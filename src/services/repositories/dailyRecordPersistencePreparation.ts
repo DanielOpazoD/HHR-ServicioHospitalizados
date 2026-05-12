@@ -1,6 +1,7 @@
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { normalizeDailyRecordInvariants } from '@/utils/recordInvariants';
+import { normalizeMovementBedConsistency } from '@/services/repositories/clinicalMovementBedConsistencyPolicy';
 import { validateAndSalvageRecord } from '@/services/repositories/helpers/validationHelper';
 import { logError } from '@/services/utils/errorService';
 import {
@@ -12,9 +13,13 @@ import { buildInvariantRepairReviewContext } from '@/services/repositories/invar
 
 const normalizePreparedRecord = (record: DailyRecord): DailyRecord => {
   const normalized = normalizeDailyRecordInvariants(record);
-  const validatedRecord = normalized.record;
+  const movementConsistency = normalizeMovementBedConsistency(normalized.record);
+  const validatedRecord = movementConsistency.record;
 
-  const repairPaths = Object.keys(normalized.patches);
+  const repairPaths = [
+    ...Object.keys(normalized.patches),
+    ...Object.keys(movementConsistency.patches),
+  ];
 
   if (repairPaths.length > 0) {
     logError(

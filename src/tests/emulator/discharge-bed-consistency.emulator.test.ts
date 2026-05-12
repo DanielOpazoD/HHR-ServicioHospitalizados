@@ -1,0 +1,172 @@
+import 'fake-indexeddb/auto';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RulesTestEnvironment, initializeTestEnvironment } from '@firebase/rules-unit-testing';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { PatientData } from '@/types/domain/patient';
+import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+import { resolveFirestoreRulesEmulatorConfig } from '@/tests/security/firestoreRulesEmulatorConfig';
+
+const runEmulatorTests =
+  process.env.RUN_FIRESTORE_EMULATOR_TESTS === '1' ||
+  process.env.FIRESTORE_EMULATOR_HOST !== undefined;
+const describeEmulator = runEmulatorTests ? describe : describe.skip;
+
+let activeDb: unknown;
+type TestFirestore = ReturnType<
+  ReturnType<RulesTestEnvironment['authenticatedContext']>['firestore']
+>;
+
+vi.mock('@/firebaseConfig', () => ({
+  get db() {
+    return activeDb;
+  },
+  auth: null,
+}));
+
+import { getForDateWithMeta } from '@/services/repositories/dailyRecordRepositoryReadService';
+import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
+import {
+  clearAllRecords,
+  getRecordForDate,
+  saveRecord,
+} from '@/services/storage/indexeddb/indexedDbRecordService';
+import { clearAllSyncQueue } from '@/services/storage/sync';
+
+const buildRecord = (date: string, lastUpdated: string): DailyRecord => ({
+  date,
+  beds: {},
+  discharges: [],
+  transfers: [],
+  cma: [],
+  lastUpdated,
+  nurses: [],
+  nursesDayShift: [],
+  nursesNightShift: [],
+  tensDayShift: [],
+  tensNightShift: [],
+  activeExtraBeds: [],
+  dateTimestamp: Date.parse(`${date}T00:00:00.000Z`),
+});
+
+const buildPatient = (bedId: string, overrides: Partial<PatientData> = {}): PatientData =>
+  ({
+    bedId,
+    isBlocked: false,
+    bedMode: 'Cama',
+    hasCompanionCrib: false,
+    patientName: 'Paciente Egresado',
+    rut: '33.333.333-3',
+    age: '40a',
+    pathology: 'Diagnostico base',
+    specialty: Specialty.MEDICINA,
+    status: PatientStatus.ESTABLE,
+    admissionDate: '2026-02-10',
+    hasWristband: false,
+    devices: [],
+    surgicalComplication: false,
+    isUPC: false,
+    ...overrides,
+  }) as PatientData;
+
+const buildEmptyBed = (bedId: string): PatientData =>
+  buildPatient(bedId, {
+    patientName: '',
+    rut: '',
+    age: '',
+    pathology: '',
+    status: PatientStatus.EMPTY,
+    admissionDate: '',
+    hasWristband: true,
+  });
+
+const CURRENT_RECORD_DATE = new Date().toISOString().slice(0, 10);
+const isoAt = (date: string, time: string): string => `${date}T${time}.000Z`;
+
+describeEmulator('Firestore discharge-bed consistency flow', () => {
+  let testEnv: RulesTestEnvironment;
+  let nurseDb: TestFirestore;
+
+  beforeAll(async () => {
+    const rulesPath = path.resolve(__dirname, '../../../firestore.rules');
+    const rules = fs.readFileSync(rulesPath, 'utf8');
+    const emulatorConfig = resolveFirestoreRulesEmulatorConfig(process.env.FIRESTORE_EMULATOR_HOST);
+
+    testEnv = await initializeTestEnvironment({
+      projectId: 'demo-hhr-discharge-bed-consistency-test',
+      firestore: {
+        rules,
+        host: emulatorConfig.host,
+        port: emulatorConfig.port,
+      },
+    });
+    nurseDb = testEnv
+      .authenticatedContext('user_nurse', {
+        email: 'hospitalizados@hospitalhangaroa.cl',
+        role: 'nurse_hospital',
+      })
+      .firestore();
+  });
+
+  beforeEach(async () => {
+    await testEnv.clearFirestore();
+    await clearAllRecords();
+    await clearAllSyncQueue();
+    setFirestoreEnabled(true);
+    activeDb = nurseDb;
+  });
+
+  afterAll(async () => {
+    await testEnv.cleanup();
+  });
+
+  it('does not hydrate a stale local bed as active when Firestore already has the discharge', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const dischargedRut = '33.333.333-3';
+    const localStaleRecord = buildRecord(date, isoAt(date, '09:00:00'));
+    localStaleRecord.beds = {
+      R1: buildPatient('R1', {
+        rut: dischargedRut,
+        pathology: 'Diagnostico cache antiguo',
+      }),
+    };
+
+    const remoteDischargedRecord = buildRecord(date, isoAt(date, '10:00:00'));
+    remoteDischargedRecord.beds = { R1: buildEmptyBed('R1') };
+    remoteDischargedRecord.discharges = [
+      {
+        id: 'discharge-1',
+        bedId: 'R1',
+        bedName: 'R1',
+        bedType: 'Cama',
+        patientName: 'Paciente Egresado',
+        rut: dischargedRut,
+        diagnosis: 'Diagnostico remoto',
+        admissionDate: '2026-02-10',
+        status: 'Vivo',
+        dischargeType: 'Domicilio (Habitual)',
+        movementDate: date,
+        time: '10:00',
+      },
+    ];
+
+    await saveRecord(localStaleRecord);
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context
+        .firestore()
+        .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
+        .set(remoteDischargedRecord);
+    });
+
+    const result = await getForDateWithMeta(date, true);
+
+    expect(result.record?.discharges).toHaveLength(1);
+    expect(result.record?.beds.R1.patientName).toBe('');
+    expect(result.record?.beds.R1.rut).toBe('');
+
+    const hydratedLocal = await getRecordForDate(date);
+    expect(hydratedLocal?.beds.R1.patientName).toBe('');
+    expect(hydratedLocal?.beds.R1.rut).toBe('');
+  });
+});

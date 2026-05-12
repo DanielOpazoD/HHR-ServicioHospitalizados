@@ -30,6 +30,7 @@ import {
   mergePatientData,
 } from '@/services/repositories/conflictResolutionMergeUtils';
 import { mergePatientDevices } from '@/services/repositories/conflictResolutionDeviceMergeUtils';
+import { normalizeMovementBedConsistency } from '@/services/repositories/clinicalMovementBedConsistencyPolicy';
 import {
   STAFFING_SLOT_ARRAY_FIELDS,
   buildMergedDayShiftStaffingMirror,
@@ -197,7 +198,7 @@ const resolveWholeRecord = (
     traceContext.add(traceFromScalarDecision(key, decision));
   });
 
-  return resolved;
+  return normalizeMovementBedConsistency(resolved).record;
 };
 
 const resolveByChangedPaths = (
@@ -311,7 +312,7 @@ const resolveByChangedPaths = (
 
   const merged = applyPatches(remote, patches);
   merged.lastUpdated = toIso(Math.max(toMillis(remote.lastUpdated), toMillis(local.lastUpdated)));
-  return merged;
+  return normalizeMovementBedConsistency(merged).record;
 };
 
 const resolvePathValueWithMatrix = (

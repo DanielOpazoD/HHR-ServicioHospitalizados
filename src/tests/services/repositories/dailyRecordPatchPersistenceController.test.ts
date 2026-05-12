@@ -89,6 +89,51 @@ describe('dailyRecordPatchPersistenceController', () => {
     expect(logErrorMock).toHaveBeenCalled();
   });
 
+  it('merges movement-bed consistency repairs into the outgoing patch', () => {
+    const patched = {
+      ...current,
+      beds: {
+        R1: {
+          bedId: 'R1',
+          patientName: 'Paciente Egresado',
+          rut: '33.333.333-3',
+          pathology: 'Diagnostico cache antiguo',
+          admissionDate: '2026-02-10',
+          status: 'Estable',
+          bedMode: 'Cama',
+          hasCompanionCrib: false,
+        },
+      },
+      discharges: [
+        {
+          id: 'discharge-1',
+          bedId: 'R1',
+          patientName: 'Paciente Egresado',
+          rut: '33.333.333-3',
+          admissionDate: '2026-02-10',
+          status: 'Vivo',
+          movementDate: '2026-02-18',
+        },
+      ],
+    } as unknown as DailyRecord;
+    applyPatchesMock.mockReturnValue(patched);
+    normalizeDailyRecordInvariantsMock.mockReturnValue({
+      record: patched,
+      patches: {},
+    });
+
+    const result = preparePatchedRecordPersistence(current, '2026-04-19', {
+      discharges: patched.discharges,
+    } as DailyRecordPatch);
+
+    expect(result.mergedPatches['beds.R1']).toMatchObject({
+      bedId: 'R1',
+      patientName: '',
+      rut: '',
+    });
+    expect(logErrorMock).toHaveBeenCalled();
+  });
+
   it('logs clinically reviewable context when invariant repairs are merged', () => {
     const patch: DailyRecordPatch = { 'beds.R1.patientName': 'Paciente Demo' };
 
