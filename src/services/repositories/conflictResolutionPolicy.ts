@@ -16,6 +16,7 @@ export interface ScalarPolicyDecision {
     | 'remote_undefined_fallback'
     | 'root_local_priority'
     | 'root_remote_priority'
+    | 'clinical_census_remote_priority'
     | 'clinical_local_priority'
     | 'clinical_remote_non_empty_fallback'
     | 'admin_remote_priority'
@@ -56,6 +57,26 @@ const CLINICAL_PATIENT_FIELDS = new Set([
   'deliveryDate',
   'deliveryCesareanLabor',
 ]);
+
+const CLINICAL_CENSUS_REMOTE_PRIORITY_FIELDS = new Set([
+  'pathology',
+  'snomedCode',
+  'cie10Code',
+  'cie10Description',
+  'diagnosisComments',
+  'specialty',
+  'secondarySpecialty',
+  'status',
+  'ginecobstetriciaType',
+  'deliveryRoute',
+  'deliveryDate',
+  'deliveryCesareanLabor',
+  'isUPC',
+  'upcChecklist',
+]);
+
+export const isClinicalCensusRemotePriorityField = (field: string): boolean =>
+  CLINICAL_CENSUS_REMOTE_PRIORITY_FIELDS.has(field);
 
 const isEmptyClinicalValue = (value: unknown): boolean =>
   value === '' ||
@@ -143,6 +164,23 @@ export const decideScalarByPolicy = (
   const parts = path.split('.');
   if (parts[0] === 'beds' && parts.length >= 3) {
     const patientField = parts[2];
+    if (isClinicalCensusRemotePriorityField(patientField)) {
+      if (isEmptyClinicalValue(local) && !isEmptyClinicalValue(remote)) {
+        return {
+          value: remote,
+          winner: 'remote',
+          reason: 'clinical_remote_non_empty_fallback',
+        };
+      }
+      if (preferLocalDefault) {
+        return { value: local, winner: 'local', reason: 'clinical_local_priority' };
+      }
+      return {
+        value: remote,
+        winner: 'remote',
+        reason: 'clinical_census_remote_priority',
+      };
+    }
     if (CLINICAL_PATIENT_FIELDS.has(patientField)) {
       if (isEmptyClinicalValue(local) && !isEmptyClinicalValue(remote)) {
         return {

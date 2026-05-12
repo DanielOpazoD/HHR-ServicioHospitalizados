@@ -202,13 +202,14 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.schemaVersion).toBe(5);
   });
 
-  it('prioritizes clinical fields from local during automatic merge', () => {
+  it('preserves narrative clinical notes from local during automatic merge', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.beds = {
       R1: {
         bedId: 'R1',
         patientName: 'Remoto',
         pathology: 'Diag remoto',
+        handoffNote: 'Nota remota',
       } as unknown as DailyRecord['beds'][string],
     };
 
@@ -218,11 +219,12 @@ describe('conflictResolutionMatrix', () => {
         bedId: 'R1',
         patientName: 'Local',
         pathology: 'Diag local',
+        handoffNote: 'Nota local',
       } as unknown as DailyRecord['beds'][string],
     };
 
     const resolved = resolveDailyRecordConflict(remote, local, { changedPaths: ['*'] });
-    expect(resolved.beds.R1.pathology).toBe('Diag local');
+    expect(resolved.beds.R1.handoffNote).toBe('Nota local');
     expect(resolved.beds.R1.patientName).toBe('Local');
   });
 
@@ -451,7 +453,7 @@ describe('conflictResolutionMatrix', () => {
       } as unknown as DailyRecord['beds'][string],
     };
 
-    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    const local = makeRecord('2026-02-18', '2026-02-18T09:55:00.000Z');
     local.beds = {
       R1: {
         bedId: 'R1',
@@ -469,8 +471,8 @@ describe('conflictResolutionMatrix', () => {
         expect.objectContaining({
           path: 'beds.R1.pathology',
           strategy: 'scalar_policy',
-          winner: 'local',
-          reason: 'clinical_local_priority',
+          winner: 'remote',
+          reason: 'clinical_census_remote_priority',
         }),
         expect.objectContaining({
           path: 'beds.R1.location',

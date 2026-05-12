@@ -169,4 +169,51 @@ describeEmulator('Firestore discharge-bed consistency flow', () => {
     expect(hydratedLocal?.beds.R1.patientName).toBe('');
     expect(hydratedLocal?.beds.R1.rut).toBe('');
   });
+
+  it('hydrates Firebase census diagnosis and specialty over stale local values', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const localStaleRecord = buildRecord(date, isoAt(date, '09:00:00'));
+    localStaleRecord.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente Censo',
+        rut: '44.444.444-4',
+        pathology: 'Diagnostico cache antiguo',
+        diagnosisComments: 'Comentario cache antiguo',
+        specialty: Specialty.PEDIATRIA,
+        secondarySpecialty: '',
+        status: PatientStatus.GRAVE,
+      }),
+    };
+
+    const remoteRecord = buildRecord(date, isoAt(date, '10:00:00'));
+    remoteRecord.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente Censo',
+        rut: '44.444.444-4',
+        pathology: 'Neumonia adquirida en la comunidad',
+        diagnosisComments: 'CURB-65 elevado',
+        specialty: Specialty.MEDICINA,
+        secondarySpecialty: Specialty.CIRUGIA,
+        status: PatientStatus.ESTABLE,
+      }),
+    };
+
+    await saveRecord(localStaleRecord);
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(remoteRecord);
+    });
+
+    const result = await getForDateWithMeta(date, true);
+
+    expect(result.record?.beds.R1.pathology).toBe('Neumonia adquirida en la comunidad');
+    expect(result.record?.beds.R1.diagnosisComments).toBe('CURB-65 elevado');
+    expect(result.record?.beds.R1.specialty).toBe(Specialty.MEDICINA);
+    expect(result.record?.beds.R1.secondarySpecialty).toBe(Specialty.CIRUGIA);
+    expect(result.record?.beds.R1.status).toBe(PatientStatus.ESTABLE);
+
+    const hydratedLocal = await getRecordForDate(date);
+    expect(hydratedLocal?.beds.R1.pathology).toBe('Neumonia adquirida en la comunidad');
+    expect(hydratedLocal?.beds.R1.specialty).toBe(Specialty.MEDICINA);
+    expect(hydratedLocal?.beds.R1.status).toBe(PatientStatus.ESTABLE);
+  });
 });

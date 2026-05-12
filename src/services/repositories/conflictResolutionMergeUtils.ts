@@ -1,6 +1,9 @@
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { resolveConflictDomainContextForPath } from '@/services/repositories/conflictResolutionDomainPolicy';
-import { decideScalarByPolicy } from '@/services/repositories/conflictResolutionPolicy';
+import {
+  decideScalarByPolicy,
+  isClinicalCensusRemotePriorityField,
+} from '@/services/repositories/conflictResolutionPolicy';
 import { isPlainObject, isPrimitive } from '@/services/repositories/conflictResolutionUtils';
 import {
   mergePatientDevices,
@@ -289,6 +292,18 @@ export const mergePatientData = (
   keys.forEach(key => {
     const remoteValue = remoteRecord[key];
     const localValue = localRecord[key];
+
+    if (isClinicalCensusRemotePriorityField(key)) {
+      const decision = decideScalarByPolicy(
+        `${pathPrefix}.${key}`,
+        remoteValue,
+        localValue,
+        preferLocal
+      );
+      merged[key] = decision.value;
+      traceContext?.add(traceFromScalarDecision(`${pathPrefix}.${key}`, decision));
+      return;
+    }
 
     if (PATIENT_ID_ARRAY_FIELDS.has(key)) {
       merged[key] = mergeArrayById(
