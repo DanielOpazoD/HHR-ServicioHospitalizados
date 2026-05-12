@@ -6,6 +6,7 @@ import { AuditLogEntry } from '@/types/auditLogTypes';
 import { ErrorLog } from '@/services/utils/errorService';
 
 const FIXED_ISO_TIMESTAMP = '2026-01-15T10:30:00.000Z';
+const FIXED_LOGIN_ATTEMPT_TIMESTAMP = 1772627400000;
 
 describe('indexedDBService', () => {
   const setMockLocationWithReload = () => {
@@ -356,7 +357,10 @@ describe('indexedDBService', () => {
       localStorage.setItem('hhr_auth_bootstrap_pending_v1', '{"startedAt":1,"mode":"redirect"}');
       localStorage.setItem('unrelated_local_key', 'remove-me');
       sessionStorage.setItem('firebase:authUser:test:[DEFAULT]', '{"uid":"session"}');
-      sessionStorage.setItem('hhr_google_login_attempt_pending', String(Date.now()));
+      sessionStorage.setItem(
+        'hhr_google_login_attempt_pending',
+        String(FIXED_LOGIN_ATTEMPT_TIMESTAMP)
+      );
       sessionStorage.setItem('hhr_logged_this_session', 'true');
       sessionStorage.setItem('unrelated_session_key', 'remove-me');
 
