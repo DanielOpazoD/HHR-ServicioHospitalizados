@@ -1184,6 +1184,7 @@ export function registerFirestoreRulesAccessGroups({
 
   describe('Settings Collection', () => {
     const settingsPath = 'hospitals/H1/settings/tableConfig';
+    const aiProviderRoutingPath = 'hospitals/H1/settings/aiProviderRouting';
 
     it('Admins can write settings', async () => {
       await assertSucceeds(admin().doc(settingsPath).set({ foo: 'bar' }));
@@ -1195,6 +1196,34 @@ export function registerFirestoreRulesAccessGroups({
 
     it('Nurses can write settings', async () => {
       await assertSucceeds(nurse().doc(settingsPath).set({ foo: 'bar' }));
+    });
+
+    it('Only admins can write AI provider routing settings', async () => {
+      await assertSucceeds(
+        admin()
+          .doc(aiProviderRoutingPath)
+          .set({
+            actions: {
+              clinical_document_import: {
+                enabled: true,
+                provider: 'deepseek',
+              },
+            },
+          })
+      );
+
+      await assertFails(
+        nurse()
+          .doc(aiProviderRoutingPath)
+          .set({
+            actions: {
+              clinical_document_import: {
+                enabled: true,
+                provider: 'gemini',
+              },
+            },
+          })
+      );
     });
 
     it('Unauthenticated users cannot read settings', async () => {

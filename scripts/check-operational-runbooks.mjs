@@ -70,7 +70,13 @@ const requiredDocs = [
   },
   {
     file: 'docs/RUNBOOK_AI_PROVIDER_OPERATIONS.md',
-    patterns: ['AI_PROVIDER', 'GEMINI_API_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY'],
+    patterns: [
+      'AI_PROVIDER',
+      'GEMINI_API_KEY',
+      'OPENAI_API_KEY',
+      'ANTHROPIC_API_KEY',
+      'DEEPSEEK_API_KEY',
+    ],
   },
   {
     file: 'docs/SERVERLESS_SENSITIVE_CONTRACTS.md',

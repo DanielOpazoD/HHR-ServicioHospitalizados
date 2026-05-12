@@ -1,5 +1,13 @@
 import React, { Suspense, lazy, useRef, useState } from 'react';
-import { FileText, Settings2, Shield, ShieldCheck, Sparkles, TableProperties } from 'lucide-react';
+import {
+  Bot,
+  FileText,
+  Settings2,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  TableProperties,
+} from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { useTableConfig } from '@/context/TableConfigContext';
@@ -7,6 +15,7 @@ import { useUISettings } from '@/context/UISettingsContext';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { AccessRestricted } from './internal/AccessRestricted';
 import RoleManagementView from './RoleManagementView';
+import { ClinicalAIProviderRoutingPanel } from './ClinicalAIProviderRoutingPanel';
 import {
   SettingsVisualTab,
   SettingsSecurityTab,
@@ -19,7 +28,13 @@ const LazyClinicalDocumentTemplatesManager = lazy(() =>
   }))
 );
 
-type ConfigurationTab = 'VISUAL' | 'TABLE' | 'SECURITY' | 'ROLES' | 'CLINICAL_TEMPLATES';
+type ConfigurationTab =
+  | 'VISUAL'
+  | 'TABLE'
+  | 'SECURITY'
+  | 'ROLES'
+  | 'CLINICAL_TEMPLATES'
+  | 'AI_PROVIDERS';
 
 // Configuration view — admin-only page grouping BOTH user preferences (formerly
 // "Preferencias" modal: visual, table, security) AND system administration
@@ -94,6 +109,12 @@ export const ConfigurationView: React.FC = () => {
     { id: 'SECURITY', label: 'Seguridad', icon: Shield, color: 'text-amber-400' },
     { id: 'ROLES', label: 'Roles y permisos', icon: ShieldCheck, color: 'text-indigo-400' },
     {
+      id: 'AI_PROVIDERS',
+      label: 'IA',
+      icon: Bot,
+      color: 'text-cyan-400',
+    },
+    {
       id: 'CLINICAL_TEMPLATES',
       label: 'Plantillas clínicas',
       icon: FileText,
@@ -154,6 +175,7 @@ export const ConfigurationView: React.FC = () => {
         )}
         {activeTab === 'SECURITY' && <SettingsSecurityTab />}
         {activeTab === 'ROLES' && <RoleManagementView />}
+        {activeTab === 'AI_PROVIDERS' && <ClinicalAIProviderRoutingPanel />}
         {activeTab === 'CLINICAL_TEMPLATES' && (
           <Suspense
             fallback={
