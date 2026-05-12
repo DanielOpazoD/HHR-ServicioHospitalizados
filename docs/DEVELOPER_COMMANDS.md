@@ -71,6 +71,7 @@ Estos scripts siguen soportados, pero no forman parte de la superficie pública 
 - `npm run test:rules:ci`
 - `npm run test:emulator:sync`
 - `npm run test:emulator:ui`
+- `npm run test:firestore:cma:ci`
 - `npm run test:e2e`
 - `npm run test:e2e:critical`
 - `npm run test:e2e:flow-performance`

@@ -169,6 +169,7 @@
     "test:emulator:ui": "RUN_FIRESTORE_EMULATOR_TESTS=1 vitest run -c vitest.emulator-ui.config.ts",
     "test:emulator:sync:ci": "bash scripts/run-firestore-sync-emulator-ci.sh",
     "test:firestore:release:ci": "bash scripts/run-firestore-release-gate-ci.sh",
+    "test:firestore:cma:ci": "bash scripts/run-firestore-cma-specialty-ci.sh",
     "emulator": "firebase emulators:start --only firestore"
   },
   "dependencies": {
@@ -268,7 +269,7 @@
     "qs": "6.15.0",
     "@isaacs/brace-expansion": "5.0.1",
     "markdown-it": "14.1.1",
-    "protobufjs": "7.5.5"
+    "protobufjs": "7.5.7"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,css,md}": [
