@@ -40,7 +40,7 @@ describe('conflictResolutionMatrix', () => {
       changedPaths: ['beds.R1.patientName'],
     });
 
-    expect(resolved.beds.R1.patientName).toBe('Nombre local');
+    expect(resolved.beds.R1.patientName).toBe('Nombre remoto');
     expect(resolved.beds.R1.pathology).toBe('Diag remoto');
   });
 

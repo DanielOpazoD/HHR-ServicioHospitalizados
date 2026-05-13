@@ -124,7 +124,7 @@ describe('dailyRecordRepositorySyncService', () => {
     );
   });
 
-  it('keeps a longer local diagnosis when realtime emits a newer truncated diagnosis', async () => {
+  it('uses the newer remote canonical diagnosis when realtime emits shorter diagnosis text', async () => {
     const localRecord = {
       date: '2026-03-03',
       beds: {
@@ -157,22 +157,29 @@ describe('dailyRecordRepositorySyncService', () => {
     const callback = vi.fn();
     subscribeDetailed('2026-03-03', callback);
 
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     expect(callback).toHaveBeenCalledWith(
       expect.objectContaining({
         record: expect.objectContaining({
           beds: expect.objectContaining({
             R1: expect.objectContaining({
-              pathology: 'Puérpera de cesárea.',
+              pathology: 'Puérpera',
             }),
           }),
         }),
       }),
       false
     );
-    expect(saveToIndexedDB).not.toHaveBeenCalled();
+    expect(saveToIndexedDB).toHaveBeenCalledWith(
+      expect.objectContaining({
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({
+            pathology: 'Puérpera',
+          }),
+        }),
+      })
+    );
   });
 
   it('returns missing_remote when the local record exists but no remote record was found', async () => {

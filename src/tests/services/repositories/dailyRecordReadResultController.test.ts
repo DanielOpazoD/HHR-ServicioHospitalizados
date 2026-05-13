@@ -77,11 +77,21 @@ describe('dailyRecordReadResultController', () => {
   it('returns the merged selected record when golden path keeps local authority', () => {
     const local = buildRecord('2026-04-15', '2026-04-15T12:00:00.000Z');
     local.beds = {
-      R1: { bedId: 'R1', patientName: 'LOCAL PATIENT', pathology: 'LOCAL DX' },
+      R1: {
+        bedId: 'R1',
+        patientName: 'LOCAL PATIENT',
+        pathology: 'LOCAL DX',
+        handoffNote: 'LOCAL NOTE',
+      },
     } as unknown as DailyRecord['beds'];
     const remote = buildRecord('2026-04-15', '2026-04-15T08:00:00.000Z');
     remote.beds = {
-      R1: { bedId: 'R1', patientName: 'REMOTE PATIENT', pathology: 'REMOTE DX' },
+      R1: {
+        bedId: 'R1',
+        patientName: 'REMOTE PATIENT',
+        pathology: 'REMOTE DX',
+        handoffNote: 'REMOTE NOTE',
+      },
       R2: { bedId: 'R2', patientName: 'REMOTE NEW PATIENT', pathology: 'REMOTE NEW DX' },
     } as unknown as DailyRecord['beds'];
     const goldenPath = resolveDailyRecordPersistenceGoldenPath({
@@ -106,7 +116,8 @@ describe('dailyRecordReadResultController', () => {
 
     expect(result.source).toBe('indexeddb');
     expect(result.sourceOfTruth).toBe('local');
-    expect(result.record?.beds.R1.pathology).toBe('LOCAL DX');
+    expect(result.record?.beds.R1.pathology).toBe('REMOTE DX');
+    expect(result.record?.beds.R1.handoffNote).toBe('LOCAL NOTE');
     expect(result.record?.beds.R2.patientName).toBe('REMOTE NEW PATIENT');
   });
 

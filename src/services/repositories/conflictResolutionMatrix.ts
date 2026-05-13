@@ -338,19 +338,12 @@ const resolvePathValueWithMatrix = (
   }
 
   if (isClinicalCensusRemotePriorityField(patientField)) {
-    const localIsNewer = toMillis(local.lastUpdated) > toMillis(remote.lastUpdated);
-    const decision = localIsNewer
-      ? ({
-          value: getValueAtPath(local, path),
-          winner: 'local',
-          reason: 'clinical_local_priority',
-        } as const)
-      : decideScalarByPolicy(
-          path,
-          getValueAtPath(remote, path),
-          getValueAtPath(local, path),
-          false
-        );
+    const decision = decideScalarByPolicy(
+      path,
+      getValueAtPath(remote, path),
+      getValueAtPath(local, path),
+      true
+    );
     traceContext.add(traceFromScalarDecision(path, decision));
     return decision.value;
   }
