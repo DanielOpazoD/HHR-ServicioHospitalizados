@@ -1,3 +1,5 @@
+import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
+
 export interface ClinicalDocumentValidationIssue {
   path: string;
   message: string;
@@ -30,5 +32,5 @@ export const buildClinicalDocumentEpisodeKey = (
   const rut = (patientRut ?? '').trim();
   const date = (admissionDate ?? '').trim();
   if (!rut || !date) return null;
-  return `${rut}__${date}`;
+  return buildClinicalEpisodeKey(rut, date);
 };

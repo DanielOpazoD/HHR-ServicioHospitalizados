@@ -29,6 +29,19 @@ export interface PatientMovementClassification {
   isNewAdmission: boolean;
 }
 
+export interface ClinicalEpisodeFallbackEvent {
+  source?: string;
+  reason: 'missing_clinical_episode_id';
+  fallbackEpisodeKey: string;
+  hasRut: boolean;
+  hasAdmissionTime: boolean;
+}
+
+export interface ClinicalEpisodeResolutionOptions {
+  source?: string;
+  onFallback?: (event: ClinicalEpisodeFallbackEvent) => void;
+}
+
 export const normalizeClinicalEpisodeTime = (admissionTime?: string): string =>
   String(admissionTime || '').trim();
 
@@ -53,17 +66,28 @@ export const resolveClinicalEpisodeAdmissionDate = (
   patient: PatientEpisodeContract
 ): string | undefined => patient.firstSeenDate || patient.admissionDate;
 
-export const resolveClinicalEpisodeIdentifier = (patient: PatientEpisodeContract): string => {
+export const resolveClinicalEpisodeIdentifier = (
+  patient: PatientEpisodeContract,
+  options: ClinicalEpisodeResolutionOptions = {}
+): string => {
   const persistedEpisodeId = normalizeClinicalEpisodeId(patient.clinicalEpisodeId);
   if (persistedEpisodeId) {
     return persistedEpisodeId;
   }
 
-  return buildClinicalEpisodeKey(
+  const fallbackEpisodeKey = buildClinicalEpisodeKey(
     patient.rut || '',
     resolveClinicalEpisodeAdmissionDate(patient),
     patient.admissionTime
   );
+  options.onFallback?.({
+    source: options.source,
+    reason: 'missing_clinical_episode_id',
+    fallbackEpisodeKey,
+    hasRut: Boolean(patient.rut?.trim()),
+    hasAdmissionTime: Boolean(normalizeClinicalEpisodeTime(patient.admissionTime)),
+  });
+  return fallbackEpisodeKey;
 };
 
 export const resolveClinicalEpisode = (
@@ -71,7 +95,8 @@ export const resolveClinicalEpisode = (
   context?: {
     sourceDailyRecordDate?: string;
     sourceBedId?: string;
-  }
+  },
+  options: ClinicalEpisodeResolutionOptions = {}
 ): ClinicalEpisode => ({
   patientRut: patient.rut || '',
   patientName: patient.patientName || '',
@@ -80,7 +105,7 @@ export const resolveClinicalEpisode = (
   sourceDailyRecordDate: context?.sourceDailyRecordDate,
   sourceBedId: context?.sourceBedId,
   specialty: patient.specialty,
-  episodeKey: resolveClinicalEpisodeIdentifier(patient),
+  episodeKey: resolveClinicalEpisodeIdentifier(patient, options),
 });
 
 export const buildPatientPresenceSnapshot = (

@@ -24,6 +24,7 @@ import type { EpisodeDocuments } from '@/features/census/components/global-searc
 import type { GroupedEpisode } from '@/features/census/components/global-search/globalSearchContracts';
 import { resolveEpisodeCensusTargetDate } from '@/features/census/components/global-search/episodeGroupingController';
 import { DocRow } from '@/features/census/components/global-search/DocRow';
+import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
 import { formatDateToCL } from '@/utils/clinicalUtils';
 
 // ---------------------------------------------------------------------------
@@ -44,12 +45,8 @@ interface EpisodeBlockCardProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Build episode lookup key preserving original RUT format.
- * The canonical format is `RUT__admissionDate` (e.g., "8.258.248-7__2026-03-17").
- */
 const buildEpisodeKey = (rut: string, admissionDate: string): string =>
-  `${rut || 'sin-rut'}__${admissionDate || 'sin-ingreso'}`;
+  buildClinicalEpisodeKey(rut, admissionDate);
 
 const dischargeTypeIcon = (type: string) => {
   switch (type) {

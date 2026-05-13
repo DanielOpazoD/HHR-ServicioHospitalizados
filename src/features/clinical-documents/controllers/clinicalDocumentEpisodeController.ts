@@ -2,9 +2,11 @@ import type { ClinicalDocumentEpisodeContext } from '@/features/clinical-documen
 import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
 import {
   buildClinicalEpisodeKey as buildClinicalEpisodeKeyFromApplication,
+  type ClinicalEpisodeFallbackEvent,
   resolveClinicalEpisode,
   resolveClinicalEpisodeAdmissionDate,
 } from '@/application/patient-flow/clinicalEpisode';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { calculateAge } from '@/utils/clinicalUtils';
 import { normalizeCalendarDate } from '@/utils/clinicalDateUtils';
 
@@ -34,6 +36,24 @@ const resolveClinicalDocumentDischargeDateValue = (patient: PatientData): string
   normalizeCalendarDate(patient.transferDate) ||
   getCurrentDateValue();
 
+const recordClinicalDocumentEpisodeFallback = (
+  event: ClinicalEpisodeFallbackEvent,
+  context: { sourceDailyRecordDate: string; sourceBedId: string }
+): void => {
+  recordOperationalTelemetry({
+    category: 'clinical_document',
+    operation: 'clinical_episode_key_fallback',
+    status: 'degraded',
+    runtimeState: 'degraded',
+    date: context.sourceDailyRecordDate,
+    issues: ['Clinical document episode resolved without clinicalEpisodeId.'],
+    context: {
+      ...event,
+      sourceBedId: context.sourceBedId,
+    },
+  });
+};
+
 /**
  * Resolves the full episode context for a clinical document.
  * @param patient - Patient demographic and admission data
@@ -46,10 +66,18 @@ export const buildClinicalDocumentEpisodeContext = (
   sourceDailyRecordDate: string,
   sourceBedId: string
 ): ClinicalDocumentEpisodeContext =>
-  resolveClinicalEpisode(patient, {
-    sourceDailyRecordDate,
-    sourceBedId,
-  });
+  resolveClinicalEpisode(
+    patient,
+    {
+      sourceDailyRecordDate,
+      sourceBedId,
+    },
+    {
+      source: 'clinical_document',
+      onFallback: event =>
+        recordClinicalDocumentEpisodeFallback(event, { sourceDailyRecordDate, sourceBedId }),
+    }
+  );
 
 /**
  * Derives the patient field values used to populate document header placeholders.

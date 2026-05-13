@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  buildDischargeCanonicalAuditEntries,
   dispatchCanonicalDischarge,
   type DischargeCanonicalAuditEntry,
   type DischargeCanonicalDispatchInput,
@@ -23,6 +24,78 @@ const validInput = (
 });
 
 describe('dispatchCanonicalDischarge', () => {
+  it('builds discharge audit entries with clinicalEpisodeId as the episode key for new patients', () => {
+    const entries = buildDischargeCanonicalAuditEntries({
+      record: {
+        date: '2026-05-13',
+        beds: {
+          R1: {
+            bedId: 'R1',
+            patientName: 'Paciente Reingreso Tarde',
+            rut: '11.111.111-1',
+            admissionDate: '2026-05-13',
+            admissionTime: '18:30',
+            clinicalEpisodeId: 'ep-afternoon',
+          },
+        },
+      },
+      bedId: 'R1',
+      status: 'Vivo',
+    });
+
+    expect(entries).toEqual([
+      expect.objectContaining({
+        bedId: 'R1',
+        patientName: 'Paciente Reingreso Tarde',
+        rut: '11.111.111-1',
+        status: 'Vivo',
+        episodeKey: 'ep-afternoon',
+      }),
+    ]);
+  });
+
+  it('separates same-RUT same-day discharge document locks by clinicalEpisodeId', async () => {
+    const writeAuditEvent = vi
+      .fn()
+      .mockResolvedValue({ status: 'success', data: null, issues: [] });
+    const lockDocumentsByEpisodeKey = vi.fn().mockResolvedValue([]);
+
+    await dispatchCanonicalDischarge(
+      validInput({
+        entries: [
+          {
+            bedId: 'R1',
+            patientName: 'Paciente Mañana',
+            rut: '11.111.111-1',
+            status: 'Vivo',
+            episodeKey: 'ep-morning',
+          },
+          {
+            bedId: 'R2',
+            patientName: 'Paciente Tarde',
+            rut: '11.111.111-1',
+            status: 'Vivo',
+            episodeKey: 'ep-afternoon',
+          },
+        ],
+      }),
+      { writeAuditEvent, lockDocumentsByEpisodeKey }
+    );
+
+    expect(lockDocumentsByEpisodeKey).toHaveBeenNthCalledWith(
+      1,
+      'ep-morning',
+      undefined,
+      expect.objectContaining({ lockedAt: expect.any(String) })
+    );
+    expect(lockDocumentsByEpisodeKey).toHaveBeenNthCalledWith(
+      2,
+      'ep-afternoon',
+      undefined,
+      expect.objectContaining({ lockedAt: expect.any(String) })
+    );
+  });
+
   it('blocks anonymous actors and never invokes the legacy persist', async () => {
     const performLegacyPersist = vi.fn();
     const writeAuditEvent = vi.fn();
