@@ -104,6 +104,8 @@ import { withRetry } from '@/utils/networkUtils';
 describe('firestoreRecordWrites', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete (import.meta.env as Record<string, string | undefined>)
+      .VITE_DAILY_RECORD_AUTHORITY_CALLABLE;
     mockGetCurrentUser.mockReturnValue(null);
     mockResolveFirebaseUserRole.mockResolvedValue(null);
     mockEnsureUserRoleClaim.mockResolvedValue(undefined);
@@ -163,6 +165,42 @@ describe('firestoreRecordWrites', () => {
       } as never)
     ).rejects.toThrow('clinical authority');
 
+    expect(saveHistorySnapshot).not.toHaveBeenCalled();
+    expect(setDoc).not.toHaveBeenCalled();
+  });
+
+  it('routes authenticated full-record saves through the clinical authority callable when enabled', async () => {
+    (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_CALLABLE =
+      'true';
+    mockGetCurrentUser.mockReturnValue({
+      uid: 'doctor-1',
+      email: 'doctor@example.com',
+      isAnonymous: false,
+    });
+
+    await saveRecordToFirestore(
+      {
+        date: '2026-03-14',
+        beds: {},
+        discharges: [],
+        transfers: [],
+        cma: [],
+      } as never,
+      '2026-03-14T10:00:00.000Z'
+    );
+
+    expect(mockGetFunctions).toHaveBeenCalled();
+    expect(mockHttpsCallable).toHaveBeenCalledWith(
+      { name: 'functions-runtime' },
+      'saveDailyRecordWithClinicalAuthority'
+    );
+    expect(mockSpecialistCallable).toHaveBeenCalledWith({
+      date: '2026-03-14',
+      expectedLastUpdated: '2026-03-14T10:00:00.000Z',
+      record: expect.objectContaining({
+        date: '2026-03-14',
+      }),
+    });
     expect(saveHistorySnapshot).not.toHaveBeenCalled();
     expect(setDoc).not.toHaveBeenCalled();
   });

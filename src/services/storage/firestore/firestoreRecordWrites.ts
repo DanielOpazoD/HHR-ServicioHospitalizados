@@ -72,6 +72,12 @@ interface SpecialistMedicalHandoffCallablePayload {
   patch: Record<string, unknown>;
 }
 
+interface DailyRecordAuthorityCallablePayload {
+  date: string;
+  record: DailyRecord;
+  expectedLastUpdated?: string;
+}
+
 const isDoctorSpecialistRole = (role: UserRole | null): role is 'doctor_specialist' =>
   role === 'doctor_specialist';
 
@@ -103,6 +109,38 @@ const updateSpecialistMedicalHandoffViaCallable = async (
   await callable({
     date,
     patch,
+  });
+};
+
+const shouldRouteDailyRecordSaveViaCallable = async (): Promise<boolean> => {
+  if (import.meta.env.VITE_DAILY_RECORD_AUTHORITY_CALLABLE !== 'true') {
+    return false;
+  }
+
+  try {
+    await defaultAuthRuntime.ready;
+    const firebaseUser = defaultAuthRuntime.getCurrentUser();
+    return Boolean(firebaseUser && !firebaseUser.isAnonymous);
+  } catch (error) {
+    firestoreWriteLogger.warn('Daily record authority callable routing check failed', { error });
+    return false;
+  }
+};
+
+const saveDailyRecordViaAuthorityCallable = async (
+  record: DailyRecord,
+  expectedLastUpdated?: string
+): Promise<void> => {
+  const functions = await defaultFunctionsRuntime.getFunctions();
+  const callable = httpsCallable<
+    DailyRecordAuthorityCallablePayload,
+    { success: boolean; date: string }
+  >(functions, 'saveDailyRecordWithClinicalAuthority');
+
+  await callable({
+    date: record.date,
+    record,
+    expectedLastUpdated,
   });
 };
 
@@ -171,6 +209,14 @@ export const saveRecordToFirestore = async (
     );
 
     assertDailyRecordClinicalAuthority(record);
+
+    if (await shouldRouteDailyRecordSaveViaCallable()) {
+      await withRetry(() => saveDailyRecordViaAuthorityCallable(record, expectedLastUpdated), {
+        onRetry: (err: unknown, attempt: number) =>
+          logFirestoreWriteRetry('save', record.date, attempt, err),
+      });
+      return;
+    }
 
     await saveHistorySnapshot(record.date);
 

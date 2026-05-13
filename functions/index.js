@@ -6,6 +6,9 @@ const { createHandoffSignatureFunctions } = require('./lib/handoffSignatureFunct
 const {
   createSpecialistMedicalHandoffFunctions,
 } = require('./lib/specialistMedicalHandoffFunctions');
+const {
+  createDailyRecordWriteAuthorityFunctions,
+} = require('./lib/dailyRecordWriteAuthorityFunctions');
 const { createClinicalDocumentExportFunctions } = require('./lib/clinicalDocumentExportFunctions');
 const {
   createClinicalDocumentPdfRenderFunctions,
@@ -31,6 +34,10 @@ module.exports = {
     admin,
   }),
   ...createSpecialistMedicalHandoffFunctions({
+    admin,
+    resolveRoleForEmail: authHelpers.resolveRoleForEmail,
+  }),
+  ...createDailyRecordWriteAuthorityFunctions({
     admin,
     resolveRoleForEmail: authHelpers.resolveRoleForEmail,
   }),
