@@ -21,7 +21,12 @@ export const shouldPreserveLocalPatientNarrative = (
   const remoteRut = normalizeEpisodeValue(remotePatient.rut);
   const localRut = normalizeEpisodeValue(localPatient.rut);
   if (remoteRut || localRut) {
-    return Boolean(remoteRut && localRut && remoteRut === localRut);
+    if (remoteRut && localRut && remoteRut === localRut) {
+      return true;
+    }
+    const remoteEpisode = resolveEpisodeAnchor(remotePatient);
+    const localEpisode = resolveEpisodeAnchor(localPatient);
+    return !remoteEpisode || !localEpisode || remoteEpisode === localEpisode;
   }
 
   const remoteEpisode = resolveEpisodeAnchor(remotePatient);

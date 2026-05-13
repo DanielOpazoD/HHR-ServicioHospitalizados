@@ -89,3 +89,7 @@ export interface CMAData {
   originalBedId?: string; // For undo: original bed ID
   originalData?: PatientData; // For undo: snapshot of original patient data
 }
+
+export const resolveCmaHistoricalAdmissionDate = (
+  movement: Pick<CMAData, 'originalData'>
+): string => movement.originalData?.admissionDate || '';

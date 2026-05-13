@@ -1,6 +1,11 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
-import type { CMAData, DischargeData, TransferData } from '@/types/domain/movements';
+import {
+  resolveCmaHistoricalAdmissionDate,
+  type CMAData,
+  type DischargeData,
+  type TransferData,
+} from '@/types/domain/movements';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 
 type MovementRecord = Pick<
@@ -8,10 +13,7 @@ type MovementRecord = Pick<
   'bedId' | 'patientName' | 'rut' | 'admissionDate' | 'isNested'
 >;
 
-type CmaMovementRecord = Pick<
-  CMAData,
-  'originalBedId' | 'bedName' | 'patientName' | 'rut' | 'originalData'
->;
+type CmaMovementRecord = CMAData;
 
 type ConfirmedMovementRecord = MovementRecord | CmaMovementRecord;
 
@@ -28,7 +30,7 @@ const isCmaMovement = (movement: ConfirmedMovementRecord): movement is CmaMoveme
 
 const resolveMovementAdmissionDate = (movement: ConfirmedMovementRecord): string => {
   if (isCmaMovement(movement)) {
-    return movement.originalData?.admissionDate || '';
+    return resolveCmaHistoricalAdmissionDate(movement);
   }
   return movement.admissionDate || '';
 };
