@@ -176,6 +176,41 @@ describe('conflict resolution narrative episode policy', () => {
     expect(resolved.beds.R1.clinicalEvents).toEqual([]);
   });
 
+  it('uses clinicalEpisodeId as the primary narrative boundary when both sides have one', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T18:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Reingresado',
+        rut: '11.111.111-1',
+        admissionDate: '2026-02-18',
+        admissionTime: '08:00',
+        clinicalEpisodeId: 'ep-afternoon',
+        handoffNoteDayShift: '',
+        clinicalEvents: [],
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T18:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Reingresado',
+        rut: '11.111.111-1',
+        admissionDate: '2026-02-18',
+        admissionTime: '08:00',
+        clinicalEpisodeId: 'ep-morning',
+        handoffNoteDayShift: 'Evolucion de otro episodio',
+        clinicalEvents: [{ id: 'event-morning', name: 'Evento de otro episodio' }],
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    expect(resolved.beds.R1.handoffNoteDayShift).toBe('');
+    expect(resolved.beds.R1.clinicalEvents).toEqual([]);
+  });
+
   it('does not apply stale changed-path structured entries to a different remote patient episode', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.beds = {

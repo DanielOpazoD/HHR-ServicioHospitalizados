@@ -30,6 +30,7 @@ const buildPort = (override?: Partial<AdmitPatientPort>): AdmitPatientPort => ({
       rut: input.rut,
       admissionDate: input.admissionDate,
       recordDate: input.recordDate,
+      clinicalEpisodeId: input.clinicalEpisodeId ?? '',
     })
   ),
   ...override,
@@ -147,6 +148,31 @@ describe('executeAdmitPatientCommand', () => {
           patientName: 'Paciente Demo',
           bedId: 'H5C1',
           rut: '11.111.111-1',
+          clinicalEpisodeId: expect.stringMatching(/^ep_/),
+        }),
+      })
+    );
+  });
+
+  it('generates a clinicalEpisodeId before persistence and audit', async () => {
+    const port = buildPort();
+
+    const outcome = await executeAdmitPatientCommand(validInput(), {
+      port,
+      writeAuditEvent,
+      createClinicalEpisodeId: () => 'admission-id',
+    });
+
+    expect(port.persistAdmission).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clinicalEpisodeId: 'ep_admission-id',
+      })
+    );
+    expect(outcome.patient?.clinicalEpisodeId).toBe('ep_admission-id');
+    expect(writeAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          clinicalEpisodeId: 'ep_admission-id',
         }),
       })
     );

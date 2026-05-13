@@ -105,6 +105,7 @@ describe('admitPatientCommand integration (hook → port → repository)', () =>
       'beds.H5C1.rut': '11.111.111-1',
       'beds.H5C1.admissionDate': '2026-05-03',
       'beds.H5C1.pathology': 'Diagnóstico demo',
+      'beds.H5C1.clinicalEpisodeId': expect.stringMatching(/^ep_/),
     });
 
     // Audit emitted with the authenticated email as actor
@@ -208,6 +209,7 @@ describe('admitPatientCommand integration (hook → port → repository)', () =>
       'beds.H5C1.patientName': 'Paciente Demo',
       'beds.H5C1.rut': '11.111.111-1',
       'beds.H5C1.admissionDate': '2026-05-03',
+      'beds.H5C1.clinicalEpisodeId': expect.stringMatching(/^ep_/),
     });
     expect(Object.keys(patch)).not.toContain('beds.H5C1.pathology');
   });

@@ -14,6 +14,7 @@ import type {
 } from '@/application/daily-record/commands/admitPatientCommand';
 import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import type { DailyRecordPatch } from '@/services/contracts/dailyRecordServiceContracts';
+import { resolveClinicalEpisodeIdForAdmission } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
 
 export type AdmitPatientPersistenceFn = (date: string, patch: DailyRecordPatch) => Promise<void>;
 
@@ -26,6 +27,7 @@ export const buildAdmitPatientPatch = (input: AdmitPatientInput): DailyRecordPat
     [`beds.${input.bedId}.patientName`]: input.patientName,
     [`beds.${input.bedId}.rut`]: input.rut,
     [`beds.${input.bedId}.admissionDate`]: input.admissionDate,
+    [`beds.${input.bedId}.clinicalEpisodeId`]: resolveClinicalEpisodeIdForAdmission(input),
   };
   if (input.pathology !== undefined) {
     patch[`beds.${input.bedId}.pathology`] = input.pathology;
@@ -38,6 +40,7 @@ const buildSnapshotFromInput = (input: AdmitPatientInput): AdmittedPatientSnapsh
   patientName: input.patientName,
   rut: input.rut,
   admissionDate: input.admissionDate,
+  clinicalEpisodeId: resolveClinicalEpisodeIdForAdmission(input),
   recordDate: input.recordDate,
 });
 
@@ -45,8 +48,12 @@ export const createDailyRecordAdmitPatientPort = (
   persist: AdmitPatientPersistenceFn = updatePartial
 ): AdmitPatientPort => ({
   persistAdmission: async (input: AdmitPatientInput): Promise<AdmittedPatientSnapshot> => {
-    await persist(input.recordDate, buildAdmitPatientPatch(input));
-    return buildSnapshotFromInput(input);
+    const inputWithEpisodeId: AdmitPatientInput = {
+      ...input,
+      clinicalEpisodeId: resolveClinicalEpisodeIdForAdmission(input),
+    };
+    await persist(inputWithEpisodeId.recordDate, buildAdmitPatientPatch(inputWithEpisodeId));
+    return buildSnapshotFromInput(inputWithEpisodeId);
   },
 });
 

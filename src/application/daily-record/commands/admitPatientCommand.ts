@@ -33,6 +33,7 @@ import {
   buildRuntimeOperationStatusSnapshot,
   type RuntimeOperationStatusSnapshot,
 } from '@/shared/contracts/runtimeOperationStatus';
+import { resolveClinicalEpisodeIdForAdmission } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
 
 export interface AdmitPatientInput {
   bedId: string;
@@ -40,6 +41,7 @@ export interface AdmitPatientInput {
   rut: string;
   pathology?: string;
   admissionDate: string;
+  clinicalEpisodeId?: string;
   recordDate: string;
   /** uid / email of the authenticated actor performing the admission. */
   actor: string;
@@ -50,6 +52,7 @@ export interface AdmittedPatientSnapshot {
   patientName: string;
   rut: string;
   admissionDate: string;
+  clinicalEpisodeId: string;
   recordDate: string;
 }
 
@@ -60,6 +63,7 @@ export interface AdmitPatientPort {
 export interface AdmitPatientCommandDependencies {
   port: AdmitPatientPort;
   writeAuditEvent?: typeof executeWriteAuditEvent;
+  createClinicalEpisodeId?: () => string;
 }
 
 export interface AdmitPatientOutcome {
@@ -117,8 +121,12 @@ export const executeAdmitPatientCommand = async (
   }
 
   let snapshot: AdmittedPatientSnapshot;
+  const inputWithEpisodeId: AdmitPatientInput = {
+    ...input,
+    clinicalEpisodeId: resolveClinicalEpisodeIdForAdmission(input, deps.createClinicalEpisodeId),
+  };
   try {
-    snapshot = await deps.port.persistAdmission(input);
+    snapshot = await deps.port.persistAdmission(inputWithEpisodeId);
   } catch (error) {
     return {
       status: buildRuntimeOperationStatusSnapshot('failed'),
@@ -144,6 +152,7 @@ export const executeAdmitPatientCommand = async (
       bedId: input.bedId,
       rut: input.rut,
       pathology: input.pathology ?? '',
+      clinicalEpisodeId: inputWithEpisodeId.clinicalEpisodeId,
     },
     patientRut: input.rut,
     recordDate: input.recordDate,

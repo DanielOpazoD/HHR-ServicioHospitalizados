@@ -13,6 +13,7 @@ import {
 } from '@/services/repositories/dailyRecordDomainServices';
 import { assertAdmissionDatePersistencePolicy } from '@/services/repositories/dailyRecordAdmissionDateWritePolicy';
 import { buildInvariantRepairReviewContext } from '@/services/repositories/invariantRepairReviewContext';
+import { buildDailyRecordClinicalEpisodeIdPatches } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
 
 export const preparePatchedRecordPersistence = (
   current: DailyRecord,
@@ -28,9 +29,13 @@ export const preparePatchedRecordPersistence = (
     mergedPatches.dateTimestamp = updatedForInvariants.dateTimestamp;
   }
 
-  const normalized = normalizeDailyRecordInvariants(updatedForInvariants);
-  const movementConsistency = normalizeMovementBedConsistency(normalized.record);
   const shouldSkipStructuralNormalization = isSpecialistScopedDailyRecordPatch(mergedPatches);
+  if (!shouldSkipStructuralNormalization) {
+    Object.assign(mergedPatches, buildDailyRecordClinicalEpisodeIdPatches(updatedForInvariants));
+  }
+
+  const normalized = normalizeDailyRecordInvariants(applyPatches(current, mergedPatches));
+  const movementConsistency = normalizeMovementBedConsistency(normalized.record);
 
   if (!shouldSkipStructuralNormalization) {
     Object.assign(mergedPatches, normalized.patches);

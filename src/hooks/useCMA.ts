@@ -11,6 +11,8 @@ import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
 import { buildClearPatientPatches } from '@/hooks/controllers/bedManagementPatchController';
 import { buildAtomicPatientMovementPatch, buildUndoCmaPatch } from '@/application/census/public';
 import { tombstoneMovementById } from '@/application/census/movementTombstonePolicy';
+import { buildCmaEpisodeMovementFields } from '@/application/census/cmaEpisodeMovementFields';
+import { ensurePatientClinicalEpisodeId } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
 
 /**
  * Normalize CMA patient data fields
@@ -54,19 +56,21 @@ export const useCMA = (
 
       // Normalize data before saving
       const normalizedData = normalizePatientData(data);
+      const sourceBedId =
+        data.originalBedId && currentRecord.beds?.[data.originalBedId] ? data.originalBedId : null;
+      const sourcePatientWithEpisodeId = sourceBedId
+        ? ensurePatientClinicalEpisodeId(currentRecord.beds[sourceBedId])
+        : null;
 
       const newEntry: CMAData = {
         ...data,
         ...normalizedData,
+        ...buildCmaEpisodeMovementFields(normalizedData, sourcePatientWithEpisodeId),
         id: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
       };
 
       const updatedCma = [...(currentRecord.cma || []), newEntry];
-      const sourceBedId =
-        newEntry.originalBedId && currentRecord.beds?.[newEntry.originalBedId]
-          ? newEntry.originalBedId
-          : null;
       const updatedRecord = {
         ...currentRecord,
         cma: updatedCma,

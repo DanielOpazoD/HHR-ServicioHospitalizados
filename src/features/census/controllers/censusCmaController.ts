@@ -7,6 +7,7 @@ import {
   failWithCode,
   ok,
 } from '@/features/census/controllers/controllerResult';
+export { buildCmaEpisodeMovementFields } from '@/application/census/cmaEpisodeMovementFields';
 
 export const CMA_INTERVENTION_TYPES = [
   'Cirugía Mayor Ambulatoria',

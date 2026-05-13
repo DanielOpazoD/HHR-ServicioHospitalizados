@@ -13,6 +13,9 @@ const resolveEpisodeAnchor = (patient: PatientData | undefined): string =>
 const resolveEpisodeTime = (patient: PatientData | undefined): string =>
   normalizeEpisodeValue(patient?.admissionTime);
 
+const resolvePersistedClinicalEpisodeId = (patient: PatientData | undefined): string =>
+  normalizeEpisodeValue(patient?.clinicalEpisodeId);
+
 const resolveEpisodeTuple = (patient: PatientData | undefined): string => {
   const rut = normalizeEpisodeValue(patient?.rut);
   const anchor = resolveEpisodeAnchor(patient);
@@ -51,6 +54,12 @@ export const shouldPreserveLocalPatientNarrative = (
 ): boolean => {
   if (!remotePatient || !localPatient) {
     return true;
+  }
+
+  const remoteClinicalEpisodeId = resolvePersistedClinicalEpisodeId(remotePatient);
+  const localClinicalEpisodeId = resolvePersistedClinicalEpisodeId(localPatient);
+  if (remoteClinicalEpisodeId && localClinicalEpisodeId) {
+    return remoteClinicalEpisodeId === localClinicalEpisodeId;
   }
 
   const remoteRut = normalizeEpisodeValue(remotePatient.rut);

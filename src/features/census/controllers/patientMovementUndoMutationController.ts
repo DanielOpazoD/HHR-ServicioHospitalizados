@@ -41,9 +41,18 @@ const normalizeIdentityValue = (value: string | undefined): string =>
   value?.trim().toLowerCase() ?? '';
 
 const matchesRestoredPatient = (
-  movement: Pick<DischargeData | TransferData | CMAData, 'patientName' | 'rut'>,
+  movement: Pick<
+    DischargeData | TransferData | CMAData,
+    'patientName' | 'rut' | 'clinicalEpisodeId'
+  >,
   updatedBed: PatientData
 ): boolean => {
+  const movementEpisodeId = normalizeIdentityValue(movement.clinicalEpisodeId);
+  const restoredEpisodeId = normalizeIdentityValue(updatedBed.clinicalEpisodeId);
+  if (movementEpisodeId && restoredEpisodeId) {
+    return movementEpisodeId === restoredEpisodeId;
+  }
+
   const movementRut = normalizeIdentityValue(movement.rut);
   const restoredRut = normalizeIdentityValue(updatedBed.rut);
   if (movementRut && restoredRut) {
@@ -68,8 +77,8 @@ const matchesRestoredSourceBed = (
 
 const shouldRemoveRestoredPatientDestination = (
   movement:
-    | Pick<DischargeData | TransferData, 'bedId' | 'patientName' | 'rut'>
-    | Pick<CMAData, 'originalBedId' | 'patientName' | 'rut'>,
+    | Pick<DischargeData | TransferData, 'bedId' | 'patientName' | 'rut' | 'clinicalEpisodeId'>
+    | Pick<CMAData, 'originalBedId' | 'patientName' | 'rut' | 'clinicalEpisodeId'>,
   bedId: string,
   updatedBed: PatientData
 ): boolean =>

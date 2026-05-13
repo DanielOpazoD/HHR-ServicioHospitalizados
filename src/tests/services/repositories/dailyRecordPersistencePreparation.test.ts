@@ -43,4 +43,13 @@ describe('prepareDailyRecordForPersistence', () => {
     expect(prepared.beds.R1.rut).toBe('');
     expect(prepared.beds.R1.status).not.toBe('Estable');
   });
+
+  it('backfills clinicalEpisodeId for active patients before persistence', () => {
+    const record = makeRecord();
+    record.discharges = [];
+
+    const prepared = prepareDailyRecordForPersistence(record, '2026-02-18');
+
+    expect(prepared.beds.R1.clinicalEpisodeId).toMatch(/^legacy_ep_/);
+  });
 });

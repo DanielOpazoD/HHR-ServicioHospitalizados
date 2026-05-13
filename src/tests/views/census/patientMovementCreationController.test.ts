@@ -33,6 +33,7 @@ describe('patientMovementCreationController', () => {
     record.beds.R1 = DataFactory.createMockPatient('R1', {
       patientName: 'Madre A',
       rut: '11-1',
+      clinicalEpisodeId: 'ep-mother',
       admissionDate: '2024-12-31',
       admissionTime: '23:10',
       firstSeenDate: '2024-12-31',
@@ -51,6 +52,7 @@ describe('patientMovementCreationController', () => {
       clinicalCrib: DataFactory.createMockPatient('R1', {
         patientName: 'RN A',
         rut: '22-2',
+        clinicalEpisodeId: 'ep-baby',
       }),
     });
 
@@ -74,6 +76,11 @@ describe('patientMovementCreationController', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.updatedRecord.discharges).toHaveLength(2);
+      expect(result.value.updatedRecord.discharges[0].clinicalEpisodeId).toBe('ep-mother');
+      expect(result.value.updatedRecord.discharges[1].clinicalEpisodeId).toBe('ep-baby');
+      expect(result.value.updatedRecord.discharges[0].originalData?.clinicalEpisodeId).toBe(
+        'ep-mother'
+      );
       expect(result.value.updatedRecord.beds.R1.patientName).toBe('');
       expect(result.value.updatedRecord.beds.R1.admissionDate).toBe('');
       expect(result.value.updatedRecord.beds.R1.admissionTime).toBe('');
@@ -122,6 +129,7 @@ describe('patientMovementCreationController', () => {
     record.beds.R1 = DataFactory.createMockPatient('R1', {
       patientName: 'Madre A',
       rut: '11-1',
+      clinicalEpisodeId: 'ep-mother',
       admissionDate: '2024-12-31',
       admissionTime: '23:10',
       firstSeenDate: '2024-12-31',
@@ -139,6 +147,7 @@ describe('patientMovementCreationController', () => {
       clinicalCrib: DataFactory.createMockPatient('R1', {
         patientName: 'RN A',
         rut: '22-2',
+        clinicalEpisodeId: 'ep-baby',
       }),
     });
 
@@ -163,6 +172,11 @@ describe('patientMovementCreationController', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.updatedRecord.transfers).toHaveLength(2);
+      expect(result.value.updatedRecord.transfers[0].clinicalEpisodeId).toBe('ep-mother');
+      expect(result.value.updatedRecord.transfers[1].clinicalEpisodeId).toBe('ep-baby');
+      expect(result.value.updatedRecord.transfers[0].originalData?.clinicalEpisodeId).toBe(
+        'ep-mother'
+      );
       expect(result.value.updatedRecord.beds.R1.patientName).toBe('');
       expect(result.value.updatedRecord.beds.R1.admissionDate).toBe('');
       expect(result.value.updatedRecord.beds.R1.admissionTime).toBe('');
