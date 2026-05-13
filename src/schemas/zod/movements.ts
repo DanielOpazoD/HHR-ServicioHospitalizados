@@ -24,9 +24,14 @@ const MovementTombstoneFieldsSchema = {
   deletedReason: nullableOptional(z.string()),
 };
 
+const MovementEpisodeFieldsSchema = {
+  clinicalEpisodeId: nullableOptional(z.string()),
+};
+
 export const DischargeDataSchema: z.ZodType<DischargeData, z.ZodTypeDef, unknown> = z
   .object({
     ...MovementTombstoneFieldsSchema,
+    ...MovementEpisodeFieldsSchema,
     id: z.string(),
     movementDate: nullableOptional(z.string()),
     admissionDate: nullableOptional(z.string()),
@@ -54,6 +59,7 @@ export const DischargeDataSchema: z.ZodType<DischargeData, z.ZodTypeDef, unknown
 export const TransferDataSchema: z.ZodType<TransferData, z.ZodTypeDef, unknown> = z
   .object({
     ...MovementTombstoneFieldsSchema,
+    ...MovementEpisodeFieldsSchema,
     id: z.string(),
     movementDate: nullableOptional(z.string()),
     admissionDate: nullableOptional(z.string()),
@@ -81,6 +87,7 @@ export const TransferDataSchema: z.ZodType<TransferData, z.ZodTypeDef, unknown> 
 export const CMADataSchema: z.ZodType<CMAData, z.ZodTypeDef, unknown> = z
   .object({
     ...MovementTombstoneFieldsSchema,
+    ...MovementEpisodeFieldsSchema,
     id: z.string(),
     bedName: z.string().default(''),
     patientName: z.string().default(''),

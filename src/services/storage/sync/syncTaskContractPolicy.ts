@@ -1,4 +1,4 @@
-import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
+import { resolveClinicalEpisodeIdentifier } from '@/application/patient-flow/clinicalEpisode';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
 import type { SyncTask, SyncTaskContract } from '@/services/storage/syncQueueTypes';
@@ -19,13 +19,7 @@ const collectPatientEpisodeKeys = (patient: PatientData | undefined): string[] =
     return [];
   }
 
-  const keys = [
-    buildClinicalEpisodeKey(
-      normalizeText(patient.rut),
-      normalizeText(patient.firstSeenDate || patient.admissionDate),
-      normalizeText(patient.admissionTime)
-    ),
-  ];
+  const keys = [resolveClinicalEpisodeIdentifier(patient)];
 
   if (patient.clinicalCrib) {
     keys.push(...collectPatientEpisodeKeys(patient.clinicalCrib));

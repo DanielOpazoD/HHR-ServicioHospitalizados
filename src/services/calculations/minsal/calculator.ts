@@ -25,11 +25,12 @@ const resolveMovementSpecialty = (movement: { specialty?: string }): string =>
 
 const resolveMovementAdmissionDate = (
   movement: {
+    clinicalEpisodeId?: string;
     rut?: string;
     admissionDate?: string;
   },
   episodeTracker: ReturnType<typeof createEpisodeAdmissionTracker>
-): string | undefined => episodeTracker.resolveAdmissionDate(movement.rut, movement.admissionDate);
+): string | undefined => episodeTracker.resolveAdmissionDate(movement, movement.admissionDate);
 
 const resolveMovementDiagnosis = (movement: { diagnosis?: string }): string | undefined =>
   resolveTraceabilityDiagnosis(movement.diagnosis);
@@ -141,7 +142,11 @@ export function calculateMinsalStats(
     Object.values(record.beds || {}).forEach(bed => {
       episodeTracker.observeBed(bed, record.date);
     });
-    const closedRuts = new Set<string>();
+    const closedEpisodes: Array<{
+      clinicalEpisodeId?: string;
+      rut?: string;
+      admissionDate?: string;
+    }> = [];
 
     const bloqueadas = countBlockedBeds(record.beds);
     const disponibles = HOSPITAL_CAPACITY - bloqueadas;
@@ -172,7 +177,7 @@ export function calculateMinsalStats(
           diagnosis: resolveTraceabilityDiagnosis(p.pathology),
           date: record.date,
           bedName: p.bedName,
-          admissionDate: episodeTracker.resolveAdmissionDate(p.rut, p.admissionDate),
+          admissionDate: episodeTracker.resolveAdmissionDate(p, p.admissionDate),
           dischargeDate: dischargeDates.get(p.rut),
         });
       });
@@ -208,7 +213,7 @@ export function calculateMinsalStats(
         existing.fallecidosList.push(traceData);
       }
       if (d.rut) {
-        closedRuts.add(d.rut);
+        closedEpisodes.push(d);
       }
       specialtyData.set(specialty, existing);
     });
@@ -247,12 +252,12 @@ export function calculateMinsalStats(
         existing.fachList.push(traceData);
       }
       if (t.rut) {
-        closedRuts.add(t.rut);
+        closedEpisodes.push(t);
       }
       specialtyData.set(specialty, existing);
     });
 
-    closedRuts.forEach(rut => episodeTracker.closeEpisode(rut));
+    closedEpisodes.forEach(episode => episodeTracker.closeEpisode(episode));
   });
 
   const egresosTotal = totalEgresosVivos + totalEgresosFallecidos + totalEgresosTraslados;

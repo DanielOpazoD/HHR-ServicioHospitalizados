@@ -22,7 +22,12 @@ export interface MovementTombstoneFields {
   deletedReason?: string;
 }
 
-export interface DischargeData extends MovementTombstoneFields {
+export interface MovementEpisodeFields {
+  /** Stable episode identifier. Optional while legacy movement rows are backfilled. */
+  clinicalEpisodeId?: string;
+}
+
+export interface DischargeData extends MovementTombstoneFields, MovementEpisodeFields {
   id: string;
   movementDate?: string; // YYYY-MM-DD
   admissionDate?: string; // Explicit episode admission date for reporting
@@ -46,7 +51,7 @@ export interface DischargeData extends MovementTombstoneFields {
   ieehData?: IeehData; // Persisted IEEH PDF generation data
 }
 
-export interface TransferData extends MovementTombstoneFields {
+export interface TransferData extends MovementTombstoneFields, MovementEpisodeFields {
   id: string;
   movementDate?: string; // YYYY-MM-DD
   admissionDate?: string; // Explicit episode admission date for reporting
@@ -71,7 +76,7 @@ export interface TransferData extends MovementTombstoneFields {
   isNested?: boolean; // Identifies if it was a clinical crib
 }
 
-export interface CMAData extends MovementTombstoneFields {
+export interface CMAData extends MovementTombstoneFields, MovementEpisodeFields {
   id: string;
   bedName: string; // Generic location or identifier
   patientName: string;

@@ -175,6 +175,7 @@ export const PatientDataSchema: z.ZodType<PatientData, z.ZodTypeDef, unknown> = 
       status: z.nativeEnum(PatientStatus).default(PatientStatus.EMPTY),
       admissionDate: z.string().default(''),
       admissionTime: z.string().default(''),
+      clinicalEpisodeId: nullableOptional(z.string()),
       hasWristband: z.boolean().default(true),
       devices: nullishDefault(z.array(z.string()), () => []),
       deviceDetails: nullableOptional(DeviceDetailsSchema),

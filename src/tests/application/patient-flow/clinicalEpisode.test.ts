@@ -5,6 +5,7 @@ import {
   classifyPatientMovementForRecord,
   resolveClinicalEpisode,
   resolveClinicalEpisodeAdmissionDate,
+  resolveClinicalEpisodeIdentifier,
 } from '@/application/patient-flow/clinicalEpisode';
 
 describe('clinicalEpisode application model', () => {
@@ -43,6 +44,23 @@ describe('clinicalEpisode application model', () => {
       sourceBedId: 'R1',
       episodeKey: '11.111.111-1__2026-03-04',
     });
+  });
+
+  it('prefers a persisted clinicalEpisodeId over the derived legacy tuple', () => {
+    const patient = {
+      clinicalEpisodeId: 'episode_2026_03_05_afternoon',
+      patientName: 'Paciente',
+      rut: '11.111.111-1',
+      admissionDate: '2026-03-05',
+      firstSeenDate: '2026-03-04',
+      admissionTime: '18:30',
+    };
+
+    expect(resolveClinicalEpisodeIdentifier(patient)).toBe('episode_2026_03_05_afternoon');
+    expect(resolveClinicalEpisode(patient).episodeKey).toBe('episode_2026_03_05_afternoon');
+    expect(buildPatientPresenceSnapshot(patient, 'R1')?.episodeKey).toBe(
+      'episode_2026_03_05_afternoon'
+    );
   });
 
   it('builds presence snapshots and movement classification with shared rules', () => {
