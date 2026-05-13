@@ -16,6 +16,11 @@ import {
   applyDailyRecordClinicalConsistencyCheck,
   recordClinicalConsistencyTelemetry,
 } from '@/services/repositories/dailyRecordClinicalConsistencyCheck';
+import {
+  evaluateDailyRecordClinicalAuthority,
+  recordClinicalAuthorityTelemetry,
+  recordClinicalEpisodeIdCoverageTelemetry,
+} from '@/services/repositories/dailyRecordClinicalAuthorityPolicy';
 
 /**
  * Tolerance window for same-session rapid edits (e.g. clicking checkboxes fast).
@@ -119,6 +124,22 @@ const syncDailyRecord = async (
     'syncQueue.writeDailyRecord',
     async () => {
       const recordToWrite = await resolveRecordForSyncTask(task, record, runtime);
+      const authority = evaluateDailyRecordClinicalAuthority(recordToWrite, {
+        date: recordToWrite.date,
+        phase: 'sync_publish',
+      });
+      recordClinicalAuthorityTelemetry(authority);
+      recordClinicalEpisodeIdCoverageTelemetry(recordToWrite, {
+        date: recordToWrite.date,
+        phase: 'sync_publish',
+      });
+
+      if (authority.status === 'blocked') {
+        throw new ConcurrencyError(
+          `Sync queue: clinical authority blocked write for ${recordToWrite.date}.`
+        );
+      }
+
       await setDoc(
         getRecordDocRef(recordToWrite.date, runtime),
         sanitizeForFirestore(recordToWrite) as Record<string, unknown>,

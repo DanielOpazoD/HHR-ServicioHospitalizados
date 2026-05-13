@@ -16,8 +16,14 @@ import {
 } from '@/services/storage/firestore/firestoreShared';
 import { isSpecialistScopedDailyRecordPatch } from '@/services/repositories/dailyRecordClinicalDomainService';
 import {
+  evaluateDailyRecordClinicalAuthority,
+  recordClinicalAuthorityTelemetry,
+  recordClinicalEpisodeIdCoverageTelemetry,
+} from '@/services/repositories/dailyRecordClinicalAuthorityPolicy';
+import {
   asFirestoreUpdatePayload,
   assertFirestoreConcurrency,
+  ConcurrencyError,
   createDeletedRecordRef,
   saveHistorySnapshot,
 } from '@/services/storage/firestore/firestoreWriteSupport';
@@ -131,6 +137,25 @@ const tryRefreshCurrentUserRoleClaim = async (date: string): Promise<boolean> =>
 
 export { ConcurrencyError } from '@/services/storage/firestore/firestoreWriteSupport';
 
+const assertDailyRecordClinicalAuthority = (record: DailyRecord): void => {
+  const authority = evaluateDailyRecordClinicalAuthority(record, {
+    date: record.date,
+    phase: 'persistence',
+  });
+  recordClinicalAuthorityTelemetry(authority);
+  recordClinicalEpisodeIdCoverageTelemetry(record, {
+    date: record.date,
+    phase: 'persistence',
+  });
+
+  if (authority.status === 'blocked') {
+    throw new ConcurrencyError(
+      `Daily record clinical authority blocked write for ${record.date}: ` +
+        authority.violations.map(violation => violation.message).join(' ')
+    );
+  }
+};
+
 export const saveRecordToFirestore = async (
   record: DailyRecord,
   expectedLastUpdated?: string
@@ -144,6 +169,8 @@ export const saveRecordToFirestore = async (
       'save',
       { toleranceMs: 0 }
     );
+
+    assertDailyRecordClinicalAuthority(record);
 
     await saveHistorySnapshot(record.date);
 

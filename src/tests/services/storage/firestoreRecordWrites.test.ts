@@ -129,6 +129,44 @@ describe('firestoreRecordWrites', () => {
     expect(vi.mocked(setDoc).mock.calls[0]?.[0]).toEqual({ date: '2026-03-14' });
   });
 
+  it('blocks full-record writes that violate clinical episode authority', async () => {
+    const duplicatedPatient = {
+      bedId: 'R1',
+      isBlocked: false,
+      bedMode: 'Cama',
+      hasCompanionCrib: false,
+      patientName: 'Paciente Duplicado',
+      rut: '11.111.111-1',
+      age: '40a',
+      pathology: 'Diagnostico',
+      specialty: 'Medicina',
+      status: 'Estable',
+      admissionDate: '2026-03-14',
+      admissionTime: '09:00',
+      hasWristband: true,
+      devices: [],
+      surgicalComplication: false,
+      isUPC: false,
+      clinicalEpisodeId: 'ep-duplicado',
+    };
+
+    await expect(
+      saveRecordToFirestore({
+        date: '2026-03-14',
+        beds: {
+          R1: duplicatedPatient,
+          R2: { ...duplicatedPatient, bedId: 'R2' },
+        },
+        discharges: [],
+        transfers: [],
+        cma: [],
+      } as never)
+    ).rejects.toThrow('clinical authority');
+
+    expect(saveHistorySnapshot).not.toHaveBeenCalled();
+    expect(setDoc).not.toHaveBeenCalled();
+  });
+
   it('updates partial records and falls back to setDoc when update target is missing', async () => {
     await updateRecordPartial('2026-03-14', { status: 'ok' } as never);
     expect(updateDoc).toHaveBeenCalledTimes(1);
