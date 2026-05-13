@@ -139,9 +139,7 @@ const closeAll = async (contexts: BrowserContext[]) => {
 };
 
 test.describe('Multi-user offline conflict smoke', () => {
-  test('preserves user A offline edits when user B exposes an older remote snapshot', async ({
-    browser,
-  }) => {
+  test('accepts Firebase canonical census fields on reconnect', async ({ browser }) => {
     test.setTimeout(90_000);
     const userAContext = await browser.newContext();
     const userBContext = await browser.newContext();
@@ -194,15 +192,15 @@ test.describe('Multi-user offline conflict smoke', () => {
 
       await expect(userAPage.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
       await expect(userARow.locator('input[name="patientName"]').first()).toHaveValue(
-        'MULTIUSER BASELINE'
+        'REMOTE USER B'
       );
-      await expect(userADiagnosisInput).toHaveValue('USER A OFFLINE DX');
+      await expect(userADiagnosisInput).toHaveValue('REMOTE USER B DX');
     } finally {
       await closeAll([userAContext, userBContext]);
     }
   });
 
-  test('keeps user A offline edit and accepts user B non-conflicting bed update after reconnect', async ({
+  test('accepts remote canonical fields and user B non-conflicting bed update after reconnect', async ({
     browser,
   }) => {
     test.setTimeout(90_000);
@@ -280,7 +278,7 @@ test.describe('Multi-user offline conflict smoke', () => {
       await expect(userAR1.locator('input[name="patientName"]').first()).toHaveValue(
         'MULTIUSER BASELINE'
       );
-      await expect(userAR1DiagnosisInput).toHaveValue('USER A LOCAL DX');
+      await expect(userAR1DiagnosisInput).toHaveValue('BASE DX');
 
       const userAR2 = getRow(userAPage, 'R2');
       await expect(userAR2.locator('input[name="patientName"]').first()).toHaveValue(
