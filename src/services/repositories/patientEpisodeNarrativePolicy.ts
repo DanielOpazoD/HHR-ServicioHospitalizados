@@ -1,4 +1,5 @@
 import type { PatientData } from '@/services/contracts/patientServiceContracts';
+import { resolveClinicalEpisodeIdentifier } from '@/application/patient-flow/clinicalEpisode';
 
 const EPISODE_SCOPED_PATIENT_ARRAY_FIELDS = new Set(['clinicalEvents', 'medicalHandoffEntries']);
 
@@ -17,12 +18,11 @@ const resolvePersistedClinicalEpisodeId = (patient: PatientData | undefined): st
   normalizeEpisodeValue(patient?.clinicalEpisodeId);
 
 const resolveEpisodeTuple = (patient: PatientData | undefined): string => {
+  if (!patient) return '';
   const rut = normalizeEpisodeValue(patient?.rut);
   const anchor = resolveEpisodeAnchor(patient);
   if (!rut || !anchor) return '';
-
-  const time = resolveEpisodeTime(patient);
-  return time ? `${rut}__${anchor}__${time}` : `${rut}__${anchor}`;
+  return normalizeEpisodeValue(resolveClinicalEpisodeIdentifier(patient));
 };
 
 const areSameRutEpisode = (

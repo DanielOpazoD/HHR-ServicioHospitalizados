@@ -29,6 +29,7 @@
 import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
 import { isAnonymousActor } from '@/application/audit/auditActorPolicy';
 import { executeLockClinicalDocumentsByEpisode } from '@/application/clinical-documents/lockClinicalDocumentsByEpisodeUseCase';
+import { resolveClinicalEpisodeIdentifier } from '@/application/patient-flow/clinicalEpisode';
 import {
   createApplicationDegraded,
   createApplicationFailed,
@@ -57,6 +58,28 @@ export interface DischargeCanonicalAuditEntry {
   hospitalId?: string;
 }
 
+interface DischargeCanonicalPatientSnapshot {
+  bedId?: string;
+  patientName?: string;
+  rut?: string;
+  admissionDate?: string;
+  firstSeenDate?: string;
+  admissionTime?: string;
+  clinicalEpisodeId?: string;
+}
+
+export interface DischargeCanonicalAuditEntriesInput {
+  record:
+    | {
+        date?: string;
+        beds?: Record<string, DischargeCanonicalPatientSnapshot | undefined>;
+      }
+    | null
+    | undefined;
+  bedId?: string | null;
+  status?: string;
+}
+
 export interface DischargeCanonicalDispatchInput {
   actor: string;
   recordDate: string;
@@ -74,6 +97,27 @@ export interface DischargeCanonicalDispatchOutcome {
   status: RuntimeOperationStatusSnapshot;
   applicationOutcome: ApplicationOutcome<DischargeCanonicalAuditEntry[] | null>;
 }
+
+export const buildDischargeCanonicalAuditEntries = ({
+  record,
+  bedId,
+  status,
+}: DischargeCanonicalAuditEntriesInput): DischargeCanonicalAuditEntry[] => {
+  if (!bedId) return [];
+  const bed = record?.beds?.[bedId];
+  if (!bed) return [];
+  if (status !== 'Vivo' && status !== 'Fallecido') return [];
+
+  return [
+    {
+      bedId,
+      patientName: bed.patientName ?? '',
+      rut: bed.rut ?? '',
+      status,
+      episodeKey: resolveClinicalEpisodeIdentifier(bed),
+    },
+  ];
+};
 
 const buildDischargeAuditEvent = (
   actor: string,

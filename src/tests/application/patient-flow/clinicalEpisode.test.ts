@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildClinicalEpisodeKey,
   buildPatientPresenceSnapshot,
@@ -61,6 +61,31 @@ describe('clinicalEpisode application model', () => {
     expect(buildPatientPresenceSnapshot(patient, 'R1')?.episodeKey).toBe(
       'episode_2026_03_05_afternoon'
     );
+  });
+
+  it('records a fallback event when a patient has no persisted clinicalEpisodeId', () => {
+    const recordFallback = vi.fn();
+    const patient = {
+      patientName: 'Paciente Legacy',
+      rut: '11.111.111-1',
+      firstSeenDate: '2026-03-05',
+      admissionDate: '2026-03-05',
+      admissionTime: '08:30',
+    };
+
+    expect(
+      resolveClinicalEpisodeIdentifier(patient, {
+        source: 'clinical_document',
+        onFallback: recordFallback,
+      })
+    ).toBe('11.111.111-1__2026-03-05__08:30');
+    expect(recordFallback).toHaveBeenCalledWith({
+      source: 'clinical_document',
+      reason: 'missing_clinical_episode_id',
+      fallbackEpisodeKey: '11.111.111-1__2026-03-05__08:30',
+      hasRut: true,
+      hasAdmissionTime: true,
+    });
   });
 
   it('builds presence snapshots and movement classification with shared rules', () => {

@@ -9,24 +9,9 @@ import {
 } from '@/features/census/controllers/censusActionNotificationController';
 import { runDischargeWithTransferGuard } from '@/features/census/controllers/censusDischargeTransferGuardController';
 import {
+  buildDischargeCanonicalAuditEntries,
   dispatchCanonicalDischarge,
-  type DischargeCanonicalAuditEntry,
 } from '@/features/census/controllers/dischargeCanonicalAdoptionController';
-/**
- * Canonical episode-key format used to group clinical documents by
- * hospitalization. Inlined here (instead of importing from clinical-documents)
- * to keep this hook free of cross-feature imports — the format is small,
- * stable, and tested in `clinicalDocumentEpisodeKey.test.ts`.
- */
-const buildClinicalDocumentEpisodeKey = (
-  rut: string | undefined,
-  admissionDate: string | undefined
-): string | undefined => {
-  const trimmedRut = (rut ?? '').trim();
-  const trimmedDate = (admissionDate ?? '').trim();
-  if (!trimmedRut || !trimmedDate) return undefined;
-  return `${trimmedRut}__${trimmedDate}`;
-};
 import type { CensusActionRuntimeRefs } from '@/features/census/hooks/useCensusActionRuntimeRefs';
 import { useCensusModalCommand } from '@/features/census/hooks/useCensusModalCommand';
 import { useConfirmedMovementAction } from '@/features/census/hooks/useConfirmedMovementAction';
@@ -100,24 +85,12 @@ export const useCensusDischargeCommand = ({
       });
     };
 
-    const buildCanonicalAuditEntries = (): DischargeCanonicalAuditEntry[] => {
-      const bedId = dischargeStateRef.current.bedId;
-      if (!bedId) return [];
-      const bed = recordRef.current?.beds?.[bedId];
-      if (!bed) return [];
-      const status = dischargeStateRef.current.status;
-      if (status !== 'Vivo' && status !== 'Fallecido') return [];
-      const episodeKey = buildClinicalDocumentEpisodeKey(bed.rut, bed.admissionDate);
-      return [
-        {
-          bedId,
-          patientName: bed.patientName ?? '',
-          rut: bed.rut ?? '',
-          status,
-          episodeKey,
-        },
-      ];
-    };
+    const buildCanonicalAuditEntries = () =>
+      buildDischargeCanonicalAuditEntries({
+        record: recordRef.current,
+        bedId: dischargeStateRef.current.bedId,
+        status: dischargeStateRef.current.status,
+      });
 
     const runLegacyDischarge = (): boolean => {
       const result = executeDischargeController({

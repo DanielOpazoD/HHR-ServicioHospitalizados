@@ -9,6 +9,14 @@ import {
 } from '@/features/clinical-documents/controllers/clinicalDocumentEpisodeController';
 import { DataFactory } from '@/tests/factories/DataFactory';
 
+const { recordOperationalTelemetryMock } = vi.hoisted(() => ({
+  recordOperationalTelemetryMock: vi.fn(),
+}));
+
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
+  recordOperationalTelemetry: recordOperationalTelemetryMock,
+}));
+
 describe('clinicalDocumentEpisodeController', () => {
   it('builds a stable episode key from rut and admission date', () => {
     expect(buildClinicalEpisodeKey('12.345.678-9', '2026-03-04')).toBe('12.345.678-9__2026-03-04');
@@ -27,6 +35,33 @@ describe('clinicalDocumentEpisodeController', () => {
     expect(context.sourceBedId).toBe('R1');
     expect(context.episodeKey).toContain(patient.rut);
     expect(context.admissionDate).toBe('2026-03-04');
+  });
+
+  it('records degraded telemetry when clinical documents fall back to a legacy episode key', () => {
+    const patient = DataFactory.createMockPatient('R1', {
+      clinicalEpisodeId: undefined,
+      admissionDate: '2026-03-06',
+      admissionTime: '11:45',
+      firstSeenDate: '2026-03-04',
+    });
+
+    buildClinicalDocumentEpisodeContext(patient, '2026-03-04', 'R1');
+
+    expect(recordOperationalTelemetryMock).toHaveBeenCalledWith({
+      category: 'clinical_document',
+      operation: 'clinical_episode_key_fallback',
+      status: 'degraded',
+      runtimeState: 'degraded',
+      date: '2026-03-04',
+      issues: ['Clinical document episode resolved without clinicalEpisodeId.'],
+      context: expect.objectContaining({
+        source: 'clinical_document',
+        fallbackEpisodeKey: expect.stringContaining('__2026-03-04__11:45'),
+        hasRut: true,
+        hasAdmissionTime: true,
+        sourceBedId: 'R1',
+      }),
+    });
   });
 
   it('prefills clinical document patient fields from the patient record', () => {
