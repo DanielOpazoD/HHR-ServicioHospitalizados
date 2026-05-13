@@ -26,10 +26,15 @@ const resolveSubscriptionResult = async (
     localRecord,
     remoteRecord,
     remoteAvailability,
+    clinicalConsistencyPhase: 'sync_publish',
   });
   if (goldenPath.shouldHydrateLocal && remoteRecord) {
     try {
-      await persistHydratedRecordToLocalCache(remoteRecord, date, localRecord);
+      await persistHydratedRecordToLocalCache(
+        goldenPath.selectedRecord || remoteRecord,
+        date,
+        localRecord
+      );
     } catch (error) {
       if (error instanceof AdmissionDatePolicyViolationError) {
         dailyRecordSyncLogger.warn(
@@ -143,10 +148,15 @@ export const syncWithFirestoreDetailed = async (date: string) => {
           localRecord,
           remoteRecord: remoteResult.record,
           remoteAvailability: remoteResult.record ? 'resolved' : 'missing',
+          clinicalConsistencyPhase: 'sync_publish',
         });
         if (goldenPath.shouldHydrateLocal && remoteResult.record) {
           try {
-            await persistHydratedRecordToLocalCache(remoteResult.record, date, localRecord);
+            await persistHydratedRecordToLocalCache(
+              goldenPath.selectedRecord || remoteResult.record,
+              date,
+              localRecord
+            );
           } catch (error) {
             if (error instanceof AdmissionDatePolicyViolationError) {
               dailyRecordSyncLogger.warn(

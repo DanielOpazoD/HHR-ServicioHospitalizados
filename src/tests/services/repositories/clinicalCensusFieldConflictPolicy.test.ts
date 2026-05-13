@@ -120,4 +120,38 @@ describe('clinical census field conflict policy', () => {
       ])
     );
   });
+
+  it('keeps local narrative notes without letting a newer local snapshot override remote canonical census fields', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Remoto',
+        rut: '11.111.111-1',
+        pathology: 'Diagnostico Firebase vigente',
+        specialty: Specialty.MEDICINA,
+        handoffNote: 'Nota remota antigua',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Local Cache',
+        rut: '22.222.222-2',
+        pathology: 'Diagnostico local stale',
+        specialty: Specialty.PEDIATRIA,
+        handoffNote: 'Nota local nueva aun pendiente de sincronizar',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const result = resolveDailyRecordConflictWithTrace(remote, local, { changedPaths: ['*'] });
+
+    expect(result.record.beds.R1.patientName).toBe('Paciente Remoto');
+    expect(result.record.beds.R1.rut).toBe('11.111.111-1');
+    expect(result.record.beds.R1.pathology).toBe('Diagnostico Firebase vigente');
+    expect(result.record.beds.R1.specialty).toBe(Specialty.MEDICINA);
+    expect(result.record.beds.R1.handoffNote).toBe('Nota local nueva aun pendiente de sincronizar');
+  });
 });

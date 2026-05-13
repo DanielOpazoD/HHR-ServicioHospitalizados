@@ -5,6 +5,7 @@ import {
   CONFLICT_RESOLUTION_POLICY_VERSION,
   RECORD_STRUCTURAL_FIELDS,
   decideScalarByPolicy,
+  isClinicalCensusRemotePriorityField,
 } from '@/services/repositories/conflictResolutionPolicy';
 import {
   getValueAtPath,
@@ -332,6 +333,16 @@ const resolvePathValueWithMatrix = (
       getValueAtPath(local, path),
       true
     );
+    traceContext.add(traceFromScalarDecision(path, decision));
+    return decision.value;
+  }
+
+  if (isClinicalCensusRemotePriorityField(patientField)) {
+    const decision = {
+      value: getValueAtPath(local, path),
+      winner: 'local',
+      reason: 'clinical_local_priority',
+    } as const;
     traceContext.add(traceFromScalarDecision(path, decision));
     return decision.value;
   }

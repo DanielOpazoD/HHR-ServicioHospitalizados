@@ -70,7 +70,7 @@ export const resolveRemoteGoldenPathReadResult = async ({
   const recordToHydrate =
     selectedLocalMerge ||
     (goldenPath.shouldHydrateLocal && effectiveRemoteReadResult.record
-      ? effectiveRemoteReadResult.record
+      ? goldenPath.selectedRecord || effectiveRemoteReadResult.record
       : null);
 
   if (recordToHydrate) {

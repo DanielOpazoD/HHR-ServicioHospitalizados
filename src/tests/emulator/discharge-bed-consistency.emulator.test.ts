@@ -220,4 +220,47 @@ describeEmulator('Firestore discharge-bed consistency flow', () => {
     expect(hydratedLocal?.beds.R1.specialty).toBe(Specialty.MEDICINA);
     expect(hydratedLocal?.beds.R1.status).toBe(PatientStatus.ESTABLE);
   });
+
+  it('keeps a newer local narrative note while hydrating Firebase canonical census fields', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const localRecordWithPendingNarrative = buildRecord(date, isoAt(date, '10:05:00'));
+    localRecordWithPendingNarrative.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente Cache',
+        rut: '55.555.555-5',
+        pathology: 'Diagnostico cache stale',
+        specialty: Specialty.PEDIATRIA,
+        handoffNote: 'Nota local pendiente de sincronizar',
+      }),
+    };
+
+    const remoteRecord = buildRecord(date, isoAt(date, '10:00:00'));
+    remoteRecord.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente Firebase',
+        rut: '44.444.444-4',
+        pathology: 'Diagnostico Firebase vigente',
+        specialty: Specialty.MEDICINA,
+        handoffNote: 'Nota remota previa',
+      }),
+    };
+
+    await saveRecord(localRecordWithPendingNarrative);
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(remoteRecord);
+    });
+
+    const result = await getForDateWithMeta(date, true);
+
+    expect(result.record?.beds.R1.patientName).toBe('Paciente Firebase');
+    expect(result.record?.beds.R1.rut).toBe('44.444.444-4');
+    expect(result.record?.beds.R1.pathology).toBe('Diagnostico Firebase vigente');
+    expect(result.record?.beds.R1.specialty).toBe(Specialty.MEDICINA);
+    expect(result.record?.beds.R1.handoffNote).toBe('Nota local pendiente de sincronizar');
+
+    const hydratedLocal = await getRecordForDate(date);
+    expect(hydratedLocal?.beds.R1.patientName).toBe('Paciente Firebase');
+    expect(hydratedLocal?.beds.R1.pathology).toBe('Diagnostico Firebase vigente');
+    expect(hydratedLocal?.beds.R1.handoffNote).toBe('Nota local pendiente de sincronizar');
+  });
 });

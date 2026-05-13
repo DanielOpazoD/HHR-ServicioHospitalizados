@@ -118,9 +118,6 @@ export const decideScalarByPolicy = (
           reason: 'clinical_remote_non_empty_fallback',
         };
       }
-      if (preferLocalDefault) {
-        return { value: local, winner: 'local', reason: 'clinical_local_priority' };
-      }
       return {
         value: remote,
         winner: 'remote',

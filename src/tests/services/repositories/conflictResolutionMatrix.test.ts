@@ -342,8 +342,9 @@ describe('conflictResolutionMatrix', () => {
 
     const resolved = resolveDailyRecordConflict(remote, local);
 
-    // R1 keeps User A's local edit (newer timestamp).
-    expect(resolved.beds.R1.pathology).toBe('USER A LOCAL DX');
+    // R1 keeps the remote canonical diagnosis in whole-record reconciliation;
+    // local narrative fields are the only patient fields protected by timestamp.
+    expect(resolved.beds.R1.pathology).toBe('Old diagnosis');
     // R2 takes the remote payload — User A never touched it, so the empty
     // local default must not be interpreted as an intentional clear.
     expect(resolved.beds.R2.patientName).toBe('USER B NEW PATIENT');
