@@ -12,11 +12,15 @@ import {
 } from '@/services/repositories/dailyRecordWriteRecoveryController';
 import { queueSyncTask } from '@/services/storage/sync';
 
-const queueMergedRecoveryTask = async (record: DailyRecord, changedPaths: string[]) => {
+const queueMergedRecoveryTask = async (
+  record: DailyRecord,
+  changedPaths: string[],
+  expectedVersion?: string
+) => {
   const result = await queueSyncTask(
     'UPDATE_DAILY_RECORD',
     record,
-    buildRecoveryTaskMeta(changedPaths, 'conflict_auto_merge')
+    buildRecoveryTaskMeta(changedPaths, 'conflict_auto_merge', expectedVersion)
   );
   return result.accepted;
 };
@@ -49,7 +53,7 @@ export const attemptConflictAutoMergeRecovery = async (
     );
 
     await saveToIndexedDB(merged);
-    const queued = await queueMergedRecoveryTask(merged, changedPaths);
+    const queued = await queueMergedRecoveryTask(merged, changedPaths, remoteRecord.lastUpdated);
     if (!queued) {
       return { status: 'not_possible' };
     }

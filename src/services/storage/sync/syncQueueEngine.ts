@@ -22,6 +22,7 @@ import {
   buildSyncQueueTelemetryFromRows,
   recordSyncQueueDecisionTelemetry,
 } from '@/services/storage/sync/syncQueueTelemetryController';
+import { buildSyncTaskContract } from '@/services/storage/sync/syncTaskContractPolicy';
 
 export interface SyncQueueOperationSnapshot {
   id?: number;
@@ -152,7 +153,7 @@ export const createSyncQueueEngine = ({
   const queueTask = async (
     type: SyncTask['type'],
     payload: unknown,
-    meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy'>
+    meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>
   ): Promise<SyncQueueEnqueueResult> => {
     const key = getTaskKey(type, payload);
     const ownerKey = runtime.getOwnerKey();
@@ -162,6 +163,7 @@ export const createSyncQueueEngine = ({
       contexts: meta?.contexts,
       recoveryPolicy: meta?.recoveryPolicy,
     });
+    const syncContract = buildSyncTaskContract(type, payload, meta?.syncContract);
 
     if (key) {
       const existing = await store.findReusableTask(type, key, ownerKey);
@@ -175,6 +177,7 @@ export const createSyncQueueEngine = ({
           contexts: contextMeta.contexts,
           origin: meta?.origin || existing.origin || 'direct_queue',
           recoveryPolicy: contextMeta.recoveryPolicy,
+          syncContract,
           ...clearTaskErrorState(),
         });
         triggerProcessing();
@@ -213,6 +216,7 @@ export const createSyncQueueEngine = ({
       contexts: contextMeta.contexts,
       origin: meta?.origin || 'direct_queue',
       recoveryPolicy: contextMeta.recoveryPolicy,
+      syncContract,
       ...clearTaskErrorState(),
     });
     triggerProcessing();

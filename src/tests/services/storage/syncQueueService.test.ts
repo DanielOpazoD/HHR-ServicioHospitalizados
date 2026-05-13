@@ -30,7 +30,7 @@ vi.mock('@/services/utils/errorService', async importOriginal => {
   };
 });
 
-import { setDoc } from 'firebase/firestore';
+import { getDoc, setDoc } from 'firebase/firestore';
 import {
   getSyncQueueDomainMetrics,
   queueSyncTask,
@@ -69,6 +69,38 @@ describe('storage/sync public entrypoint', () => {
     expect(tasks).toHaveLength(1);
     const payload = tasks[0].payload as DailyRecord;
     expect(payload.lastUpdated).toBe('v2');
+  });
+
+  it('stores an extensible sync contract for daily record tasks', async () => {
+    const record = makeRecord('2025-01-12', '2025-01-12T10:00:00.000Z');
+    record.beds.R1 = {
+      bedId: 'R1',
+      patientName: 'Paciente Sync',
+      rut: '11.111.111-1',
+      admissionDate: '2025-01-10',
+      admissionTime: '14:30',
+      isBlocked: false,
+    } as DailyRecord['beds'][string];
+
+    await queueSyncTask('UPDATE_DAILY_RECORD', record, {
+      contexts: ['clinical'],
+      origin: 'partial_update_retry',
+      syncContract: {
+        expectedVersion: '2025-01-12T09:00:00.000Z',
+        changedPaths: ['beds.R1.pathology'],
+      },
+    });
+
+    const [task] = await hospitalDB.syncQueue.toArray();
+
+    expect(task.syncContract).toEqual(
+      expect.objectContaining({
+        expectedVersion: '2025-01-12T09:00:00.000Z',
+        recordRevision: '2025-01-12T10:00:00.000Z',
+        changedPaths: ['beds.R1.pathology'],
+        clinicalEpisodeKeys: ['11.111.111-1__2025-01-10__14:30'],
+      })
+    );
   });
 
   it('backs off and retries when sync fails', async () => {
@@ -180,6 +212,58 @@ describe('storage/sync public entrypoint', () => {
     expect(tasks[0].status).toBe('CONFLICT');
     expect(tasks[0].lastErrorCategory).toBe('conflict');
     expect(tasks[0].lastErrorAction).toContain('handoff');
+  });
+
+  it('revalidates stale daily record tasks against Firebase before writing', async () => {
+    const local = makeRecord('2025-01-13', '2025-01-13T10:10:00.000Z');
+    local.beds.R1 = {
+      bedId: 'R1',
+      patientName: 'Paciente Sync',
+      rut: '11.111.111-1',
+      age: '40a',
+      pathology: 'Diagnostico local stale',
+      specialty: 'Medicina',
+      status: 'Estable',
+      admissionDate: '2025-01-13',
+      isBlocked: false,
+      bedMode: 'Cuna',
+      hasCompanionCrib: false,
+      hasWristband: true,
+      devices: [],
+      surgicalComplication: false,
+      isUPC: false,
+    } as DailyRecord['beds'][string];
+
+    const remote = makeRecord('2025-01-13', '2025-01-13T10:20:00.000Z');
+    remote.beds.R1 = {
+      ...local.beds.R1,
+      pathology: 'Diagnostico Firebase vigente',
+      bedMode: 'Cama',
+    };
+
+    vi.mocked(getDoc).mockResolvedValue({
+      exists: () => true,
+      data: () => remote as unknown as Record<string, unknown>,
+    } as Awaited<ReturnType<typeof getDoc>>);
+
+    await queueSyncTask('UPDATE_DAILY_RECORD', local, {
+      contexts: ['clinical'],
+      origin: 'partial_update_retry',
+      syncContract: {
+        expectedVersion: '2025-01-13T10:00:00.000Z',
+        changedPaths: ['beds.R1.pathology'],
+      },
+    });
+
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    await processSyncQueue();
+
+    expect(setDoc).toHaveBeenCalledTimes(1);
+    const writtenRecord = vi.mocked(setDoc).mock.calls[0][1] as DailyRecord;
+    expect(writtenRecord.beds.R1.pathology).toBe('Diagnostico Firebase vigente');
+    expect(writtenRecord.beds.R1.bedMode).toBe('Cama');
+    expect(writtenRecord.lastUpdated).toBe('2025-01-13T10:20:00.000Z');
+    await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
   });
 
   it('does not process tasks scheduled for a future retry window', async () => {

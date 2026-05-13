@@ -26,4 +26,12 @@ export interface SyncTask {
   contexts?: SyncDomainContext[];
   origin?: SyncTaskOrigin;
   recoveryPolicy?: string;
+  syncContract?: SyncTaskContract;
+}
+
+export interface SyncTaskContract {
+  expectedVersion?: string;
+  recordRevision?: string;
+  clinicalEpisodeKeys?: string[];
+  changedPaths?: string[];
 }

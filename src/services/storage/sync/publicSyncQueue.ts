@@ -193,7 +193,7 @@ export const getSyncQueueDomainMetrics = async (): Promise<SyncQueueDomainMetric
 export const queueSyncTask = async (
   type: SyncTask['type'],
   payload: unknown,
-  meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy'>
+  meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>
 ): Promise<SyncQueueEnqueueResult> => {
   try {
     await ensureDbReady();

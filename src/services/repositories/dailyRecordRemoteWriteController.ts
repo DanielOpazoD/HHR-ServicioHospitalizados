@@ -62,6 +62,10 @@ export const queueRetryForRecord = async (record: DailyRecord): Promise<boolean>
   return queueRecoveryTask(record, {
     contexts: ['clinical', 'staffing', 'movements', 'handoff', 'metadata'],
     origin: 'full_save_retry',
+    syncContract: {
+      expectedVersion: record.lastUpdated,
+      changedPaths: ['*'],
+    },
   });
 };
 
@@ -71,7 +75,8 @@ export const resolveRemoteWriteRecovery = async (
   date: string,
   record: DailyRecord,
   changedPaths: string[],
-  error: unknown
+  error: unknown,
+  expectedVersion?: string
 ): Promise<RemoteWriteRecoveryResult> => {
   const effectiveChangedPaths = resolveEffectiveChangedPaths(changedPaths);
   const conflictSummary = (kind: DailyRecordConflictSummary['kind'], message: string) =>
@@ -95,7 +100,7 @@ export const resolveRemoteWriteRecovery = async (
   if (shouldQueueRetryableError(error)) {
     const queued = await queueRecoveryTask(
       record,
-      buildRecoveryTaskMeta(changedPaths, resolveRetryOrigin(changedPaths))
+      buildRecoveryTaskMeta(changedPaths, resolveRetryOrigin(changedPaths), expectedVersion)
     );
     return resolveQueuedRetryRecoveryResult(
       queued,
