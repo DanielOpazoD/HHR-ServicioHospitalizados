@@ -9,6 +9,7 @@ import {
   hasPatientIdentityOrClinicalContent,
   isLocallyClearedPatient,
   shouldPreserveLocalPatientNarrative,
+  shouldUseRemoteEpisodeScopedValue,
 } from '@/services/repositories/patientEpisodeNarrativePolicy';
 import { isPlainObject, isPrimitive } from '@/services/repositories/conflictResolutionUtils';
 import {
@@ -295,6 +296,17 @@ export const mergePatientData = (
         strategy: 'scalar_policy',
         winner: 'remote',
         reason: 'remote_episode_prevents_stale_local_narrative',
+      });
+      return;
+    }
+
+    if (shouldUseRemoteEpisodeScopedValue(key, remotePatient, localPatient)) {
+      merged[key] = remoteValue;
+      traceContext?.add({
+        path: `${pathPrefix}.${key}`,
+        strategy: 'copy_remote_value',
+        winner: 'remote',
+        reason: 'remote_episode_prevents_stale_local_structured_narrative',
       });
       return;
     }

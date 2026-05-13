@@ -135,4 +135,75 @@ describe('clinical movement-bed consistency policy', () => {
     expect(resolved.beds.R1.rut).toBe('');
     expect(resolved.beds.R1.status).not.toBe('Vivo');
   });
+
+  it('does not clear a name-only CMA match when admission evidence is missing', () => {
+    const remote = makeRecord('2026-02-18T10:00:00.000Z');
+    remote.cma = [
+      {
+        id: 'cma-name-only',
+        originalBedId: 'R1',
+        bedName: 'R1',
+        patientName: 'Paciente Sin Rut',
+        rut: '',
+        diagnosis: 'Procedimiento CMA',
+        specialty: 'Cirugia',
+        interventionType: 'Cirugía Mayor Ambulatoria',
+      },
+    ] as unknown as DailyRecord['cma'];
+
+    const local = makeRecord('2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Sin Rut',
+        rut: '',
+        pathology: 'Ingreso posterior sin RUT',
+        admissionDate: '2026-02-18',
+        status: 'Estable',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    expect(resolved.cma).toHaveLength(1);
+    expect(resolved.beds.R1.patientName).toBe('Paciente Sin Rut');
+    expect(resolved.beds.R1.pathology).toBe('Ingreso posterior sin RUT');
+  });
+
+  it('clears a name-only CMA match when original admission date confirms the same episode', () => {
+    const remote = makeRecord('2026-02-18T10:00:00.000Z');
+    remote.cma = [
+      {
+        id: 'cma-name-and-admission',
+        originalBedId: 'R1',
+        bedName: 'R1',
+        patientName: 'Paciente Sin Rut',
+        rut: '',
+        diagnosis: 'Procedimiento CMA',
+        specialty: 'Cirugia',
+        interventionType: 'Cirugía Mayor Ambulatoria',
+        originalData: {
+          admissionDate: '2026-02-10',
+        },
+      },
+    ] as unknown as DailyRecord['cma'];
+
+    const local = makeRecord('2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Sin Rut',
+        rut: '',
+        pathology: 'Procedimiento CMA',
+        admissionDate: '2026-02-10',
+        status: 'Vivo',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    expect(resolved.cma).toHaveLength(1);
+    expect(resolved.beds.R1.patientName).toBe('');
+    expect(resolved.beds.R1.status).not.toBe('Vivo');
+  });
 });

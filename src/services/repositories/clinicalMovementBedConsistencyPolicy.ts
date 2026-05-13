@@ -8,7 +8,10 @@ type MovementRecord = Pick<
   'bedId' | 'patientName' | 'rut' | 'admissionDate' | 'isNested'
 >;
 
-type CmaMovementRecord = Pick<CMAData, 'originalBedId' | 'bedName' | 'patientName' | 'rut'>;
+type CmaMovementRecord = Pick<
+  CMAData,
+  'originalBedId' | 'bedName' | 'patientName' | 'rut' | 'originalData'
+>;
 
 type ConfirmedMovementRecord = MovementRecord | CmaMovementRecord;
 
@@ -19,6 +22,16 @@ const normalizeIdentity = (value: unknown): string =>
 
 const hasActivePatientIdentity = (patient: PatientData | undefined): boolean =>
   Boolean(normalizeIdentity(patient?.patientName) || normalizeIdentity(patient?.rut));
+
+const isCmaMovement = (movement: ConfirmedMovementRecord): movement is CmaMovementRecord =>
+  !('bedId' in movement);
+
+const resolveMovementAdmissionDate = (movement: ConfirmedMovementRecord): string => {
+  if (isCmaMovement(movement)) {
+    return movement.originalData?.admissionDate || '';
+  }
+  return movement.admissionDate || '';
+};
 
 const matchesMovementPatient = (
   patient: PatientData | undefined,
@@ -41,9 +54,14 @@ const matchesMovementPatient = (
   }
 
   const patientAdmissionDate = normalizeIdentity(patient?.admissionDate);
-  const movementAdmissionDate = normalizeIdentity(
-    'admissionDate' in movement ? movement.admissionDate : ''
-  );
+  const movementAdmissionDate = normalizeIdentity(resolveMovementAdmissionDate(movement));
+  if (isCmaMovement(movement)) {
+    return Boolean(
+      patientAdmissionDate &&
+      movementAdmissionDate &&
+      patientAdmissionDate === movementAdmissionDate
+    );
+  }
   return (
     !patientAdmissionDate ||
     !movementAdmissionDate ||

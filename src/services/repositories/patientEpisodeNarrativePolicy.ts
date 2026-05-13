@@ -1,5 +1,7 @@
 import type { PatientData } from '@/services/contracts/patientServiceContracts';
 
+const EPISODE_SCOPED_PATIENT_ARRAY_FIELDS = new Set(['clinicalEvents', 'medicalHandoffEntries']);
+
 const normalizeEpisodeValue = (value: unknown): string =>
   String(value || '')
     .trim()
@@ -22,19 +24,27 @@ export const shouldPreserveLocalPatientNarrative = (
     return Boolean(remoteRut && localRut && remoteRut === localRut);
   }
 
-  const remoteName = normalizeEpisodeValue(remotePatient.patientName);
-  const localName = normalizeEpisodeValue(localPatient.patientName);
-  if (!remoteName && !localName) {
-    return true;
-  }
-  if (!remoteName || !localName || remoteName !== localName) {
-    return false;
-  }
-
   const remoteEpisode = resolveEpisodeAnchor(remotePatient);
   const localEpisode = resolveEpisodeAnchor(localPatient);
+  const remoteName = normalizeEpisodeValue(remotePatient.patientName);
+  const localName = normalizeEpisodeValue(localPatient.patientName);
+  if (remoteName && localName && remoteName !== localName) {
+    if (remoteEpisode && localEpisode) {
+      return remoteEpisode === localEpisode;
+    }
+    return !remoteEpisode && !localEpisode;
+  }
+
   return !remoteEpisode || !localEpisode || remoteEpisode === localEpisode;
 };
+
+export const shouldUseRemoteEpisodeScopedValue = (
+  field: string,
+  remotePatient: PatientData | undefined,
+  localPatient: PatientData | undefined
+): boolean =>
+  EPISODE_SCOPED_PATIENT_ARRAY_FIELDS.has(field) &&
+  !shouldPreserveLocalPatientNarrative(remotePatient, localPatient);
 
 export const hasPatientIdentityOrClinicalContent = (patient: PatientData | undefined): boolean => {
   if (!patient) return false;

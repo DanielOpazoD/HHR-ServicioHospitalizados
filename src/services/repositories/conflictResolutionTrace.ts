@@ -9,7 +9,8 @@ export type ConflictResolutionStrategy =
   | 'merge_patient'
   | 'merge_beds'
   | 'copy_preferred_active_devices'
-  | 'copy_local_value';
+  | 'copy_local_value'
+  | 'copy_remote_value';
 
 export interface ConflictResolutionTraceEntry {
   path: string;
