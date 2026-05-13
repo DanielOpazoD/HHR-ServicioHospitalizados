@@ -8,20 +8,21 @@ const resolveTraceabilityDiagnosis = value => {
   return diagnosis || undefined;
 };
 
-const resolveAdmissionDateForEvent = (tracker, patientRut, fallbackAdmissionDate) =>
-  tracker.resolveAdmissionDate(patientRut, fallbackAdmissionDate);
+const resolveAdmissionDateForEvent = (tracker, patient, fallbackAdmissionDate) =>
+  tracker.resolveAdmissionDate(patient, fallbackAdmissionDate);
 
 const resolveMovementSpecialty = movement => normalizeSpecialty(movement && movement.specialty);
 
 const resolveMovementAdmissionDate = (tracker, movement) =>
-  resolveAdmissionDateForEvent(
-    tracker,
-    movement && movement.rut,
-    movement && movement.admissionDate
-  );
+  resolveAdmissionDateForEvent(tracker, movement, movement && movement.admissionDate);
 
 const resolveMovementDiagnosis = movement =>
   resolveTraceabilityDiagnosis(movement && movement.diagnosis);
+
+const isActiveMovement = movement => !(movement && movement.deletedAt);
+
+const getActiveMovements = movements =>
+  Array.isArray(movements) ? movements.filter(isActiveMovement) : [];
 
 const normalizeIsoDate = value => {
   if (!value || typeof value !== 'string') return undefined;
@@ -108,7 +109,7 @@ const calculateMinsalStatistics = ({ records, hospitalCapacity, startDate, endDa
   const specialtyData = new Map();
 
   orderedRecords.forEach(record => {
-    const closedRuts = new Set();
+    const closedEpisodes = [];
 
     Object.values(record.beds || {}).forEach(bed => {
       episodeTracker.observeBed(bed, record.date);
@@ -138,7 +139,7 @@ const calculateMinsalStatistics = ({ records, hospitalCapacity, startDate, endDa
         diagnosis: resolveTraceabilityDiagnosis(bed.pathology),
         date: record.date,
         bedName: bed.bedName,
-        admissionDate: episodeTracker.resolveAdmissionDate(bed.rut, bed.admissionDate),
+        admissionDate: episodeTracker.resolveAdmissionDate(bed, bed.admissionDate),
       });
       specialtyData.set(specialty, existing);
 
@@ -154,7 +155,7 @@ const calculateMinsalStatistics = ({ records, hospitalCapacity, startDate, endDa
           date: record.date,
           bedName: bed.clinicalCrib.bedName || bed.bedName,
           admissionDate: episodeTracker.resolveAdmissionDate(
-            bed.clinicalCrib.rut,
+            bed.clinicalCrib,
             bed.clinicalCrib.admissionDate
           ),
         });
@@ -165,8 +166,11 @@ const calculateMinsalStatistics = ({ records, hospitalCapacity, startDate, endDa
     totalDiasCamaDisponibles += hospitalCapacity - bloqueadas;
     totalDiasCamaOcupados += ocupadas;
 
-    if (record.discharges) {
-      record.discharges.forEach(discharge => {
+    const activeDischarges = getActiveMovements(record.discharges);
+    const activeTransfers = getActiveMovements(record.transfers);
+
+    if (activeDischarges.length) {
+      activeDischarges.forEach(discharge => {
         const normalizedDischarge = normalizeMovementReportingSnapshot(discharge);
         const specialty = resolveMovementSpecialty(normalizedDischarge);
         const existing = specialtyData.get(specialty) || createEmptySpecialtyBucket();
@@ -198,15 +202,15 @@ const calculateMinsalStatistics = ({ records, hospitalCapacity, startDate, endDa
           totalEgresosVivos++;
         }
         if (discharge.rut) {
-          closedRuts.add(discharge.rut);
+          closedEpisodes.push(discharge);
         }
         specialtyData.set(specialty, existing);
       });
     }
 
-    if (record.transfers) {
-      totalEgresosTraslados += record.transfers.length;
-      record.transfers.forEach(transfer => {
+    if (activeTransfers.length) {
+      totalEgresosTraslados += activeTransfers.length;
+      activeTransfers.forEach(transfer => {
         const normalizedTransfer = normalizeMovementReportingSnapshot(transfer);
         const specialty = resolveMovementSpecialty(normalizedTransfer);
         const existing = specialtyData.get(specialty) || createEmptySpecialtyBucket();
@@ -230,13 +234,13 @@ const calculateMinsalStatistics = ({ records, hospitalCapacity, startDate, endDa
           admissionDate: resolvedAdmissionDate,
         });
         if (transfer.rut) {
-          closedRuts.add(transfer.rut);
+          closedEpisodes.push(transfer);
         }
         specialtyData.set(specialty, existing);
       });
     }
 
-    closedRuts.forEach(rut => episodeTracker.closeEpisode(rut));
+    closedEpisodes.forEach(episode => episodeTracker.closeEpisode(episode));
   });
 
   const egresosTotal = totalEgresosVivos + totalEgresosFallecidos + totalEgresosTraslados;

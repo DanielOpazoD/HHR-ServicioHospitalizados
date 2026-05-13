@@ -95,6 +95,7 @@ describe('zod entity schemas', () => {
     it('should parse valid patient data', () => {
       const patient = PatientDataSchema.parse({
         bedId: 'UTI-01',
+        clinicalEpisodeId: 'episode-persisted-1',
         patientName: 'Juan Pérez',
         rut: '12.345.678-9',
         pathology: 'Neumonía',
@@ -105,6 +106,7 @@ describe('zod entity schemas', () => {
       });
       expect(patient.patientName).toBe('Juan Pérez');
       expect(patient.specialty).toBe('Med Interna');
+      expect(patient.clinicalEpisodeId).toBe('episode-persisted-1');
     });
 
     it('should preserve a custom free-text specialty', () => {
@@ -317,11 +319,13 @@ describe('zod entity schemas', () => {
     it('should preserve movement tombstone metadata', () => {
       const discharge = DischargeDataSchema.parse({
         id: 'discharge-1',
+        clinicalEpisodeId: 'episode-discharge-1',
         deletedAt: '2026-05-12T10:00:00.000Z',
         deletedBy: 'tester',
         deletedReason: 'manual_delete',
       });
 
+      expect(discharge.clinicalEpisodeId).toBe('episode-discharge-1');
       expect(discharge.deletedAt).toBe('2026-05-12T10:00:00.000Z');
       expect(discharge.deletedBy).toBe('tester');
       expect(discharge.deletedReason).toBe('manual_delete');

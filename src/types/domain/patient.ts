@@ -97,6 +97,8 @@ export interface PatientData {
   location?: string;
   /** Optional first day the patient was observed in census; used for admission audits. */
   firstSeenDate?: string;
+  /** Stable episode identifier. Optional during legacy tuple-to-ID migration. */
+  clinicalEpisodeId?: string;
 
   // CUDYR Data
   cudyr?: CudyrScore;

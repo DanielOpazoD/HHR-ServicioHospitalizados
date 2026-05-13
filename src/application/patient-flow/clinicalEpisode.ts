@@ -42,6 +42,9 @@ export const buildClinicalEpisodeKey = (
   return normalizedAdmissionTime ? `${baseKey}__${normalizedAdmissionTime}` : baseKey;
 };
 
+export const normalizeClinicalEpisodeId = (clinicalEpisodeId?: string): string =>
+  String(clinicalEpisodeId || '').trim();
+
 /**
  * Clinical documents and episode snapshots should anchor to the first observed
  * day of the current episode when the census already resolved it.
@@ -49,6 +52,19 @@ export const buildClinicalEpisodeKey = (
 export const resolveClinicalEpisodeAdmissionDate = (
   patient: PatientEpisodeContract
 ): string | undefined => patient.firstSeenDate || patient.admissionDate;
+
+export const resolveClinicalEpisodeIdentifier = (patient: PatientEpisodeContract): string => {
+  const persistedEpisodeId = normalizeClinicalEpisodeId(patient.clinicalEpisodeId);
+  if (persistedEpisodeId) {
+    return persistedEpisodeId;
+  }
+
+  return buildClinicalEpisodeKey(
+    patient.rut || '',
+    resolveClinicalEpisodeAdmissionDate(patient),
+    patient.admissionTime
+  );
+};
 
 export const resolveClinicalEpisode = (
   patient: PatientEpisodeContract,
@@ -64,11 +80,7 @@ export const resolveClinicalEpisode = (
   sourceDailyRecordDate: context?.sourceDailyRecordDate,
   sourceBedId: context?.sourceBedId,
   specialty: patient.specialty,
-  episodeKey: buildClinicalEpisodeKey(
-    patient.rut || '',
-    resolveClinicalEpisodeAdmissionDate(patient),
-    patient.admissionTime
-  ),
+  episodeKey: resolveClinicalEpisodeIdentifier(patient),
 });
 
 export const buildPatientPresenceSnapshot = (
@@ -87,7 +99,7 @@ export const buildPatientPresenceSnapshot = (
     patientName: patient.patientName || '',
     admissionDate,
     admissionTime: patient.admissionTime,
-    episodeKey: buildClinicalEpisodeKey(patientRut, admissionDate, patient.admissionTime),
+    episodeKey: resolveClinicalEpisodeIdentifier(patient),
   };
 };
 

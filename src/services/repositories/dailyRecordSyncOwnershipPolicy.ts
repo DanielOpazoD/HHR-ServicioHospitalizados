@@ -41,6 +41,7 @@ const PATIENT_FIELD_OWNERSHIP = {
   upcChecklist: 'remoteCanonical',
   surgicalComplication: 'remoteCanonical',
   firstSeenDate: 'remoteCanonical',
+  clinicalEpisodeId: 'remoteCanonical',
 
   bedId: 'adminRemote',
   bedName: 'adminRemote',

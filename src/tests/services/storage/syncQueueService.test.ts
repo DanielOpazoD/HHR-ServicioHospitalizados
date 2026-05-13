@@ -108,6 +108,25 @@ describe('storage/sync public entrypoint', () => {
     );
   });
 
+  it('prefers persisted clinicalEpisodeId in sync contract episode keys', async () => {
+    const record = makeRecord('2025-01-12', '2025-01-12T10:00:00.000Z');
+    record.beds.R1 = {
+      bedId: 'R1',
+      clinicalEpisodeId: 'episode-r1-canonical',
+      patientName: 'Paciente Sync',
+      rut: '11.111.111-1',
+      admissionDate: '2025-01-10',
+      admissionTime: '14:30',
+      isBlocked: false,
+    } as DailyRecord['beds'][string];
+
+    await queueSyncTask('UPDATE_DAILY_RECORD', record);
+
+    const [task] = await hospitalDB.syncQueue.toArray();
+
+    expect(task.syncContract?.clinicalEpisodeKeys).toEqual(['episode-r1-canonical']);
+  });
+
   it('backs off and retries when sync fails', async () => {
     vi.mocked(setDoc).mockRejectedValueOnce(new Error('Network down'));
 
