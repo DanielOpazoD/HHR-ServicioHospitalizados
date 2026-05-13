@@ -91,6 +91,39 @@ describe('clinical movement-bed consistency policy', () => {
     expect(resolved.beds.R1.rut).toBe('44.444.444-4');
   });
 
+  it('ignores tombstoned discharges when normalizing bed consistency', () => {
+    const remote = makeRecord('2026-02-18T10:00:00.000Z');
+    remote.discharges = [
+      {
+        id: 'discharge-deleted',
+        bedId: 'R1',
+        patientName: 'Paciente Reingresado',
+        rut: '33.333.333-3',
+        admissionDate: '2026-02-18',
+        status: 'Vivo',
+        movementDate: '2026-02-18',
+        deletedAt: '2026-02-18T12:00:00.000Z',
+      },
+    ] as unknown as DailyRecord['discharges'];
+
+    const local = makeRecord('2026-02-18T12:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Reingresado',
+        rut: '33.333.333-3',
+        pathology: 'Reingreso valido',
+        admissionDate: '2026-02-18',
+        status: 'Estable',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    expect(resolved.beds.R1.patientName).toBe('Paciente Reingresado');
+    expect(resolved.beds.R1.pathology).toBe('Reingreso valido');
+  });
+
   it('does not resurrect a CMA patient from stale local bed data during automatic merge', () => {
     const remote = makeRecord('2026-02-18T10:00:00.000Z');
     remote.beds = {

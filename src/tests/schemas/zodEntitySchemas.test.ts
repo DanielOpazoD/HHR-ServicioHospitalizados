@@ -313,6 +313,19 @@ describe('zod entity schemas', () => {
       expect(DischargeDataSchema.parse({ id: '1', status: 'Vivo' }).status).toBe('Vivo');
       expect(DischargeDataSchema.parse({ id: '2', status: 'Fallecido' }).status).toBe('Fallecido');
     });
+
+    it('should preserve movement tombstone metadata', () => {
+      const discharge = DischargeDataSchema.parse({
+        id: 'discharge-1',
+        deletedAt: '2026-05-12T10:00:00.000Z',
+        deletedBy: 'tester',
+        deletedReason: 'manual_delete',
+      });
+
+      expect(discharge.deletedAt).toBe('2026-05-12T10:00:00.000Z');
+      expect(discharge.deletedBy).toBe('tester');
+      expect(discharge.deletedReason).toBe('manual_delete');
+    });
   });
 
   describe('TransferDataSchema', () => {

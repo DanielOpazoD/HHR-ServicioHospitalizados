@@ -6,7 +6,7 @@ import {
 } from '@/features/census/controllers/patientMovementUndoMutationController';
 
 describe('patientMovementUndoMutationController', () => {
-  it('applies undo for discharge by restoring bed and removing discharge entry', () => {
+  it('applies undo for discharge by restoring bed and tombstoning discharge entry', () => {
     const record = DataFactory.createMockDailyRecord('2025-01-01', {
       discharges: [
         DataFactory.createMockDischarge({ id: 'd-1', bedId: 'R1' }),
@@ -22,10 +22,15 @@ describe('patientMovementUndoMutationController', () => {
     });
 
     expect(updated.beds.R1.patientName).toBe('Paciente Restaurado');
-    expect(updated.discharges.map(d => d.id)).toEqual(['d-2']);
+    expect(updated.discharges.map(d => d.id)).toEqual(['d-1', 'd-2']);
+    expect(updated.discharges[0]).toMatchObject({
+      id: 'd-1',
+      deletedAt: expect.any(String),
+      deletedReason: 'manual_delete',
+    });
   });
 
-  it('removes stale destination entries for the restored patient when undoing discharge', () => {
+  it('tombstones stale destination entries for the restored patient when undoing discharge', () => {
     const restoredPatient = DataFactory.createMockPatient('R1', {
       patientName: 'Paciente Restaurado',
       rut: '11.111.111-1',
@@ -64,12 +69,12 @@ describe('patientMovementUndoMutationController', () => {
       updatedBed: restoredPatient,
     });
 
-    expect(updated.discharges).toEqual([]);
-    expect(updated.transfers).toEqual([]);
-    expect(updated.cma).toEqual([]);
+    expect(updated.discharges[0]).toMatchObject({ id: 'd-1', deletedAt: expect.any(String) });
+    expect(updated.transfers[0]).toMatchObject({ id: 't-stale', deletedAt: expect.any(String) });
+    expect(updated.cma[0]).toMatchObject({ id: 'cma-stale', deletedAt: expect.any(String) });
   });
 
-  it('applies undo for transfer by restoring bed and removing transfer entry', () => {
+  it('applies undo for transfer by restoring bed and tombstoning transfer entry', () => {
     const record = DataFactory.createMockDailyRecord('2025-01-01', {
       transfers: [
         DataFactory.createMockTransfer({ id: 't-1', bedId: 'R1' }),
@@ -85,10 +90,15 @@ describe('patientMovementUndoMutationController', () => {
     });
 
     expect(updated.beds.R2.patientName).toBe('Transfer Restaurado');
-    expect(updated.transfers.map(t => t.id)).toEqual(['t-1']);
+    expect(updated.transfers.map(t => t.id)).toEqual(['t-1', 't-2']);
+    expect(updated.transfers[1]).toMatchObject({
+      id: 't-2',
+      deletedAt: expect.any(String),
+      deletedReason: 'manual_delete',
+    });
   });
 
-  it('removes stale destination entries for the restored patient when undoing transfer', () => {
+  it('tombstones stale destination entries for the restored patient when undoing transfer', () => {
     const restoredPatient = DataFactory.createMockPatient('R2', {
       patientName: 'Transfer Restaurado',
       rut: '22.222.222-2',
@@ -127,8 +137,8 @@ describe('patientMovementUndoMutationController', () => {
       updatedBed: restoredPatient,
     });
 
-    expect(updated.discharges).toEqual([]);
-    expect(updated.transfers).toEqual([]);
-    expect(updated.cma).toEqual([]);
+    expect(updated.discharges[0]).toMatchObject({ id: 'd-stale', deletedAt: expect.any(String) });
+    expect(updated.transfers[0]).toMatchObject({ id: 't-1', deletedAt: expect.any(String) });
+    expect(updated.cma[0]).toMatchObject({ id: 'cma-stale', deletedAt: expect.any(String) });
   });
 });

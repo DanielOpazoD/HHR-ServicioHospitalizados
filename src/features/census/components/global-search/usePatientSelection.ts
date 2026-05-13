@@ -47,13 +47,12 @@ const loadClinicalDocPdf = () => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const parseCompositeEpisodeKey = (key: string): { rut: string; admissionDate: string } | null => {
-  const separatorIdx = key.indexOf('__');
-  if (separatorIdx < 1) return null;
-  const rut = key.slice(0, separatorIdx);
-  const admissionDate = key.slice(separatorIdx + 2);
+const parseCompositeEpisodeKey = (
+  key: string
+): { rut: string; admissionDate: string; admissionTime?: string } | null => {
+  const [rut, admissionDate, admissionTime] = key.split('__');
   if (!rut || !admissionDate) return null;
-  return { rut, admissionDate };
+  return { rut, admissionDate, admissionTime };
 };
 
 const buildPatientHistoryCacheKey = (patient: MasterPatient): string =>
@@ -167,6 +166,8 @@ export function usePatientSelection(): UsePatientSelectionReturn {
       const rutWithoutDots = parsed.rut.replace(/\./g, '');
       const candidateKeys = [
         ...new Set([
+          buildClinicalEpisodeKey(parsed.rut, parsed.admissionDate, parsed.admissionTime),
+          buildClinicalEpisodeKey(rutWithoutDots, parsed.admissionDate, parsed.admissionTime),
           buildClinicalEpisodeKey(parsed.rut, parsed.admissionDate),
           buildClinicalEpisodeKey(rutWithoutDots, parsed.admissionDate),
         ]),

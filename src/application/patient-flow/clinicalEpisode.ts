@@ -9,6 +9,7 @@ export interface ClinicalEpisode {
   patientRut: string;
   patientName: string;
   admissionDate?: string;
+  admissionTime?: string;
   sourceDailyRecordDate?: string;
   sourceBedId?: string;
   specialty?: string;
@@ -28,8 +29,18 @@ export interface PatientMovementClassification {
   isNewAdmission: boolean;
 }
 
-export const buildClinicalEpisodeKey = (patientRut: string, admissionDate?: string): string =>
-  `${patientRut || 'sin-rut'}__${admissionDate || 'sin-ingreso'}`;
+export const normalizeClinicalEpisodeTime = (admissionTime?: string): string =>
+  String(admissionTime || '').trim();
+
+export const buildClinicalEpisodeKey = (
+  patientRut: string,
+  admissionDate?: string,
+  admissionTime?: string
+): string => {
+  const baseKey = `${patientRut || 'sin-rut'}__${admissionDate || 'sin-ingreso'}`;
+  const normalizedAdmissionTime = normalizeClinicalEpisodeTime(admissionTime);
+  return normalizedAdmissionTime ? `${baseKey}__${normalizedAdmissionTime}` : baseKey;
+};
 
 /**
  * Clinical documents and episode snapshots should anchor to the first observed
@@ -49,12 +60,14 @@ export const resolveClinicalEpisode = (
   patientRut: patient.rut || '',
   patientName: patient.patientName || '',
   admissionDate: resolveClinicalEpisodeAdmissionDate(patient),
+  admissionTime: patient.admissionTime,
   sourceDailyRecordDate: context?.sourceDailyRecordDate,
   sourceBedId: context?.sourceBedId,
   specialty: patient.specialty,
   episodeKey: buildClinicalEpisodeKey(
     patient.rut || '',
-    resolveClinicalEpisodeAdmissionDate(patient)
+    resolveClinicalEpisodeAdmissionDate(patient),
+    patient.admissionTime
   ),
 });
 
@@ -74,7 +87,7 @@ export const buildPatientPresenceSnapshot = (
     patientName: patient.patientName || '',
     admissionDate,
     admissionTime: patient.admissionTime,
-    episodeKey: buildClinicalEpisodeKey(patientRut, admissionDate),
+    episodeKey: buildClinicalEpisodeKey(patientRut, admissionDate, patient.admissionTime),
   };
 };
 

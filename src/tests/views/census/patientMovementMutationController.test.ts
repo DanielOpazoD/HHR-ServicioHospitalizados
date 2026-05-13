@@ -35,7 +35,7 @@ describe('patientMovementMutationController', () => {
     expect(updated.discharges[0].time).toBe('10:00');
   });
 
-  it('deletes discharge by id', () => {
+  it('tombstones discharge by id without removing the persisted movement', () => {
     const record = DataFactory.createMockDailyRecord('2025-01-01', {
       discharges: [
         DataFactory.createMockDischarge({ id: 'd-1' }),
@@ -44,8 +44,13 @@ describe('patientMovementMutationController', () => {
     });
 
     const updated = resolveDeleteDischargeMovement({ record, id: 'd-1' });
-    expect(updated.discharges).toHaveLength(1);
-    expect(updated.discharges[0].id).toBe('d-2');
+    expect(updated.discharges).toHaveLength(2);
+    expect(updated.discharges[0]).toMatchObject({
+      id: 'd-1',
+      deletedAt: expect.any(String),
+      deletedReason: 'manual_delete',
+    });
+    expect(updated.discharges[1].id).toBe('d-2');
   });
 
   it('updates transfer by id with partial updates', () => {
@@ -68,7 +73,7 @@ describe('patientMovementMutationController', () => {
     expect(updated.transfers[0].time).toBe('11:00');
   });
 
-  it('deletes transfer by id', () => {
+  it('tombstones transfer by id without removing the persisted movement', () => {
     const record = DataFactory.createMockDailyRecord('2025-01-01', {
       transfers: [
         DataFactory.createMockTransfer({ id: 't-1' }),
@@ -77,7 +82,12 @@ describe('patientMovementMutationController', () => {
     });
 
     const updated = resolveDeleteTransferMovement({ record, id: 't-2' });
-    expect(updated.transfers).toHaveLength(1);
+    expect(updated.transfers).toHaveLength(2);
     expect(updated.transfers[0].id).toBe('t-1');
+    expect(updated.transfers[1]).toMatchObject({
+      id: 't-2',
+      deletedAt: expect.any(String),
+      deletedReason: 'manual_delete',
+    });
   });
 });

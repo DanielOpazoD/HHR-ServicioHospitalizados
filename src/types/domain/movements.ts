@@ -16,7 +16,13 @@ export interface IeehData {
   tratanteRut?: string;
 }
 
-export interface DischargeData {
+export interface MovementTombstoneFields {
+  deletedAt?: string;
+  deletedBy?: string;
+  deletedReason?: string;
+}
+
+export interface DischargeData extends MovementTombstoneFields {
   id: string;
   movementDate?: string; // YYYY-MM-DD
   admissionDate?: string; // Explicit episode admission date for reporting
@@ -40,7 +46,7 @@ export interface DischargeData {
   ieehData?: IeehData; // Persisted IEEH PDF generation data
 }
 
-export interface TransferData {
+export interface TransferData extends MovementTombstoneFields {
   id: string;
   movementDate?: string; // YYYY-MM-DD
   admissionDate?: string; // Explicit episode admission date for reporting
@@ -65,7 +71,7 @@ export interface TransferData {
   isNested?: boolean; // Identifies if it was a clinical crib
 }
 
-export interface CMAData {
+export interface CMAData extends MovementTombstoneFields {
   id: string;
   bedName: string; // Generic location or identifier
   patientName: string;

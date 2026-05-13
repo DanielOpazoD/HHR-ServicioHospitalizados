@@ -5,6 +5,7 @@ import type {
   DischargeData,
   TransferData,
 } from '@/features/census/contracts/censusMovementContracts';
+import { tombstoneMovementsWhere } from '@/application/census/movementTombstonePolicy';
 
 interface ApplyUndoDischargeInput {
   record: DailyRecord;
@@ -83,18 +84,21 @@ export const removeRestoredPatientDestinationEntries = ({
   cmaId,
 }: RestoredPatientDestinationInput): DailyRecord => ({
   ...record,
-  discharges: (record.discharges ?? []).filter(
+  discharges: tombstoneMovementsWhere(
+    record.discharges,
     discharge =>
-      discharge.id !== dischargeId &&
-      !shouldRemoveRestoredPatientDestination(discharge, bedId, updatedBed)
+      discharge.id === dischargeId ||
+      shouldRemoveRestoredPatientDestination(discharge, bedId, updatedBed)
   ),
-  transfers: (record.transfers ?? []).filter(
+  transfers: tombstoneMovementsWhere(
+    record.transfers,
     transfer =>
-      transfer.id !== transferId &&
-      !shouldRemoveRestoredPatientDestination(transfer, bedId, updatedBed)
+      transfer.id === transferId ||
+      shouldRemoveRestoredPatientDestination(transfer, bedId, updatedBed)
   ),
-  cma: (record.cma ?? []).filter(
-    item => item.id !== cmaId && !shouldRemoveRestoredPatientDestination(item, bedId, updatedBed)
+  cma: tombstoneMovementsWhere(
+    record.cma,
+    item => item.id === cmaId || shouldRemoveRestoredPatientDestination(item, bedId, updatedBed)
   ),
 });
 

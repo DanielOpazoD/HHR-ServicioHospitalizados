@@ -4,6 +4,7 @@ import {
   formatDayLabel,
   todayIso,
 } from '@/features/prescriptions/components/prescriptionBedGridSupport';
+import { isMovementDeleted } from '@/application/census/movementTombstonePolicy';
 
 export interface DailyBedOption {
   bedId: string;
@@ -93,7 +94,9 @@ const buildMovementBedOptions = (
         bedName?: string;
         patientName?: string;
         rut?: string;
+        deletedAt?: string;
       };
+      if (isMovementDeleted(item)) return null;
       const bedId = item.bedId?.trim() || item.bedName?.trim() || '';
       const patientName = item.patientName?.trim() ?? '';
       const patientRut = item.rut?.trim() ?? '';

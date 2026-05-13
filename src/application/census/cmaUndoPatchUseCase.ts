@@ -1,5 +1,6 @@
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import type { CMAData, DischargeData, TransferData } from '@/types/domain/movements';
+import { tombstoneMovementsWhere } from '@/application/census/movementTombstonePolicy';
 
 type RestoredPatient = NonNullable<DailyRecord['beds']>[string];
 
@@ -51,14 +52,15 @@ export const buildUndoCmaPatch = (record: DailyRecord, item: CMAData): DailyReco
 
   return {
     [`beds.${bedId}`]: updatedBed,
-    discharges: (record.discharges ?? []).filter(
-      discharge => !shouldRemoveRestoredPatientDestination(discharge, bedId, updatedBed)
+    discharges: tombstoneMovementsWhere(record.discharges, discharge =>
+      shouldRemoveRestoredPatientDestination(discharge, bedId, updatedBed)
     ),
-    transfers: (record.transfers ?? []).filter(
-      transfer => !shouldRemoveRestoredPatientDestination(transfer, bedId, updatedBed)
+    transfers: tombstoneMovementsWhere(record.transfers, transfer =>
+      shouldRemoveRestoredPatientDestination(transfer, bedId, updatedBed)
     ),
-    cma: (record.cma ?? []).filter(
-      cma => cma.id !== item.id && !shouldRemoveRestoredPatientDestination(cma, bedId, updatedBed)
+    cma: tombstoneMovementsWhere(
+      record.cma,
+      cma => cma.id === item.id || shouldRemoveRestoredPatientDestination(cma, bedId, updatedBed)
     ),
   } as DailyRecordPatch;
 };

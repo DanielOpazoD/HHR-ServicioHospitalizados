@@ -7,6 +7,11 @@ import {
   type TransferData,
 } from '@/types/domain/movements';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
+import {
+  getActiveCma,
+  getActiveDischarges,
+  getActiveTransfers,
+} from '@/application/census/movementTombstonePolicy';
 
 type MovementRecord = Pick<
   DischargeData | TransferData,
@@ -102,9 +107,9 @@ const collectConfirmedMovementsByBed = (
     });
   };
 
-  (record.discharges ?? []).forEach(append);
-  (record.transfers ?? []).forEach(append);
-  (record.cma ?? []).forEach(appendCma);
+  getActiveDischarges(record.discharges).forEach(append);
+  getActiveTransfers(record.transfers).forEach(append);
+  getActiveCma(record.cma).forEach(appendCma);
   return byBed;
 };
 
