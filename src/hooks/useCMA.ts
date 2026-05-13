@@ -11,8 +11,8 @@ import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
 import { buildClearPatientPatches } from '@/hooks/controllers/bedManagementPatchController';
 import { buildAtomicPatientMovementPatch, buildUndoCmaPatch } from '@/application/census/public';
 import { tombstoneMovementById } from '@/application/census/movementTombstonePolicy';
+import { buildCmaEpisodeMovementFields } from '@/application/census/cmaEpisodeMovementFields';
 import { ensurePatientClinicalEpisodeId } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
-import { buildCmaEpisodeMovementFields } from '@/features/census/controllers/censusCmaController';
 
 /**
  * Normalize CMA patient data fields

@@ -7,6 +7,7 @@ const ROOT = path.resolve(__dirname, '../../../');
 const ALLOWED_ORIGINAL_DATA_REFERENCES = [
   'src/schemas/zod/movements.ts',
   'src/types/domain/movements.ts',
+  'src/application/census/cmaEpisodeMovementFields.ts',
   'src/application/census/cmaUndoPatchUseCase.ts',
   'src/hooks/usePatientMovementUndoExecutor.ts',
   'src/hooks/controllers/censusExcelSheetController.ts',
