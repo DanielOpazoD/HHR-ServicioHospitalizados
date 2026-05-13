@@ -50,6 +50,7 @@ describe('useCMA', () => {
     mockRecord.beds.R1 = DataFactory.createMockPatient('R1', {
       patientName: 'Paciente CMA',
       rut: '11.111.111-1',
+      clinicalEpisodeId: 'ep-cma-source',
       pathology: 'Colelitiasis',
       location: 'Sector A',
     });
@@ -75,6 +76,10 @@ describe('useCMA', () => {
           expect.objectContaining({
             patientName: 'Paciente Cma',
             originalBedId: 'R1',
+            clinicalEpisodeId: 'ep-cma-source',
+            originalData: expect.objectContaining({
+              clinicalEpisodeId: 'ep-cma-source',
+            }),
           }),
         ]),
         'beds.R1': expect.objectContaining({

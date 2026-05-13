@@ -10,11 +10,12 @@ import {
 } from '@/services/repositories/dailyRecordDomainServices';
 import { assertAdmissionDatePersistencePolicy } from '@/services/repositories/dailyRecordAdmissionDateWritePolicy';
 import { buildInvariantRepairReviewContext } from '@/services/repositories/invariantRepairReviewContext';
+import { ensureDailyRecordClinicalEpisodeIds } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
 
 const normalizePreparedRecord = (record: DailyRecord): DailyRecord => {
   const normalized = normalizeDailyRecordInvariants(record);
   const movementConsistency = normalizeMovementBedConsistency(normalized.record);
-  const validatedRecord = movementConsistency.record;
+  const validatedRecord = ensureDailyRecordClinicalEpisodeIds(movementConsistency.record);
 
   const repairPaths = [
     ...Object.keys(normalized.patches),

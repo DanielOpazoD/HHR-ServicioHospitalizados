@@ -7,6 +7,7 @@ import {
   failWithCode,
   ok,
 } from '@/features/census/controllers/controllerResult';
+import { deepClone } from '@/utils/deepClone';
 
 export const CMA_INTERVENTION_TYPES = [
   'Cirugía Mayor Ambulatoria',
@@ -86,6 +87,14 @@ export const buildCmaIeehPatientSnapshot = (item: CMAData, recordDate: string): 
     admissionDate: recordDate,
   };
 };
+
+export const buildCmaEpisodeMovementFields = (
+  data: Partial<CMAData>,
+  sourcePatient?: PatientData | null
+): Partial<Pick<CMAData, 'clinicalEpisodeId' | 'originalData'>> => ({
+  clinicalEpisodeId: data.clinicalEpisodeId || sourcePatient?.clinicalEpisodeId,
+  originalData: data.originalData || (sourcePatient ? deepClone(sourcePatient) : undefined),
+});
 
 export const executeUndoCmaController = async (
   item: CMAData,

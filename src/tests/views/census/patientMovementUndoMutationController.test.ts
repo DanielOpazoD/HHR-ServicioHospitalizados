@@ -74,6 +74,45 @@ describe('patientMovementUndoMutationController', () => {
     expect(updated.cma[0]).toMatchObject({ id: 'cma-stale', deletedAt: expect.any(String) });
   });
 
+  it('does not tombstone same-rut movements from a different clinical episode during undo cleanup', () => {
+    const restoredPatient = DataFactory.createMockPatient('R1', {
+      patientName: 'Paciente Reingresado',
+      rut: '11.111.111-1',
+      clinicalEpisodeId: 'ep-current',
+    });
+    const record = DataFactory.createMockDailyRecord('2025-01-01', {
+      discharges: [
+        DataFactory.createMockDischarge({
+          id: 'd-current',
+          bedId: 'R1',
+          patientName: restoredPatient.patientName,
+          rut: restoredPatient.rut,
+          clinicalEpisodeId: 'ep-current',
+        }),
+      ],
+      transfers: [
+        DataFactory.createMockTransfer({
+          id: 't-other-episode',
+          bedId: 'R1',
+          patientName: restoredPatient.patientName,
+          rut: restoredPatient.rut,
+          clinicalEpisodeId: 'ep-previous',
+        }),
+      ],
+    });
+
+    const updated = resolveApplyUndoDischargeRecord({
+      record,
+      dischargeId: 'd-current',
+      bedId: 'R1',
+      updatedBed: restoredPatient,
+    });
+
+    expect(updated.discharges[0]).toMatchObject({ id: 'd-current', deletedAt: expect.any(String) });
+    expect(updated.transfers[0].id).toBe('t-other-episode');
+    expect(updated.transfers[0].deletedAt).toBeUndefined();
+  });
+
   it('applies undo for transfer by restoring bed and tombstoning transfer entry', () => {
     const record = DataFactory.createMockDailyRecord('2025-01-01', {
       transfers: [
