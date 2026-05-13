@@ -1,4 +1,6 @@
-export const SYNC_OWNERSHIP_POLICY_VERSION = '2026-05-daily-record-v1';
+import type { PatientData } from '@/types/domain/patient';
+
+export const SYNC_OWNERSHIP_POLICY_VERSION = '2026-05-daily-record-v2';
 
 export type DailyRecordSyncOwnership =
   | 'remoteCanonical'
@@ -10,6 +12,10 @@ export type DailyRecordSyncOwnership =
   | 'default';
 
 const PATIENT_FIELD_OWNERSHIP = {
+  firstName: 'remoteCanonical',
+  lastName: 'remoteCanonical',
+  secondLastName: 'remoteCanonical',
+  identityStatus: 'remoteCanonical',
   patientName: 'remoteCanonical',
   rut: 'remoteCanonical',
   documentType: 'remoteCanonical',
@@ -18,6 +24,7 @@ const PATIENT_FIELD_OWNERSHIP = {
   biologicalSex: 'remoteCanonical',
   insurance: 'remoteCanonical',
   isRapanui: 'remoteCanonical',
+  cudyr: 'remoteCanonical',
   pathology: 'remoteCanonical',
   snomedCode: 'remoteCanonical',
   cie10Code: 'remoteCanonical',
@@ -56,10 +63,17 @@ const PATIENT_FIELD_OWNERSHIP = {
   medicalHandoffAudit: 'localNarrative',
   clinicalCrib: 'movementInvariant',
 
+  devices: 'mergeById',
+  deviceDetails: 'mergeById',
   clinicalEvents: 'mergeById',
   deviceInstanceHistory: 'mergeById',
   medicalHandoffEntries: 'mergeById',
-} as const satisfies Record<string, DailyRecordSyncOwnership>;
+  fhir_resource: 'derivedProjection',
+} as const satisfies Record<keyof PatientData, DailyRecordSyncOwnership>;
+
+export const PATIENT_SYNC_OWNERSHIP_FIELDS = Object.keys(PATIENT_FIELD_OWNERSHIP) as Array<
+  keyof PatientData
+>;
 
 const ROOT_OWNERSHIP = {
   discharges: 'mergeById',
