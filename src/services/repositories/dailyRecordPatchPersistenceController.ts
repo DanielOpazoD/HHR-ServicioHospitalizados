@@ -1,6 +1,7 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import { normalizeDailyRecordInvariants } from '@/utils/recordInvariants';
+import { normalizeMovementBedConsistency } from '@/services/repositories/clinicalMovementBedConsistencyPolicy';
 import { validateAndSalvageRecord } from '@/services/repositories/helpers/validationHelper';
 import { applyPatches } from '@/utils/patchUtils';
 import { logError } from '@/services/utils/errorService';
@@ -28,13 +29,18 @@ export const preparePatchedRecordPersistence = (
   }
 
   const normalized = normalizeDailyRecordInvariants(updatedForInvariants);
+  const movementConsistency = normalizeMovementBedConsistency(normalized.record);
   const shouldSkipStructuralNormalization = isSpecialistScopedDailyRecordPatch(mergedPatches);
 
   if (!shouldSkipStructuralNormalization) {
     Object.assign(mergedPatches, normalized.patches);
+    Object.assign(mergedPatches, movementConsistency.patches);
   }
 
-  const repairPaths = Object.keys(normalized.patches);
+  const repairPaths = [
+    ...Object.keys(normalized.patches),
+    ...Object.keys(movementConsistency.patches),
+  ];
 
   if (!shouldSkipStructuralNormalization && repairPaths.length > 0) {
     logError(

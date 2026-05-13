@@ -40,7 +40,7 @@ describe('conflictResolutionMatrix', () => {
       changedPaths: ['beds.R1.patientName'],
     });
 
-    expect(resolved.beds.R1.patientName).toBe('Nombre local');
+    expect(resolved.beds.R1.patientName).toBe('Nombre remoto');
     expect(resolved.beds.R1.pathology).toBe('Diag remoto');
   });
 
@@ -202,13 +202,15 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.schemaVersion).toBe(5);
   });
 
-  it('prioritizes clinical fields from local during automatic merge', () => {
+  it('preserves narrative clinical notes from local during automatic merge', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.beds = {
       R1: {
         bedId: 'R1',
-        patientName: 'Remoto',
+        patientName: 'Nombre corregido remoto',
+        rut: '11.111.111-1',
         pathology: 'Diag remoto',
+        handoffNote: 'Nota remota',
       } as unknown as DailyRecord['beds'][string],
     };
 
@@ -216,14 +218,16 @@ describe('conflictResolutionMatrix', () => {
     local.beds = {
       R1: {
         bedId: 'R1',
-        patientName: 'Local',
+        patientName: 'Nombre local sin actualizar',
+        rut: '11.111.111-1',
         pathology: 'Diag local',
+        handoffNote: 'Nota local',
       } as unknown as DailyRecord['beds'][string],
     };
 
     const resolved = resolveDailyRecordConflict(remote, local, { changedPaths: ['*'] });
-    expect(resolved.beds.R1.pathology).toBe('Diag local');
-    expect(resolved.beds.R1.patientName).toBe('Local');
+    expect(resolved.beds.R1.handoffNote).toBe('Nota local');
+    expect(resolved.beds.R1.patientName).toBe('Nombre corregido remoto');
   });
 
   it('prioritizes administrative fields from remote during automatic merge', () => {
@@ -340,8 +344,9 @@ describe('conflictResolutionMatrix', () => {
 
     const resolved = resolveDailyRecordConflict(remote, local);
 
-    // R1 keeps User A's local edit (newer timestamp).
-    expect(resolved.beds.R1.pathology).toBe('USER A LOCAL DX');
+    // R1 keeps the remote canonical diagnosis in whole-record reconciliation;
+    // local narrative fields are the only patient fields protected by timestamp.
+    expect(resolved.beds.R1.pathology).toBe('Old diagnosis');
     // R2 takes the remote payload — User A never touched it, so the empty
     // local default must not be interpreted as an intentional clear.
     expect(resolved.beds.R2.patientName).toBe('USER B NEW PATIENT');
@@ -451,7 +456,7 @@ describe('conflictResolutionMatrix', () => {
       } as unknown as DailyRecord['beds'][string],
     };
 
-    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    const local = makeRecord('2026-02-18', '2026-02-18T09:55:00.000Z');
     local.beds = {
       R1: {
         bedId: 'R1',
@@ -469,8 +474,8 @@ describe('conflictResolutionMatrix', () => {
         expect.objectContaining({
           path: 'beds.R1.pathology',
           strategy: 'scalar_policy',
-          winner: 'local',
-          reason: 'clinical_local_priority',
+          winner: 'remote',
+          reason: 'clinical_census_remote_priority',
         }),
         expect.objectContaining({
           path: 'beds.R1.location',

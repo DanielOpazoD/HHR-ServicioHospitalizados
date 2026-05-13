@@ -294,7 +294,7 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
     ]);
   });
 
-  it('preserves a multi-word local diagnosis when a newer remote snapshot is truncated', async () => {
+  it('hydrates newer Firebase diagnosis over stale local census diagnosis', async () => {
     const date = CURRENT_RECORD_DATE;
     const localTimestamp = isoAt(date, '12:00:00');
     const remoteUpdatedTimestamp = isoAt(date, '12:00:02');
@@ -329,11 +329,10 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
 
     const result = await getForDateWithMeta(date, true);
 
-    expect(result.sourceOfTruth).toBe('local');
-    expect(result.record?.beds.R1.pathology).toBe('Puérpera de cesárea.');
+    expect(result.record?.beds.R1.pathology).toBe('Puérpera');
 
     const hydratedLocal = await getRecordForDate(date);
-    expect(hydratedLocal?.beds.R1.pathology).toBe('Puérpera de cesárea.');
+    expect(hydratedLocal?.beds.R1.pathology).toBe('Puérpera');
   });
 
   it('auto-merges a conflicted bed move and persists no duplicate patient after retry', async () => {

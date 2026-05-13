@@ -125,7 +125,7 @@ test.describe('Sync conflict resolution', () => {
     await expect(statusSelect).toHaveValue('Grave');
   });
 
-  test('preserves a newer offline local edit when a stale multi-user remote snapshot appears', async ({
+  test('accepts remote canonical census fields while preserving newer local narrative', async ({
     page,
   }) => {
     const baseRecord = buildCanonicalE2ERecord(CONFLICT_DATE);
@@ -177,6 +177,7 @@ test.describe('Sync conflict resolution', () => {
       fields: {
         patientName: 'Local Offline Winner',
         pathology: 'LOCAL OFFLINE DX',
+        handoffNote: 'LOCAL OFFLINE NOTE',
       },
     });
 
@@ -200,6 +201,7 @@ test.describe('Sync conflict resolution', () => {
             ...(currentBeds.R1 || {}),
             patientName: 'Local Offline Winner',
             pathology: 'LOCAL OFFLINE DX',
+            handoffNote: 'LOCAL OFFLINE NOTE',
           },
         },
       };
@@ -218,6 +220,7 @@ test.describe('Sync conflict resolution', () => {
                 ...(currentBeds.R1 || {}),
                 patientName: 'REMOTE STALE USER',
                 pathology: 'REMOTE STALE DX',
+                handoffNote: 'REMOTE STALE NOTE',
                 status: 'Grave',
               },
             },
@@ -246,9 +249,17 @@ test.describe('Sync conflict resolution', () => {
     await page.reload({ waitUntil: 'domcontentloaded' });
 
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
-    await expect(patientNameInput).toHaveValue('Local Offline Winner');
+    await expect(patientNameInput).toHaveValue('REMOTE STALE USER');
     await expect(row.locator('input[placeholder*="Diagnóstico"]').first()).toHaveValue(
-      'LOCAL OFFLINE DX'
+      'REMOTE STALE DX'
     );
+    await waitForPersistedBedFields({
+      page,
+      date: CONFLICT_DATE,
+      bedId: 'R1',
+      expected: {
+        handoffNote: 'LOCAL OFFLINE NOTE',
+      },
+    });
   });
 });

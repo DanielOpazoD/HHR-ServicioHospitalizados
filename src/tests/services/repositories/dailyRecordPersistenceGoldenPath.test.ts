@@ -39,13 +39,14 @@ describe('dailyRecordPersistenceGoldenPath', () => {
     expect(result.recoveryAction).toBe('defer_remote_sync');
   });
 
-  it('keeps newer local edits while accepting non-conflicting remote bed updates', () => {
+  it('keeps newer local narrative while accepting remote canonical bed updates', () => {
     const local = buildRecord('2026-03-18', '2026-03-18T12:00:00.000Z');
     local.beds = {
       R1: {
         bedId: 'R1',
         patientName: 'LOCAL BASELINE',
         pathology: 'USER A LOCAL DX',
+        handoffNote: 'USER A LOCAL NOTE',
       },
       R2: {
         bedId: 'R2',
@@ -60,6 +61,7 @@ describe('dailyRecordPersistenceGoldenPath', () => {
         bedId: 'R1',
         patientName: 'REMOTE BASELINE',
         pathology: 'REMOTE STALE DX',
+        handoffNote: 'REMOTE STALE NOTE',
       },
       R2: {
         bedId: 'R2',
@@ -75,7 +77,8 @@ describe('dailyRecordPersistenceGoldenPath', () => {
       remoteAvailability: 'resolved',
     });
 
-    expect(result.selectedRecord?.beds.R1.pathology).toBe('USER A LOCAL DX');
+    expect(result.selectedRecord?.beds.R1.pathology).toBe('REMOTE STALE DX');
+    expect(result.selectedRecord?.beds.R1.handoffNote).toBe('USER A LOCAL NOTE');
     expect(result.selectedRecord?.beds.R2.patientName).toBe('USER B NEW PATIENT');
     expect(result.selectedRecord?.beds.R2.pathology).toBe('USER B NON CONFLICT DX');
     expect(result.selectedStore).toBe('local');
@@ -98,7 +101,7 @@ describe('dailyRecordPersistenceGoldenPath', () => {
     expect(result.consistencyState).toBe('remote_authoritative');
   });
 
-  it('preserves a longer local diagnosis when a newer remote snapshot carries a truncated clinical text', () => {
+  it('accepts a newer remote canonical diagnosis even when it is shorter than local text', () => {
     const local = buildRecord('2026-03-18', '2026-03-18T12:00:00.000Z');
     local.beds = {
       R1: {
@@ -124,9 +127,9 @@ describe('dailyRecordPersistenceGoldenPath', () => {
       remoteAvailability: 'resolved',
     });
 
-    expect(result.selectedRecord?.beds.R1.pathology).toBe('Puérpera de cesárea.');
-    expect(result.selectedStore).toBe('local');
-    expect(result.shouldHydrateLocal).toBe(false);
+    expect(result.selectedRecord?.beds.R1.pathology).toBe('Puérpera');
+    expect(result.selectedStore).toBe('remote');
+    expect(result.shouldHydrateLocal).toBe(true);
   });
 
   it('keeps the local record as recoverable fallback when remote is unavailable', () => {

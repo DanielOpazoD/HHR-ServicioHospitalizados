@@ -123,7 +123,7 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
       expect.objectContaining({
         date: '2026-02-16',
         beds: expect.objectContaining({
-          R1: expect.objectContaining({ pathology: 'Diag local' }),
+          R1: expect.objectContaining({ pathology: 'Diag remoto' }),
         }),
       }),
       expect.objectContaining({
@@ -208,7 +208,7 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
         discharges: expect.arrayContaining([expect.objectContaining({ id: 'discharge-remote' })]),
         transfers: expect.arrayContaining([expect.objectContaining({ id: 'transfer-remote' })]),
         beds: expect.objectContaining({
-          R1: expect.objectContaining({ pathology: 'Diagnostico editado localmente' }),
+          R1: expect.objectContaining({ pathology: 'Diagnostico' }),
         }),
       }),
       expect.objectContaining({
@@ -245,7 +245,7 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
       expect.objectContaining({
         date: '2026-02-15',
         beds: expect.objectContaining({
-          R1: expect.objectContaining({ pathology: 'Diagnostico local' }),
+          R1: expect.objectContaining({ pathology: 'Diagnostico remoto' }),
         }),
       }),
       expect.objectContaining({

@@ -5,6 +5,8 @@ import {
   CONFLICT_RESOLUTION_POLICY_VERSION,
   RECORD_STRUCTURAL_FIELDS,
   decideScalarByPolicy,
+  isClinicalCensusRemotePriorityField,
+  isLocalNarrativePatientField,
 } from '@/services/repositories/conflictResolutionPolicy';
 import {
   getValueAtPath,
@@ -26,10 +28,16 @@ import {
   mergeBeds,
   mergeArrayById,
   mergeUniquePrimitiveArray,
-  mergeObject,
   mergePatientData,
 } from '@/services/repositories/conflictResolutionMergeUtils';
+import { mergeMovementArrayById } from '@/services/repositories/conflictResolutionMovementMergePolicy';
+import { mergeRecordObjectFields } from '@/services/repositories/conflictResolutionRecordObjectMergeUtils';
+import {
+  shouldPreserveLocalPatientNarrative,
+  shouldUseRemoteEpisodeScopedValue,
+} from '@/services/repositories/patientEpisodeNarrativePolicy';
 import { mergePatientDevices } from '@/services/repositories/conflictResolutionDeviceMergeUtils';
+import { normalizeMovementBedConsistency } from '@/services/repositories/clinicalMovementBedConsistencyPolicy';
 import {
   STAFFING_SLOT_ARRAY_FIELDS,
   buildMergedDayShiftStaffingMirror,
@@ -101,9 +109,21 @@ const resolveWholeRecord = (
     ...preferred,
     date: remote.date || local.date,
     beds: mergeBeds(remote.beds, local.beds, preferLocal, traceContext, 'beds'),
-    discharges: mergeArrayById(remote.discharges, local.discharges, traceContext, 'discharges'),
-    transfers: mergeArrayById(remote.transfers, local.transfers, traceContext, 'transfers'),
-    cma: mergeArrayById(remote.cma, local.cma, traceContext, 'cma'),
+    discharges: mergeMovementArrayById(
+      remote.discharges,
+      local.discharges,
+      preferLocal,
+      traceContext,
+      'discharges'
+    ),
+    transfers: mergeMovementArrayById(
+      remote.transfers,
+      local.transfers,
+      preferLocal,
+      traceContext,
+      'transfers'
+    ),
+    cma: mergeMovementArrayById(remote.cma, local.cma, preferLocal, traceContext, 'cma'),
     // Keep legacy `nurses` only as a compatibility mirror of the canonical day shift array.
     nurses: [...resolvedNursesDayShift],
     nursesDayShift: resolvedNursesDayShift,
@@ -135,55 +155,7 @@ const resolveWholeRecord = (
       traceContext,
       'activeExtraBeds'
     ),
-    handoffDayChecklist: mergeObject(
-      remote.handoffDayChecklist as unknown as Record<string, unknown> | undefined,
-      local.handoffDayChecklist as unknown as Record<string, unknown> | undefined,
-      preferLocal,
-      traceContext,
-      'handoffDayChecklist'
-    ) as DailyRecord['handoffDayChecklist'],
-    handoffNightChecklist: mergeObject(
-      remote.handoffNightChecklist as unknown as Record<string, unknown> | undefined,
-      local.handoffNightChecklist as unknown as Record<string, unknown> | undefined,
-      preferLocal,
-      traceContext,
-      'handoffNightChecklist'
-    ) as DailyRecord['handoffNightChecklist'],
-    medicalHandoffBySpecialty: mergeObject(
-      remote.medicalHandoffBySpecialty as unknown as Record<string, unknown> | undefined,
-      local.medicalHandoffBySpecialty as unknown as Record<string, unknown> | undefined,
-      preferLocal,
-      traceContext,
-      'medicalHandoffBySpecialty'
-    ) as DailyRecord['medicalHandoffBySpecialty'],
-    medicalSignature: mergeObject(
-      remote.medicalSignature as unknown as Record<string, unknown> | undefined,
-      local.medicalSignature as unknown as Record<string, unknown> | undefined,
-      preferLocal,
-      traceContext,
-      'medicalSignature'
-    ) as DailyRecord['medicalSignature'],
-    medicalSignatureByScope: mergeObject(
-      remote.medicalSignatureByScope as unknown as Record<string, unknown> | undefined,
-      local.medicalSignatureByScope as unknown as Record<string, unknown> | undefined,
-      preferLocal,
-      traceContext,
-      'medicalSignatureByScope'
-    ) as DailyRecord['medicalSignatureByScope'],
-    medicalHandoffSentAtByScope: mergeObject(
-      remote.medicalHandoffSentAtByScope as unknown as Record<string, unknown> | undefined,
-      local.medicalHandoffSentAtByScope as unknown as Record<string, unknown> | undefined,
-      preferLocal,
-      traceContext,
-      'medicalHandoffSentAtByScope'
-    ) as DailyRecord['medicalHandoffSentAtByScope'],
-    medicalSignatureLinkTokenByScope: mergeObject(
-      remote.medicalSignatureLinkTokenByScope as unknown as Record<string, unknown> | undefined,
-      local.medicalSignatureLinkTokenByScope as unknown as Record<string, unknown> | undefined,
-      preferLocal,
-      traceContext,
-      'medicalSignatureLinkTokenByScope'
-    ) as DailyRecord['medicalSignatureLinkTokenByScope'],
+    ...mergeRecordObjectFields(remote, local, preferLocal, traceContext),
     lastUpdated: toIso(Math.max(remoteTs, localTs)),
   };
 
@@ -197,7 +169,7 @@ const resolveWholeRecord = (
     traceContext.add(traceFromScalarDecision(key, decision));
   });
 
-  return resolved;
+  return normalizeMovementBedConsistency(resolved).record;
 };
 
 const resolveByChangedPaths = (
@@ -311,7 +283,7 @@ const resolveByChangedPaths = (
 
   const merged = applyPatches(remote, patches);
   merged.lastUpdated = toIso(Math.max(toMillis(remote.lastUpdated), toMillis(local.lastUpdated)));
-  return merged;
+  return normalizeMovementBedConsistency(merged).record;
 };
 
 const resolvePathValueWithMatrix = (
@@ -335,6 +307,38 @@ const resolvePathValueWithMatrix = (
     return decision.value;
   }
 
+  if (isClinicalCensusRemotePriorityField(patientField)) {
+    const decision = decideScalarByPolicy(
+      path,
+      getValueAtPath(remote, path),
+      getValueAtPath(local, path),
+      true
+    );
+    traceContext.add(traceFromScalarDecision(path, decision));
+    return decision.value;
+  }
+
+  if (
+    isLocalNarrativePatientField(patientField) &&
+    !shouldPreserveLocalPatientNarrative(remote.beds[bedId], local.beds[bedId])
+  ) {
+    traceContext.add({
+      path,
+      strategy: 'scalar_policy',
+      winner: 'remote',
+      reason: 'remote_episode_prevents_stale_local_narrative',
+    });
+    return getValueAtPath(remote, path);
+  }
+  if (shouldUseRemoteEpisodeScopedValue(patientField, remote.beds[bedId], local.beds[bedId])) {
+    traceContext.add({
+      path,
+      strategy: 'copy_remote_value',
+      winner: 'remote',
+      reason: 'remote_episode_prevents_stale_local_structured_narrative',
+    });
+    return getValueAtPath(remote, path);
+  }
   if (PATIENT_ID_ARRAY_FIELDS.has(patientField)) {
     return mergeArrayById(
       getValueAtPath(remote, path) as unknown[],
@@ -343,7 +347,6 @@ const resolvePathValueWithMatrix = (
       path
     );
   }
-
   if (PATIENT_UNIQUE_ARRAY_FIELDS.has(patientField)) {
     return mergePatientDevices(
       (getValueAtPath(remote, path) as string[]) || [],

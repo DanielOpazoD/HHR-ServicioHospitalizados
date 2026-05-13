@@ -113,12 +113,13 @@ describe('dailyRecordRemoteReadController', () => {
     );
   });
 
-  it('merges remote hydration with local clinical edits before replacing the cache', async () => {
+  it('merges remote hydration with local narrative edits before replacing the cache', async () => {
     const local = buildRecord('2026-03-19', '2026-03-19T08:00:00.000Z');
     local.beds = {
       R1: buildPatient('R1', {
         patientName: 'LOCAL PATIENT',
         pathology: 'LOCAL OFFLINE DX',
+        handoffNote: 'LOCAL OFFLINE NOTE',
       }),
     };
 
@@ -127,6 +128,7 @@ describe('dailyRecordRemoteReadController', () => {
       R1: buildPatient('R1', {
         patientName: 'REMOTE PATIENT',
         pathology: 'REMOTE BASE DX',
+        handoffNote: 'REMOTE BASE NOTE',
       }),
       R2: buildPatient('R2', {
         patientName: 'REMOTE NEW PATIENT',
@@ -149,12 +151,16 @@ describe('dailyRecordRemoteReadController', () => {
       persistHydratedRecord,
     });
 
-    expect(result.record?.beds.R1.pathology).toBe('LOCAL OFFLINE DX');
+    expect(result.record?.beds.R1.pathology).toBe('REMOTE BASE DX');
+    expect(result.record?.beds.R1.handoffNote).toBe('LOCAL OFFLINE NOTE');
     expect(result.record?.beds.R2.patientName).toBe('REMOTE NEW PATIENT');
     expect(persistHydratedRecord).toHaveBeenCalledWith(
       expect.objectContaining({
         beds: expect.objectContaining({
-          R1: expect.objectContaining({ pathology: 'LOCAL OFFLINE DX' }),
+          R1: expect.objectContaining({
+            pathology: 'REMOTE BASE DX',
+            handoffNote: 'LOCAL OFFLINE NOTE',
+          }),
           R2: expect.objectContaining({ patientName: 'REMOTE NEW PATIENT' }),
         }),
       }),
@@ -163,7 +169,7 @@ describe('dailyRecordRemoteReadController', () => {
     );
   });
 
-  it('does not pre-merge away a truncated remote diagnosis before choosing the golden path', async () => {
+  it('keeps the newer remote canonical diagnosis even when it is shorter than local text', async () => {
     const local = buildRecord('2026-03-19', '2026-03-19T12:00:00.000Z');
     local.beds = {
       R1: buildPatient('R1', {
@@ -195,13 +201,13 @@ describe('dailyRecordRemoteReadController', () => {
       persistHydratedRecord,
     });
 
-    expect(result.source).toBe('indexeddb');
-    expect(result.sourceOfTruth).toBe('local');
-    expect(result.record?.beds.R1.pathology).toBe('Puérpera de cesárea.');
+    expect(result.source).toBe('firestore');
+    expect(result.sourceOfTruth).toBe('remote');
+    expect(result.record?.beds.R1.pathology).toBe('Puérpera');
     expect(persistHydratedRecord).toHaveBeenCalledWith(
       expect.objectContaining({
         beds: expect.objectContaining({
-          R1: expect.objectContaining({ pathology: 'Puérpera de cesárea.' }),
+          R1: expect.objectContaining({ pathology: 'Puérpera' }),
         }),
       }),
       '2026-03-19',

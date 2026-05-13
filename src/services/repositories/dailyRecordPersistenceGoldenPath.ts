@@ -6,6 +6,12 @@ import {
 } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { resolveDailyRecordConflict } from '@/services/repositories/conflictResolutionMatrix';
 import type { PatientData } from '@/types/domain/patient';
+import {
+  applyDailyRecordClinicalConsistencyCheck,
+  recordClinicalConsistencyTelemetry,
+  recordRemoteCanonicalReconciliationTelemetry,
+  type DailyRecordClinicalConsistencyPhase,
+} from '@/services/repositories/dailyRecordClinicalConsistencyCheck';
 
 export type DailyRecordRemoteAvailability =
   | 'resolved'
@@ -19,6 +25,7 @@ interface ResolveDailyRecordPersistenceGoldenPathInput {
   remoteAvailability: DailyRecordRemoteAvailability;
   localRepairApplied?: boolean;
   remoteRepairApplied?: boolean;
+  clinicalConsistencyPhase?: DailyRecordClinicalConsistencyPhase;
 }
 
 export interface DailyRecordPersistenceGoldenPathResult {
@@ -36,7 +43,6 @@ export interface DailyRecordPersistenceGoldenPathResult {
 }
 
 const PROTECTED_CLINICAL_TEXT_FIELDS = [
-  'pathology',
   'handoffNote',
   'handoffNoteDayShift',
   'handoffNoteNightShift',
@@ -85,9 +91,10 @@ export const resolveDailyRecordPersistenceGoldenPath = ({
   remoteAvailability,
   localRepairApplied = false,
   remoteRepairApplied = false,
+  clinicalConsistencyPhase = 'read_publish',
 }: ResolveDailyRecordPersistenceGoldenPathInput): DailyRecordPersistenceGoldenPathResult => {
   const shouldProtectLocalClinicalText = hasRemoteClinicalTextShrinkage(localRecord, remoteRecord);
-  const selectedRecord =
+  const candidateRecord =
     remoteAvailability === 'not_requested'
       ? localRecord
       : localRecord && remoteRecord && shouldProtectLocalClinicalText
@@ -95,6 +102,23 @@ export const resolveDailyRecordPersistenceGoldenPath = ({
         : localRecord && remoteRecord && shouldKeepLocalRecordOverRemote(localRecord, remoteRecord)
           ? resolveDailyRecordConflict(remoteRecord, localRecord)
           : resolvePreferredDailyRecord(localRecord, remoteRecord);
+  const clinicalConsistency = candidateRecord
+    ? applyDailyRecordClinicalConsistencyCheck(candidateRecord, {
+        date: candidateRecord.date,
+        phase: clinicalConsistencyPhase,
+      })
+    : null;
+  if (clinicalConsistency) {
+    recordClinicalConsistencyTelemetry(clinicalConsistency);
+  }
+  const selectedRecord = clinicalConsistency?.record ?? candidateRecord;
+  recordRemoteCanonicalReconciliationTelemetry({
+    date: selectedRecord?.date || localRecord?.date || remoteRecord?.date || '',
+    phase: clinicalConsistencyPhase,
+    localRecord,
+    remoteRecord,
+    selectedRecord,
+  });
   const selectedStore = !selectedRecord
     ? 'none'
     : shouldProtectLocalClinicalText
@@ -105,9 +129,9 @@ export const resolveDailyRecordPersistenceGoldenPath = ({
         : 'local';
   const repairApplied =
     selectedStore === 'remote'
-      ? remoteRepairApplied
+      ? remoteRepairApplied || clinicalConsistency?.status === 'repaired'
       : selectedStore === 'local'
-        ? localRepairApplied
+        ? localRepairApplied || clinicalConsistency?.status === 'repaired'
         : false;
   const consistency = resolveDailyRecordReadConsistency({
     localRecord,

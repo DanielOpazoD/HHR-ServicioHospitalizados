@@ -1,6 +1,16 @@
 import { PatientData } from '@/services/contracts/patientServiceContracts';
 import { resolveConflictDomainContextForPath } from '@/services/repositories/conflictResolutionDomainPolicy';
-import { decideScalarByPolicy } from '@/services/repositories/conflictResolutionPolicy';
+import {
+  decideScalarByPolicy,
+  isClinicalCensusRemotePriorityField,
+  isLocalNarrativePatientField,
+} from '@/services/repositories/conflictResolutionPolicy';
+import {
+  hasPatientIdentityOrClinicalContent,
+  isLocallyClearedPatient,
+  shouldPreserveLocalPatientNarrative,
+  shouldUseRemoteEpisodeScopedValue,
+} from '@/services/repositories/patientEpisodeNarrativePolicy';
 import { isPlainObject, isPrimitive } from '@/services/repositories/conflictResolutionUtils';
 import {
   mergePatientDevices,
@@ -185,30 +195,6 @@ export const mergeObject = (
   return result;
 };
 
-const hasPatientIdentityOrClinicalContent = (patient: PatientData | undefined): boolean => {
-  if (!patient) return false;
-  const normalizedStatus = String(patient.status || '').trim();
-
-  return Boolean(
-    String(patient.patientName || '').trim() ||
-    String(patient.rut || '').trim() ||
-    String(patient.pathology || '').trim() ||
-    String(patient.admissionDate || '').trim() ||
-    (normalizedStatus && normalizedStatus !== 'EMPTY')
-  );
-};
-
-const isLocallyClearedPatient = (patient: PatientData | undefined): boolean => {
-  if (!patient) return false;
-
-  return (
-    !String(patient.patientName || '').trim() &&
-    !String(patient.rut || '').trim() &&
-    !String(patient.pathology || '').trim() &&
-    !String(patient.admissionDate || '').trim()
-  );
-};
-
 export const mergePatientData = (
   remotePatient: PatientData | undefined,
   localPatient: PatientData | undefined,
@@ -279,6 +265,7 @@ export const mergePatientData = (
   const localRecord = localPatient as unknown as Record<string, unknown>;
   const merged: Record<string, unknown> = {};
   const keys = new Set([...Object.keys(remoteRecord), ...Object.keys(localRecord)]);
+  const preserveLocalNarrative = shouldPreserveLocalPatientNarrative(remotePatient, localPatient);
   traceContext?.add({
     path: pathPrefix,
     strategy: 'merge_patient',
@@ -289,6 +276,40 @@ export const mergePatientData = (
   keys.forEach(key => {
     const remoteValue = remoteRecord[key];
     const localValue = localRecord[key];
+
+    if (isClinicalCensusRemotePriorityField(key)) {
+      const decision = decideScalarByPolicy(
+        `${pathPrefix}.${key}`,
+        remoteValue,
+        localValue,
+        preferLocal
+      );
+      merged[key] = decision.value;
+      traceContext?.add(traceFromScalarDecision(`${pathPrefix}.${key}`, decision));
+      return;
+    }
+
+    if (isLocalNarrativePatientField(key) && !preserveLocalNarrative) {
+      merged[key] = remoteValue;
+      traceContext?.add({
+        path: `${pathPrefix}.${key}`,
+        strategy: 'scalar_policy',
+        winner: 'remote',
+        reason: 'remote_episode_prevents_stale_local_narrative',
+      });
+      return;
+    }
+
+    if (shouldUseRemoteEpisodeScopedValue(key, remotePatient, localPatient)) {
+      merged[key] = remoteValue;
+      traceContext?.add({
+        path: `${pathPrefix}.${key}`,
+        strategy: 'copy_remote_value',
+        winner: 'remote',
+        reason: 'remote_episode_prevents_stale_local_structured_narrative',
+      });
+      return;
+    }
 
     if (PATIENT_ID_ARRAY_FIELDS.has(key)) {
       merged[key] = mergeArrayById(
