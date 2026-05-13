@@ -6,10 +6,10 @@ const { evaluateDailyRecordClinicalAuthority } = require('./dailyRecordClinicalA
 
 const ALLOWED_DAILY_RECORD_WRITE_ROLES = new Set([
   'admin',
-  'doctor',
+  'nurse_hospital',
+  'doctor_urgency',
   'doctor_specialist',
-  'nurse',
-  'matron',
+  'editor',
 ]);
 
 const assertStringField = (value, fieldName) => {

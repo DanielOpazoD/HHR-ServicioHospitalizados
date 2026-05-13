@@ -115,7 +115,7 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
     });
     const functionsApi = createDailyRecordWriteAuthorityFunctions({
       admin,
-      resolveRoleForEmail: vi.fn().mockResolvedValue('doctor'),
+      resolveRoleForEmail: vi.fn().mockResolvedValue('nurse_hospital'),
     });
 
     const result = await functionsApi.saveDailyRecordWithClinicalAuthority.run(
@@ -184,7 +184,7 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
     });
     const functionsApi = createDailyRecordWriteAuthorityFunctions({
       admin,
-      resolveRoleForEmail: vi.fn().mockResolvedValue('doctor'),
+      resolveRoleForEmail: vi.fn().mockResolvedValue('doctor_urgency'),
     });
 
     await expect(
@@ -198,6 +198,28 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
       )
     ).rejects.toMatchObject({
       code: 'aborted',
+    });
+
+    expect(set).not.toHaveBeenCalled();
+  });
+
+  it('rejects viewer role even when authenticated', async () => {
+    const { admin, set } = createAdminMock();
+    const functionsApi = createDailyRecordWriteAuthorityFunctions({
+      admin,
+      resolveRoleForEmail: vi.fn().mockResolvedValue('viewer'),
+    });
+
+    await expect(
+      functionsApi.saveDailyRecordWithClinicalAuthority.run(
+        {
+          date: '2026-05-13',
+          record: makeRecord(),
+        },
+        makeContext()
+      )
+    ).rejects.toMatchObject({
+      code: 'permission-denied',
     });
 
     expect(set).not.toHaveBeenCalled();
