@@ -112,4 +112,44 @@ describe('handoffPdf section builders', () => {
     expect(tables[1].rows[0][3]).toBe('HDS');
     expect(tables[2].rows[0][0]).toBe('Ana Diaz');
   });
+
+  it('excluye movimientos con tombstone del resumen PDF de entrega', () => {
+    const tables = buildMovementsSummaryTables({
+      ...baseRecord,
+      discharges: [
+        ...baseRecord.discharges,
+        {
+          ...baseRecord.discharges[0],
+          id: 'd-deleted',
+          patientName: 'Alta eliminada',
+          deletedAt: '2026-03-10T13:00:00Z',
+        },
+      ],
+      transfers: [
+        ...baseRecord.transfers,
+        {
+          ...baseRecord.transfers[0],
+          id: 't-deleted',
+          patientName: 'Traslado eliminado',
+          deletedAt: '2026-03-10T13:00:00Z',
+        },
+      ],
+      cma: [
+        ...baseRecord.cma,
+        {
+          ...baseRecord.cma[0],
+          id: 'c-deleted',
+          patientName: 'CMA eliminada',
+          deletedAt: '2026-03-10T13:00:00Z',
+        },
+      ],
+    });
+
+    expect(tables[0].rows).toHaveLength(1);
+    expect(tables[0].rows.flat()).not.toContain('Alta eliminada');
+    expect(tables[1].rows).toHaveLength(1);
+    expect(tables[1].rows.flat()).not.toContain('Traslado eliminado');
+    expect(tables[2].rows).toHaveLength(1);
+    expect(tables[2].rows.flat()).not.toContain('CMA eliminada');
+  });
 });
