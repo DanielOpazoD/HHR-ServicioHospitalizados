@@ -5,6 +5,10 @@ import { normalizeSpecialty, isFachEvacuationMethod } from './normalization';
 import { createEpisodeAdmissionTracker } from './episodeTracker';
 import type { MinsalDailyRecord } from './minsalRecordContracts';
 import { normalizeMovementReportingSnapshot } from './movementCompatibility';
+import {
+  getActiveDischarges,
+  getActiveTransfers,
+} from '@/application/census/movementTombstonePolicy';
 
 const resolveTraceabilityDiagnosis = (value: unknown): string | undefined => {
   if (typeof value !== 'string') return undefined;
@@ -73,7 +77,7 @@ export function buildSpecialtyTraceability(
     }
 
     if (type === 'egresos' || type === 'fallecidos') {
-      record.discharges?.forEach(discharge => {
+      getActiveDischarges(record.discharges).forEach(discharge => {
         const normalizedDischarge = normalizeMovementReportingSnapshot(discharge);
         if (resolveMovementSpecialty(normalizedDischarge) !== normalizedSpecialty) return;
         if (type === 'fallecidos' && discharge.status !== 'Fallecido') return;
@@ -95,7 +99,7 @@ export function buildSpecialtyTraceability(
       });
     }
 
-    record.transfers?.forEach(transfer => {
+    getActiveTransfers(record.transfers).forEach(transfer => {
       const normalizedTransfer = normalizeMovementReportingSnapshot(transfer);
       if (resolveMovementSpecialty(normalizedTransfer) !== normalizedSpecialty) return;
       if (type === 'aerocardal' && transfer.evacuationMethod !== EVACUATION_METHOD_AEROCARDAL)

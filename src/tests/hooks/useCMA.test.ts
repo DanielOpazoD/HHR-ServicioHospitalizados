@@ -89,7 +89,7 @@ describe('useCMA', () => {
     expect(saveAndUpdate).not.toHaveBeenCalled();
   });
 
-  it('should delete a CMA entry', () => {
+  it('should tombstone a CMA entry without removing it from the persisted list', () => {
     mockRecord.cma = [DataFactory.createMockCMA({ id: 'cma-1' })];
     const { result } = renderHook(() => useCMA(mockRecord, saveAndUpdate, patchRecord));
 
@@ -99,7 +99,13 @@ describe('useCMA', () => {
 
     expect(patchRecord).toHaveBeenCalledWith(
       expect.objectContaining({
-        cma: [],
+        cma: [
+          expect.objectContaining({
+            id: 'cma-1',
+            deletedAt: expect.any(String),
+            deletedReason: 'manual_delete',
+          }),
+        ],
       })
     );
   });

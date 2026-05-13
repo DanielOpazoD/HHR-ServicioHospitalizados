@@ -1,4 +1,5 @@
 import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
+import { tombstoneMovementById } from '@/application/census/movementTombstonePolicy';
 import {
   DischargeType,
   TransferData,
@@ -62,7 +63,7 @@ export const resolveDeleteDischargeMovement = ({
   id,
 }: DeleteMovementInput): DailyRecord => ({
   ...record,
-  discharges: record.discharges.filter(discharge => discharge.id !== id),
+  discharges: tombstoneMovementById(record.discharges, id),
 });
 
 export const resolveUpdateTransferMovement = ({
@@ -81,5 +82,5 @@ export const resolveDeleteTransferMovement = ({
   id,
 }: DeleteMovementInput): DailyRecord => ({
   ...record,
-  transfers: record.transfers.filter(transfer => transfer.id !== id),
+  transfers: tombstoneMovementById(record.transfers, id),
 });

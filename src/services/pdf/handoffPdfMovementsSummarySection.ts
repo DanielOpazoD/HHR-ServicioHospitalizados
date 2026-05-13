@@ -1,51 +1,62 @@
 import type { jsPDF } from 'jspdf';
 
 import type { HandoffPdfMovementsRecord } from '@/services/pdf/contracts/handoffPdfContracts';
+import {
+  getActiveCma,
+  getActiveDischarges,
+  getActiveTransfers,
+} from '@/application/census/movementTombstonePolicy';
 
 import type { AutoTableFunction, JsPDFWithAutoTable } from './handoffPdfTypes';
 import type { HandoffPdfMovementSummaryTable } from './handoffPdfSectionTypes';
 
 export const buildMovementsSummaryTables = (
   record: HandoffPdfMovementsRecord
-): HandoffPdfMovementSummaryTable[] => [
-  {
-    title: 'ALTAS:',
-    emptyLabel: ' Sin altas',
-    emptyOffsetX: 12,
-    headers: [['Cama', 'Paciente', 'Diagnóstico', 'Destino/Tipo']],
-    rows: (record.discharges || []).map(discharge => [
-      discharge.bedName,
-      discharge.patientName + (discharge.rut ? ` - ${discharge.rut}` : ''),
-      discharge.diagnosis,
-      discharge.status === 'Fallecido' ? 'Fallecido' : discharge.dischargeType || 'Domicilio',
-    ]),
-  },
-  {
-    title: 'TRASLADOS:',
-    emptyLabel: ' Sin traslados',
-    emptyOffsetX: 22,
-    headers: [['Origen', 'Paciente', 'Diagnóstico', 'Destino', 'Medio']],
-    rows: (record.transfers || []).map(transfer => [
-      transfer.bedName,
-      transfer.patientName,
-      transfer.diagnosis,
-      transfer.receivingCenter,
-      transfer.evacuationMethod,
-    ]),
-  },
-  {
-    title: 'HOSPITALIZACIÓN DIURNA (CMA):',
-    emptyLabel: ' Sin hospitalizaciones diurnas',
-    emptyOffsetX: 55,
-    headers: [['Paciente', 'RUT', 'Intervención', 'Tipo']],
-    rows: (record.cma || []).map(cma => [
-      cma.patientName,
-      cma.rut,
-      cma.diagnosis,
-      cma.interventionType,
-    ]),
-  },
-];
+): HandoffPdfMovementSummaryTable[] => {
+  const discharges = getActiveDischarges(record.discharges);
+  const transfers = getActiveTransfers(record.transfers);
+  const cmaMovements = getActiveCma(record.cma);
+
+  return [
+    {
+      title: 'ALTAS:',
+      emptyLabel: ' Sin altas',
+      emptyOffsetX: 12,
+      headers: [['Cama', 'Paciente', 'Diagnóstico', 'Destino/Tipo']],
+      rows: discharges.map(discharge => [
+        discharge.bedName,
+        discharge.patientName + (discharge.rut ? ` - ${discharge.rut}` : ''),
+        discharge.diagnosis,
+        discharge.status === 'Fallecido' ? 'Fallecido' : discharge.dischargeType || 'Domicilio',
+      ]),
+    },
+    {
+      title: 'TRASLADOS:',
+      emptyLabel: ' Sin traslados',
+      emptyOffsetX: 22,
+      headers: [['Origen', 'Paciente', 'Diagnóstico', 'Destino', 'Medio']],
+      rows: transfers.map(transfer => [
+        transfer.bedName,
+        transfer.patientName,
+        transfer.diagnosis,
+        transfer.receivingCenter,
+        transfer.evacuationMethod,
+      ]),
+    },
+    {
+      title: 'HOSPITALIZACIÓN DIURNA (CMA):',
+      emptyLabel: ' Sin hospitalizaciones diurnas',
+      emptyOffsetX: 55,
+      headers: [['Paciente', 'RUT', 'Intervención', 'Tipo']],
+      rows: cmaMovements.map(cma => [
+        cma.patientName,
+        cma.rut,
+        cma.diagnosis,
+        cma.interventionType,
+      ]),
+    },
+  ];
+};
 
 export const addMovementsSummary = (
   doc: jsPDF,

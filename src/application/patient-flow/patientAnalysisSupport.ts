@@ -15,6 +15,10 @@ import {
   registerTransferEvent,
   closePatientsMissingFromCensus,
 } from './patientAnalysisEngine';
+import {
+  getActiveDischarges,
+  getActiveTransfers,
+} from '@/application/census/movementTombstonePolicy';
 
 export interface AnalysisResult {
   totalRecords: number;
@@ -79,11 +83,11 @@ export const buildPatientAnalysis = async (
     }
 
     const currentNow = now();
-    for (const discharge of record.discharges || []) {
+    for (const discharge of getActiveDischarges(record.discharges)) {
       registerDischargeEvent(accumulator, date, discharge, currentNow);
     }
 
-    for (const transfer of record.transfers || []) {
+    for (const transfer of getActiveTransfers(record.transfers)) {
       registerTransferEvent(accumulator, date, transfer, currentNow);
     }
 

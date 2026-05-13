@@ -8,6 +8,10 @@ import type {
 } from '@/application/shared/dailyRecordCoreContracts';
 import type { PatientData } from '@/types/domain/patient';
 import { useAuditContext } from '@/context/AuditContext';
+import {
+  getActiveDischarges,
+  isMovementDeleted,
+} from '@/application/census/movementTombstonePolicy';
 
 // Mock dependencies
 vi.mock('@/context/AuditContext', () => ({
@@ -245,7 +249,15 @@ describe('usePatientDischarges', () => {
     );
     const payload = vi.mocked(mockSaveAndUpdate).mock.calls[0][0];
     expect(payload.beds.R2.patientName).toBe('Recovered');
-    expect(payload.discharges).toEqual([]);
+    expect(getActiveDischarges(payload.discharges)).toEqual([]);
+    expect(payload.discharges[0]).toEqual(
+      expect.objectContaining({
+        id: 'd-1',
+        deletedAt: expect.any(String),
+        deletedReason: 'manual_delete',
+      })
+    );
+    expect(isMovementDeleted(payload.discharges[0])).toBe(true);
   });
 
   it('should notify runtime when undo is blocked by occupied bed', () => {

@@ -8,6 +8,10 @@ import type {
 } from '@/application/shared/dailyRecordCoreContracts';
 import type { PatientData } from '@/types/domain/patient';
 import { useAuditContext } from '@/context/AuditContext';
+import {
+  getActiveTransfers,
+  isMovementDeleted,
+} from '@/application/census/movementTombstonePolicy';
 
 // Mock dependencies
 vi.mock('@/context/AuditContext', () => ({
@@ -192,7 +196,15 @@ describe('usePatientTransfers', () => {
     expect(mockSaveAndUpdate).toHaveBeenCalledTimes(1);
     const payload = vi.mocked(mockSaveAndUpdate).mock.calls[0][0];
     expect(payload.beds.R2.patientName).toBe('Recovered');
-    expect(payload.transfers).toEqual([]);
+    expect(getActiveTransfers(payload.transfers)).toEqual([]);
+    expect(payload.transfers[0]).toEqual(
+      expect.objectContaining({
+        id: 't-1',
+        deletedAt: expect.any(String),
+        deletedReason: 'manual_delete',
+      })
+    );
+    expect(isMovementDeleted(payload.transfers[0])).toBe(true);
   });
 
   it('should notify runtime when undo transfer is blocked', () => {

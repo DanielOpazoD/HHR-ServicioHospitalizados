@@ -7,6 +7,11 @@ import type {
   SyncStatus,
 } from '@/context/dailyRecordContextContracts';
 import type { CMAData, DischargeData, TransferData } from '@/types/domain/movements';
+import {
+  getActiveCma,
+  getActiveDischarges,
+  getActiveTransfers,
+} from '@/application/census/movementTombstonePolicy';
 import type { PatientData } from '@/hooks/contracts/patientHookContracts';
 import type { StabilityRules } from '@/hooks/useStabilityRules';
 import type { DailyRecordBootstrapPhase } from '@/hooks/controllers/dailyRecordBootstrapController';
@@ -76,9 +81,9 @@ export const useDailyRecordFragmentedValues = (
   const movementsValue = useMemo(() => {
     if (!record) return null;
     return {
-      discharges: record.discharges || [],
-      transfers: record.transfers || [],
-      cma: record.cma || [],
+      discharges: getActiveDischarges(record.discharges),
+      transfers: getActiveTransfers(record.transfers),
+      cma: getActiveCma(record.cma),
     };
   }, [record]);
 

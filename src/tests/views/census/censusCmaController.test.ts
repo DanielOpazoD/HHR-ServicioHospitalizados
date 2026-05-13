@@ -169,9 +169,19 @@ describe('censusCmaController', () => {
 
     expect(buildUndoCmaPatch(record, item)).toEqual({
       'beds.R3': originalData,
-      discharges: [],
+      discharges: [
+        expect.objectContaining({
+          id: 'discharge-echo',
+          deletedAt: expect.any(String),
+        }),
+      ],
       transfers: [],
-      cma: [],
+      cma: [
+        expect.objectContaining({
+          id: 'cma-atomic',
+          deletedAt: expect.any(String),
+        }),
+      ],
     });
   });
 

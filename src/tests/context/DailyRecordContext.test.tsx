@@ -137,6 +137,42 @@ describe('DailyRecordContext', () => {
     expect(screen.getByTestId('hook-data').textContent).toBe('null');
   });
 
+  it('exposes only active movements through useDailyRecordMovements', () => {
+    const valueWithDeletedMovements = {
+      ...mockValue,
+      record: {
+        ...mockValue.record,
+        discharges: [
+          { id: 'd-active', patientName: 'Alta activa' },
+          { id: 'd-deleted', patientName: 'Alta borrada', deletedAt: '2026-05-12T10:00:00.000Z' },
+        ],
+        transfers: [
+          { id: 't-active', patientName: 'Traslado activo' },
+          {
+            id: 't-deleted',
+            patientName: 'Traslado borrado',
+            deletedAt: '2026-05-12T10:00:00.000Z',
+          },
+        ],
+        cma: [
+          { id: 'cma-active', patientName: 'CMA activa' },
+          { id: 'cma-deleted', patientName: 'CMA borrada', deletedAt: '2026-05-12T10:00:00.000Z' },
+        ],
+      },
+    } as unknown as DailyRecordContextType;
+
+    render(
+      <DailyRecordProvider value={valueWithDeletedMovements}>
+        <TestComponent hook={useDailyRecordMovements} />
+      </DailyRecordProvider>
+    );
+
+    const data = JSON.parse(screen.getByTestId('hook-data').textContent || '{}');
+    expect(data.discharges.map((item: { id: string }) => item.id)).toEqual(['d-active']);
+    expect(data.transfers.map((item: { id: string }) => item.id)).toEqual(['t-active']);
+    expect(data.cma.map((item: { id: string }) => item.id)).toEqual(['cma-active']);
+  });
+
   it('should provide sync status via useDailyRecordSync', () => {
     render(
       <DailyRecordProvider value={mockValue}>

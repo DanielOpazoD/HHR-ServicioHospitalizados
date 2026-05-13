@@ -9,6 +9,10 @@ import { calculateDischargeStayDays } from '@/utils/clinicalDayUtils';
 import { createEpisodeAdmissionTracker } from './episodeTracker';
 import type { MinsalDailyRecord } from './minsalRecordContracts';
 import { normalizeMovementReportingSnapshot } from './movementCompatibility';
+import {
+  getActiveDischarges,
+  getActiveTransfers,
+} from '@/application/census/movementTombstonePolicy';
 
 const resolveTraceabilityDiagnosis = (value: unknown): string | undefined => {
   if (typeof value !== 'string') return undefined;
@@ -129,8 +133,8 @@ export function calculateMinsalStats(
   // Pre-calculate discharge/transfer dates
   const dischargeDates = new Map<string, string>();
   orderedRecords.forEach(r => {
-    r.discharges?.forEach(d => dischargeDates.set(d.rut, r.date));
-    r.transfers?.forEach(t => dischargeDates.set(t.rut, r.date));
+    getActiveDischarges(r.discharges).forEach(d => dischargeDates.set(d.rut, r.date));
+    getActiveTransfers(r.transfers).forEach(t => dischargeDates.set(t.rut, r.date));
   });
 
   orderedRecords.forEach(record => {
@@ -146,12 +150,15 @@ export function calculateMinsalStats(
     totalDiasCamaDisponibles += disponibles;
     totalDiasCamaOcupados += ocupadas;
 
-    record.discharges?.forEach(d => {
+    const activeDischarges = getActiveDischarges(record.discharges);
+    const activeTransfers = getActiveTransfers(record.transfers);
+
+    activeDischarges.forEach(d => {
       if (d.status === 'Fallecido') totalEgresosFallecidos++;
       else totalEgresosVivos++;
     });
 
-    totalEgresosTraslados += record.transfers?.length || 0;
+    totalEgresosTraslados += activeTransfers.length;
 
     const patientsBySpecialty = getPatientsBySpecialty(record.beds);
     patientsBySpecialty.forEach((patients, specialty) => {
@@ -172,7 +179,7 @@ export function calculateMinsalStats(
       specialtyData.set(specialty, existing);
     });
 
-    record.discharges?.forEach(d => {
+    activeDischarges.forEach(d => {
       const discharge = normalizeMovementReportingSnapshot(d);
       const specialty = resolveMovementSpecialty(discharge);
       const existing = specialtyData.get(specialty) || createSpecialtyBucket();
@@ -206,7 +213,7 @@ export function calculateMinsalStats(
       specialtyData.set(specialty, existing);
     });
 
-    record.transfers?.forEach(t => {
+    activeTransfers.forEach(t => {
       const transfer = normalizeMovementReportingSnapshot(t);
       const specialty = resolveMovementSpecialty(transfer);
       const existing = specialtyData.get(specialty) || createSpecialtyBucket();

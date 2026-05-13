@@ -10,6 +10,7 @@ import { capitalizeWords } from '@/utils/stringUtils';
 import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
 import { buildClearPatientPatches } from '@/hooks/controllers/bedManagementPatchController';
 import { buildAtomicPatientMovementPatch, buildUndoCmaPatch } from '@/application/census/public';
+import { tombstoneMovementById } from '@/application/census/movementTombstonePolicy';
 
 /**
  * Normalize CMA patient data fields
@@ -96,7 +97,7 @@ export const useCMA = (
       if (!currentRecord) return;
       const currentList = currentRecord.cma || [];
       patchRecord({
-        cma: currentList.filter(item => item.id !== id),
+        cma: tombstoneMovementById(currentList, id),
       });
     },
     [patchRecord]
