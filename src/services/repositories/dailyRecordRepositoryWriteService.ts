@@ -58,9 +58,10 @@ const applyRemoteRecovery = async (
   record: DailyRecord,
   fields: string[],
   error: unknown,
-  state: RemoteWriteState
+  state: RemoteWriteState,
+  expectedVersion?: string
 ): Promise<'continue' | 'return'> => {
-  const recovery = await resolveRemoteWriteRecovery(date, record, fields, error);
+  const recovery = await resolveRemoteWriteRecovery(date, record, fields, error, expectedVersion);
   if (recovery.status === 'throw') {
     applyRecoveryDecisionToState(
       state,
@@ -122,6 +123,7 @@ const persistLocalAndAttemptRemoteSync = async ({
   remoteState,
   remoteWrite,
   onRemoteFailure,
+  expectedVersion,
 }: {
   date: string;
   record: DailyRecord;
@@ -129,6 +131,7 @@ const persistLocalAndAttemptRemoteSync = async ({
   remoteState: RemoteWriteState;
   remoteWrite: () => Promise<void>;
   onRemoteFailure: (error: unknown) => void;
+  expectedVersion?: string;
 }): Promise<'continue' | 'return'> => {
   await saveToIndexedDB(record);
 
@@ -142,7 +145,7 @@ const persistLocalAndAttemptRemoteSync = async ({
     return 'continue';
   } catch (err) {
     onRemoteFailure(err);
-    return applyRemoteRecovery(date, record, changedPaths, err, remoteState);
+    return applyRemoteRecovery(date, record, changedPaths, err, remoteState, expectedVersion);
   }
 };
 
@@ -256,6 +259,7 @@ export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: st
         err
       );
     },
+    expectedVersion: command.expectedLastUpdated,
   });
   if (nextAction === 'return') {
     return buildSaveResult(command.date, remoteState);
@@ -384,6 +388,7 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
     onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(`Firestore partial update failed for ${command.date}`, err);
     },
+    expectedVersion: current.lastUpdated,
   });
   if (nextAction === 'return') {
     return buildPartialUpdateResult(command.date, remoteState, patchedFields);

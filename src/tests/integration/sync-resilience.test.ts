@@ -174,5 +174,12 @@ describe('Sync resilience integration', () => {
     expect(mergedPayload.beds.R1.bedMode).toBe('Cama');
     expect(tasks[0].contexts).toEqual(['clinical', 'metadata']);
     expect(tasks[0].origin).toBe('conflict_auto_merge');
+    expect(tasks[0].syncContract).toEqual(
+      expect.objectContaining({
+        expectedVersion: remote.lastUpdated,
+        recordRevision: mergedPayload.lastUpdated,
+        changedPaths: expect.arrayContaining(['beds.R1.pathology']),
+      })
+    );
   });
 });
