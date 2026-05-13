@@ -226,8 +226,8 @@ describeEmulator('Firestore discharge-bed consistency flow', () => {
     const localRecordWithPendingNarrative = buildRecord(date, isoAt(date, '10:05:00'));
     localRecordWithPendingNarrative.beds = {
       R1: buildPatient('R1', {
-        patientName: 'Paciente Cache',
-        rut: '55.555.555-5',
+        patientName: 'Paciente Firebase sin actualizar',
+        rut: '44.444.444-4',
         pathology: 'Diagnostico cache stale',
         specialty: Specialty.PEDIATRIA,
         handoffNote: 'Nota local pendiente de sincronizar',
@@ -262,5 +262,44 @@ describeEmulator('Firestore discharge-bed consistency flow', () => {
     expect(hydratedLocal?.beds.R1.patientName).toBe('Paciente Firebase');
     expect(hydratedLocal?.beds.R1.pathology).toBe('Diagnostico Firebase vigente');
     expect(hydratedLocal?.beds.R1.handoffNote).toBe('Nota local pendiente de sincronizar');
+  });
+
+  it('does not hydrate an old local handoff note into a different Firebase patient episode', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const localRecordWithOldNarrative = buildRecord(date, isoAt(date, '10:05:00'));
+    localRecordWithOldNarrative.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente Antiguo',
+        rut: '55.555.555-5',
+        admissionDate: '2026-02-10',
+        handoffNote: 'Evolucion del paciente antiguo',
+      }),
+    };
+
+    const remoteRecord = buildRecord(date, isoAt(date, '10:00:00'));
+    remoteRecord.beds = {
+      R1: buildPatient('R1', {
+        patientName: 'Paciente Nuevo Firebase',
+        rut: '44.444.444-4',
+        admissionDate: date,
+        pathology: 'Diagnostico Firebase vigente',
+        handoffNote: '',
+      }),
+    };
+
+    await saveRecord(localRecordWithOldNarrative);
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(remoteRecord);
+    });
+
+    const result = await getForDateWithMeta(date, true);
+
+    expect(result.record?.beds.R1.patientName).toBe('Paciente Nuevo Firebase');
+    expect(result.record?.beds.R1.rut).toBe('44.444.444-4');
+    expect(result.record?.beds.R1.handoffNote).toBe('');
+
+    const hydratedLocal = await getRecordForDate(date);
+    expect(hydratedLocal?.beds.R1.patientName).toBe('Paciente Nuevo Firebase');
+    expect(hydratedLocal?.beds.R1.handoffNote).toBe('');
   });
 });

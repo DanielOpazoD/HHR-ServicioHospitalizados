@@ -1,12 +1,16 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
-import type { DischargeData, TransferData } from '@/types/domain/movements';
+import type { CMAData, DischargeData, TransferData } from '@/types/domain/movements';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 
 type MovementRecord = Pick<
   DischargeData | TransferData,
   'bedId' | 'patientName' | 'rut' | 'admissionDate' | 'isNested'
 >;
+
+type CmaMovementRecord = Pick<CMAData, 'originalBedId' | 'bedName' | 'patientName' | 'rut'>;
+
+type ConfirmedMovementRecord = MovementRecord | CmaMovementRecord;
 
 const normalizeIdentity = (value: unknown): string =>
   String(value || '')
@@ -18,7 +22,7 @@ const hasActivePatientIdentity = (patient: PatientData | undefined): boolean =>
 
 const matchesMovementPatient = (
   patient: PatientData | undefined,
-  movement: MovementRecord
+  movement: ConfirmedMovementRecord
 ): boolean => {
   if (!hasActivePatientIdentity(patient)) {
     return false;
@@ -37,7 +41,9 @@ const matchesMovementPatient = (
   }
 
   const patientAdmissionDate = normalizeIdentity(patient?.admissionDate);
-  const movementAdmissionDate = normalizeIdentity(movement.admissionDate);
+  const movementAdmissionDate = normalizeIdentity(
+    'admissionDate' in movement ? movement.admissionDate : ''
+  );
   return (
     !patientAdmissionDate ||
     !movementAdmissionDate ||
@@ -45,18 +51,40 @@ const matchesMovementPatient = (
   );
 };
 
-const collectConfirmedMovementsByBed = (record: DailyRecord): Map<string, MovementRecord[]> => {
-  const byBed = new Map<string, MovementRecord[]>();
-  const append = (movement: MovementRecord) => {
-    const bedId = normalizeIdentity(movement.bedId);
-    if (!bedId) return;
-    const entries = byBed.get(movement.bedId) ?? [];
+const resolveMovementBedId = (movement: ConfirmedMovementRecord): string => {
+  if ('bedId' in movement) {
+    return movement.bedId;
+  }
+  return movement.originalBedId || movement.bedName;
+};
+
+const isNestedMovement = (movement: ConfirmedMovementRecord): boolean =>
+  'isNested' in movement && Boolean(movement.isNested);
+
+const collectConfirmedMovementsByBed = (
+  record: DailyRecord
+): Map<string, ConfirmedMovementRecord[]> => {
+  const byBed = new Map<string, ConfirmedMovementRecord[]>();
+  const append = (movement: ConfirmedMovementRecord) => {
+    const bedId = resolveMovementBedId(movement);
+    if (!normalizeIdentity(bedId)) return;
+    const entries = byBed.get(bedId) ?? [];
     entries.push(movement);
-    byBed.set(movement.bedId, entries);
+    byBed.set(bedId, entries);
+  };
+
+  const appendCma = (movement: CmaMovementRecord) => {
+    const bedId = movement.originalBedId || movement.bedName;
+    if (!bedId) return;
+    append({
+      ...movement,
+      originalBedId: bedId,
+    });
   };
 
   (record.discharges ?? []).forEach(append);
   (record.transfers ?? []).forEach(append);
+  (record.cma ?? []).forEach(appendCma);
   return byBed;
 };
 
@@ -84,7 +112,7 @@ export const normalizeMovementBedConsistency = (
     }
 
     const mainMovement = movements.find(
-      movement => !movement.isNested && matchesMovementPatient(currentBed, movement)
+      movement => !isNestedMovement(movement) && matchesMovementPatient(currentBed, movement)
     );
     if (mainMovement) {
       const cleared = buildClearedBed(bedId, currentBed);
@@ -98,7 +126,8 @@ export const normalizeMovementBedConsistency = (
     }
 
     const nestedMovement = movements.find(
-      movement => movement.isNested && matchesMovementPatient(currentBed.clinicalCrib, movement)
+      movement =>
+        isNestedMovement(movement) && matchesMovementPatient(currentBed.clinicalCrib, movement)
     );
     if (!nestedMovement) {
       return;

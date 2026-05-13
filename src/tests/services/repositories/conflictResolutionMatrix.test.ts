@@ -207,7 +207,8 @@ describe('conflictResolutionMatrix', () => {
     remote.beds = {
       R1: {
         bedId: 'R1',
-        patientName: 'Remoto',
+        patientName: 'Nombre corregido remoto',
+        rut: '11.111.111-1',
         pathology: 'Diag remoto',
         handoffNote: 'Nota remota',
       } as unknown as DailyRecord['beds'][string],
@@ -217,7 +218,8 @@ describe('conflictResolutionMatrix', () => {
     local.beds = {
       R1: {
         bedId: 'R1',
-        patientName: 'Local',
+        patientName: 'Nombre local sin actualizar',
+        rut: '11.111.111-1',
         pathology: 'Diag local',
         handoffNote: 'Nota local',
       } as unknown as DailyRecord['beds'][string],
@@ -225,7 +227,7 @@ describe('conflictResolutionMatrix', () => {
 
     const resolved = resolveDailyRecordConflict(remote, local, { changedPaths: ['*'] });
     expect(resolved.beds.R1.handoffNote).toBe('Nota local');
-    expect(resolved.beds.R1.patientName).toBe('Remoto');
+    expect(resolved.beds.R1.patientName).toBe('Nombre corregido remoto');
   });
 
   it('prioritizes administrative fields from remote during automatic merge', () => {

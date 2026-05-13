@@ -90,4 +90,49 @@ describe('clinical movement-bed consistency policy', () => {
     expect(resolved.beds.R1.patientName).toBe('Paciente Nuevo');
     expect(resolved.beds.R1.rut).toBe('44.444.444-4');
   });
+
+  it('does not resurrect a CMA patient from stale local bed data during automatic merge', () => {
+    const remote = makeRecord('2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: '',
+        rut: '',
+        pathology: '',
+        admissionDate: '',
+        status: 'EMPTY',
+      } as unknown as DailyRecord['beds'][string],
+    };
+    remote.cma = [
+      {
+        id: 'cma-1',
+        originalBedId: 'R1',
+        bedName: 'R1',
+        patientName: 'Paciente CMA',
+        rut: '55.555.555-5',
+        diagnosis: 'Procedimiento CMA',
+        specialty: 'Cirugia',
+        interventionType: 'Cirugía Mayor Ambulatoria',
+      },
+    ] as unknown as DailyRecord['cma'];
+
+    const local = makeRecord('2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente CMA',
+        rut: '55.555.555-5',
+        pathology: 'Procedimiento CMA',
+        admissionDate: '',
+        status: 'Vivo',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    expect(resolved.cma).toHaveLength(1);
+    expect(resolved.beds.R1.patientName).toBe('');
+    expect(resolved.beds.R1.rut).toBe('');
+    expect(resolved.beds.R1.status).not.toBe('Vivo');
+  });
 });

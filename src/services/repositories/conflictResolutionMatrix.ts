@@ -6,6 +6,7 @@ import {
   RECORD_STRUCTURAL_FIELDS,
   decideScalarByPolicy,
   isClinicalCensusRemotePriorityField,
+  isLocalNarrativePatientField,
 } from '@/services/repositories/conflictResolutionPolicy';
 import {
   getValueAtPath,
@@ -30,6 +31,7 @@ import {
   mergeObject,
   mergePatientData,
 } from '@/services/repositories/conflictResolutionMergeUtils';
+import { shouldPreserveLocalPatientNarrative } from '@/services/repositories/patientEpisodeNarrativePolicy';
 import { mergePatientDevices } from '@/services/repositories/conflictResolutionDeviceMergeUtils';
 import { normalizeMovementBedConsistency } from '@/services/repositories/clinicalMovementBedConsistencyPolicy';
 import {
@@ -348,6 +350,18 @@ const resolvePathValueWithMatrix = (
     return decision.value;
   }
 
+  if (
+    isLocalNarrativePatientField(patientField) &&
+    !shouldPreserveLocalPatientNarrative(remote.beds[bedId], local.beds[bedId])
+  ) {
+    traceContext.add({
+      path,
+      strategy: 'scalar_policy',
+      winner: 'remote',
+      reason: 'remote_episode_prevents_stale_local_narrative',
+    });
+    return getValueAtPath(remote, path);
+  }
   if (PATIENT_ID_ARRAY_FIELDS.has(patientField)) {
     return mergeArrayById(
       getValueAtPath(remote, path) as unknown[],
@@ -356,7 +370,6 @@ const resolvePathValueWithMatrix = (
       path
     );
   }
-
   if (PATIENT_UNIQUE_ARRAY_FIELDS.has(patientField)) {
     return mergePatientDevices(
       (getValueAtPath(remote, path) as string[]) || [],
