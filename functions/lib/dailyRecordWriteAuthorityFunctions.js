@@ -2,7 +2,10 @@ const functions = require('firebase-functions/v1');
 const { HOSPITAL_ID } = require('./runtime/runtimeConfig');
 const { requireAuthenticatedEmail } = require('./auth/authPolicies');
 const { sanitizeLogValue } = require('./logging/redaction');
-const { evaluateDailyRecordClinicalAuthority } = require('./dailyRecordClinicalAuthorityPolicy');
+const {
+  collectClinicalEpisodeCoverage,
+  evaluateDailyRecordClinicalAuthority,
+} = require('./dailyRecordClinicalAuthorityPolicy');
 
 const ALLOWED_DAILY_RECORD_WRITE_ROLES = new Set([
   'admin',
@@ -24,6 +27,11 @@ const assertStringField = (value, fieldName) => {
 };
 
 const isPlainObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const normalizeMode = value => (value === 'shadow' ? 'shadow' : 'enforced');
+
+const normalizeOrigin = value =>
+  typeof value === 'string' && value.trim() ? value.trim().slice(0, 80) : 'direct_save';
 
 const toMillis = value => {
   if (!value) return 0;
@@ -54,14 +62,7 @@ const assertExpectedVersion = ({ snapshot, expectedLastUpdated }) => {
 
 const assertClinicalAuthority = record => {
   const result = evaluateDailyRecordClinicalAuthority(record);
-  if (result.status === 'ok') {
-    return;
-  }
-
-  throw new functions.https.HttpsError(
-    'failed-precondition',
-    result.violations.map(violation => violation.message).join(' ')
-  );
+  return result;
 };
 
 const parsePayload = data => {
@@ -84,13 +85,87 @@ const parsePayload = data => {
   return {
     date,
     record,
+    mode: normalizeMode(data?.mode),
+    origin: normalizeOrigin(data?.origin),
+    dryRun: data?.dryRun === true,
+    syncContract: isPlainObject(data?.syncContract) ? data.syncContract : undefined,
     expectedLastUpdated:
       typeof data?.expectedLastUpdated === 'string' ? data.expectedLastUpdated : undefined,
   };
 };
 
+const buildAuthorityResponse = ({ date, mode, authority, coverage }) => ({
+  success: authority.status === 'ok',
+  date,
+  mode,
+  authorityStatus: authority.status,
+  coverage,
+  violations: authority.violations.map(violation => ({
+    type: violation.type,
+    path: violation.path,
+    bedId: violation.bedId,
+  })),
+});
+
+const recordAuthorityTelemetry = async ({
+  admin,
+  date,
+  mode,
+  origin,
+  dryRun,
+  authority,
+  coverage,
+  syncContract,
+  status,
+  errorCode,
+  errorMessage,
+  startedAt,
+}) => {
+  try {
+    const changedPaths = Array.isArray(syncContract?.changedPaths) ? syncContract.changedPaths : [];
+    await admin
+      .firestore()
+      .collection('hospitals')
+      .doc(HOSPITAL_ID)
+      .collection('functionsTelemetry')
+      .add({
+        service: 'dailyRecordWriteAuthority',
+        operation: 'saveDailyRecordWithClinicalAuthority',
+        hospitalId: HOSPITAL_ID,
+        durationMs: Date.now() - startedAt,
+        attempt: 1,
+        totalAttempts: 1,
+        status,
+        errorCode,
+        errorMessage,
+        timestamp: new Date().toISOString(),
+        context: {
+          date,
+          mode,
+          origin,
+          dryRun,
+          authorityStatus: authority.status,
+          violationCount: authority.violations.length,
+          violationTypes: authority.violations.map(violation => violation.type).join(','),
+          changedPathsCount: changedPaths.length,
+          hasExpectedVersion: Boolean(syncContract?.expectedVersion),
+          activePatients: coverage.activePatients,
+          canonicalEpisodeIds: coverage.canonicalEpisodeIds,
+          fallbackEpisodeKeys: coverage.fallbackEpisodeKeys,
+          degenerateFallbackEpisodeKeys: coverage.degenerateFallbackEpisodeKeys,
+        },
+      });
+  } catch (error) {
+    console.warn(
+      'Failed to record daily record authority telemetry',
+      sanitizeLogValue({ date, error })
+    );
+  }
+};
+
 const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }) => ({
   saveDailyRecordWithClinicalAuthority: functions.https.onCall(async (data, context) => {
+    const startedAt = Date.now();
     const email = requireAuthenticatedEmail(context);
     const resolvedRole = await resolveRoleForEmail(email);
 
@@ -101,8 +176,31 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
       );
     }
 
-    const { date, record, expectedLastUpdated } = parsePayload(data);
-    assertClinicalAuthority(record);
+    const { date, record, expectedLastUpdated, mode, origin, dryRun, syncContract } =
+      parsePayload(data);
+    const authority = assertClinicalAuthority(record);
+    const coverage = collectClinicalEpisodeCoverage(record);
+
+    if (authority.status !== 'ok') {
+      await recordAuthorityTelemetry({
+        admin,
+        date,
+        mode,
+        origin,
+        dryRun,
+        authority,
+        coverage,
+        syncContract,
+        status: 'failure',
+        errorCode: 'failed-precondition',
+        errorMessage: 'Daily record clinical authority blocked write.',
+        startedAt,
+      });
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        authority.violations.map(violation => violation.message).join(' ')
+      );
+    }
 
     const db = admin.firestore();
     const docRef = db.collection('hospitals').doc(HOSPITAL_ID).collection('dailyRecords').doc(date);
@@ -111,6 +209,10 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
       await db.runTransaction(async transaction => {
         const snapshot = await transaction.get(docRef);
         assertExpectedVersion({ snapshot, expectedLastUpdated });
+
+        if (dryRun) {
+          return;
+        }
 
         const now = admin.firestore.Timestamp.now();
         if (snapshot.exists) {
@@ -127,12 +229,36 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
         });
       });
 
-      return {
-        success: true,
+      await recordAuthorityTelemetry({
+        admin,
         date,
-      };
+        mode,
+        origin,
+        dryRun,
+        authority,
+        coverage,
+        syncContract,
+        status: 'success',
+        startedAt,
+      });
+
+      return buildAuthorityResponse({ date, mode, authority, coverage });
     } catch (error) {
       if (error instanceof functions.https.HttpsError) {
+        await recordAuthorityTelemetry({
+          admin,
+          date,
+          mode,
+          origin,
+          dryRun,
+          authority,
+          coverage,
+          syncContract,
+          status: 'failure',
+          errorCode: error.code,
+          errorMessage: error.message,
+          startedAt,
+        });
         throw error;
       }
 

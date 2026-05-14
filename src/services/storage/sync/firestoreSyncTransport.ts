@@ -21,6 +21,11 @@ import {
   recordClinicalAuthorityTelemetry,
   recordClinicalEpisodeIdCoverageTelemetry,
 } from '@/services/repositories/dailyRecordClinicalAuthorityPolicy';
+import {
+  shouldShadowDailyRecordAuthorityCallable,
+  shouldUseDailyRecordAuthorityCallable,
+} from '@/services/storage/firestore/dailyRecordAuthorityMode';
+import { saveDailyRecordWithClinicalAuthorityCallable } from '@/services/storage/firestore/dailyRecordAuthorityCallableClient';
 
 /**
  * Tolerance window for same-session rapid edits (e.g. clicking checkboxes fast).
@@ -138,6 +143,34 @@ const syncDailyRecord = async (
         throw new ConcurrencyError(
           `Sync queue: clinical authority blocked write for ${recordToWrite.date}.`
         );
+      }
+
+      if (shouldUseDailyRecordAuthorityCallable()) {
+        await saveDailyRecordWithClinicalAuthorityCallable({
+          date: recordToWrite.date,
+          record: recordToWrite,
+          expectedLastUpdated: task.syncContract?.expectedVersion,
+          mode: 'enforced',
+          origin: task.origin,
+          syncContract: task.syncContract,
+        });
+        return;
+      }
+
+      if (shouldShadowDailyRecordAuthorityCallable()) {
+        try {
+          await saveDailyRecordWithClinicalAuthorityCallable({
+            date: recordToWrite.date,
+            record: recordToWrite,
+            expectedLastUpdated: task.syncContract?.expectedVersion,
+            mode: 'shadow',
+            origin: task.origin,
+            syncContract: task.syncContract,
+            dryRun: true,
+          });
+        } catch {
+          // Shadow mode must never block legacy direct publish.
+        }
       }
 
       await setDoc(

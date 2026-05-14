@@ -32,6 +32,12 @@ import { ensureUserRoleClaim } from '@/services/auth/authClaimSyncService';
 import { resolveFirebaseUserRole } from '@/services/auth/authAccessResolution';
 import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
+import {
+  resolveDailyRecordAuthorityMode,
+  shouldShadowDailyRecordAuthorityCallable,
+  shouldUseDailyRecordAuthorityCallable,
+} from '@/services/storage/firestore/dailyRecordAuthorityMode';
+import { saveDailyRecordWithClinicalAuthorityCallable } from '@/services/storage/firestore/dailyRecordAuthorityCallableClient';
 import type { UserRole } from '@/types/authRoleTypes';
 
 const logFirestoreWriteRetry = (
@@ -72,12 +78,6 @@ interface SpecialistMedicalHandoffCallablePayload {
   patch: Record<string, unknown>;
 }
 
-interface DailyRecordAuthorityCallablePayload {
-  date: string;
-  record: DailyRecord;
-  expectedLastUpdated?: string;
-}
-
 const isDoctorSpecialistRole = (role: UserRole | null): role is 'doctor_specialist' =>
   role === 'doctor_specialist';
 
@@ -113,7 +113,7 @@ const updateSpecialistMedicalHandoffViaCallable = async (
 };
 
 const shouldRouteDailyRecordSaveViaCallable = async (): Promise<boolean> => {
-  if (import.meta.env.VITE_DAILY_RECORD_AUTHORITY_CALLABLE !== 'true') {
+  if (!shouldUseDailyRecordAuthorityCallable()) {
     return false;
   }
 
@@ -127,21 +127,35 @@ const shouldRouteDailyRecordSaveViaCallable = async (): Promise<boolean> => {
   }
 };
 
-const saveDailyRecordViaAuthorityCallable = async (
+const tryShadowDailyRecordSaveViaCallable = async (
   record: DailyRecord,
   expectedLastUpdated?: string
 ): Promise<void> => {
-  const functions = await defaultFunctionsRuntime.getFunctions();
-  const callable = httpsCallable<
-    DailyRecordAuthorityCallablePayload,
-    { success: boolean; date: string }
-  >(functions, 'saveDailyRecordWithClinicalAuthority');
+  if (!shouldShadowDailyRecordAuthorityCallable()) {
+    return;
+  }
 
-  await callable({
-    date: record.date,
-    record,
-    expectedLastUpdated,
-  });
+  try {
+    await defaultAuthRuntime.ready;
+    const firebaseUser = defaultAuthRuntime.getCurrentUser();
+    if (!firebaseUser || firebaseUser.isAnonymous) {
+      return;
+    }
+
+    await saveDailyRecordWithClinicalAuthorityCallable({
+      date: record.date,
+      record,
+      expectedLastUpdated,
+      mode: 'shadow',
+      origin: 'shadow_save',
+      dryRun: true,
+    });
+  } catch (error) {
+    firestoreWriteLogger.warn('Daily record authority shadow validation failed', {
+      date: record.date,
+      error,
+    });
+  }
 };
 
 const tryRefreshCurrentUserRoleClaim = async (date: string): Promise<boolean> => {
@@ -211,13 +225,24 @@ export const saveRecordToFirestore = async (
     assertDailyRecordClinicalAuthority(record);
 
     if (await shouldRouteDailyRecordSaveViaCallable()) {
-      await withRetry(() => saveDailyRecordViaAuthorityCallable(record, expectedLastUpdated), {
-        onRetry: (err: unknown, attempt: number) =>
-          logFirestoreWriteRetry('save', record.date, attempt, err),
-      });
+      await withRetry(
+        () =>
+          saveDailyRecordWithClinicalAuthorityCallable({
+            date: record.date,
+            record,
+            expectedLastUpdated,
+            mode: resolveDailyRecordAuthorityMode() === 'enforced' ? 'enforced' : 'shadow',
+            origin: 'direct_save',
+          }),
+        {
+          onRetry: (err: unknown, attempt: number) =>
+            logFirestoreWriteRetry('save', record.date, attempt, err),
+        }
+      );
       return;
     }
 
+    await tryShadowDailyRecordSaveViaCallable(record, expectedLastUpdated);
     await saveHistorySnapshot(record.date);
 
     const sanitizedRecord = sanitizeForFirestore({

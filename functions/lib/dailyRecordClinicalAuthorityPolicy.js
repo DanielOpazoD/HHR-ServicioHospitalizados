@@ -121,6 +121,38 @@ const evaluateDailyRecordClinicalAuthority = record => {
   };
 };
 
+const collectClinicalEpisodeCoverage = record => {
+  const snapshot = {
+    activePatients: 0,
+    canonicalEpisodeIds: 0,
+    fallbackEpisodeKeys: 0,
+    degenerateFallbackEpisodeKeys: 0,
+  };
+
+  const visit = patient => {
+    if (!hasActivePatientIdentity(patient)) return;
+
+    snapshot.activePatients += 1;
+    if (normalizeEpisodeId(patient.clinicalEpisodeId)) {
+      snapshot.canonicalEpisodeIds += 1;
+      return;
+    }
+
+    snapshot.fallbackEpisodeKeys += 1;
+    if (!normalizeText(patient.rut) || !String(patient.admissionTime || '').trim()) {
+      snapshot.degenerateFallbackEpisodeKeys += 1;
+    }
+  };
+
+  Object.values(record?.beds || {}).forEach(patient => {
+    visit(patient);
+    visit(patient?.clinicalCrib);
+  });
+
+  return snapshot;
+};
+
 module.exports = {
+  collectClinicalEpisodeCoverage,
   evaluateDailyRecordClinicalAuthority,
 };
