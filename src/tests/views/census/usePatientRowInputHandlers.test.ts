@@ -38,6 +38,9 @@ describe('usePatientRowInputHandlers', () => {
       result.current.handleCheckboxChange('isUPC')({
         target: { checked: true },
       } as ChangeEvent<HTMLInputElement>);
+      result.current.handleTextChange('status')({
+        target: { value: 'De cuidado' },
+      } as ChangeEvent<HTMLSelectElement>);
       result.current.toggleDocumentType();
       result.current.handleDemographicsSave({ age: '40' });
       result.current.handleDeliveryRouteChange('Vaginal', '2026-02-12', undefined);
@@ -45,6 +48,7 @@ describe('usePatientRowInputHandlers', () => {
 
     expect(updatePatient).toHaveBeenCalledWith('R1', 'patientName', 'Paciente X');
     expect(updatePatient).toHaveBeenCalledWith('R1', 'isUPC', true);
+    expect(updatePatient).toHaveBeenCalledWith('R1', 'status', 'De cuidado');
     expect(updatePatient).toHaveBeenCalledWith('R1', 'documentType', 'Pasaporte');
     expect(updatePatientMultiple).toHaveBeenCalledWith('R1', { age: '40' });
     expect(harmonizeEpisodeDemographicsHistorySafely).toHaveBeenCalledWith({

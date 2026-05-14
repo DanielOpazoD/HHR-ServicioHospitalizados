@@ -75,7 +75,10 @@ describe('SpecialtyCell', () => {
     fireEvent.blur(customSpecialtyInput);
 
     expect(onMultipleUpdate).toHaveBeenLastCalledWith(
-      expect.objectContaining({ specialty: 'Unidad Dolor' })
+      expect.objectContaining({
+        specialty: 'Unidad Dolor',
+        secondarySpecialty: undefined,
+      })
     );
     expect(customSpecialtyInput).toHaveValue('Unidad Dolor');
   });

@@ -1,0 +1,62 @@
+import { describe, expect, it } from 'vitest';
+import { isSameEpisodeForExplicitCensusPatch } from '@/services/repositories/explicitLocalCensusPatchPolicy';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
+
+type Patient = DailyRecord['beds'][string];
+
+const patient = (overrides: Partial<Patient>): Patient =>
+  ({
+    bedId: 'R1',
+    patientName: 'Paciente Test',
+    rut: '11.111.111-1',
+    admissionDate: '2026-02-18',
+    admissionTime: '08:00',
+    ...overrides,
+  }) as Patient;
+
+describe('explicitLocalCensusPatchPolicy', () => {
+  it('matches the same persisted clinical episode id', () => {
+    expect(
+      isSameEpisodeForExplicitCensusPatch(
+        patient({ clinicalEpisodeId: 'episode-r1' }),
+        patient({ clinicalEpisodeId: ' episode-r1 ' })
+      )
+    ).toBe(true);
+  });
+
+  it('rejects when only one side has a clinical episode id', () => {
+    expect(
+      isSameEpisodeForExplicitCensusPatch(
+        patient({ clinicalEpisodeId: 'episode-r1' }),
+        patient({ clinicalEpisodeId: undefined })
+      )
+    ).toBe(false);
+  });
+
+  it('matches legacy episodes by rut, admission date and admission time', () => {
+    expect(
+      isSameEpisodeForExplicitCensusPatch(
+        patient({ clinicalEpisodeId: undefined }),
+        patient({ clinicalEpisodeId: undefined })
+      )
+    ).toBe(true);
+  });
+
+  it('rejects same-rut same-day re-admissions with different admission time', () => {
+    expect(
+      isSameEpisodeForExplicitCensusPatch(
+        patient({ clinicalEpisodeId: undefined, admissionTime: '15:30' }),
+        patient({ clinicalEpisodeId: undefined, admissionTime: '08:00' })
+      )
+    ).toBe(false);
+  });
+
+  it('uses name and admission anchor only when rut is unavailable on both sides', () => {
+    expect(
+      isSameEpisodeForExplicitCensusPatch(
+        patient({ clinicalEpisodeId: undefined, rut: '', patientName: 'Paciente Sin Rut' }),
+        patient({ clinicalEpisodeId: undefined, rut: '', patientName: ' paciente sin rut ' })
+      )
+    ).toBe(true);
+  });
+});

@@ -1,0 +1,147 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { PatientData } from '@/types/domain/patient';
+import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+
+vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
+  getRecordForDate: vi.fn(),
+  saveRecord: vi.fn(),
+}));
+
+vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
+  getRecordFromFirestore: vi.fn(),
+}));
+
+vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
+  saveRecordToFirestore: vi.fn(),
+  updateRecordPartial: vi.fn(),
+}));
+
+vi.mock('@/services/storage/sync', () => ({
+  isRetryableSyncError: vi.fn(),
+  queueSyncTask: vi.fn(),
+}));
+
+vi.mock('@/services/repositories/repositoryConfig', () => ({
+  isFirestoreEnabled: vi.fn(() => true),
+}));
+
+vi.mock('@/utils/recordInvariants', () => ({
+  normalizeDailyRecordInvariants: vi.fn((record: DailyRecord) => ({ record, patches: {} })),
+}));
+
+vi.mock('@/services/repositories/helpers/validationHelper', () => ({
+  validateAndSalvageRecord: vi.fn((record: DailyRecord) => record),
+}));
+
+vi.mock('@/services/utils/fhirMappers', () => ({
+  mapPatientToFhir: vi.fn(() => ({})),
+}));
+
+vi.mock('@/services/repositories/PatientMasterRepository', () => ({
+  PatientMasterRepository: {
+    upsertPatient: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+vi.mock('@/services/repositories/ports/repositoryAuditPort', () => ({
+  logRepositoryConflictAutoMerged: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
+import { getRecordForDate as getRecordFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
+import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
+import { updateRecordPartial as updateRecordPartialToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
+import { queueSyncTask } from '@/services/storage/sync';
+
+const buildRecord = (date: string): DailyRecord => ({
+  date,
+  beds: {},
+  discharges: [],
+  transfers: [],
+  cma: [],
+  lastUpdated: '2026-02-19T00:00:00.000Z',
+  nurses: [],
+  activeExtraBeds: [],
+});
+
+const buildPatient = (bedId: string, patientName: string): PatientData => ({
+  bedId,
+  isBlocked: false,
+  bedMode: 'Cama',
+  hasCompanionCrib: false,
+  patientName,
+  rut: '11.111.111-1',
+  age: '40a',
+  pathology: 'Diagnostico',
+  specialty: Specialty.MEDICINA,
+  status: PatientStatus.ESTABLE,
+  admissionDate: '2026-02-18',
+  hasWristband: false,
+  devices: [],
+  surgicalComplication: false,
+  isUPC: false,
+});
+
+describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(queueSyncTask).mockResolvedValue({
+      accepted: true,
+      mode: 'created',
+      pendingTasks: 1,
+      maxPendingTasks: 192,
+    });
+  });
+
+  it('keeps explicit local specialty and status edits during partial-update auto-merge', async () => {
+    const current = buildRecord('2026-02-15');
+    current.beds = { R1: buildPatient('R1', 'Paciente vigente') };
+    current.beds.R1.clinicalEpisodeId = 'episode-r1';
+    current.beds.R1.specialty = 'Otra especialidad';
+    current.beds.R1.secondarySpecialty = 'Infectologia';
+    current.beds.R1.status = PatientStatus.GRAVE;
+
+    const remote = buildRecord('2026-02-15');
+    remote.beds = { R1: buildPatient('R1', 'Paciente vigente') };
+    remote.beds.R1.clinicalEpisodeId = 'episode-r1';
+    remote.beds.R1.specialty = Specialty.MEDICINA;
+    remote.beds.R1.secondarySpecialty = Specialty.CIRUGIA;
+    remote.beds.R1.status = PatientStatus.ESTABLE;
+    remote.beds.R1.pathology = 'Diagnostico remoto concurrente';
+
+    const concurrencyError = new Error('Concurrency conflict');
+    concurrencyError.name = 'ConcurrencyError';
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(updateRecordPartialToFirestore).mockRejectedValueOnce(concurrencyError);
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(remote);
+
+    await expect(
+      updatePartial('2026-02-15', {
+        'beds.R1.specialty': 'Otra especialidad',
+        'beds.R1.secondarySpecialty': 'Infectologia',
+        'beds.R1.status': PatientStatus.GRAVE,
+      })
+    ).resolves.toBeUndefined();
+
+    expect(queueSyncTask).toHaveBeenCalledWith(
+      'UPDATE_DAILY_RECORD',
+      expect.objectContaining({
+        date: '2026-02-15',
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({
+            specialty: 'Otra especialidad',
+            secondarySpecialty: 'Infectologia',
+            status: PatientStatus.GRAVE,
+            pathology: 'Diagnostico remoto concurrente',
+          }),
+        }),
+      }),
+      expect.objectContaining({
+        contexts: expect.arrayContaining(['clinical', 'metadata']),
+        origin: 'conflict_auto_merge',
+      })
+    );
+  });
+});
