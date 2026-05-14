@@ -11,6 +11,7 @@ import { formatRut, isValidRut, isPassportFormat } from '@/utils/rutUtils';
 import { buildClearPatientPatches } from '@/hooks/controllers/bedManagementPatchController';
 import { buildAtomicPatientMovementPatch, buildUndoCmaPatch } from '@/application/census/public';
 import { tombstoneMovementById } from '@/application/census/movementTombstonePolicy';
+import { convertCmaToHomeDischargeRecord } from '@/application/census/movementTypeConversionPolicy';
 import { buildCmaEpisodeMovementFields } from '@/application/census/cmaEpisodeMovementFields';
 import { ensurePatientClinicalEpisodeId } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
 
@@ -136,13 +137,32 @@ export const useCMA = (
     [patchRecord]
   );
 
+  const convertCmaToHomeDischarge = useCallback(
+    (id: string) => {
+      const currentRecord = recordRef.current;
+      if (!currentRecord) return;
+
+      const updatedRecord = convertCmaToHomeDischargeRecord(currentRecord, id, () =>
+        crypto.randomUUID()
+      );
+      if (updatedRecord === currentRecord) return;
+
+      patchRecord({
+        cma: updatedRecord.cma,
+        discharges: updatedRecord.discharges,
+      });
+    },
+    [patchRecord]
+  );
+
   return useMemo(
     () => ({
       addCMA,
       deleteCMA,
       updateCMA,
       undoCMA,
+      convertCmaToHomeDischarge,
     }),
-    [addCMA, deleteCMA, updateCMA, undoCMA]
+    [addCMA, deleteCMA, updateCMA, undoCMA, convertCmaToHomeDischarge]
   );
 };

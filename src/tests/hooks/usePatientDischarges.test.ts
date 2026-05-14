@@ -175,6 +175,70 @@ describe('usePatientDischarges', () => {
     expect(mockSaveAndUpdate).toHaveBeenCalled();
   });
 
+  it('converts a home discharge into CMA in one movement patch', () => {
+    const originalData = {
+      bedId: 'R1',
+      patientName: 'Test Patient',
+      rut: '12345678-9',
+      birthDate: '1980-01-01',
+      biologicalSex: 'Femenino',
+      clinicalEpisodeId: 'episode-discharge',
+    } as PatientData;
+    const recordWithDischarge = {
+      ...mockRecord,
+      discharges: [
+        {
+          id: 'discharge-1',
+          bedId: 'R1',
+          bedName: 'R1',
+          bedType: 'Cama',
+          patientName: 'Test Patient',
+          rut: '12345678-9',
+          diagnosis: 'Test Diagnosis',
+          age: '44',
+          time: '10:20',
+          status: 'Vivo',
+          dischargeType: 'Domicilio (Habitual)',
+          clinicalEpisodeId: 'episode-discharge',
+          originalData,
+        },
+      ],
+    } as unknown as DailyRecord;
+
+    const { result } = renderHook(() =>
+      usePatientDischarges(recordWithDischarge, mockSaveAndUpdate, undefined, mockPatchRecord)
+    );
+
+    act(() => {
+      result.current.convertDischargeToCma('discharge-1');
+    });
+
+    expect(mockPatchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        discharges: [
+          expect.objectContaining({
+            id: 'discharge-1',
+            deletedAt: expect.any(String),
+            deletedReason: 'converted_to_cma',
+          }),
+        ],
+        cma: [
+          expect.objectContaining({
+            patientName: 'Test Patient',
+            rut: '12345678-9',
+            age: '44',
+            birthDate: '1980-01-01',
+            biologicalSex: 'Femenino',
+            originalBedId: 'R1',
+            dischargeTime: '10:20',
+            interventionType: 'Cirugía Mayor Ambulatoria',
+            clinicalEpisodeId: 'episode-discharge',
+          }),
+        ],
+      })
+    );
+  });
+
   it('should handle mother-only discharge', () => {
     const recordWithCrib = {
       ...mockRecord,

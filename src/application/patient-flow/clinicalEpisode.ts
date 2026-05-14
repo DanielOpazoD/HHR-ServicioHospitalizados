@@ -58,6 +58,9 @@ export const buildClinicalEpisodeKey = (
 export const normalizeClinicalEpisodeId = (clinicalEpisodeId?: string): string =>
   String(clinicalEpisodeId || '').trim();
 
+export const isCanonicalClinicalEpisodeId = (clinicalEpisodeId?: string): boolean =>
+  normalizeClinicalEpisodeId(clinicalEpisodeId).startsWith('ep_');
+
 /**
  * Clinical documents and episode snapshots should anchor to the first observed
  * day of the current episode when the census already resolved it.
@@ -77,6 +80,15 @@ export const buildClinicalEpisodeKeyCandidates = (
   patient: PatientEpisodeContract,
   primaryEpisodeKey?: string
 ): string[] => {
+  const persistedEpisodeId = normalizeClinicalEpisodeId(patient.clinicalEpisodeId);
+  const normalizedPrimaryEpisodeKey = normalizeClinicalEpisodeId(primaryEpisodeKey);
+  if (
+    isCanonicalClinicalEpisodeId(normalizedPrimaryEpisodeKey) ||
+    isCanonicalClinicalEpisodeId(persistedEpisodeId)
+  ) {
+    return uniqueNonEmpty([primaryEpisodeKey, persistedEpisodeId]);
+  }
+
   const rut = String(patient.rut || '').trim();
   const rutWithoutDots = stripRutDots(rut);
   const admissionDate = resolveClinicalEpisodeAdmissionDate(patient);

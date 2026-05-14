@@ -2,6 +2,8 @@ import type { PatientData } from '@/hooks/contracts/patientHookContracts';
 
 const hasMeaningfulIdentityValue = (value?: string): boolean => Boolean(value?.trim());
 
+const normalizeIdentityValue = (value?: string): string => String(value || '').trim();
+
 export const hasDisplayablePatientName = (
   patient: Pick<PatientData, 'patientName'> | null | undefined
 ): boolean => hasMeaningfulIdentityValue(patient?.patientName);
@@ -25,6 +27,39 @@ export const shouldAnchorFirstSeenDate = ({
 
   // Empty identity means a new episode, even if a remote partial clear left a stale anchor behind.
   return !hadIdentity && hasIdentityNow;
+};
+
+export const shouldResetClinicalEpisodeOwnership = ({
+  currentClinicalEpisodeId,
+  currentPatientName,
+  currentRut,
+  nextPatientName,
+  nextRut,
+}: {
+  currentClinicalEpisodeId?: string;
+  currentPatientName?: string;
+  currentRut?: string;
+  nextPatientName?: string;
+  nextRut?: string;
+}): boolean => {
+  if (!normalizeIdentityValue(currentClinicalEpisodeId)) {
+    return false;
+  }
+
+  const normalizedCurrentRut = normalizeIdentityValue(currentRut);
+  const normalizedNextRut = normalizeIdentityValue(nextRut);
+  if ((normalizedCurrentRut || normalizedNextRut) && normalizedCurrentRut !== normalizedNextRut) {
+    return true;
+  }
+
+  const normalizedCurrentName = normalizeIdentityValue(currentPatientName);
+  const normalizedNextName = normalizeIdentityValue(nextPatientName);
+  return (
+    !normalizedCurrentRut &&
+    !normalizedNextRut &&
+    Boolean(normalizedCurrentName || normalizedNextName) &&
+    normalizedCurrentName !== normalizedNextName
+  );
 };
 
 export const getClearClinicalDataPatches = (bedId: string): Record<string, unknown> => ({

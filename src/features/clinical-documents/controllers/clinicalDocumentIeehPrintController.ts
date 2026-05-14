@@ -122,16 +122,23 @@ export const buildIeehPatientFromEpicrisis = (
   workspacePatient?: { birthDate?: string }
 ): IeehPatientSnapshot => {
   const fieldValue = (id: string): string => doc.patientFields.find(f => f.id === id)?.value ?? '';
+  const firstFieldValue = (...ids: string[]): string => {
+    for (const id of ids) {
+      const value = fieldValue(id).trim();
+      if (value) return value;
+    }
+    return '';
+  };
 
   const isRapanuiRaw = fieldValue('isRapanui');
 
   return {
-    patientName: doc.patientName,
-    rut: doc.patientRut,
+    patientName: firstFieldValue('nombre', 'patientName') || doc.patientName,
+    rut: firstFieldValue('rut', 'patientRut') || doc.patientRut,
     documentType: fieldValue('documentType') || 'RUT',
-    admissionDate: doc.admissionDate ?? fieldValue('admissionDate'),
+    admissionDate: firstFieldValue('fing', 'admissionDate') || doc.admissionDate,
     admissionTime: fieldValue('admissionTime'),
-    birthDate: workspacePatient?.birthDate ?? fieldValue('birthDate'),
+    birthDate: firstFieldValue('fecnac', 'birthDate') || workspacePatient?.birthDate,
     biologicalSex: fieldValue('sex') || fieldValue('biologicalSex'),
     insurance: fieldValue('insurance'),
     isRapanui: isRapanuiRaw === 'true' || isRapanuiRaw === 'Sí',

@@ -20,6 +20,7 @@ import {
   selectDischargeUndoMovement,
   selectMovementUndoAuditMetadata,
 } from '@/application/census/public';
+import { convertDischargeToCmaRecord } from '@/application/census/movementTypeConversionPolicy';
 import { usePatientMovementFeedback } from '@/hooks/usePatientMovementFeedback';
 import { usePatientMovementAudit } from '@/hooks/usePatientMovementAudit';
 import { usePatientMovementCreationExecutor } from '@/hooks/usePatientMovementCreationExecutor';
@@ -29,6 +30,7 @@ import { usePatientMovementMutationExecutor } from '@/hooks/usePatientMovementMu
 import { usePatientMovementMutationByIdExecutor } from '@/hooks/usePatientMovementMutationByIdExecutor';
 import type {
   AddDischargeAction,
+  ConvertDischargeToCmaAction,
   DeleteDischargeAction,
   DischargeMovementActions,
   UndoDischargeAction,
@@ -174,13 +176,36 @@ export const usePatientDischarges = (
     [executeMovementUndo, logDischargeUndoEntry, withCurrentRecord]
   );
 
+  const convertDischargeToCma: ConvertDischargeToCmaAction = useCallback(
+    id => {
+      withCurrentRecord(currentRecord => {
+        const updatedRecord = convertDischargeToCmaRecord(currentRecord, id, () =>
+          crypto.randomUUID()
+        );
+        if (updatedRecord === currentRecord) return;
+
+        if (patchRecord) {
+          patchRecord({
+            discharges: updatedRecord.discharges,
+            cma: updatedRecord.cma,
+          });
+          return;
+        }
+
+        void saveAndUpdate(updatedRecord);
+      });
+    },
+    [patchRecord, saveAndUpdate, withCurrentRecord]
+  );
+
   return useMemo(
     () => ({
       addDischarge,
       updateDischarge,
       deleteDischarge,
       undoDischarge,
+      convertDischargeToCma,
     }),
-    [addDischarge, updateDischarge, deleteDischarge, undoDischarge]
+    [addDischarge, updateDischarge, deleteDischarge, undoDischarge, convertDischargeToCma]
   );
 };

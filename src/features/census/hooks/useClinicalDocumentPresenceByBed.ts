@@ -89,7 +89,7 @@ export const useClinicalDocumentPresenceByBed = ({
     const activeEpisodeKeys = buildActiveClinicalDocumentEpisodeKeys(query.data);
 
     return {
-      byBedId: buildClinicalDocumentPresenceByBed(bindings, activeEpisodeKeys),
+      byBedId: buildClinicalDocumentPresenceByBed(bindings, activeEpisodeKeys, query.data),
       infoByBedId: buildClinicalDocumentPresenceInfoByBed(bindings, query.data),
     };
   }, [bindings, enabled, query.data]);

@@ -104,6 +104,30 @@ describe('buildIeehPatientFromEpicrisis', () => {
 
     expect(patient.documentType).toBe('RUT');
   });
+
+  it('prefers visible edited patient fields over immutable document metadata', () => {
+    const editedDoc = {
+      ...baseDoc,
+      patientName: 'Paciente anterior',
+      patientRut: '11.111.111-1',
+      admissionDate: '2026-04-01',
+      patientFields: baseDoc.patientFields.map(field => {
+        if (field.id === 'nombre') return { ...field, value: 'Paciente corregido' };
+        if (field.id === 'rut') return { ...field, value: '22.222.222-2' };
+        if (field.id === 'fecnac') return { ...field, value: '1980-02-03' };
+        if (field.id === 'edad') return { ...field, value: '46' };
+        if (field.id === 'fing') return { ...field, value: '2026-04-02' };
+        return field;
+      }),
+    };
+
+    const patient = buildIeehPatientFromEpicrisis(editedDoc, { birthDate: '1970-01-01' });
+
+    expect(patient.patientName).toBe('Paciente corregido');
+    expect(patient.rut).toBe('22.222.222-2');
+    expect(patient.birthDate).toBe('1980-02-03');
+    expect(patient.admissionDate).toBe('2026-04-02');
+  });
 });
 
 // ---------------------------------------------------------------------------

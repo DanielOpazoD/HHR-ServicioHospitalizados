@@ -38,19 +38,34 @@ describe('clinicalDocumentEpisodeController', () => {
     expect(context.admissionDate).toBe('2026-03-04');
   });
 
-  it('includes canonical and legacy episode keys for clinical document lookup', () => {
+  it('uses only the canonical episode id for clinical document lookup when available', () => {
     const patient = DataFactory.createMockPatient('R1', {
-      clinicalEpisodeId: 'episode-canonical-1',
+      clinicalEpisodeId: 'ep_canonical_1',
       rut: '11.111.111-1',
       admissionDate: '2026-03-06',
       admissionTime: '11:45',
       firstSeenDate: '2026-03-04',
     });
 
-    const keys = buildClinicalDocumentEpisodeKeyCandidates(patient, 'episode-canonical-1');
+    const keys = buildClinicalDocumentEpisodeKeyCandidates(patient, 'ep_canonical_1');
+
+    expect(keys).toEqual(['ep_canonical_1']);
+  });
+
+  it('uses legacy episode key fallbacks only when a canonical episode id is not available', () => {
+    const patient = DataFactory.createMockPatient('R1', {
+      rut: '11.111.111-1',
+      admissionDate: '2026-03-06',
+      admissionTime: '11:45',
+      firstSeenDate: '2026-03-04',
+    });
+
+    const keys = buildClinicalDocumentEpisodeKeyCandidates(
+      patient,
+      '11.111.111-1__2026-03-04__11:45'
+    );
 
     expect(keys).toEqual([
-      'episode-canonical-1',
       '11.111.111-1__2026-03-04__11:45',
       '11111111-1__2026-03-04__11:45',
       '11.111.111-1__2026-03-04',
