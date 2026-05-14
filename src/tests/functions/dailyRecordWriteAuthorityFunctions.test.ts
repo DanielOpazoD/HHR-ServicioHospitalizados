@@ -60,6 +60,7 @@ const createAdminMock = ({
   remoteData?: Record<string, unknown>;
 } = {}) => {
   const set = vi.fn();
+  const telemetryAdd = vi.fn().mockResolvedValue({ id: 'telemetry-1' });
   const collection = vi.fn();
   const historyDoc = { path: 'history-doc' };
   const historyCollection = { doc: vi.fn(() => historyDoc) };
@@ -68,7 +69,12 @@ const createAdminMock = ({
     collection: vi.fn(() => historyCollection),
   };
   const dailyRecordsCollection = { doc: vi.fn(() => docRef) };
-  const hospitalDoc = { collection: vi.fn(() => dailyRecordsCollection) };
+  const functionsTelemetryCollection = { add: telemetryAdd };
+  const hospitalDoc = {
+    collection: vi.fn((name: string) =>
+      name === 'functionsTelemetry' ? functionsTelemetryCollection : dailyRecordsCollection
+    ),
+  };
   collection.mockReturnValue({ doc: vi.fn(() => hospitalDoc) });
 
   const transaction = {
@@ -82,6 +88,7 @@ const createAdminMock = ({
   return {
     transaction,
     set,
+    telemetryAdd,
     docRef,
     historyDoc,
     admin: {
@@ -106,7 +113,7 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
   });
 
   it('writes daily records in a transaction after clinical authority validation', async () => {
-    const { admin, set, docRef, historyDoc } = createAdminMock({
+    const { admin, set, docRef, historyDoc, telemetryAdd } = createAdminMock({
       remoteData: {
         date: '2026-05-13',
         lastUpdated: '2026-05-13T10:00:00.000Z',
@@ -122,6 +129,12 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
       {
         date: '2026-05-13',
         expectedLastUpdated: '2026-05-13T10:00:00.000Z',
+        mode: 'enforced',
+        origin: 'outbox',
+        syncContract: {
+          expectedVersion: '2026-05-13T10:00:00.000Z',
+          changedPaths: ['beds.R1.pathology'],
+        },
         record: makeRecord(),
       },
       makeContext()
@@ -144,7 +157,40 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
         lastUpdated: expect.anything(),
       })
     );
-    expect(result).toEqual({ success: true, date: '2026-05-13' });
+    expect(result).toEqual({
+      success: true,
+      date: '2026-05-13',
+      mode: 'enforced',
+      authorityStatus: 'ok',
+      coverage: {
+        activePatients: 1,
+        canonicalEpisodeIds: 1,
+        fallbackEpisodeKeys: 0,
+        degenerateFallbackEpisodeKeys: 0,
+      },
+      violations: [],
+    });
+    expect(telemetryAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        service: 'dailyRecordWriteAuthority',
+        operation: 'saveDailyRecordWithClinicalAuthority',
+        status: 'success',
+        context: expect.objectContaining({
+          date: '2026-05-13',
+          mode: 'enforced',
+          origin: 'outbox',
+          authorityStatus: 'ok',
+          violationTypes: '',
+          changedPathsCount: 1,
+          activePatients: 1,
+          canonicalEpisodeIds: 1,
+          fallbackEpisodeKeys: 0,
+          degenerateFallbackEpisodeKeys: 0,
+        }),
+      })
+    );
+    expect(JSON.stringify(telemetryAdd.mock.calls[0]?.[0])).not.toContain('11.111.111-1');
+    expect(JSON.stringify(telemetryAdd.mock.calls[0]?.[0])).not.toContain('Paciente Uno');
   });
 
   it('rejects full saves that duplicate an active clinical episode', async () => {

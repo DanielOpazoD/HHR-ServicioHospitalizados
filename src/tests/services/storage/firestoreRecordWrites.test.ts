@@ -106,6 +106,7 @@ describe('firestoreRecordWrites', () => {
     vi.clearAllMocks();
     delete (import.meta.env as Record<string, string | undefined>)
       .VITE_DAILY_RECORD_AUTHORITY_CALLABLE;
+    delete (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_MODE;
     mockGetCurrentUser.mockReturnValue(null);
     mockResolveFirebaseUserRole.mockResolvedValue(null);
     mockEnsureUserRoleClaim.mockResolvedValue(undefined);
@@ -169,6 +170,48 @@ describe('firestoreRecordWrites', () => {
     expect(setDoc).not.toHaveBeenCalled();
   });
 
+  it('runs shadow authority validation without blocking direct full-record saves', async () => {
+    (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_MODE =
+      'shadow';
+    mockGetCurrentUser.mockReturnValue({
+      uid: 'nurse-1',
+      email: 'nurse@example.com',
+      isAnonymous: false,
+    });
+    mockSpecialistCallable.mockRejectedValueOnce(new Error('shadow unavailable'));
+
+    await saveRecordToFirestore(
+      {
+        date: '2026-03-16',
+        beds: {},
+        discharges: [],
+        transfers: [],
+        cma: [],
+      } as never,
+      '2026-03-16T10:00:00.000Z'
+    );
+
+    expect(mockSpecialistCallable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        date: '2026-03-16',
+        dryRun: true,
+        expectedLastUpdated: '2026-03-16T10:00:00.000Z',
+        mode: 'shadow',
+        origin: 'shadow_save',
+        record: expect.objectContaining({ date: '2026-03-16' }),
+      })
+    );
+    expect(firestoreWriteLoggerWarn).toHaveBeenCalledWith(
+      'Daily record authority shadow validation failed',
+      expect.objectContaining({ date: '2026-03-16', error: expect.any(Error) })
+    );
+    expect(saveHistorySnapshot).toHaveBeenCalledWith('2026-03-16');
+    expect(setDoc).toHaveBeenCalledWith(
+      { date: '2026-03-16' },
+      expect.objectContaining({ date: '2026-03-16' })
+    );
+  });
+
   it('routes authenticated full-record saves through the clinical authority callable when enabled', async () => {
     (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_CALLABLE =
       'true';
@@ -194,13 +237,17 @@ describe('firestoreRecordWrites', () => {
       { name: 'functions-runtime' },
       'saveDailyRecordWithClinicalAuthority'
     );
-    expect(mockSpecialistCallable).toHaveBeenCalledWith({
-      date: '2026-03-14',
-      expectedLastUpdated: '2026-03-14T10:00:00.000Z',
-      record: expect.objectContaining({
+    expect(mockSpecialistCallable).toHaveBeenCalledWith(
+      expect.objectContaining({
         date: '2026-03-14',
-      }),
-    });
+        expectedLastUpdated: '2026-03-14T10:00:00.000Z',
+        mode: 'enforced',
+        origin: 'direct_save',
+        record: expect.objectContaining({
+          date: '2026-03-14',
+        }),
+      })
+    );
     expect(saveHistorySnapshot).not.toHaveBeenCalled();
     expect(setDoc).not.toHaveBeenCalled();
   });
