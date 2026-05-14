@@ -19,8 +19,10 @@ describe('clinicalDocumentPresenceController', () => {
         bed: BEDS.find(bed => bed.id === 'R1')!,
         data: DataFactory.createMockPatient('R1', {
           patientName: 'Main',
+          clinicalEpisodeId: 'episode-canonical-r1',
           rut: '11.111.111-1',
           admissionDate: '2026-03-05',
+          admissionTime: '08:30',
         }),
         isSubRow: false,
       },
@@ -51,7 +53,14 @@ describe('clinicalDocumentPresenceController', () => {
     expect(buildBedEpisodeBindings(unifiedRows)).toEqual([
       {
         bedId: 'R1',
-        episodeKey: '11.111.111-1__2026-03-05',
+        episodeKey: 'episode-canonical-r1',
+        episodeKeys: [
+          'episode-canonical-r1',
+          '11.111.111-1__2026-03-05__08:30',
+          '11111111-1__2026-03-05__08:30',
+          '11.111.111-1__2026-03-05',
+          '11111111-1__2026-03-05',
+        ],
       },
     ]);
   });
@@ -120,7 +129,11 @@ describe('clinicalDocumentPresenceController', () => {
       buildClinicalDocumentPresenceByBed(
         [
           { bedId: 'R1', episodeKey: '11.111.111-1__2026-03-05' },
-          { bedId: 'R2', episodeKey: '22.222.222-2__2026-03-05' },
+          {
+            bedId: 'R2',
+            episodeKey: 'episode-canonical-r2',
+            episodeKeys: ['episode-canonical-r2', '22.222.222-2__2026-03-05'],
+          },
         ],
         activeEpisodeKeys
       )

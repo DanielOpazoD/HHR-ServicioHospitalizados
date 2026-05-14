@@ -11,7 +11,7 @@ import {
   executeListActiveClinicalDocumentTemplates,
   executeSeedClinicalDocumentTemplates,
 } from '@/application/clinical-documents/clinicalDocumentTemplateUseCases';
-import { subscribeClinicalDocumentsByEpisode } from '@/application/clinical-documents/clinicalDocumentUseCases';
+import { subscribeClinicalDocumentsByEpisodeKeys } from '@/application/clinical-documents/clinicalDocumentUseCases';
 import { clinicalDocumentObservability } from '@/features/clinical-documents/services/clinicalDocumentOperationalTelemetry';
 import {
   resolveNextSelectedClinicalDocumentId,
@@ -60,6 +60,10 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
   const episode = useMemo(
     () => buildClinicalDocumentEpisodeContext(patient, currentDateString, bedId),
     [bedId, currentDateString, patient]
+  );
+  const episodeKeys = useMemo(
+    () => Array.from(new Set([episode.episodeKey, ...(episode.alternateEpisodeKeys || [])])),
+    [episode.alternateEpisodeKeys, episode.episodeKey]
   );
 
   const resolvedSelectedTemplateId = useMemo(() => {
@@ -136,8 +140,8 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
       return;
     }
 
-    const unsubscribe = subscribeClinicalDocumentsByEpisode(
-      episode.episodeKey,
+    const unsubscribe = subscribeClinicalDocumentsByEpisodeKeys(
+      episodeKeys,
       docs => {
         const hydrated = docs.map(document => hydrateLegacyClinicalDocument(document));
         setDocuments(hydrated);
@@ -149,7 +153,7 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
     return () => {
       unsubscribe();
     };
-  }, [canRead, episode.episodeKey, hospitalId, isActive]);
+  }, [canRead, episodeKeys, hospitalId, isActive]);
 
   return {
     templates,

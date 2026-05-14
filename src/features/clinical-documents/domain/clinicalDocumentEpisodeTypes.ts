@@ -9,7 +9,9 @@ export interface ClinicalDocumentEpisodeContext {
   patientRut: string;
   patientName: string;
   episodeKey: string;
+  alternateEpisodeKeys?: string[];
   admissionDate?: string;
+  admissionTime?: string;
   sourceDailyRecordDate?: string;
   sourceBedId?: string;
   specialty?: string;

@@ -14,7 +14,11 @@ import {
 } from '@/features/census/controllers/clinicalDocumentPresenceController';
 
 const bindings: BedEpisodeBinding[] = [
-  { bedId: 'R1', episodeKey: '12345678-9__2026-01-10' },
+  {
+    bedId: 'R1',
+    episodeKey: 'episode-canonical-r1',
+    episodeKeys: ['episode-canonical-r1', '12345678-9__2026-01-10'],
+  },
   { bedId: 'R2', episodeKey: '98765432-1__2026-02-15' },
   { bedId: 'NEO1', episodeKey: '11111111-1__2026-03-01' },
 ];
