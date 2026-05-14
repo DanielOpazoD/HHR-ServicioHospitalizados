@@ -16,8 +16,14 @@ import {
 } from '@/services/storage/firestore/firestoreShared';
 import { isSpecialistScopedDailyRecordPatch } from '@/services/repositories/dailyRecordClinicalDomainService';
 import {
+  evaluateDailyRecordClinicalAuthority,
+  recordClinicalAuthorityTelemetry,
+  recordClinicalEpisodeIdCoverageTelemetry,
+} from '@/services/repositories/dailyRecordClinicalAuthorityPolicy';
+import {
   asFirestoreUpdatePayload,
   assertFirestoreConcurrency,
+  ConcurrencyError,
   createDeletedRecordRef,
   saveHistorySnapshot,
 } from '@/services/storage/firestore/firestoreWriteSupport';
@@ -66,6 +72,12 @@ interface SpecialistMedicalHandoffCallablePayload {
   patch: Record<string, unknown>;
 }
 
+interface DailyRecordAuthorityCallablePayload {
+  date: string;
+  record: DailyRecord;
+  expectedLastUpdated?: string;
+}
+
 const isDoctorSpecialistRole = (role: UserRole | null): role is 'doctor_specialist' =>
   role === 'doctor_specialist';
 
@@ -100,6 +112,38 @@ const updateSpecialistMedicalHandoffViaCallable = async (
   });
 };
 
+const shouldRouteDailyRecordSaveViaCallable = async (): Promise<boolean> => {
+  if (import.meta.env.VITE_DAILY_RECORD_AUTHORITY_CALLABLE !== 'true') {
+    return false;
+  }
+
+  try {
+    await defaultAuthRuntime.ready;
+    const firebaseUser = defaultAuthRuntime.getCurrentUser();
+    return Boolean(firebaseUser && !firebaseUser.isAnonymous);
+  } catch (error) {
+    firestoreWriteLogger.warn('Daily record authority callable routing check failed', { error });
+    return false;
+  }
+};
+
+const saveDailyRecordViaAuthorityCallable = async (
+  record: DailyRecord,
+  expectedLastUpdated?: string
+): Promise<void> => {
+  const functions = await defaultFunctionsRuntime.getFunctions();
+  const callable = httpsCallable<
+    DailyRecordAuthorityCallablePayload,
+    { success: boolean; date: string }
+  >(functions, 'saveDailyRecordWithClinicalAuthority');
+
+  await callable({
+    date: record.date,
+    record,
+    expectedLastUpdated,
+  });
+};
+
 const tryRefreshCurrentUserRoleClaim = async (date: string): Promise<boolean> => {
   try {
     await defaultAuthRuntime.ready;
@@ -131,6 +175,25 @@ const tryRefreshCurrentUserRoleClaim = async (date: string): Promise<boolean> =>
 
 export { ConcurrencyError } from '@/services/storage/firestore/firestoreWriteSupport';
 
+const assertDailyRecordClinicalAuthority = (record: DailyRecord): void => {
+  const authority = evaluateDailyRecordClinicalAuthority(record, {
+    date: record.date,
+    phase: 'persistence',
+  });
+  recordClinicalAuthorityTelemetry(authority);
+  recordClinicalEpisodeIdCoverageTelemetry(record, {
+    date: record.date,
+    phase: 'persistence',
+  });
+
+  if (authority.status === 'blocked') {
+    throw new ConcurrencyError(
+      `Daily record clinical authority blocked write for ${record.date}: ` +
+        authority.violations.map(violation => violation.message).join(' ')
+    );
+  }
+};
+
 export const saveRecordToFirestore = async (
   record: DailyRecord,
   expectedLastUpdated?: string
@@ -144,6 +207,16 @@ export const saveRecordToFirestore = async (
       'save',
       { toleranceMs: 0 }
     );
+
+    assertDailyRecordClinicalAuthority(record);
+
+    if (await shouldRouteDailyRecordSaveViaCallable()) {
+      await withRetry(() => saveDailyRecordViaAuthorityCallable(record, expectedLastUpdated), {
+        onRetry: (err: unknown, attempt: number) =>
+          logFirestoreWriteRetry('save', record.date, attempt, err),
+      });
+      return;
+    }
 
     await saveHistorySnapshot(record.date);
 

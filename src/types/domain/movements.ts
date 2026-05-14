@@ -104,3 +104,19 @@ export interface CMAData extends MovementTombstoneFields, MovementEpisodeFields 
 export const resolveCmaHistoricalAdmissionDate = (
   movement: Pick<CMAData, 'originalData'>
 ): string => movement.originalData?.admissionDate || '';
+
+interface MovementHistoricalEpisodeSnapshot {
+  admissionDate?: string;
+  originalData?: Pick<PatientData, 'admissionDate' | 'firstSeenDate' | 'admissionTime'>;
+}
+
+export const resolveMovementHistoricalAdmissionDate = (
+  movement: MovementHistoricalEpisodeSnapshot
+): string | undefined =>
+  movement.admissionDate ||
+  movement.originalData?.firstSeenDate ||
+  movement.originalData?.admissionDate;
+
+export const resolveMovementHistoricalAdmissionTime = (
+  movement: MovementHistoricalEpisodeSnapshot
+): string | undefined => movement.originalData?.admissionTime;
