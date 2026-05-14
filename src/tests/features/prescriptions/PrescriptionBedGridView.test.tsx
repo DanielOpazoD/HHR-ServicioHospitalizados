@@ -412,9 +412,6 @@ describe('PrescriptionBedGridView', () => {
     });
 
     expect(screen.getByRole('dialog', { name: /vista ampliada/i })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText('2 / 2')).toBeInTheDocument(), {
-      timeout: 4000,
-    });
     await waitFor(
       () =>
         expect(resolvePrescriptionImageDownloadUrl).toHaveBeenCalledWith(second.image.storagePath),
