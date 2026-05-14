@@ -216,6 +216,111 @@ describe('ClinicalDocumentRepository.listByEpisodeKeys', () => {
     expect(result.map(document => document.id)).toEqual(['d-1']);
   });
 
+  it('lists legacy documents with incomplete audit actors after read hydration', async () => {
+    const legacyActor = {
+      uid: 'legacy-user',
+      email: 'legacy@hospital.cl',
+    };
+    const legacyDocument = {
+      ...buildDoc('legacy-audit', 'rut-1__2026-03-01', '2026-03-05T10:00:00.000Z'),
+      audit: {
+        createdAt: '2026-03-05T10:00:00.000Z',
+        createdBy: legacyActor,
+        updatedAt: '2026-03-05T11:00:00.000Z',
+        updatedBy: legacyActor,
+        signedAt: '2026-03-05T12:00:00.000Z',
+        signedBy: legacyActor,
+        unsignedAt: '2026-03-05T13:00:00.000Z',
+        unsignedBy: legacyActor,
+        archivedAt: '2026-03-05T14:00:00.000Z',
+        archivedBy: legacyActor,
+        signatureRevocations: [
+          {
+            revokedAt: '2026-03-05T13:00:00.000Z',
+            revokedBy: legacyActor,
+            previousSignedAt: '2026-03-05T12:00:00.000Z',
+            reason: 'Corrección de firma legacy',
+          },
+        ],
+      },
+      versionHistory: [
+        {
+          version: 1,
+          savedAt: '2026-03-05T10:30:00.000Z',
+          savedBy: legacyActor,
+          reason: 'manual',
+        },
+      ],
+    } as unknown as ClinicalDocumentRecord;
+    vi.mocked(firestoreDb.getDocs).mockResolvedValueOnce([legacyDocument]);
+
+    const result = await ClinicalDocumentRepository.listByEpisodeKeys(['rut-1__2026-03-01'], 'hhr');
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: 'legacy-audit',
+      audit: {
+        createdBy: {
+          uid: 'legacy-user',
+          email: 'legacy@hospital.cl',
+          displayName: 'Usuario legado',
+          role: 'legacy_unknown',
+        },
+        updatedBy: {
+          displayName: 'Usuario legado',
+          role: 'legacy_unknown',
+        },
+        signedBy: {
+          displayName: 'Usuario legado',
+          role: 'legacy_unknown',
+        },
+        unsignedBy: {
+          displayName: 'Usuario legado',
+          role: 'legacy_unknown',
+        },
+        archivedBy: {
+          displayName: 'Usuario legado',
+          role: 'legacy_unknown',
+        },
+        signatureRevocations: [
+          {
+            revokedBy: {
+              displayName: 'Usuario legado',
+              role: 'legacy_unknown',
+            },
+          },
+        ],
+      },
+      versionHistory: [
+        {
+          savedBy: {
+            displayName: 'Usuario legado',
+            role: 'legacy_unknown',
+          },
+        },
+      ],
+    });
+  });
+
+  it('still rejects structurally broken clinical documents after legacy hydration', async () => {
+    const structurallyBroken = {
+      ...buildDoc('broken-structure', 'rut-1__2026-03-01', '2026-03-05T10:00:00.000Z'),
+      patientFields: [
+        {
+          id: 'nombre',
+          label: 'Nombre',
+          value: 123,
+          type: 'text',
+        },
+      ],
+    } as unknown as ClinicalDocumentRecord;
+    vi.mocked(firestoreDb.getDocs).mockResolvedValueOnce([structurallyBroken]);
+
+    const result = await ClinicalDocumentRepository.listByEpisodeKeys(['rut-1__2026-03-01'], 'hhr');
+
+    expect(result).toEqual([]);
+  });
+
   it('normalizes legacy signed documents back to editable drafts on read', async () => {
     vi.mocked(firestoreDb.getDocs).mockResolvedValueOnce([
       {

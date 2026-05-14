@@ -57,6 +57,24 @@ describe('clinicalDocumentRuntimeContracts', () => {
     expect(() => parseClinicalDocumentRecord(record as ClinicalDocumentRecord)).toThrow();
   });
 
+  it('keeps new-write audit actor parsing strict', () => {
+    const record = buildRecord();
+    const createdBy = {
+      uid: record.audit.createdBy.uid,
+      email: record.audit.createdBy.email,
+    };
+
+    expect(
+      safeParseClinicalDocumentRecord({
+        ...record,
+        audit: {
+          ...record.audit,
+          createdBy,
+        },
+      }).success
+    ).toBe(false);
+  });
+
   it('accepts default clinical document templates', () => {
     expect(parseClinicalDocumentTemplate(CLINICAL_DOCUMENT_TEMPLATES.epicrisis).id).toBe(
       'epicrisis'
