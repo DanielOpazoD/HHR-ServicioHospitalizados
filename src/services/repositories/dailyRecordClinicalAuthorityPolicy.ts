@@ -1,7 +1,6 @@
 import {
   buildClinicalEpisodeKey,
   normalizeClinicalEpisodeId,
-  resolveClinicalEpisodeAdmissionDate,
   resolveClinicalEpisodeIdentifier,
 } from '@/application/patient-flow/clinicalEpisode';
 import {
@@ -11,7 +10,13 @@ import {
 } from '@/application/census/movementTombstonePolicy';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { CMAData, DischargeData, TransferData } from '@/types/domain/movements';
+import {
+  resolveMovementHistoricalAdmissionDate,
+  resolveMovementHistoricalAdmissionTime,
+  type CMAData,
+  type DischargeData,
+  type TransferData,
+} from '@/types/domain/movements';
 import type { PatientData } from '@/types/domain/patient';
 
 export type DailyRecordClinicalAuthorityPhase = 'sync_publish' | 'persistence';
@@ -96,18 +101,10 @@ const resolveMovementEpisodeKey = (movement: DischargeData | TransferData | CMAD
     return persistedEpisodeId;
   }
 
-  const originalData = movement.originalData;
-  const admissionDate =
-    'admissionDate' in movement && movement.admissionDate
-      ? movement.admissionDate
-      : originalData
-        ? resolveClinicalEpisodeAdmissionDate(originalData)
-        : undefined;
-
   return buildClinicalEpisodeKey(
     movement.rut || movement.patientName || '',
-    admissionDate,
-    originalData?.admissionTime
+    resolveMovementHistoricalAdmissionDate(movement),
+    resolveMovementHistoricalAdmissionTime(movement)
   );
 };
 
