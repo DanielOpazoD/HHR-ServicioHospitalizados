@@ -124,4 +124,31 @@ describe('safeParsePrescriptionRecord', () => {
   it('returns null for invalid input instead of throwing', () => {
     expect(safeParsePrescriptionRecord({ id: 'broken' })).toBeNull();
   });
+
+  it('accepts legacy records missing uploader source', () => {
+    expect(
+      safeParsePrescriptionRecord(
+        validRecord({
+          uploader: {
+            uid: 'legacy-user',
+            email: 'legacy@hospital.cl',
+          } as never,
+        })
+      )
+    ).toMatchObject({
+      uploader: { source: 'authenticated' },
+    });
+  });
+
+  it('accepts legacy records with non-jpeg contentType metadata', () => {
+    expect(
+      safeParsePrescriptionRecord(
+        validRecord({
+          image: { ...validRecord().image, contentType: 'image/png' as never },
+        })
+      )
+    ).toMatchObject({
+      image: { contentType: 'image/jpeg' },
+    });
+  });
 });
