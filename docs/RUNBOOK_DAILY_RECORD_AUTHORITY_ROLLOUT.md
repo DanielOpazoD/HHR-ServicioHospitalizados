@@ -22,14 +22,17 @@ El flag recomendado para rollout nuevo es `VITE_DAILY_RECORD_AUTHORITY_MODE`.
 
 1. Desplegar con `VITE_DAILY_RECORD_AUTHORITY_MODE=client_only`.
 2. Cambiar a `shadow` durante al menos un turno clinico observado.
-3. Revisar `functionsTelemetry` para:
+3. Revisar el panel admin de telemetria de Functions, seccion
+   `Autoridad censo diario`. Debe mostrar `Listo para enforced` antes de activar el modo
+   obligatorio.
+4. Si se necesita auditoria fina, filtrar `functionsTelemetry` por:
    - `service = dailyRecordWriteAuthority`;
    - `operation = saveDailyRecordWithClinicalAuthority`;
    - `authorityStatus`;
    - `fallbackEpisodeKeys`;
    - `degenerateFallbackEpisodeKeys`;
    - `violationCount`.
-4. Si no aparecen fallos inesperados, cambiar a `enforced`.
+5. Si no aparecen fallos inesperados, cambiar a `enforced`.
 
 ## Rollback
 
@@ -49,3 +52,5 @@ violacion.
 - Aumento de `failed-precondition`: revisar duplicados o episodios cerrados activos.
 - `degenerateFallbackEpisodeKeys > 0`: hay pacientes activos sin identidad de episodio
   suficientemente fuerte; conviene revisar adopcion de `clinicalEpisodeId`.
+- Recomendacion `Investigar antes de activar` en el panel: no pasar a `enforced` hasta
+  entender el bloqueo o el fallback degenerado.
