@@ -70,6 +70,17 @@ export const prescriptionRecordSchema = z.object({
   typeUpdatedBy: z.string().optional(),
 });
 
+const legacyCompatiblePrescriptionRecordSchema = prescriptionRecordSchema.extend({
+  image: prescriptionImageMetaSchema.extend({
+    // Legacy uploads may still point to PNG/WebP assets created before JPEG normalization.
+    contentType: z.string().min(1),
+  }),
+  uploader: prescriptionUploaderRefSchema.extend({
+    // Legacy records persisted before `source` rollout.
+    source: z.enum(['authenticated', 'qr_pin']).optional(),
+  }),
+});
+
 export type ParsedPrescriptionRecord = z.infer<typeof prescriptionRecordSchema>;
 
 /**
@@ -85,6 +96,22 @@ export const parsePrescriptionRecord = (input: unknown): PrescriptionRecord =>
  * corrupt document doesn't blow up the listing for the rest.
  */
 export const safeParsePrescriptionRecord = (input: unknown): PrescriptionRecord | null => {
-  const result = prescriptionRecordSchema.safeParse(input);
-  return result.success ? (result.data as PrescriptionRecord) : null;
+  const strict = prescriptionRecordSchema.safeParse(input);
+  if (strict.success) return strict.data as PrescriptionRecord;
+
+  const legacy = legacyCompatiblePrescriptionRecordSchema.safeParse(input);
+  if (!legacy.success) return null;
+
+  return {
+    ...(legacy.data as PrescriptionRecord),
+    image: {
+      ...legacy.data.image,
+      // Keep runtime contract stable for UI consumers while tolerating legacy metadata.
+      contentType: 'image/jpeg',
+    },
+    uploader: {
+      ...legacy.data.uploader,
+      source: legacy.data.uploader.source ?? 'authenticated',
+    },
+  } as PrescriptionRecord;
 };
