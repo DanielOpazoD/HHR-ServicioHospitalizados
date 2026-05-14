@@ -13,7 +13,10 @@
  *   records → buildClinicalDocumentPresenceInfoByBed (counts per bed)
  */
 
-import { buildPatientPresenceSnapshot } from '@/application/patient-flow/clinicalEpisode';
+import {
+  buildClinicalEpisodeKeyCandidates,
+  buildPatientPresenceSnapshot,
+} from '@/application/patient-flow/clinicalEpisode';
 import type { UnifiedBedRow } from '@/features/census/types/censusTableTypes';
 
 // ---------------------------------------------------------------------------
@@ -30,6 +33,7 @@ type ClinicalDocumentPresenceRecord = {
 export interface BedEpisodeBinding {
   bedId: string;
   episodeKey: string;
+  episodeKeys?: string[];
 }
 
 /** Per-bed record presence with counts for badge display. */
@@ -63,7 +67,13 @@ export const buildBedEpisodeBindings = (unifiedRows: UnifiedBedRow[]): BedEpisod
         return [];
       }
 
-      return [{ bedId: snapshot.bedId, episodeKey: snapshot.episodeKey }];
+      return [
+        {
+          bedId: snapshot.bedId,
+          episodeKey: snapshot.episodeKey,
+          episodeKeys: buildClinicalEpisodeKeyCandidates(row.data, snapshot.episodeKey),
+        },
+      ];
     });
 
 // ---------------------------------------------------------------------------
@@ -91,7 +101,8 @@ export const buildClinicalDocumentPresenceByBed = (
 ): Record<string, boolean> => {
   const result: Record<string, boolean> = {};
   bindings.forEach(b => {
-    result[b.bedId] = activeEpisodeKeys.has(b.episodeKey);
+    const episodeKeys = b.episodeKeys?.length ? b.episodeKeys : [b.episodeKey];
+    result[b.bedId] = episodeKeys.some(episodeKey => activeEpisodeKeys.has(episodeKey));
   });
   return result;
 };
@@ -130,11 +141,17 @@ export const buildClinicalDocumentPresenceInfoByBed = (
   const result: Record<string, ClinicalDocumentPresenceInfo> = {};
 
   bindings.forEach(b => {
-    const entry = counts.get(b.episodeKey);
+    const episodeKeys = b.episodeKeys?.length ? b.episodeKeys : [b.episodeKey];
+    const entries = episodeKeys.map(episodeKey => counts.get(episodeKey)).filter(Boolean) as Array<{
+      total: number;
+      drafts: number;
+    }>;
+    const totalCount = entries.reduce((total, entry) => total + entry.total, 0);
+    const draftCount = entries.reduce((total, entry) => total + entry.drafts, 0);
     result[b.bedId] = {
-      present: !!entry,
-      totalCount: entry?.total ?? 0,
-      draftCount: entry?.drafts ?? 0,
+      present: totalCount > 0,
+      totalCount,
+      draftCount,
     };
   });
 

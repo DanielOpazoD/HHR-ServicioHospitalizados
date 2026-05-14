@@ -145,6 +145,7 @@ const secondaryTemplate: ClinicalDocumentTemplate = {
 vi.mock('@/services/repositories/ClinicalDocumentRepository', () => ({
   ClinicalDocumentRepository: {
     subscribeByEpisode: vi.fn(),
+    subscribeByEpisodeKeys: vi.fn(),
   },
 }));
 
@@ -196,6 +197,12 @@ describe('ClinicalDocumentsWorkspace', () => {
 
     vi.mocked(ClinicalDocumentRepository.subscribeByEpisode).mockImplementation(
       (_episodeKey, callback) => {
+        callback([clinicalDocument]);
+        return vi.fn();
+      }
+    );
+    vi.mocked(ClinicalDocumentRepository.subscribeByEpisodeKeys).mockImplementation(
+      (_episodeKeys, callback) => {
         callback([clinicalDocument]);
         return vi.fn();
       }

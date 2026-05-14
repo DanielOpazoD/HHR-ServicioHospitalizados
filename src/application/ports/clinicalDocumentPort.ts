@@ -34,6 +34,11 @@ export interface ClinicalDocumentPort {
     callback: (documents: ClinicalDocumentRecord[]) => void,
     hospitalId?: string
   ) => () => void;
+  subscribeByEpisodeKeys: (
+    episodeKeys: string[],
+    callback: (documents: ClinicalDocumentRecord[]) => void,
+    hospitalId?: string
+  ) => () => void;
 }
 
 export const defaultClinicalDocumentPort: ClinicalDocumentPort = {
@@ -52,4 +57,6 @@ export const defaultClinicalDocumentPort: ClinicalDocumentPort = {
     ClinicalDocumentRepository.delete(documentId, hospitalId),
   subscribeByEpisode: (episodeKey, callback, hospitalId) =>
     ClinicalDocumentRepository.subscribeByEpisode(episodeKey, callback, hospitalId),
+  subscribeByEpisodeKeys: (episodeKeys, callback, hospitalId) =>
+    ClinicalDocumentRepository.subscribeByEpisodeKeys(episodeKeys, callback, hospitalId),
 };

@@ -2,6 +2,7 @@ import type { ClinicalDocumentEpisodeContext } from '@/features/clinical-documen
 import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
 import {
   buildClinicalEpisodeKey as buildClinicalEpisodeKeyFromApplication,
+  buildClinicalEpisodeKeyCandidates as buildClinicalEpisodeKeyCandidatesFromApplication,
   type ClinicalEpisodeFallbackEvent,
   resolveClinicalEpisode,
   resolveClinicalEpisodeAdmissionDate,
@@ -16,8 +17,11 @@ import { normalizeCalendarDate } from '@/utils/clinicalDateUtils';
  * @param admissionDate - Optional admission date to disambiguate episodes
  * @returns Deterministic episode key string
  */
-export const buildClinicalEpisodeKey = (patientRut: string, admissionDate?: string): string =>
-  buildClinicalEpisodeKeyFromApplication(patientRut, admissionDate);
+export const buildClinicalEpisodeKey = (
+  patientRut: string,
+  admissionDate?: string,
+  admissionTime?: string
+): string => buildClinicalEpisodeKeyFromApplication(patientRut, admissionDate, admissionTime);
 
 const padTime = (value: number): string => value.toString().padStart(2, '0');
 
@@ -35,6 +39,11 @@ const resolveClinicalDocumentDischargeDateValue = (patient: PatientData): string
   normalizeCalendarDate(patient.dischargeDate) ||
   normalizeCalendarDate(patient.transferDate) ||
   getCurrentDateValue();
+
+export const buildClinicalDocumentEpisodeKeyCandidates = (
+  patient: PatientData,
+  primaryEpisodeKey?: string
+): string[] => buildClinicalEpisodeKeyCandidatesFromApplication(patient, primaryEpisodeKey);
 
 const recordClinicalDocumentEpisodeFallback = (
   event: ClinicalEpisodeFallbackEvent,
@@ -65,8 +74,8 @@ export const buildClinicalDocumentEpisodeContext = (
   patient: PatientData,
   sourceDailyRecordDate: string,
   sourceBedId: string
-): ClinicalDocumentEpisodeContext =>
-  resolveClinicalEpisode(
+): ClinicalDocumentEpisodeContext => {
+  const episode = resolveClinicalEpisode(
     patient,
     {
       sourceDailyRecordDate,
@@ -78,6 +87,14 @@ export const buildClinicalDocumentEpisodeContext = (
         recordClinicalDocumentEpisodeFallback(event, { sourceDailyRecordDate, sourceBedId }),
     }
   );
+  const candidateKeys = buildClinicalDocumentEpisodeKeyCandidates(patient, episode.episodeKey);
+  const alternateEpisodeKeys = candidateKeys.filter(key => key !== episode.episodeKey);
+
+  return {
+    ...episode,
+    ...(alternateEpisodeKeys.length > 0 ? { alternateEpisodeKeys } : {}),
+  };
+};
 
 /**
  * Derives the patient field values used to populate document header placeholders.

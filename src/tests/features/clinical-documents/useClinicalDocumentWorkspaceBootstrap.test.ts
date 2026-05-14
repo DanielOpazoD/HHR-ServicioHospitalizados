@@ -42,7 +42,7 @@ vi.mock('@/application/clinical-documents/clinicalDocumentUseCases', async () =>
   >('@/application/clinical-documents/clinicalDocumentUseCases');
   return {
     ...actual,
-    subscribeClinicalDocumentsByEpisode: vi.fn(),
+    subscribeClinicalDocumentsByEpisodeKeys: vi.fn(),
   };
 });
 
@@ -128,6 +128,7 @@ describe('useClinicalDocumentWorkspaceBootstrap', () => {
     controllerMocks.listActiveClinicalDocumentTemplates.mockReturnValue([localTemplate]);
     controllerMocks.buildClinicalDocumentEpisodeContext.mockReturnValue({
       episodeKey: '11.111.111-1__2026-03-06',
+      alternateEpisodeKeys: ['11111111-1__2026-03-06'],
       sourceDailyRecordDate: '2026-03-06',
       specialty: 'Medicina',
     });
@@ -142,8 +143,8 @@ describe('useClinicalDocumentWorkspaceBootstrap', () => {
       data: [localTemplate],
       issues: [],
     });
-    vi.mocked(clinicalDocumentUseCases.subscribeClinicalDocumentsByEpisode).mockImplementation(
-      (_episodeKey, callback) => {
+    vi.mocked(clinicalDocumentUseCases.subscribeClinicalDocumentsByEpisodeKeys).mockImplementation(
+      (_episodeKeys, callback) => {
         callback([buildDocument()]);
         return vi.fn();
       }
@@ -166,7 +167,7 @@ describe('useClinicalDocumentWorkspaceBootstrap', () => {
     await Promise.resolve();
 
     expect(templateUseCases.executeListActiveClinicalDocumentTemplates).not.toHaveBeenCalled();
-    expect(clinicalDocumentUseCases.subscribeClinicalDocumentsByEpisode).not.toHaveBeenCalled();
+    expect(clinicalDocumentUseCases.subscribeClinicalDocumentsByEpisodeKeys).not.toHaveBeenCalled();
   });
 
   it('loads remote templates and hydrates subscription documents', async () => {
@@ -188,8 +189,8 @@ describe('useClinicalDocumentWorkspaceBootstrap', () => {
       expect(result.current.selectedDocumentId).toBe(result.current.documents[0]?.id);
     });
 
-    expect(clinicalDocumentUseCases.subscribeClinicalDocumentsByEpisode).toHaveBeenCalledWith(
-      '11.111.111-1__2026-03-06',
+    expect(clinicalDocumentUseCases.subscribeClinicalDocumentsByEpisodeKeys).toHaveBeenCalledWith(
+      ['11.111.111-1__2026-03-06', '11111111-1__2026-03-06'],
       expect.any(Function),
       'hhr'
     );
@@ -253,8 +254,8 @@ describe('useClinicalDocumentWorkspaceBootstrap', () => {
     let subscriptionCallback: ((docs: ReturnType<typeof buildDocument>[]) => void) | null = null;
     const primary = buildDocument();
     const secondary = { ...buildDocument(), id: 'secondary-doc' };
-    vi.mocked(clinicalDocumentUseCases.subscribeClinicalDocumentsByEpisode).mockImplementation(
-      (_episodeKey, callback) => {
+    vi.mocked(clinicalDocumentUseCases.subscribeClinicalDocumentsByEpisodeKeys).mockImplementation(
+      (_episodeKeys, callback) => {
         subscriptionCallback = callback as typeof subscriptionCallback;
         callback([primary, secondary]);
         return vi.fn();

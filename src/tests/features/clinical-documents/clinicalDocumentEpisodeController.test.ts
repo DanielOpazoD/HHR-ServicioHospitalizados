@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildClinicalDocumentEpisodeContext,
+  buildClinicalDocumentEpisodeKeyCandidates,
   buildClinicalDocumentPatientFieldValues,
   buildClinicalEpisodeKey,
   getCurrentDateValue,
@@ -35,6 +36,26 @@ describe('clinicalDocumentEpisodeController', () => {
     expect(context.sourceBedId).toBe('R1');
     expect(context.episodeKey).toContain(patient.rut);
     expect(context.admissionDate).toBe('2026-03-04');
+  });
+
+  it('includes canonical and legacy episode keys for clinical document lookup', () => {
+    const patient = DataFactory.createMockPatient('R1', {
+      clinicalEpisodeId: 'episode-canonical-1',
+      rut: '11.111.111-1',
+      admissionDate: '2026-03-06',
+      admissionTime: '11:45',
+      firstSeenDate: '2026-03-04',
+    });
+
+    const keys = buildClinicalDocumentEpisodeKeyCandidates(patient, 'episode-canonical-1');
+
+    expect(keys).toEqual([
+      'episode-canonical-1',
+      '11.111.111-1__2026-03-04__11:45',
+      '11111111-1__2026-03-04__11:45',
+      '11.111.111-1__2026-03-04',
+      '11111111-1__2026-03-04',
+    ]);
   });
 
   it('records degraded telemetry when clinical documents fall back to a legacy episode key', () => {

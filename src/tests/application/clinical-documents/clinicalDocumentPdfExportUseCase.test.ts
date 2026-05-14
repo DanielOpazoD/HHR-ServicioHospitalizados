@@ -84,6 +84,7 @@ describe('clinicalDocumentPdfExportUseCase', () => {
           lockDocumentsByEpisodeKey: vi.fn(),
           delete: vi.fn(),
           subscribeByEpisode: vi.fn(),
+          subscribeByEpisodeKeys: vi.fn(),
         },
       }
     );
@@ -129,6 +130,7 @@ describe('clinicalDocumentPdfExportUseCase', () => {
           lockDocumentsByEpisodeKey: vi.fn(),
           delete: vi.fn(),
           subscribeByEpisode: vi.fn(),
+          subscribeByEpisodeKeys: vi.fn(),
         },
       }
     );

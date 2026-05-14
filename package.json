@@ -29,7 +29,7 @@
     "test:smoke:critical-runtime": "node scripts/run-critical-smoke-pack.mjs",
     "test:release-confidence": "node scripts/run-release-confidence-pack.mjs --profile blocking",
     "test:release-confidence:full": "node scripts/run-release-confidence-pack.mjs --profile full",
-    "test:clinical-documents": "vitest run src/tests/features/clinical-documents src/tests/services/repositories/ClinicalDocumentRepository.test.ts",
+    "test:clinical-documents": "vitest run src/tests/features/clinical-documents src/tests/services/repositories/ClinicalDocumentRepository*.test.ts",
     "test:sync-load": "vitest run src/tests/services/storage/syncQueueLoad.test.ts",
     "test:e2e": "unset NO_COLOR; playwright test",
     "test:e2e:ui": "playwright test --ui",

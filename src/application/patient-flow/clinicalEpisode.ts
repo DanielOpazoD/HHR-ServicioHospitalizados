@@ -66,6 +66,36 @@ export const resolveClinicalEpisodeAdmissionDate = (
   patient: PatientEpisodeContract
 ): string | undefined => patient.firstSeenDate || patient.admissionDate;
 
+const stripRutDots = (rut: string): string => rut.replace(/\./g, '');
+
+const uniqueNonEmpty = (values: Array<string | undefined | null>): string[] =>
+  Array.from(
+    new Set(values.map(value => String(value || '').trim()).filter(value => value.length > 0))
+  );
+
+export const buildClinicalEpisodeKeyCandidates = (
+  patient: PatientEpisodeContract,
+  primaryEpisodeKey?: string
+): string[] => {
+  const rut = String(patient.rut || '').trim();
+  const rutWithoutDots = stripRutDots(rut);
+  const admissionDate = resolveClinicalEpisodeAdmissionDate(patient);
+  const admissionTime = patient.admissionTime;
+
+  return uniqueNonEmpty([
+    primaryEpisodeKey,
+    patient.clinicalEpisodeId,
+    rut ? buildClinicalEpisodeKey(rut, admissionDate, admissionTime) : undefined,
+    rutWithoutDots && rutWithoutDots !== rut
+      ? buildClinicalEpisodeKey(rutWithoutDots, admissionDate, admissionTime)
+      : undefined,
+    rut ? buildClinicalEpisodeKey(rut, admissionDate) : undefined,
+    rutWithoutDots && rutWithoutDots !== rut
+      ? buildClinicalEpisodeKey(rutWithoutDots, admissionDate)
+      : undefined,
+  ]);
+};
+
 export const resolveClinicalEpisodeIdentifier = (
   patient: PatientEpisodeContract,
   options: ClinicalEpisodeResolutionOptions = {}
