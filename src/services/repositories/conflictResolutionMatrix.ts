@@ -44,6 +44,10 @@ import {
   resolveCanonicalDayShiftNurses,
   resolveStaffingSlotArray,
 } from '@/services/repositories/conflictResolutionStaffingMergeUtils';
+import {
+  EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS,
+  isSameEpisodeForExplicitCensusPatch,
+} from '@/services/repositories/explicitLocalCensusPatchPolicy';
 
 interface ConflictResolutionOptions {
   changedPaths?: string[];
@@ -305,6 +309,25 @@ const resolvePathValueWithMatrix = (
     );
     traceContext.add(traceFromScalarDecision(path, decision));
     return decision.value;
+  }
+
+  if (EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS.has(patientField)) {
+    if (isSameEpisodeForExplicitCensusPatch(remote.beds[bedId], local.beds[bedId])) {
+      traceContext.add({
+        path,
+        strategy: 'copy_local_value',
+        winner: 'local',
+        reason: 'explicit_local_census_patch_same_episode',
+      });
+      return getValueAtPath(local, path);
+    }
+    traceContext.add({
+      path,
+      strategy: 'copy_remote_value',
+      winner: 'remote',
+      reason: 'explicit_local_census_patch_different_episode',
+    });
+    return getValueAtPath(remote, path);
   }
 
   if (isClinicalCensusRemotePriorityField(patientField)) {
