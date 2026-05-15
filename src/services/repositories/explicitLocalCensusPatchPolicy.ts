@@ -6,6 +6,11 @@ export const EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS = new Set([
   'status',
 ]);
 
+export const PENDING_LOCAL_CENSUS_PATCH_FIELDS = new Set([
+  'pathology',
+  ...EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS,
+]);
+
 const normalizeEpisodeScalar = (value: unknown): string =>
   String(value || '')
     .trim()

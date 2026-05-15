@@ -249,7 +249,7 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
         }),
       }),
       expect.objectContaining({
-        contexts: expect.arrayContaining(['clinical', 'metadata']),
+        contexts: ['clinical'],
         origin: 'conflict_auto_merge',
       })
     );
@@ -257,12 +257,8 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
       '2026-02-15',
       expect.objectContaining({
         policyVersion: '2026-03-v3',
-        changedPaths: expect.arrayContaining([
-          'beds.R1.pathology',
-          'beds.R1.fhir_resource',
-          'dateTimestamp',
-        ]),
-        impactedContexts: ['clinical', 'metadata'],
+        changedPaths: ['beds.R1.pathology'],
+        impactedContexts: ['clinical'],
         assessment: expect.objectContaining({
           riskLevel: 'low',
           reviewRecommended: false,
@@ -327,7 +323,7 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
         }),
       }),
       expect.objectContaining({
-        contexts: expect.arrayContaining(['clinical', 'metadata']),
+        contexts: ['clinical'],
         origin: 'conflict_auto_merge',
       })
     );

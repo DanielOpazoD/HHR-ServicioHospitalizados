@@ -48,7 +48,10 @@ vi.mock('@/services/repositories/ports/repositoryAuditPort', () => ({
   logRepositoryConflictAutoMerged: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
+import {
+  updatePartial,
+  updatePartialDetailed,
+} from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { getRecordForDate as getRecordFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { updateRecordPartial as updateRecordPartialToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
@@ -139,8 +142,81 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
         }),
       }),
       expect.objectContaining({
-        contexts: expect.arrayContaining(['clinical', 'metadata']),
+        contexts: ['clinical'],
         origin: 'conflict_auto_merge',
+      })
+    );
+  });
+
+  it('auto-merges concurrent diagnosis, free-text specialty and status patches with an exact sync contract', async () => {
+    const current = buildRecord('2026-02-15');
+    current.lastUpdated = '2026-02-15T10:00:00.000Z';
+    current.beds = { R1: buildPatient('R1', 'Paciente vigente') };
+    current.beds.R1.clinicalEpisodeId = 'episode-r1';
+    current.beds.R1.rut = '11.111.111-1';
+    current.beds.R1.admissionDate = '2026-02-14';
+    current.beds.R1.admissionTime = '08:30';
+    current.beds.R1.specialty = 'Otra especialidad libre';
+    current.beds.R1.secondarySpecialty = 'Dermatologia oncológica';
+    current.beds.R1.status = PatientStatus.DE_CUIDADO;
+    current.beds.R1.pathology = 'Diagnostico local editado';
+
+    const remote = buildRecord('2026-02-15');
+    remote.lastUpdated = '2026-02-15T10:05:00.000Z';
+    remote.beds = { R1: buildPatient('R1', 'Paciente vigente') };
+    remote.beds.R1.clinicalEpisodeId = 'episode-r1';
+    remote.beds.R1.rut = '11.111.111-1';
+    remote.beds.R1.admissionDate = '2026-02-14';
+    remote.beds.R1.admissionTime = '08:30';
+    remote.beds.R1.specialty = Specialty.MEDICINA;
+    remote.beds.R1.secondarySpecialty = '';
+    remote.beds.R1.status = PatientStatus.ESTABLE;
+    remote.beds.R1.pathology = 'Diagnostico remoto concurrente no relacionado';
+
+    const concurrencyError = new Error('Concurrency conflict');
+    concurrencyError.name = 'ConcurrencyError';
+
+    const patch = {
+      'beds.R1.pathology': 'Diagnostico local editado',
+      'beds.R1.specialty': 'Otra especialidad libre',
+      'beds.R1.secondarySpecialty': 'Dermatologia oncológica',
+      'beds.R1.status': PatientStatus.DE_CUIDADO,
+    };
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(updateRecordPartialToFirestore).mockRejectedValueOnce(concurrencyError);
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(remote);
+
+    await expect(updatePartialDetailed('2026-02-15', patch)).resolves.toMatchObject({
+      outcome: 'auto_merged',
+      autoMerged: true,
+      queuedForRetry: true,
+      patchedFields: 6,
+      conflictSummary: expect.objectContaining({
+        changedPaths: Object.keys(patch),
+      }),
+    });
+
+    expect(queueSyncTask).toHaveBeenCalledWith(
+      'UPDATE_DAILY_RECORD',
+      expect.objectContaining({
+        date: '2026-02-15',
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({
+            specialty: 'Otra especialidad libre',
+            secondarySpecialty: 'Dermatologia oncológica',
+            status: PatientStatus.DE_CUIDADO,
+            pathology: 'Diagnostico remoto concurrente no relacionado',
+          }),
+        }),
+      }),
+      expect.objectContaining({
+        contexts: ['clinical'],
+        origin: 'conflict_auto_merge',
+        syncContract: {
+          expectedVersion: '2026-02-15T10:05:00.000Z',
+          changedPaths: Object.keys(patch),
+        },
       })
     );
   });

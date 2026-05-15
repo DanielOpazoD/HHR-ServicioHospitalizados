@@ -53,7 +53,7 @@ export const buildBedRows = (
 ): PrescriptionBedRowData[] => {
   const byBed = new Map<string, PrescriptionBedRowData>();
   const activeRowsByRut = new Map<string, PrescriptionBedRowData>();
-  const activeRowsByName = new Map<string, PrescriptionBedRowData>();
+  const activeRowsByName = new Map<string, PrescriptionBedRowData | null>();
 
   for (const [bedId, patient] of Object.entries(daily?.beds || {})) {
     if (!patient || patient.isBlocked) continue;
@@ -69,21 +69,34 @@ export const buildBedRows = (
     const rutKey = normalizeRutToken(row.patientRut);
     if (rutKey) activeRowsByRut.set(rutKey, row);
     const nameKey = normalizeIdentityToken(row.patientName);
-    if (nameKey) activeRowsByName.set(nameKey, row);
+    if (nameKey) {
+      activeRowsByName.set(nameKey, activeRowsByName.has(nameKey) ? null : row);
+    }
   }
 
   for (const record of records) {
     if (resolvePrescriptionAssignmentScope(record) !== 'patient') continue;
     if (!record.bedId) continue;
-    let row = byBed.get(record.bedId);
-    if (!row) {
-      const rutKey = normalizeRutToken(record.patientRut);
-      row = rutKey ? activeRowsByRut.get(rutKey) : undefined;
+
+    const rutKey = normalizeRutToken(record.patientRut);
+    const nameKey = normalizeIdentityToken(record.patientName);
+    let row = rutKey ? activeRowsByRut.get(rutKey) : undefined;
+
+    if (!row && !rutKey && nameKey) {
+      row = activeRowsByName.get(nameKey) || undefined;
     }
+
     if (!row) {
-      const nameKey = normalizeIdentityToken(record.patientName);
-      row = nameKey ? activeRowsByName.get(nameKey) : undefined;
+      const bedRow = byBed.get(record.bedId);
+      const bedRowRutKey = normalizeRutToken(bedRow?.patientRut);
+      const bedRowNameKey = normalizeIdentityToken(bedRow?.patientName);
+      const hasRutConflict = Boolean(rutKey && bedRowRutKey && rutKey !== bedRowRutKey);
+      const hasNameConflict = Boolean(
+        !rutKey && nameKey && bedRowNameKey && nameKey !== bedRowNameKey
+      );
+      row = bedRow && !hasRutConflict && !hasNameConflict ? bedRow : undefined;
     }
+
     if (!row) {
       row = {
         bedId: record.bedId,

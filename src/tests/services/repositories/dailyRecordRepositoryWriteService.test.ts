@@ -195,8 +195,12 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         }),
       }),
       expect.objectContaining({
-        contexts: expect.arrayContaining(['clinical', 'metadata']),
+        contexts: ['clinical'],
         origin: 'partial_update_retry',
+        syncContract: {
+          changedPaths: ['beds.R1.patientName'],
+          expectedVersion: existing.lastUpdated,
+        },
       })
     );
   });

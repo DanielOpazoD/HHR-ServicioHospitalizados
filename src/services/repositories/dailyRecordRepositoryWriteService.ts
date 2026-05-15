@@ -344,6 +344,7 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
     throw err;
   }
   const patchedFields = Object.keys(mergedPatches).length;
+  const semanticChangedPaths = Object.keys(command.patch);
 
   const suspiciousShrinkages = await resolveBlockingFieldShrinkages(
     command.date,
@@ -381,7 +382,7 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
   const nextAction = await persistLocalAndAttemptRemoteSync({
     date: command.date,
     record: validatedRecord,
-    changedPaths: Object.keys(mergedPatches),
+    changedPaths: semanticChangedPaths,
     remoteState,
     remoteWrite: () =>
       updateRecordPartialToFirestore(command.date, mergedPatches, current.lastUpdated),
