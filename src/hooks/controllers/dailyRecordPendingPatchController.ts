@@ -1,7 +1,7 @@
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import { applyPatches } from '@/utils/patchUtils';
 import {
-  EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS,
+  PENDING_LOCAL_CENSUS_PATCH_FIELDS,
   isSameEpisodeForExplicitCensusPatch,
 } from '@/services/repositories/explicitLocalCensusPatchPolicy';
 
@@ -45,7 +45,7 @@ const collectPendingExplicitCensusPatch = (
   pendingPatches.forEach(patch => {
     Object.entries(patch as Record<string, unknown>).forEach(([path, value]) => {
       const [root, bedId, field] = path.split('.');
-      if (root !== 'beds' || !bedId || !field || !EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS.has(field)) {
+      if (root !== 'beds' || !bedId || !field || !PENDING_LOCAL_CENSUS_PATCH_FIELDS.has(field)) {
         return;
       }
 

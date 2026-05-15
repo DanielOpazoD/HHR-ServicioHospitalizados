@@ -206,7 +206,7 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
             specialty: 'Otra especialidad libre',
             secondarySpecialty: 'Dermatologia oncológica',
             status: PatientStatus.DE_CUIDADO,
-            pathology: 'Diagnostico local editado',
+            pathology: 'Diagnostico remoto concurrente no relacionado',
           }),
         }),
       }),
