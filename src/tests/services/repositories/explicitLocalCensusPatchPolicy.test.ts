@@ -24,11 +24,38 @@ describe('explicitLocalCensusPatchPolicy', () => {
     ).toBe(true);
   });
 
-  it('rejects when only one side has a clinical episode id', () => {
+  it('falls back to the episode tuple when only one side has a clinical episode id', () => {
     expect(
       isSameEpisodeForExplicitCensusPatch(
-        patient({ clinicalEpisodeId: 'episode-r1' }),
+        patient({ clinicalEpisodeId: 'ep_episode-r1' }),
         patient({ clinicalEpisodeId: undefined })
+      )
+    ).toBe(true);
+  });
+
+  it('falls back to the episode tuple when a canonical id meets a deterministic legacy id', () => {
+    expect(
+      isSameEpisodeForExplicitCensusPatch(
+        patient({ clinicalEpisodeId: 'ep_remote-canonical' }),
+        patient({ clinicalEpisodeId: 'legacy_ep_localhash' })
+      )
+    ).toBe(true);
+  });
+
+  it('rejects different persisted canonical episode ids before tuple fallback', () => {
+    expect(
+      isSameEpisodeForExplicitCensusPatch(
+        patient({ clinicalEpisodeId: 'ep_remote-canonical' }),
+        patient({ clinicalEpisodeId: 'ep_local-canonical' })
+      )
+    ).toBe(false);
+  });
+
+  it('rejects a one-sided clinical episode id when the fallback tuple belongs to another same-day admission', () => {
+    expect(
+      isSameEpisodeForExplicitCensusPatch(
+        patient({ clinicalEpisodeId: 'ep_episode-r1', admissionTime: '15:30' }),
+        patient({ clinicalEpisodeId: undefined, admissionTime: '08:00' })
       )
     ).toBe(false);
   });

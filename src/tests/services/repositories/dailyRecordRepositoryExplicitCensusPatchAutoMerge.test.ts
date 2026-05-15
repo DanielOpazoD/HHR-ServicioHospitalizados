@@ -220,4 +220,61 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
       })
     );
   });
+
+  it('auto-merges a new-patient status patch when only the remote side has the generated episode id', async () => {
+    const current = buildRecord('2026-02-15');
+    current.lastUpdated = '2026-02-15T10:00:00.000Z';
+    current.beds = { R1: buildPatient('R1', 'Paciente recien ingresado') };
+    current.beds.R1.clinicalEpisodeId = undefined;
+    current.beds.R1.rut = '11.111.111-1';
+    current.beds.R1.admissionDate = '2026-02-15';
+    current.beds.R1.admissionTime = '08:30';
+    current.beds.R1.status = PatientStatus.GRAVE;
+
+    const remote = buildRecord('2026-02-15');
+    remote.lastUpdated = '2026-02-15T10:05:00.000Z';
+    remote.beds = { R1: buildPatient('R1', 'Paciente recien ingresado') };
+    remote.beds.R1.clinicalEpisodeId = 'ep_r1_generated';
+    remote.beds.R1.rut = '11.111.111-1';
+    remote.beds.R1.admissionDate = '2026-02-15';
+    remote.beds.R1.admissionTime = '08:30';
+    remote.beds.R1.status = PatientStatus.EMPTY;
+
+    const concurrencyError = new Error('Concurrency conflict');
+    concurrencyError.name = 'ConcurrencyError';
+
+    const patch = {
+      'beds.R1.status': PatientStatus.GRAVE,
+    };
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(current);
+    vi.mocked(updateRecordPartialToFirestore).mockRejectedValueOnce(concurrencyError);
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(remote);
+
+    await expect(updatePartialDetailed('2026-02-15', patch)).resolves.toMatchObject({
+      outcome: 'auto_merged',
+      autoMerged: true,
+      queuedForRetry: true,
+      conflictSummary: expect.objectContaining({
+        changedPaths: Object.keys(patch),
+      }),
+    });
+
+    expect(queueSyncTask).toHaveBeenCalledWith(
+      'UPDATE_DAILY_RECORD',
+      expect.objectContaining({
+        date: '2026-02-15',
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({
+            clinicalEpisodeId: 'ep_r1_generated',
+            status: PatientStatus.GRAVE,
+          }),
+        }),
+      }),
+      expect.objectContaining({
+        contexts: ['clinical'],
+        origin: 'conflict_auto_merge',
+      })
+    );
+  });
 });

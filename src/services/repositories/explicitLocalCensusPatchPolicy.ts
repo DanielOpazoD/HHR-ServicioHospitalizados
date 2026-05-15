@@ -16,6 +16,8 @@ const normalizeEpisodeScalar = (value: unknown): string =>
     .trim()
     .toLowerCase();
 
+const isCanonicalEpisodeId = (value: string): boolean => value.startsWith('ep_');
+
 export const isSameEpisodeForExplicitCensusPatch = (
   remotePatient: DailyRecord['beds'][string] | undefined,
   localPatient: DailyRecord['beds'][string] | undefined
@@ -26,9 +28,18 @@ export const isSameEpisodeForExplicitCensusPatch = (
 
   const remoteEpisodeId = normalizeEpisodeScalar(remotePatient.clinicalEpisodeId);
   const localEpisodeId = normalizeEpisodeScalar(localPatient.clinicalEpisodeId);
-  if (remoteEpisodeId || localEpisodeId) {
-    return Boolean(remoteEpisodeId && localEpisodeId && remoteEpisodeId === localEpisodeId);
+  if (remoteEpisodeId && localEpisodeId) {
+    if (remoteEpisodeId === localEpisodeId) {
+      return true;
+    }
+    if (isCanonicalEpisodeId(remoteEpisodeId) && isCanonicalEpisodeId(localEpisodeId)) {
+      return false;
+    }
   }
+  // During admission/realtime hydration, Firebase may already have the generated
+  // episode id while the local optimistic row still only has the legacy tuple or
+  // a deterministic legacy_ep_* id. Fall through to the tuple comparison so
+  // explicit field edits do not flicker away.
 
   const remoteRut = normalizeEpisodeScalar(remotePatient.rut);
   const localRut = normalizeEpisodeScalar(localPatient.rut);
