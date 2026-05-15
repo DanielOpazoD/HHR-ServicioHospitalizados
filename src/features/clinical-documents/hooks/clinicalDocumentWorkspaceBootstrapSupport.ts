@@ -31,6 +31,65 @@ export const shouldSeedClinicalDocumentTemplates = ({
   remoteTemplateCount !== null &&
   remoteTemplateCount === 0;
 
+const isLegacyEpisodeKey = (episodeKey: string): boolean => episodeKey.includes('__');
+
+const normalizePatientRut = (rut?: string): string =>
+  String(rut || '')
+    .replace(/[^0-9kK]/g, '')
+    .toUpperCase();
+
+const resolveDocumentRut = (document: ClinicalDocumentRecord): string => {
+  const explicitRut = normalizePatientRut(document.patientRut);
+  if (explicitRut) {
+    return explicitRut;
+  }
+
+  const fieldRut = document.patientFields.find(
+    field => field.id === 'rut' || field.id === 'patientRut'
+  );
+  return normalizePatientRut(fieldRut?.value);
+};
+
+const filterDocumentsForCurrentPatientIdentity = (
+  documents: ClinicalDocumentRecord[],
+  currentPatientRut?: string
+): ClinicalDocumentRecord[] => {
+  const normalizedCurrentRut = normalizePatientRut(currentPatientRut);
+  if (!normalizedCurrentRut) {
+    return documents;
+  }
+
+  return documents.filter(document => {
+    const documentRut = resolveDocumentRut(document);
+    return !documentRut || documentRut === normalizedCurrentRut;
+  });
+};
+
+export const filterClinicalDocumentsForCurrentEpisode = ({
+  documents,
+  currentEpisodeKey,
+  allowedEpisodeKeys,
+  currentPatientRut,
+}: {
+  documents: ClinicalDocumentRecord[];
+  currentEpisodeKey: string;
+  allowedEpisodeKeys: string[];
+  currentPatientRut?: string;
+}): ClinicalDocumentRecord[] => {
+  if (!isLegacyEpisodeKey(currentEpisodeKey)) {
+    return filterDocumentsForCurrentPatientIdentity(
+      documents.filter(document => document.episodeKey === currentEpisodeKey),
+      currentPatientRut
+    );
+  }
+
+  const allowed = new Set(allowedEpisodeKeys);
+  return filterDocumentsForCurrentPatientIdentity(
+    documents.filter(document => allowed.has(document.episodeKey)),
+    currentPatientRut
+  );
+};
+
 export const resolveNextSelectedClinicalDocumentId = (
   documents: ClinicalDocumentRecord[],
   previousSelectedDocumentId: string | null

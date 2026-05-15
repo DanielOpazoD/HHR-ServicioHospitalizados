@@ -72,6 +72,7 @@ describe('DailyRecordContext', () => {
     updateDischarge: vi.fn(),
     deleteDischarge: vi.fn(),
     undoDischarge: vi.fn(),
+    convertDischargeToCma: vi.fn(),
     addTransfer: vi.fn(),
     updateTransfer: vi.fn(),
     deleteTransfer: vi.fn(),
@@ -80,6 +81,7 @@ describe('DailyRecordContext', () => {
     deleteCMA: vi.fn(),
     updateCMA: vi.fn(),
     undoCMA: vi.fn(),
+    convertCmaToHomeDischarge: vi.fn(),
     updateNurse: vi.fn(),
     updateTens: vi.fn(),
     updateDetailedStaffing: vi.fn(),
@@ -97,6 +99,15 @@ describe('DailyRecordContext', () => {
   const TestComponent = ({ hook }: { hook: () => unknown }) => {
     const data = hook();
     return <div data-testid="hook-data">{JSON.stringify(data)}</div>;
+  };
+
+  const MovementConversionActionsProbe = () => {
+    const actions = useDailyRecordMovementActions();
+    return (
+      <div data-testid="movement-conversion-actions">
+        {typeof actions.convertDischargeToCma}:{typeof actions.convertCmaToHomeDischarge}
+      </div>
+    );
   };
 
   it('should provide data via useDailyRecordData', () => {
@@ -264,6 +275,18 @@ describe('DailyRecordContext', () => {
     );
     expect(handoffRender.getByTestId('hook-data')).toBeInTheDocument();
     handoffRender.unmount();
+  });
+
+  it('exposes movement conversion actions through the fragmented actions context', () => {
+    render(
+      <DailyRecordProvider value={mockValue}>
+        <MovementConversionActionsProbe />
+      </DailyRecordProvider>
+    );
+
+    expect(screen.getByTestId('movement-conversion-actions')).toHaveTextContent(
+      'function:function'
+    );
   });
 
   it('should throw error when hooks are used outside provider', () => {

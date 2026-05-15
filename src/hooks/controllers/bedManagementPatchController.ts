@@ -23,6 +23,7 @@ import {
   getClearClinicalDataPatches,
   hasDisplayablePatientName,
   shouldAnchorFirstSeenDate,
+  shouldResetClinicalEpisodeOwnership,
 } from '@/hooks/controllers/bedManagementPatientIdentityPatchController';
 
 const getCudyrTimestampPatch = () => ({
@@ -73,12 +74,23 @@ const buildPatientFieldPatches = ({
 
   const nextPatientName = String(updates.patientName ?? currentPatient.patientName ?? '');
   const nextRut = String(updates.rut ?? currentPatient.rut ?? '');
+  const resetsClinicalEpisodeOwnership = shouldResetClinicalEpisodeOwnership({
+    currentClinicalEpisodeId: currentPatient.clinicalEpisodeId,
+    currentPatientName: currentPatient.patientName,
+    currentRut: currentPatient.rut,
+    nextPatientName,
+    nextRut,
+  });
 
   if (hasIdentityChange) {
     Object.assign(patches, getClearClinicalDataPatches(bedId));
   }
 
-  if (
+  if (resetsClinicalEpisodeOwnership) {
+    patches[`beds.${bedId}.clinicalEpisodeId`] = undefined;
+    patches[`beds.${bedId}.firstSeenDate`] =
+      nextPatientName.trim() || nextRut.trim() ? recordDate : undefined;
+  } else if (
     shouldAnchorFirstSeenDate({
       currentPatientName: currentPatient.patientName,
       currentRut: currentPatient.rut,

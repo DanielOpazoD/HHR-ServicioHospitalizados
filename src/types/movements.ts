@@ -27,6 +27,7 @@ export type UpdateDischargeAction = (
 
 export type DeleteDischargeAction = (id: string) => void;
 export type UndoDischargeAction = (id: string) => void;
+export type ConvertDischargeToCmaAction = (id: string) => void;
 
 export type AddTransferAction = (
   bedId: string,
@@ -47,6 +48,7 @@ export interface DischargeMovementActions {
   updateDischarge: UpdateDischargeAction;
   deleteDischarge: DeleteDischargeAction;
   undoDischarge: UndoDischargeAction;
+  convertDischargeToCma: ConvertDischargeToCmaAction;
 }
 
 export interface TransferMovementActions {

@@ -15,12 +15,14 @@ interface UseCmaSectionActionsParams {
   updatePatientMultiple: (bedId: string, fields: Partial<PatientData>) => void;
   deleteCMA: (id: string) => void;
   undoCMA?: (item: CMAData) => void;
+  convertCmaToHomeDischarge: (id: string) => void;
 }
 
 interface UseCmaSectionActionsResult {
   handleUpdate: (id: string, field: keyof CMAData, value: CMAData[keyof CMAData]) => void;
   handleUndo: (item: CMAData) => Promise<void>;
   handleDelete: (item: CMAData) => Promise<void>;
+  handleConvertToDischarge: (item: CMAData) => Promise<void>;
 }
 
 export const useCmaSectionActions = ({
@@ -30,6 +32,7 @@ export const useCmaSectionActions = ({
   updatePatientMultiple,
   deleteCMA,
   undoCMA,
+  convertCmaToHomeDischarge,
 }: UseCmaSectionActionsParams): UseCmaSectionActionsResult => {
   const handleUpdate = React.useCallback(
     (id: string, field: keyof CMAData, value: CMAData[keyof CMAData]) => {
@@ -68,9 +71,33 @@ export const useCmaSectionActions = ({
     [confirm, deleteCMA, notifyError]
   );
 
+  const handleConvertToDischarge = React.useCallback(
+    async (item: CMAData) => {
+      let confirmed = false;
+      try {
+        confirmed = await confirm({
+          title: 'Convertir CMA a alta domicilio',
+          message: `¿Convertir el registro CMA de ${item.patientName || 'este paciente'} en una alta a domicilio?`,
+          confirmText: 'Convertir',
+          cancelText: 'Cancelar',
+          variant: 'warning',
+        });
+      } catch {
+        notifyError('No se pudo convertir', 'No se pudo confirmar el cambio de tipo de egreso.');
+        return;
+      }
+
+      if (confirmed) {
+        convertCmaToHomeDischarge(item.id);
+      }
+    },
+    [confirm, convertCmaToHomeDischarge, notifyError]
+  );
+
   return {
     handleUpdate,
     handleUndo,
     handleDelete,
+    handleConvertToDischarge,
   };
 };

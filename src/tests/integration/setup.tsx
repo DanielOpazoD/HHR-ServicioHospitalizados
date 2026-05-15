@@ -228,6 +228,7 @@ export const createMockDailyRecordContext = (
   updateDischarge: vi.fn(),
   deleteDischarge: vi.fn(),
   undoDischarge: vi.fn(),
+  convertDischargeToCma: vi.fn(),
 
   // Transfers
   addTransfer: vi.fn(),
@@ -240,6 +241,7 @@ export const createMockDailyRecordContext = (
   deleteCMA: vi.fn(),
   updateCMA: vi.fn(),
   undoCMA: vi.fn(),
+  convertCmaToHomeDischarge: vi.fn(),
 
   // Handoff Management
   updateHandoffChecklist: vi.fn(),

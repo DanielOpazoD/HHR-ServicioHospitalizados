@@ -33,4 +33,31 @@ describe('bedManagementPatchController', () => {
     expect(patch).not.toHaveProperty('beds.R1.deviceDetails');
     expect(patch).not.toHaveProperty('beds.R1.pathology');
   });
+
+  it('clears stale episode ownership when replacing the patient identity in an occupied bed', () => {
+    const record = DataFactory.createMockDailyRecord('2026-05-14');
+    record.beds.R1 = DataFactory.createMockPatient('R1', {
+      patientName: 'Paciente Antiguo',
+      rut: '11.111.111-1',
+      admissionDate: '2026-05-14',
+      firstSeenDate: '2026-05-13',
+      clinicalEpisodeId: 'ep_old_patient',
+      pathology: 'Diagnóstico previo',
+      clinicalEvents: [{ id: 'event-old', text: 'Evento previo' } as never],
+    });
+
+    const patch = buildUpdatePatientPatches(record, 'R1', {
+      patientName: 'Paciente Nuevo',
+      rut: '22.222.222-2',
+    });
+
+    expect(patch).toMatchObject({
+      'beds.R1.patientName': 'Paciente Nuevo',
+      'beds.R1.rut': '22.222.222-2',
+      'beds.R1.clinicalEpisodeId': undefined,
+      'beds.R1.firstSeenDate': '2026-05-14',
+      'beds.R1.pathology': '',
+      'beds.R1.clinicalEvents': [],
+    });
+  });
 });

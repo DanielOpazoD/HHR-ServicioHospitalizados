@@ -135,6 +135,53 @@ describe('useCMA', () => {
     );
   });
 
+  it('converts a CMA entry into a home discharge in one movement patch', () => {
+    mockRecord.cma = [
+      DataFactory.createMockCMA({
+        id: 'cma-1',
+        patientName: 'Paciente CMA',
+        rut: '11.111.111-1',
+        age: '44',
+        bedName: 'R1',
+        originalBedId: 'R1',
+        dischargeTime: '15:30',
+        clinicalEpisodeId: 'episode-cma',
+        originalData: DataFactory.createMockPatient('R1', {
+          patientName: 'Paciente CMA',
+          clinicalEpisodeId: 'episode-cma',
+        }),
+      }),
+    ];
+    const { result } = renderHook(() => useCMA(mockRecord, saveAndUpdate, patchRecord));
+
+    act(() => {
+      result.current.convertCmaToHomeDischarge('cma-1');
+    });
+
+    expect(patchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cma: [
+          expect.objectContaining({
+            id: 'cma-1',
+            deletedAt: expect.any(String),
+            deletedReason: 'converted_to_discharge',
+          }),
+        ],
+        discharges: [
+          expect.objectContaining({
+            patientName: 'Paciente CMA',
+            rut: '11.111.111-1',
+            bedId: 'R1',
+            time: '15:30',
+            status: 'Vivo',
+            dischargeType: 'Domicilio (Habitual)',
+            clinicalEpisodeId: 'episode-cma',
+          }),
+        ],
+      })
+    );
+  });
+
   it('should handle record being null', () => {
     const { result } = renderHook(() => useCMA(null, saveAndUpdate, patchRecord));
 

@@ -8,8 +8,13 @@ import { useDischargesSectionModel } from '@/features/census/hooks/useDischarges
 // Interface for props removed as data comes from context
 
 export const DischargesSection: React.FC = () => {
-  const { recordDate, sectionModel, handleEditDischarge, updateDischarge } =
-    useDischargesSectionModel();
+  const {
+    recordDate,
+    sectionModel,
+    handleEditDischarge,
+    updateDischarge,
+    handleConvertDischargeToCma,
+  } = useDischargesSectionModel();
 
   return (
     <CensusMovementSection
@@ -38,6 +43,7 @@ export const DischargesSection: React.FC = () => {
             );
           }}
           onDelete={sectionModel.handleDelete}
+          onConvertToCma={handleConvertDischargeToCma}
         />
       )}
     />

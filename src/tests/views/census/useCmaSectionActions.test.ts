@@ -9,6 +9,7 @@ describe('useCmaSectionActions', () => {
   const updateCMA = vi.fn();
   const updatePatientMultiple = vi.fn();
   const deleteCMA = vi.fn();
+  const convertCmaToHomeDischarge = vi.fn();
 
   const cmaItem = DataFactory.createMockCMA({
     id: 'cma-1',
@@ -24,6 +25,7 @@ describe('useCmaSectionActions', () => {
         updateCMA,
         updatePatientMultiple,
         deleteCMA,
+        convertCmaToHomeDischarge,
       })
     );
 
@@ -110,5 +112,23 @@ describe('useCmaSectionActions', () => {
       'No se pudo eliminar',
       expect.stringContaining('No se pudo confirmar la eliminación CMA')
     );
+  });
+
+  it('converts cma to home discharge only when confirmation is accepted', async () => {
+    confirm.mockResolvedValueOnce(true);
+    const { result } = renderActions();
+
+    await act(async () => {
+      await result.current.handleConvertToDischarge(cmaItem);
+    });
+
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Convertir CMA a alta domicilio',
+        confirmText: 'Convertir',
+        variant: 'warning',
+      })
+    );
+    expect(convertCmaToHomeDischarge).toHaveBeenCalledWith('cma-1');
   });
 });

@@ -84,14 +84,21 @@ const remoteTemplate: ClinicalDocumentTemplate = {
   defaultFooterEspecialidadLabel: 'Especialidad',
 };
 
-const patient = {
+const patient: {
+  patientName: string;
+  rut: string;
+  specialty: string;
+  clinicalEpisodeId?: string;
+} = {
   patientName: 'Paciente Test',
   rut: '11.111.111-1',
   specialty: 'Medicina',
 };
 
-const buildDocument = () =>
-  createClinicalDocumentDraft({
+const buildDocument = (
+  overrides: Partial<ReturnType<typeof createClinicalDocumentDraft>> = {}
+) => ({
+  ...createClinicalDocumentDraft({
     templateId: 'epicrisis',
     hospitalId: 'hhr',
     actor: {
@@ -120,7 +127,9 @@ const buildDocument = () =>
     },
     medico: 'Doctor Test',
     especialidad: 'Medicina',
-  });
+  }),
+  ...overrides,
+});
 
 describe('useClinicalDocumentWorkspaceBootstrap', () => {
   beforeEach(() => {
@@ -194,6 +203,118 @@ describe('useClinicalDocumentWorkspaceBootstrap', () => {
       expect.any(Function),
       'hhr'
     );
+  });
+
+  it('ignores legacy alternate-key documents when the current patient has a canonical episode id', async () => {
+    controllerMocks.buildClinicalDocumentEpisodeContext.mockReturnValue({
+      episodeKey: 'episode-current-patient',
+      alternateEpisodeKeys: ['11.111.111-1__2026-03-06'],
+      patientRut: '11.111.111-1',
+      sourceDailyRecordDate: '2026-03-06',
+      specialty: 'Medicina',
+    });
+    vi.mocked(clinicalDocumentUseCases.subscribeClinicalDocumentsByEpisodeKeys).mockImplementation(
+      (_episodeKeys, callback) => {
+        callback([
+          buildDocument({
+            id: 'old-bed-doc',
+            episodeKey: '11.111.111-1__2026-03-06',
+            patientName: 'Paciente anterior',
+          }),
+          buildDocument({
+            id: 'current-doc',
+            episodeKey: 'episode-current-patient',
+            patientName: 'Paciente Test',
+          }),
+        ]);
+        return vi.fn();
+      }
+    );
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceBootstrap({
+        patient: patient as never,
+        currentDateString: '2026-03-06',
+        bedId: 'R1',
+        isActive: true,
+        canRead: true,
+        hospitalId: 'hhr',
+        role: 'doctor_urgency',
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.documents.map(document => document.id)).toEqual(['current-doc']);
+      expect(result.current.selectedDocumentId).toBe('current-doc');
+    });
+  });
+
+  it('clears documents immediately when the bed changes to a different patient episode', async () => {
+    controllerMocks.buildClinicalDocumentEpisodeContext.mockImplementation((nextPatient: never) => {
+      const rut = (nextPatient as { rut?: string }).rut;
+      return rut === '22.222.222-2'
+        ? {
+            episodeKey: 'ep_new_patient',
+            alternateEpisodeKeys: [],
+            patientRut: '22.222.222-2',
+            sourceDailyRecordDate: '2026-03-06',
+            specialty: 'Medicina',
+          }
+        : {
+            episodeKey: 'ep_old_patient',
+            alternateEpisodeKeys: [],
+            patientRut: '11.111.111-1',
+            sourceDailyRecordDate: '2026-03-06',
+            specialty: 'Medicina',
+          };
+    });
+    vi.mocked(clinicalDocumentUseCases.subscribeClinicalDocumentsByEpisodeKeys).mockImplementation(
+      (episodeKeys, callback) => {
+        if (episodeKeys.includes('ep_old_patient')) {
+          callback([
+            buildDocument({
+              id: 'old-patient-doc',
+              episodeKey: 'ep_old_patient',
+              patientName: 'Paciente anterior',
+            }),
+          ]);
+        }
+        return vi.fn();
+      }
+    );
+
+    const { result, rerender } = renderHook(
+      ({ hookPatient }) =>
+        useClinicalDocumentWorkspaceBootstrap({
+          patient: hookPatient as never,
+          currentDateString: '2026-03-06',
+          bedId: 'R1',
+          isActive: true,
+          canRead: true,
+          hospitalId: 'hhr',
+          role: 'doctor_urgency',
+        }),
+      { initialProps: { hookPatient: patient } }
+    );
+
+    await waitFor(() => {
+      expect(result.current.documents.map(document => document.id)).toEqual(['old-patient-doc']);
+      expect(result.current.selectedDocumentId).toBe('old-patient-doc');
+    });
+
+    rerender({
+      hookPatient: {
+        ...patient,
+        patientName: 'Paciente Nuevo',
+        rut: '22.222.222-2',
+        clinicalEpisodeId: 'ep_new_patient',
+      },
+    });
+
+    await waitFor(() => {
+      expect(result.current.documents).toEqual([]);
+      expect(result.current.selectedDocumentId).toBeNull();
+    });
   });
 
   it('seeds templates for admin when remote catalog is empty', async () => {

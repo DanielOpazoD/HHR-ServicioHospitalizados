@@ -6,6 +6,7 @@ import {
   buildActiveClinicalDocumentEpisodeKeys,
   buildBedEpisodeBindings,
   buildClinicalDocumentPresenceByBed,
+  buildClinicalDocumentPresenceInfoByBed,
 } from '@/features/census/controllers/clinicalDocumentPresenceController';
 import type { UnifiedBedRow } from '@/features/census/types/censusTableTypes';
 import { DataFactory } from '@/tests/factories/DataFactory';
@@ -54,6 +55,7 @@ describe('clinicalDocumentPresenceController', () => {
       {
         bedId: 'R1',
         episodeKey: 'episode-canonical-r1',
+        currentPatientRut: '11.111.111-1',
         episodeKeys: [
           'episode-canonical-r1',
           '11.111.111-1__2026-03-05__08:30',
@@ -140,6 +142,110 @@ describe('clinicalDocumentPresenceController', () => {
     ).toEqual({
       R1: true,
       R2: false,
+    });
+  });
+
+  it('keeps document presence when the same episode moves to a different bed', () => {
+    const bindings = [
+      {
+        bedId: 'R3',
+        episodeKey: 'ep_shared_hospitalization',
+        episodeKeys: ['ep_shared_hospitalization'],
+        currentPatientRut: '11.111.111-1',
+      },
+    ];
+    const documents = [
+      {
+        status: 'draft',
+        episodeKey: 'ep_shared_hospitalization',
+        patientRut: '11.111.111-1',
+      },
+    ];
+
+    expect(
+      buildClinicalDocumentPresenceByBed(
+        bindings,
+        buildActiveClinicalDocumentEpisodeKeys(documents),
+        documents
+      )
+    ).toEqual({ R3: true });
+    expect(buildClinicalDocumentPresenceInfoByBed(bindings, documents)).toEqual({
+      R3: {
+        present: true,
+        totalCount: 1,
+        draftCount: 1,
+      },
+    });
+  });
+
+  it('does not show previous same-day admission documents when the current episode has a canonical id', () => {
+    const bindings = [
+      {
+        bedId: 'R4',
+        episodeKey: 'ep_afternoon_readmission',
+        episodeKeys: ['ep_afternoon_readmission'],
+        currentPatientRut: '11.111.111-1',
+      },
+    ];
+    const documents = [
+      {
+        status: 'draft',
+        episodeKey: '11.111.111-1__2026-03-05__08:00',
+        patientRut: '11.111.111-1',
+      },
+      {
+        status: 'draft',
+        episodeKey: '11.111.111-1__2026-03-05',
+        patientRut: '11.111.111-1',
+      },
+    ];
+
+    expect(
+      buildClinicalDocumentPresenceByBed(
+        bindings,
+        buildActiveClinicalDocumentEpisodeKeys(documents),
+        documents
+      )
+    ).toEqual({ R4: false });
+    expect(buildClinicalDocumentPresenceInfoByBed(bindings, documents)).toEqual({
+      R4: {
+        present: false,
+        totalCount: 0,
+        draftCount: 0,
+      },
+    });
+  });
+
+  it('does not count documents from another patient even if a legacy episode key collides', () => {
+    const bindings = [
+      {
+        bedId: 'R1',
+        episodeKey: '11.111.111-1__2026-03-05',
+        episodeKeys: ['11.111.111-1__2026-03-05'],
+        currentPatientRut: '11.111.111-1',
+      },
+    ];
+    const documents = [
+      {
+        status: 'draft',
+        episodeKey: '11.111.111-1__2026-03-05',
+        patientRut: '22.222.222-2',
+      },
+    ];
+
+    expect(
+      buildClinicalDocumentPresenceByBed(
+        bindings,
+        buildActiveClinicalDocumentEpisodeKeys(documents),
+        documents
+      )
+    ).toEqual({ R1: false });
+    expect(buildClinicalDocumentPresenceInfoByBed(bindings, documents)).toEqual({
+      R1: {
+        present: false,
+        totalCount: 0,
+        draftCount: 0,
+      },
     });
   });
 });
