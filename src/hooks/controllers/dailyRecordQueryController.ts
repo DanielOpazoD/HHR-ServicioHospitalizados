@@ -157,6 +157,13 @@ export const createDailyRecordSubscription = (
       return false;
     }
 
+    if (
+      previousResult.runtime.sourceOfTruth === 'local' &&
+      incomingResult.runtime.sourceOfTruth !== 'local'
+    ) {
+      return false;
+    }
+
     return (
       toRecordTimestamp(previousResult.record.lastUpdated) >
       toRecordTimestamp(incomingResult.record.lastUpdated)

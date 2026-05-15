@@ -223,6 +223,76 @@ describe('dailyRecordQueryController', () => {
     });
   });
 
+  it('accepts a confirmed remote snapshot over a newer local optimistic cache', () => {
+    const queryClient = new QueryClient();
+    const previousRecord = DataFactory.createMockDailyRecord('2025-01-08');
+    previousRecord.lastUpdated = '2025-01-08T12:00:10.000Z';
+    previousRecord.beds.R1.specialty = 'Otra especialidad local optimista';
+    previousRecord.beds.R1.secondarySpecialty = 'Texto local aun no confirmado';
+    previousRecord.beds.R1.status = PatientStatus.DE_CUIDADO;
+
+    const remoteRecord = DataFactory.createMockDailyRecord('2025-01-08');
+    remoteRecord.lastUpdated = '2025-01-08T12:00:05.000Z';
+    remoteRecord.beds.R1.specialty = 'Medicina';
+    remoteRecord.beds.R1.secondarySpecialty = '';
+    remoteRecord.beds.R1.status = PatientStatus.ESTABLE;
+
+    queryClient.setQueryData(getDailyRecordQueryKey('2025-01-08'), {
+      record: previousRecord,
+      runtime: {
+        date: '2025-01-08',
+        availabilityState: 'resolved',
+        consistencyState: 'local_only',
+        sourceOfTruth: 'local',
+        retryability: 'not_applicable',
+        recoveryAction: 'none',
+        conflictSummary: null,
+        observabilityTags: ['daily_record', 'read'],
+        repairApplied: false,
+      },
+    });
+
+    const subscribeDetailed = vi.fn((_date, callback) => {
+      callback(
+        {
+          date: '2025-01-08',
+          outcome: 'clean',
+          record: remoteRecord,
+          consistencyState: 'remote_applied',
+          sourceOfTruth: 'remote',
+          retryability: 'not_applicable',
+          recoveryAction: 'none',
+          conflictSummary: null,
+          observabilityTags: ['daily_record', 'sync'],
+          repairApplied: false,
+        },
+        false
+      );
+      return vi.fn();
+    });
+
+    createDailyRecordSubscription(
+      { getForDate: vi.fn(), subscribeDetailed },
+      '2025-01-08',
+      queryClient
+    );
+
+    expect(queryClient.getQueryData(getDailyRecordQueryKey('2025-01-08'))).toMatchObject({
+      record: {
+        beds: {
+          R1: expect.objectContaining({
+            specialty: 'Medicina',
+            secondarySpecialty: '',
+            status: PatientStatus.ESTABLE,
+          }),
+        },
+      },
+      runtime: {
+        sourceOfTruth: 'remote',
+      },
+    });
+  });
+
   it('keeps pending local specialty and status edits visible over a newer realtime snapshot for the same episode', () => {
     clearPendingDailyRecordPatchesForTests();
     const queryClient = new QueryClient();
