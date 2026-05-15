@@ -1,8 +1,8 @@
 import { buildDischargeWithActiveTransferConfirmDialog } from '@/features/census/controllers/censusMovementActionConfirmController';
 import type { DailyRecord } from '@/features/census/contracts/censusRecordContracts';
+import type { PatientData } from '@/features/census/contracts/censusPatientContracts';
 import type { DischargeState } from '@/features/census/types/censusActionTypes';
 import type { getLatestOpenTransferRequestByBedId } from '@/services/transfers/transferService';
-import type { PatientData } from '@/types/domain/patient';
 import type { TransferRequest } from '@/types/transferRequestTypes';
 
 interface RunDischargeWithTransferGuardParams {
