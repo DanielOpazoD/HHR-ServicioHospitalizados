@@ -18,6 +18,7 @@ import {
   setDailyRecordQueryData,
   shouldUseDailyRecordRealtimeSync,
 } from '@/hooks/controllers/dailyRecordQueryController';
+import { registerPendingDailyRecordPatch } from '@/hooks/controllers/dailyRecordPendingPatchController';
 import type {
   SaveDailyRecordResult,
   UpdatePartialDailyRecordResult,
@@ -49,6 +50,13 @@ const patchDailyRecordWithCompatibility = async (
 
   await dailyRecord.updatePartial(date, partial);
   return null;
+};
+
+const PENDING_PATCH_RELEASE_GRACE_MS = 5000;
+
+const releasePendingPatchAfterRealtimeGrace = (release: () => void): void => {
+  const timer = globalThis.setTimeout(release, PENDING_PATCH_RELEASE_GRACE_MS);
+  (timer as { unref?: () => void }).unref?.();
 };
 
 /**
@@ -199,6 +207,7 @@ export const usePatchDailyRecordMutation = (date: string) => {
       queryClient.cancelQueries({
         queryKey: queryKeys.dailyRecord.byDate(date),
       });
+      const unregisterPendingPatch = registerPendingDailyRecordPatch(date, partial);
 
       const previousRecord = queryClient.getQueryData<DailyRecordQueryResult>(
         getDailyRecordQueryKey(date)
@@ -212,7 +221,7 @@ export const usePatchDailyRecordMutation = (date: string) => {
         );
       }
 
-      return { previousRecord };
+      return { previousRecord, unregisterPendingPatch };
     },
     onError: (err, partial, context) => {
       if (context?.previousRecord) {
@@ -228,8 +237,17 @@ export const usePatchDailyRecordMutation = (date: string) => {
     // will automatically update the cache when the write completes.
     // Forcing invalidation here can cause "echo" effects where the UI flickers
     // between states as it refetches data that might still be propagating.
-    onSettled: () => {
-      // No-op - let Firestore subscription handle sync
+    onSettled: (payload, error, _partial, context) => {
+      // Let Firestore subscription handle sync, but stop pinning the local
+      // explicit census patch once this mutation is no longer in flight.
+      if (!context?.unregisterPendingPatch) {
+        return;
+      }
+      if (error || isDailyRecordWriteBlockedResult(payload?.result)) {
+        context.unregisterPendingPatch();
+        return;
+      }
+      releasePendingPatchAfterRealtimeGrace(context.unregisterPendingPatch);
     },
   });
 };
