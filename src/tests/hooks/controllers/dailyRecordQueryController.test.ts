@@ -293,7 +293,7 @@ describe('dailyRecordQueryController', () => {
     });
   });
 
-  it('keeps pending local specialty and status edits visible over a newer realtime snapshot for the same episode', () => {
+  it('keeps pending local diagnosis, specialty and status edits visible over a newer realtime snapshot for the same episode', () => {
     clearPendingDailyRecordPatchesForTests();
     const queryClient = new QueryClient();
     const previousRecord = DataFactory.createMockDailyRecord('2025-01-08');
@@ -304,6 +304,7 @@ describe('dailyRecordQueryController', () => {
     previousRecord.beds.R1.specialty = 'Otorrino libre';
     previousRecord.beds.R1.secondarySpecialty = 'Interconsulta libre';
     previousRecord.beds.R1.status = PatientStatus.DE_CUIDADO;
+    previousRecord.beds.R1.pathology = 'Diagnostico local pendiente';
 
     const incomingRecord = DataFactory.createMockDailyRecord('2025-01-08');
     incomingRecord.lastUpdated = '2025-01-08T12:00:05.000Z';
@@ -331,6 +332,7 @@ describe('dailyRecordQueryController', () => {
     });
 
     const unregister = registerPendingDailyRecordPatch('2025-01-08', {
+      'beds.R1.pathology': 'Diagnostico local pendiente',
       'beds.R1.specialty': 'Otorrino libre',
       'beds.R1.secondarySpecialty': 'Interconsulta libre',
       'beds.R1.status': 'De cuidado',
@@ -350,7 +352,7 @@ describe('dailyRecordQueryController', () => {
             specialty: 'Otorrino libre',
             secondarySpecialty: 'Interconsulta libre',
             status: 'De cuidado',
-            pathology: 'Diagnostico remoto concurrente',
+            pathology: 'Diagnostico local pendiente',
           }),
         },
       },

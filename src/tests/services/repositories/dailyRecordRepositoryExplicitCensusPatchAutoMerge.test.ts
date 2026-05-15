@@ -148,7 +148,7 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
     );
   });
 
-  it('auto-merges concurrent free-text specialty and status patches with an exact sync contract', async () => {
+  it('auto-merges concurrent diagnosis, free-text specialty and status patches with an exact sync contract', async () => {
     const current = buildRecord('2026-02-15');
     current.lastUpdated = '2026-02-15T10:00:00.000Z';
     current.beds = { R1: buildPatient('R1', 'Paciente vigente') };
@@ -159,6 +159,7 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
     current.beds.R1.specialty = 'Otra especialidad libre';
     current.beds.R1.secondarySpecialty = 'Dermatologia oncológica';
     current.beds.R1.status = PatientStatus.DE_CUIDADO;
+    current.beds.R1.pathology = 'Diagnostico local editado';
 
     const remote = buildRecord('2026-02-15');
     remote.lastUpdated = '2026-02-15T10:05:00.000Z';
@@ -176,6 +177,7 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
     concurrencyError.name = 'ConcurrencyError';
 
     const patch = {
+      'beds.R1.pathology': 'Diagnostico local editado',
       'beds.R1.specialty': 'Otra especialidad libre',
       'beds.R1.secondarySpecialty': 'Dermatologia oncológica',
       'beds.R1.status': PatientStatus.DE_CUIDADO,
@@ -189,7 +191,7 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
       outcome: 'auto_merged',
       autoMerged: true,
       queuedForRetry: true,
-      patchedFields: 5,
+      patchedFields: 6,
       conflictSummary: expect.objectContaining({
         changedPaths: Object.keys(patch),
       }),
@@ -204,7 +206,7 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
             specialty: 'Otra especialidad libre',
             secondarySpecialty: 'Dermatologia oncológica',
             status: PatientStatus.DE_CUIDADO,
-            pathology: 'Diagnostico remoto concurrente no relacionado',
+            pathology: 'Diagnostico local editado',
           }),
         }),
       }),

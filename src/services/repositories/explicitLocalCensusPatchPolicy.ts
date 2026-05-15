@@ -1,6 +1,7 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 export const EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS = new Set([
+  'pathology',
   'specialty',
   'secondarySpecialty',
   'status',
