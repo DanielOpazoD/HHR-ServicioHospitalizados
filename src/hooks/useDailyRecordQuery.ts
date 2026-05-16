@@ -19,79 +19,22 @@ import {
   shouldUseDailyRecordRealtimeSync,
 } from '@/hooks/controllers/dailyRecordQueryController';
 import {
-  DailyRecordFreshnessGateError,
-  didDailyRecordFreshnessHydrateNewerRemote,
-  ensureDailyRecordRemoteFreshness,
   markDailyRecordTabHidden,
   markDailyRecordTabVisible,
 } from '@/hooks/controllers/dailyRecordFreshnessGateController';
-import {
-  PENDING_DAILY_RECORD_PATCH_TTL_MS,
-  registerPendingDailyRecordPatch,
-} from '@/hooks/controllers/dailyRecordPendingPatchController';
-import type {
-  SaveDailyRecordResult,
-  UpdatePartialDailyRecordResult,
-} from '@/services/repositories/contracts/dailyRecordResults';
+import { registerPendingDailyRecordPatch } from '@/hooks/controllers/dailyRecordPendingPatchController';
 import { isDailyRecordWriteBlockedResult } from '@/services/repositories/contracts/dailyRecordResults';
 import type { DailyRecordQueryResult } from '@/services/repositories/contracts/dailyRecordQueries';
 import type { RemoteSyncRuntimeStatus } from '@/services/repositories/repositoryConfig';
-import { toRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
-
-const saveDailyRecordWithCompatibility = async (
-  dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
-  record: DailyRecord
-): Promise<SaveDailyRecordResult | null> => {
-  if (typeof dailyRecord.saveDetailed === 'function') {
-    return dailyRecord.saveDetailed(record, record.lastUpdated);
-  }
-
-  await dailyRecord.save(record, record.lastUpdated);
-  return null;
-};
-
-const patchDailyRecordWithCompatibility = async (
-  dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
-  date: string,
-  partial: DailyRecordPatch
-): Promise<UpdatePartialDailyRecordResult | null> => {
-  if (typeof dailyRecord.updatePartialDetailed === 'function') {
-    return dailyRecord.updatePartialDetailed(date, partial);
-  }
-
-  await dailyRecord.updatePartial(date, partial);
-  return null;
-};
-
-const releasePendingPatchAfterFallbackTtl = (release: () => void): void => {
-  const timer = globalThis.setTimeout(release, PENDING_DAILY_RECORD_PATCH_TTL_MS);
-  (timer as { unref?: () => void }).unref?.();
-};
-
-const ensureFreshDailyRecordQuery = (
-  date: string,
-  dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
-  queryClient: ReturnType<typeof useQueryClient>,
-  reason: 'resume' | 'clinical_patch' | 'clinical_save'
-) =>
-  ensureDailyRecordRemoteFreshness({
-    date,
-    queryClient,
-    queryFn: createDailyRecordQueryFn(dailyRecord, date, true),
-    reason,
-  });
-
-const assertClinicalMutationDidNotStartFromStaleRemoteHydration = (
-  freshness: DailyRecordQueryResult
-): void => {
-  if (!didDailyRecordFreshnessHydrateNewerRemote(freshness)) {
-    return;
-  }
-
-  throw new DailyRecordFreshnessGateError(
-    'El censo remoto se actualizó al reactivar la pestaña. Revise los datos antes de editar.'
-  );
-};
+import {
+  ensureFreshClinicalPatchMutation,
+  ensureFreshClinicalSaveMutation,
+  ensureFreshDailyRecordQuery,
+  patchDailyRecordWithCompatibility,
+  prefetchDailyRecordQuery,
+  releasePendingPatchAfterFallbackTtl,
+  saveDailyRecordWithCompatibility,
+} from '@/hooks/controllers/dailyRecordMutationFreshnessController';
 
 /**
  * Hook for fetching a daily record by date with React Query.
@@ -159,7 +102,7 @@ export const useDailyRecordQuery = (
         return;
       }
 
-      void ensureFreshDailyRecordQuery(date, dailyRecord, queryClient, 'resume');
+      void ensureFreshDailyRecordQuery(date, { dailyRecord, queryClient }, 'resume');
     };
 
     const handleVisibilityChange = () => {
@@ -209,40 +152,12 @@ export const useSaveDailyRecordMutation = () => {
 
   return useMutation({
     mutationFn: async (record: DailyRecord) => {
-      const freshness = await ensureFreshDailyRecordQuery(
-        record.date,
-        dailyRecord,
-        queryClient,
-        'clinical_save'
-      );
-      assertClinicalMutationDidNotStartFromStaleRemoteHydration(freshness);
-      if (
-        freshness.record &&
-        toRecordTimestamp(freshness.record.lastUpdated) > toRecordTimestamp(record.lastUpdated)
-      ) {
-        throw new DailyRecordFreshnessGateError(
-          'El censo remoto se actualizó al reactivar la pestaña. Revise los datos antes de guardar.'
-        );
-      }
+      await ensureFreshClinicalSaveMutation(record, { dailyRecord, queryClient });
       const result = await saveDailyRecordWithCompatibility(dailyRecord, record);
       return { record, result };
     },
     onMutate: async newRecord => {
-      const freshness = await ensureFreshDailyRecordQuery(
-        newRecord.date,
-        dailyRecord,
-        queryClient,
-        'clinical_save'
-      );
-      assertClinicalMutationDidNotStartFromStaleRemoteHydration(freshness);
-      if (
-        freshness.record &&
-        toRecordTimestamp(freshness.record.lastUpdated) > toRecordTimestamp(newRecord.lastUpdated)
-      ) {
-        throw new DailyRecordFreshnessGateError(
-          'El censo remoto se actualizó al reactivar la pestaña. Revise los datos antes de guardar.'
-        );
-      }
+      await ensureFreshClinicalSaveMutation(newRecord, { dailyRecord, queryClient });
 
       await queryClient.cancelQueries({
         queryKey: queryKeys.dailyRecord.byDate(newRecord.date),
@@ -298,24 +213,12 @@ export const usePatchDailyRecordMutation = (date: string) => {
 
   return useMutation({
     mutationFn: async (partial: DailyRecordPatch) => {
-      const freshness = await ensureFreshDailyRecordQuery(
-        date,
-        dailyRecord,
-        queryClient,
-        'clinical_patch'
-      );
-      assertClinicalMutationDidNotStartFromStaleRemoteHydration(freshness);
+      await ensureFreshClinicalPatchMutation(date, { dailyRecord, queryClient });
       const result = await patchDailyRecordWithCompatibility(dailyRecord, date, partial);
       return { partial, result };
     },
     onMutate: async partial => {
-      const freshness = await ensureFreshDailyRecordQuery(
-        date,
-        dailyRecord,
-        queryClient,
-        'clinical_patch'
-      );
-      assertClinicalMutationDidNotStartFromStaleRemoteHydration(freshness);
+      await ensureFreshClinicalPatchMutation(date, { dailyRecord, queryClient });
 
       await queryClient.cancelQueries({
         queryKey: queryKeys.dailyRecord.byDate(date),
@@ -374,10 +277,7 @@ export const usePrefetchDailyRecord = () => {
   const { dailyRecord } = useRepositories();
 
   return async (date: string) => {
-    await queryClient.prefetchQuery({
-      queryKey: getDailyRecordQueryKey(date),
-      queryFn: createDailyRecordQueryFn(dailyRecord, date),
-    });
+    await prefetchDailyRecordQuery(queryClient, dailyRecord, date);
   };
 };
 

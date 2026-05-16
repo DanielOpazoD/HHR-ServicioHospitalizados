@@ -139,7 +139,7 @@ describe('Sync resilience integration', () => {
     expect(vi.mocked(setDoc)).toHaveBeenCalledTimes(1);
   });
 
-  it('auto-merges on concurrency conflict and keeps remote canonical clinical fields', async () => {
+  it('auto-merges same-episode explicit clinical patches while preserving remote bed state', async () => {
     const date = '2026-02-17';
 
     const local = buildRecord(date);
@@ -170,7 +170,7 @@ describe('Sync resilience integration', () => {
     expect(tasks).toHaveLength(1);
 
     const mergedPayload = tasks[0].payload as DailyRecord;
-    expect(mergedPayload.beds.R1.pathology).toBe('Diagnostico remoto');
+    expect(mergedPayload.beds.R1.pathology).toBe('Diagnostico local');
     expect(mergedPayload.beds.R1.bedMode).toBe('Cama');
     expect(tasks[0].contexts).toEqual(['clinical']);
     expect(tasks[0].origin).toBe('conflict_auto_merge');

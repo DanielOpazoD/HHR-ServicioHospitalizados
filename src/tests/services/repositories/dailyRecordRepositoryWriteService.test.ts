@@ -95,6 +95,15 @@ const buildPatient = (bedId: string, patientName: string): PatientData => ({
   isUPC: false,
 });
 
+const expectSyncContract = (expectedVersion: string, changedPaths: string[]) =>
+  expect.objectContaining({
+    syncContract: expect.objectContaining({
+      expectedVersion,
+      changedPaths,
+      recordRevision: expect.any(String),
+    }),
+  });
+
 describe('dailyRecordRepositoryWriteService outbox fallback', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -252,13 +261,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         'beds.R2.patientName': 'Paciente Nuevo',
       }),
       '2026-02-18T09:00:00.000Z',
-      expect.objectContaining({
-        syncContract: expect.objectContaining({
-          expectedVersion: '2026-02-18T09:00:00.000Z',
-          changedPaths: ['beds.R2.patientName'],
-          recordRevision: expect.any(String),
-        }),
-      })
+      expectSyncContract('2026-02-18T09:00:00.000Z', ['beds.R2.patientName'])
     );
   });
 
@@ -319,18 +322,12 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         'beds.R4.rut': '22.222.222-2',
       }),
       current.lastUpdated,
-      expect.objectContaining({
-        syncContract: expect.objectContaining({
-          expectedVersion: current.lastUpdated,
-          changedPaths: [
-            'beds.R4.patientName',
-            'beds.R4.rut',
-            'beds.R4.firstSeenDate',
-            'beds.R4.admissionDate',
-          ],
-          recordRevision: expect.any(String),
-        }),
-      })
+      expectSyncContract(current.lastUpdated, [
+        'beds.R4.patientName',
+        'beds.R4.rut',
+        'beds.R4.firstSeenDate',
+        'beds.R4.admissionDate',
+      ])
     );
   });
 
@@ -372,13 +369,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         }),
       }),
       current.lastUpdated,
-      expect.objectContaining({
-        syncContract: expect.objectContaining({
-          expectedVersion: current.lastUpdated,
-          changedPaths: ['beds.R2'],
-          recordRevision: expect.any(String),
-        }),
-      })
+      expectSyncContract(current.lastUpdated, ['beds.R2'])
     );
   });
 
@@ -409,13 +400,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
       '2026-02-13',
       expect.any(Object),
       '2026-02-13T08:00:00.000Z',
-      expect.objectContaining({
-        syncContract: expect.objectContaining({
-          expectedVersion: '2026-02-13T08:00:00.000Z',
-          changedPaths: ['beds.R1.patientName'],
-          recordRevision: expect.any(String),
-        }),
-      })
+      expectSyncContract('2026-02-13T08:00:00.000Z', ['beds.R1.patientName'])
     );
   });
 
@@ -437,13 +422,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         dateTimestamp: Date.parse('2026-02-11T00:00:00'),
       }),
       current.lastUpdated,
-      expect.objectContaining({
-        syncContract: expect.objectContaining({
-          expectedVersion: current.lastUpdated,
-          changedPaths: ['medicalHandoffNovedades'],
-          recordRevision: expect.any(String),
-        }),
-      })
+      expectSyncContract(current.lastUpdated, ['medicalHandoffNovedades'])
     );
   });
 
@@ -465,13 +444,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         dateTimestamp: Date.parse('2026-02-10T00:00:00'),
       }),
       current.lastUpdated,
-      expect.objectContaining({
-        syncContract: expect.objectContaining({
-          expectedVersion: current.lastUpdated,
-          changedPaths: ['beds.R1.patientName'],
-          recordRevision: expect.any(String),
-        }),
-      })
+      expectSyncContract(current.lastUpdated, ['beds.R1.patientName'])
     );
   });
 
@@ -497,13 +470,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         'beds.R1.clinicalCrib.fhir_resource': expect.any(Object),
       }),
       current.lastUpdated,
-      expect.objectContaining({
-        syncContract: expect.objectContaining({
-          expectedVersion: current.lastUpdated,
-          changedPaths: ['beds.R1.clinicalCrib.patientName'],
-          recordRevision: expect.any(String),
-        }),
-      })
+      expectSyncContract(current.lastUpdated, ['beds.R1.clinicalCrib.patientName'])
     );
   });
 });

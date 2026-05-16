@@ -72,7 +72,13 @@ describe('DailyRecordRepository persistence and copy flows', () => {
     expect(firestoreMock.updateRecordPartial).toHaveBeenCalledWith(
       mockDate,
       expect.anything(),
-      mockRecord.lastUpdated
+      mockRecord.lastUpdated,
+      expect.objectContaining({
+        syncContract: expect.objectContaining({
+          changedPaths: ['beds.R1.patientName', 'beds.R1.rut'],
+          expectedVersion: mockRecord.lastUpdated,
+        }),
+      })
     );
   });
 
