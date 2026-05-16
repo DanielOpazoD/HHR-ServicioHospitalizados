@@ -12,8 +12,9 @@ big-bang.
   directo a Firestore.
 - `shadow`: el cliente ejecuta una validacion backend `dryRun` cuando hay usuario autenticado,
   pero conserva la escritura directa. Los errores de shadow no bloquean al usuario.
-- `enforced`: las escrituras completas directas y las publicaciones del outbox pasan por
-  `saveDailyRecordWithClinicalAuthority`.
+- `enforced`: las escrituras completas directas, los parches clinicos parciales y las
+  publicaciones del outbox pasan por autoridad transaccional:
+  `saveDailyRecordWithClinicalAuthority` o `patchDailyRecordWithClinicalAuthority`.
 
 Compatibilidad: `VITE_DAILY_RECORD_AUTHORITY_CALLABLE=true` equivale a `enforced`.
 El flag recomendado para rollout nuevo es `VITE_DAILY_RECORD_AUTHORITY_MODE`.
@@ -27,7 +28,8 @@ El flag recomendado para rollout nuevo es `VITE_DAILY_RECORD_AUTHORITY_MODE`.
    obligatorio.
 4. Si se necesita auditoria fina, filtrar `functionsTelemetry` por:
    - `service = dailyRecordWriteAuthority`;
-   - `operation = saveDailyRecordWithClinicalAuthority`;
+   - `operation = saveDailyRecordWithClinicalAuthority` o
+     `patchDailyRecordWithClinicalAuthority`;
    - `authorityStatus`;
    - `fallbackEpisodeKeys`;
    - `degenerateFallbackEpisodeKeys`;

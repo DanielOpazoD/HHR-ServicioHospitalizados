@@ -17,7 +17,10 @@ const COLLECTION_PATH = () => `hospitals/${getActiveHospitalId()}/functionsTelem
 
 const DEFAULT_LIMIT = 500;
 const DAILY_RECORD_AUTHORITY_SERVICE = 'dailyRecordWriteAuthority';
-const DAILY_RECORD_AUTHORITY_OPERATION = 'saveDailyRecordWithClinicalAuthority';
+const DAILY_RECORD_AUTHORITY_OPERATIONS = new Set([
+  'saveDailyRecordWithClinicalAuthority',
+  'patchDailyRecordWithClinicalAuthority',
+]);
 
 interface RawTelemetryRecord {
   id?: string;
@@ -113,7 +116,7 @@ const readStringContext = (context: FunctionsTelemetryEntry['context'], key: str
 
 const isDailyRecordAuthorityEntry = (entry: FunctionsTelemetryEntry): boolean =>
   entry.service === DAILY_RECORD_AUTHORITY_SERVICE &&
-  entry.operation === DAILY_RECORD_AUTHORITY_OPERATION;
+  DAILY_RECORD_AUTHORITY_OPERATIONS.has(entry.operation);
 
 const resolveAuthorityRolloutRecommendation = (
   summary: Omit<DailyRecordAuthorityRolloutSummary, 'recommendation'>

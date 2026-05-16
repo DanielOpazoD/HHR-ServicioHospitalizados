@@ -97,6 +97,37 @@ describe('functionsTelemetryService authority rollout summary', () => {
     );
   });
 
+  it('includes partial patch authority telemetry in the rollout summary', () => {
+    const entries: FunctionsTelemetryEntry[] = [
+      makeEntry(
+        '1',
+        {
+          mode: 'enforced',
+          authorityStatus: 'ok',
+          fallbackEpisodeKeys: 0,
+          degenerateFallbackEpisodeKeys: 0,
+        },
+        {
+          operation: 'patchDailyRecordWithClinicalAuthority',
+        }
+      ),
+    ];
+
+    expect(buildDailyRecordAuthorityRolloutSummary(entries)).toEqual({
+      total: 1,
+      shadowRuns: 0,
+      enforcedWrites: 1,
+      successCount: 1,
+      failureCount: 0,
+      blockedCount: 0,
+      permissionDeniedCount: 0,
+      fallbackEpisodeKeys: 0,
+      degenerateFallbackEpisodeKeys: 0,
+      lastEntryAt: '2026-05-14T10:01.000Z',
+      recommendation: 'monitor_enforced',
+    });
+  });
+
   it('marks rollout evidence as insufficient when no authority telemetry exists', () => {
     expect(buildDailyRecordAuthorityRolloutSummary([])).toEqual({
       total: 0,
