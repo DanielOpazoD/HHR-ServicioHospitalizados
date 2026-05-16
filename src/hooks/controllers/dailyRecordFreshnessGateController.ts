@@ -98,6 +98,25 @@ const isRemoteUnavailableRead = (result: DailyRecordQueryResult): boolean =>
   result.runtime.consistencyState === 'unavailable' ||
   result.runtime.conflictSummary?.kind === 'remote_unavailable';
 
+const toRecordTimestamp = (value: string | undefined): number => {
+  if (!value) return 0;
+  const millis = Date.parse(value);
+  return Number.isFinite(millis) ? millis : 0;
+};
+
+export const didDailyRecordFreshnessHydrateNewerRemote = (
+  result: DailyRecordQueryResult
+): boolean => {
+  const conflictSummary = result.runtime.conflictSummary;
+  if (conflictSummary?.kind !== 'hydrated_from_remote') {
+    return false;
+  }
+
+  const remoteTimestamp = toRecordTimestamp(conflictSummary.remoteTimestamp);
+  const localTimestamp = toRecordTimestamp(conflictSummary.localTimestamp);
+  return remoteTimestamp > localTimestamp;
+};
+
 export const ensureDailyRecordRemoteFreshness = ({
   date,
   queryClient,
@@ -106,7 +125,10 @@ export const ensureDailyRecordRemoteFreshness = ({
   now = getNow(),
 }: EnsureDailyRecordRemoteFreshnessInput): Promise<DailyRecordQueryResult> => {
   const state = getOrCreateFreshnessState(date);
-  if (!requiresRemoteFreshness(date)) {
+  const hasExpiredRemoteConfirmation =
+    typeof state.lastRemoteConfirmedAt === 'number' &&
+    now - state.lastRemoteConfirmedAt >= DAILY_RECORD_RESUME_STALE_THRESHOLD_MS;
+  if (!requiresRemoteFreshness(date) && !hasExpiredRemoteConfirmation) {
     const current = queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date));
     return Promise.resolve(current || queryFn());
   }
@@ -172,7 +194,8 @@ export const ensureDailyRecordRemoteFreshness = ({
         },
       });
 
-      if (result.runtime.conflictSummary?.kind === 'hydrated_from_remote') {
+      const remoteNewerSummary = result.runtime.conflictSummary;
+      if (didDailyRecordFreshnessHydrateNewerRemote(result) && remoteNewerSummary) {
         dailyRecordObservability.recordEvent(
           'daily_record_resume_refresh_remote_newer',
           'success',
@@ -181,8 +204,8 @@ export const ensureDailyRecordRemoteFreshness = ({
             context: {
               date,
               reason,
-              localTimestamp: result.runtime.conflictSummary.localTimestamp,
-              remoteTimestamp: result.runtime.conflictSummary.remoteTimestamp,
+              localTimestamp: remoteNewerSummary.localTimestamp,
+              remoteTimestamp: remoteNewerSummary.remoteTimestamp,
             },
           }
         );

@@ -6,6 +6,7 @@ import type { DailyRecordRepositoryPort } from '@/application/ports/dailyRecordP
 import { usePatchDailyRecordMutation } from '@/hooks/useDailyRecordQuery';
 import {
   DailyRecordFreshnessGateError,
+  ensureDailyRecordRemoteFreshness,
   markDailyRecordTabHidden,
   markDailyRecordTabVisible,
   resetDailyRecordFreshnessGateForTests,
@@ -52,7 +53,7 @@ describe('daily record remote freshness gate', () => {
     vi.clearAllMocks();
   });
 
-  it('waits for remote freshness before running a clinical patch from a stale resumed tab', async () => {
+  it('blocks the original clinical patch when stale resume hydrates a newer remote record', async () => {
     const dailyRecord = buildMockDailyRecordRepository();
     const queryClient = createTestQueryClient();
     const localRecord = DataFactory.createMockDailyRecord(date);
@@ -142,12 +143,10 @@ describe('daily record remote freshness gate', () => {
           repairApplied: false,
         })
       );
-      await mutationPromise;
+      await expect(mutationPromise).rejects.toBeInstanceOf(DailyRecordFreshnessGateError);
     });
 
-    expect(dailyRecord.updatePartialDetailed).toHaveBeenCalledWith(date, {
-      'beds.R1.status': PatientStatus.GRAVE,
-    });
+    expect(dailyRecord.updatePartialDetailed).not.toHaveBeenCalled();
     expect(
       queryClient.getQueryData<ReturnType<typeof createDailyRecordQueryResult>>(
         getDailyRecordQueryKey(date)
@@ -207,5 +206,62 @@ describe('daily record remote freshness gate', () => {
       } as never)
     ).rejects.toBeInstanceOf(DailyRecordFreshnessGateError);
     expect(dailyRecord.updatePartialDetailed).not.toHaveBeenCalled();
+  });
+
+  it('requires a new remote confirmation when the previous freshness check is older than the threshold', async () => {
+    const queryClient = createTestQueryClient();
+    const firstRemoteRecord = DataFactory.createMockDailyRecord(date);
+    firstRemoteRecord.lastUpdated = '2026-05-16T10:00:00.000Z';
+    const secondRemoteRecord = {
+      ...firstRemoteRecord,
+      lastUpdated: '2026-05-16T10:06:00.000Z',
+    };
+    const queryFn = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createDailyRecordQueryResult(firstRemoteRecord, {
+          date,
+          availabilityState: 'resolved',
+          consistencyState: 'remote_authoritative',
+          sourceOfTruth: 'remote',
+          retryability: 'not_applicable',
+          recoveryAction: 'none',
+          conflictSummary: null,
+          observabilityTags: ['daily_record', 'read', 'remote_authoritative'],
+          repairApplied: false,
+        })
+      )
+      .mockResolvedValueOnce(
+        createDailyRecordQueryResult(secondRemoteRecord, {
+          date,
+          availabilityState: 'resolved',
+          consistencyState: 'remote_authoritative',
+          sourceOfTruth: 'remote',
+          retryability: 'not_applicable',
+          recoveryAction: 'none',
+          conflictSummary: null,
+          observabilityTags: ['daily_record', 'read', 'remote_authoritative'],
+          repairApplied: false,
+        })
+      );
+
+    markDailyRecordTabHidden(0);
+    markDailyRecordTabVisible(6 * 60 * 1000);
+    await ensureDailyRecordRemoteFreshness({
+      date,
+      queryClient,
+      queryFn,
+      reason: 'clinical_patch',
+      now: 6 * 60 * 1000,
+    });
+    await ensureDailyRecordRemoteFreshness({
+      date,
+      queryClient,
+      queryFn,
+      reason: 'clinical_patch',
+      now: 12 * 60 * 1000,
+    });
+
+    expect(queryFn).toHaveBeenCalledTimes(2);
   });
 });

@@ -20,6 +20,7 @@ import {
 } from '@/hooks/controllers/dailyRecordQueryController';
 import {
   DailyRecordFreshnessGateError,
+  didDailyRecordFreshnessHydrateNewerRemote,
   ensureDailyRecordRemoteFreshness,
   markDailyRecordTabHidden,
   markDailyRecordTabVisible,
@@ -79,6 +80,18 @@ const ensureFreshDailyRecordQuery = (
     queryFn: createDailyRecordQueryFn(dailyRecord, date, true),
     reason,
   });
+
+const assertClinicalMutationDidNotStartFromStaleRemoteHydration = (
+  freshness: DailyRecordQueryResult
+): void => {
+  if (!didDailyRecordFreshnessHydrateNewerRemote(freshness)) {
+    return;
+  }
+
+  throw new DailyRecordFreshnessGateError(
+    'El censo remoto se actualizó al reactivar la pestaña. Revise los datos antes de editar.'
+  );
+};
 
 /**
  * Hook for fetching a daily record by date with React Query.
@@ -202,6 +215,7 @@ export const useSaveDailyRecordMutation = () => {
         queryClient,
         'clinical_save'
       );
+      assertClinicalMutationDidNotStartFromStaleRemoteHydration(freshness);
       if (
         freshness.record &&
         toRecordTimestamp(freshness.record.lastUpdated) > toRecordTimestamp(record.lastUpdated)
@@ -220,6 +234,7 @@ export const useSaveDailyRecordMutation = () => {
         queryClient,
         'clinical_save'
       );
+      assertClinicalMutationDidNotStartFromStaleRemoteHydration(freshness);
       if (
         freshness.record &&
         toRecordTimestamp(freshness.record.lastUpdated) > toRecordTimestamp(newRecord.lastUpdated)
@@ -283,12 +298,24 @@ export const usePatchDailyRecordMutation = (date: string) => {
 
   return useMutation({
     mutationFn: async (partial: DailyRecordPatch) => {
-      await ensureFreshDailyRecordQuery(date, dailyRecord, queryClient, 'clinical_patch');
+      const freshness = await ensureFreshDailyRecordQuery(
+        date,
+        dailyRecord,
+        queryClient,
+        'clinical_patch'
+      );
+      assertClinicalMutationDidNotStartFromStaleRemoteHydration(freshness);
       const result = await patchDailyRecordWithCompatibility(dailyRecord, date, partial);
       return { partial, result };
     },
     onMutate: async partial => {
-      await ensureFreshDailyRecordQuery(date, dailyRecord, queryClient, 'clinical_patch');
+      const freshness = await ensureFreshDailyRecordQuery(
+        date,
+        dailyRecord,
+        queryClient,
+        'clinical_patch'
+      );
+      assertClinicalMutationDidNotStartFromStaleRemoteHydration(freshness);
 
       await queryClient.cancelQueries({
         queryKey: queryKeys.dailyRecord.byDate(date),
