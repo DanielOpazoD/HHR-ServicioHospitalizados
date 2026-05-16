@@ -15,6 +15,25 @@ const ALLOWED_DAILY_RECORD_WRITE_ROLES = new Set([
   'editor',
 ]);
 
+const ALLOWED_DAILY_RECORD_PATCH_FIELDS = new Set([
+  'pathology',
+  'diagnosisComments',
+  'snomedCode',
+  'cie10Code',
+  'cie10Description',
+  'specialty',
+  'secondarySpecialty',
+  'status',
+  'ginecobstetriciaType',
+  'deliveryRoute',
+  'deliveryDate',
+  'deliveryCesareanLabor',
+  'isUPC',
+  'upcChecklist',
+]);
+
+const FORBIDDEN_PATCH_PATH_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor']);
+
 const assertStringField = (value, fieldName) => {
   if (typeof value !== 'string' || !value.trim()) {
     throw new functions.https.HttpsError(
@@ -66,6 +85,12 @@ const setValueAtPath = (target, path, value) => {
       'Daily record patch paths must be non-empty dot paths.'
     );
   }
+  if (parts.some(part => FORBIDDEN_PATCH_PATH_SEGMENTS.has(part))) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Daily record patch path contains a forbidden segment.'
+    );
+  }
 
   let cursor = target;
   for (const part of parts.slice(0, -1)) {
@@ -83,6 +108,60 @@ const applyPatchToRecord = ({ date, remoteData, patch }) => {
   Object.entries(patch).forEach(([path, value]) => setValueAtPath(record, path, value));
   record.date = date;
   return record;
+};
+
+const parseAuthorizedPatchPath = path => {
+  const parts = String(path)
+    .split('.')
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  if (
+    parts.length !== 3 ||
+    parts[0] !== 'beds' ||
+    parts.some(part => FORBIDDEN_PATCH_PATH_SEGMENTS.has(part)) ||
+    !ALLOWED_DAILY_RECORD_PATCH_FIELDS.has(parts[2])
+  ) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      `Daily record patch path is not allowed: ${String(path).slice(0, 120)}`
+    );
+  }
+
+  return {
+    bedId: parts[1],
+    field: parts[2],
+  };
+};
+
+const assertPatchTargetsCurrentClinicalEpisode = ({ remoteData, patch }) => {
+  Object.keys(patch).forEach(path => {
+    const { bedId } = parseAuthorizedPatchPath(path);
+    const patient = remoteData?.beds?.[bedId];
+    if (!isPlainObject(patient)) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        `Daily record patch target bed is not present: ${bedId}`
+      );
+    }
+    if (patient.isBlocked === true) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        `Daily record patch target bed is blocked: ${bedId}`
+      );
+    }
+    if (
+      !patient.clinicalEpisodeId &&
+      !patient.rut &&
+      !patient.patientName &&
+      !patient.admissionDate
+    ) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        `Daily record patch target bed has no active clinical episode identity: ${bedId}`
+      );
+    }
+  });
 };
 
 const collectChangedPaths = syncContract =>
@@ -430,6 +509,7 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
         }
 
         const remoteData = snapshot.data() || {};
+        assertPatchTargetsCurrentClinicalEpisode({ remoteData, patch });
         const now = admin.firestore.Timestamp.now();
         const patchedRecord = applyPatchToRecord({ date, remoteData, patch });
         patchedRecord.meta = buildNextMeta({ remoteData, syncContract, now });

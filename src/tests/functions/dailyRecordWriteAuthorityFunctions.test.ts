@@ -285,6 +285,62 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
     );
   });
 
+  it('rejects authority patches that target non-clinical census paths', async () => {
+    const { admin, set } = createAdminMock({
+      remoteData: makeRecord(),
+    });
+    const functionsApi = createDailyRecordWriteAuthorityFunctions({
+      admin,
+      resolveRoleForEmail: vi.fn().mockResolvedValue('nurse_hospital'),
+    });
+
+    await expect(
+      functionsApi.patchDailyRecordWithClinicalAuthority.run(
+        {
+          date: '2026-05-13',
+          mode: 'enforced',
+          origin: 'direct_partial_update',
+          patch: {
+            'beds.R1.patientName': 'Nombre alterado desde callable',
+          },
+        },
+        makeContext()
+      )
+    ).rejects.toMatchObject({
+      code: 'invalid-argument',
+    });
+
+    expect(set).not.toHaveBeenCalled();
+  });
+
+  it('rejects authority patches for beds that are not present in the current remote record', async () => {
+    const { admin, set } = createAdminMock({
+      remoteData: makeRecord(),
+    });
+    const functionsApi = createDailyRecordWriteAuthorityFunctions({
+      admin,
+      resolveRoleForEmail: vi.fn().mockResolvedValue('doctor_urgency'),
+    });
+
+    await expect(
+      functionsApi.patchDailyRecordWithClinicalAuthority.run(
+        {
+          date: '2026-05-13',
+          mode: 'enforced',
+          origin: 'direct_partial_update',
+          patch: {
+            'beds.R9.pathology': 'Diagnostico en cama inexistente',
+          },
+        },
+        makeContext()
+      )
+    ).rejects.toMatchObject({
+      code: 'failed-precondition',
+    });
+
+    expect(set).not.toHaveBeenCalled();
+  });
+
   it('rejects full saves that duplicate an active clinical episode', async () => {
     const { admin, set } = createAdminMock();
     const record = makeRecord();
