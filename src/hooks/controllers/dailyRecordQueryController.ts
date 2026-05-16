@@ -2,7 +2,10 @@ import type { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/config/queryClient';
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import { applyPatches } from '@/utils/patchUtils';
-import { applyPendingExplicitCensusPatch } from '@/hooks/controllers/dailyRecordPendingPatchController';
+import {
+  applyPendingExplicitCensusPatch,
+  releaseConfirmedPendingDailyRecordPatches,
+} from '@/hooks/controllers/dailyRecordPendingPatchController';
 import {
   createDailyRecordQueryResult,
   createGetDailyRecordQuery,
@@ -140,6 +143,13 @@ export const createDailyRecordSubscription = (
     result: DailyRecordQueryResult,
     previousResult: DailyRecordQueryResult | undefined
   ) => {
+    if (result.record) {
+      releaseConfirmedPendingDailyRecordPatches(
+        date,
+        result.record,
+        previousResult?.record ?? undefined
+      );
+    }
     const resolvedRecord = result.record
       ? applyPendingExplicitCensusPatch(date, result.record, previousResult?.record ?? undefined)
       : result.record;
