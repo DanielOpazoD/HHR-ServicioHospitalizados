@@ -47,15 +47,20 @@ describe('clinical release signoff support', () => {
     expect(issues).toEqual([]);
   });
 
-  it('keeps the current branch visibly pending until human clinical validation is recorded', () => {
+  it('keeps the current branch signoff closed only after human clinical validation is recorded', () => {
     const report = buildClinicalReleaseSignoffReport(process.cwd(), { requirePassed: true });
 
-    expect(report.overall).toBe('pending');
+    expect(report.overall).toBe('ok');
     expect(report.counts.scenarioCount).toBeGreaterThanOrEqual(6);
-    expect(report.counts.pendingScenarioCount).toBeGreaterThan(0);
-    expect(report.issues).toEqual(
+    expect(report.counts.pendingScenarioCount).toBe(0);
+    expect(report.issues).toEqual([]);
+    expect(report.signoffs).toEqual(
       expect.arrayContaining([
-        'census_reload_remote_reconcile is pending_human_review; release signoff requires passed.',
+        expect.objectContaining({
+          scenarioId: 'census_reload_remote_reconcile',
+          status: 'passed',
+          validatedBy: 'Dr. Nombre Apellido / Daniel / Equipo clínico HHR',
+        }),
       ])
     );
   });
