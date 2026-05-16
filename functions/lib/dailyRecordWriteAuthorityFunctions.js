@@ -256,6 +256,7 @@ const parsePayload = data => {
 const parsePatchPayload = data => {
   const date = assertStringField(data?.date, 'date');
   const patch = data?.patch;
+  const syncContract = isPlainObject(data?.syncContract) ? data.syncContract : undefined;
   if (!isPlainObject(patch) || Object.keys(patch).length === 0) {
     throw new functions.https.HttpsError(
       'invalid-argument',
@@ -269,9 +270,13 @@ const parsePatchPayload = data => {
     mode: normalizeMode(data?.mode),
     origin: normalizeOrigin(data?.origin, 'direct_partial_update'),
     dryRun: data?.dryRun === true,
-    syncContract: isPlainObject(data?.syncContract) ? data.syncContract : undefined,
+    syncContract,
     expectedLastUpdated:
-      typeof data?.expectedLastUpdated === 'string' ? data.expectedLastUpdated : undefined,
+      typeof data?.expectedLastUpdated === 'string'
+        ? data.expectedLastUpdated
+        : typeof syncContract?.expectedVersion === 'string'
+          ? syncContract.expectedVersion
+          : undefined,
   };
 };
 
@@ -490,7 +495,8 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
   patchDailyRecordWithClinicalAuthority: functions.https.onCall(async (data, context) => {
     const startedAt = Date.now();
     const email = await assertAuthorizedDailyRecordWriter({ context, resolveRoleForEmail });
-    const { date, patch, mode, origin, dryRun, syncContract } = parsePatchPayload(data);
+    const { date, patch, mode, origin, dryRun, syncContract, expectedLastUpdated } =
+      parsePatchPayload(data);
     const db = admin.firestore();
     const docRef = db.collection('hospitals').doc(HOSPITAL_ID).collection('dailyRecords').doc(date);
     let authority;
@@ -509,6 +515,7 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
         }
 
         const remoteData = snapshot.data() || {};
+        assertExpectedVersion({ snapshot, expectedLastUpdated });
         assertPatchTargetsCurrentClinicalEpisode({ remoteData, patch });
         const now = admin.firestore.Timestamp.now();
         const patchedRecord = applyPatchToRecord({ date, remoteData, patch });

@@ -20,6 +20,7 @@ import {
   recordClinicalAuthorityTelemetry,
   recordClinicalEpisodeIdCoverageTelemetry,
 } from '@/services/repositories/dailyRecordClinicalAuthorityPolicy';
+import { CLINICAL_CENSUS_EDITABLE_FIELDS } from '@/services/repositories/explicitLocalCensusPatchPolicy';
 import {
   asFirestoreUpdatePayload,
   assertFirestoreConcurrency,
@@ -47,6 +48,24 @@ import type { SyncTaskContract } from '@/services/storage/syncQueueTypes';
 interface DailyRecordPartialWriteOptions {
   syncContract?: SyncTaskContract;
 }
+
+const CLINICAL_AUTHORITY_PATCH_FIELDS = new Set<string>(CLINICAL_CENSUS_EDITABLE_FIELDS);
+
+const isClinicalAuthorityPatchPath = (path: string): boolean => {
+  const [root, bedId, field, ...rest] = path.split('.');
+  return (
+    root === 'beds' &&
+    Boolean(bedId) &&
+    Boolean(field) &&
+    rest.length === 0 &&
+    CLINICAL_AUTHORITY_PATCH_FIELDS.has(field)
+  );
+};
+
+const isClinicalAuthorityPatch = (patch: Record<string, unknown>): boolean => {
+  const paths = Object.keys(patch);
+  return paths.length > 0 && paths.every(isClinicalAuthorityPatchPath);
+};
 
 const logFirestoreWriteRetry = (
   operation: 'save' | 'partialUpdate' | 'delete',
@@ -352,7 +371,8 @@ export const updateRecordPartial = async (
           });
         }
 
-        if (await shouldRouteDailyRecordSaveViaCallable()) {
+        const isClinicalPatchForAuthority = isClinicalAuthorityPatch(sanitizedPatch);
+        if (isClinicalPatchForAuthority && (await shouldRouteDailyRecordSaveViaCallable())) {
           return withRetry(
             () =>
               patchDailyRecordWithClinicalAuthorityCallable({
@@ -370,12 +390,14 @@ export const updateRecordPartial = async (
           );
         }
 
-        await tryShadowDailyRecordPatchViaCallable(
-          date,
-          sanitizedPatch,
-          expectedLastUpdated,
-          options.syncContract
-        );
+        if (isClinicalPatchForAuthority) {
+          await tryShadowDailyRecordPatchViaCallable(
+            date,
+            sanitizedPatch,
+            expectedLastUpdated,
+            options.syncContract
+          );
+        }
         await saveHistorySnapshot(date);
 
         return withRetry(

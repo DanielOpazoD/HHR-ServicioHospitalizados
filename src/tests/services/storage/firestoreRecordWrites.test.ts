@@ -301,6 +301,30 @@ describe('firestoreRecordWrites', () => {
     expect(saveHistorySnapshot).not.toHaveBeenCalled();
   });
 
+  it('keeps non-clinical partial updates on direct Firestore writes in enforced mode', async () => {
+    (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_MODE =
+      'enforced';
+    mockGetCurrentUser.mockReturnValue({
+      uid: 'nurse-1',
+      email: 'nurse@example.com',
+      isAnonymous: false,
+    });
+
+    await updateRecordPartial(
+      '2026-03-14',
+      { handoffNovedadesDayShift: 'Novedad administrativa' } as never,
+      '2026-03-14T10:00:00.000Z'
+    );
+
+    expect(mockHttpsCallable).not.toHaveBeenCalledWith(
+      expect.anything(),
+      'patchDailyRecordWithClinicalAuthority'
+    );
+    expect(mockSpecialistCallable).not.toHaveBeenCalled();
+    expect(saveHistorySnapshot).toHaveBeenCalledWith('2026-03-14');
+    expect(updateDoc).toHaveBeenCalledTimes(1);
+  });
+
   it('updates partial records and falls back to setDoc when update target is missing', async () => {
     await updateRecordPartial('2026-03-14', { status: 'ok' } as never, '2026-03-14T10:00:00.000Z');
     expect(assertFirestoreConcurrency).toHaveBeenCalledWith(

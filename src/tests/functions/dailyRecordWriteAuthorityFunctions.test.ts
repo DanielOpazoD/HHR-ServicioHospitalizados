@@ -128,11 +128,11 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
     const result = await functionsApi.saveDailyRecordWithClinicalAuthority.run(
       {
         date: '2026-05-13',
-        expectedLastUpdated: '2026-05-13T10:00:00.000Z',
+        expectedLastUpdated: '2026-05-13T10:00:05.000Z',
         mode: 'enforced',
         origin: 'outbox',
         syncContract: {
-          expectedVersion: '2026-05-13T10:00:00.000Z',
+          expectedVersion: '2026-05-13T10:00:05.000Z',
           changedPaths: ['beds.R1.pathology'],
         },
         record: makeRecord(),
@@ -219,11 +219,11 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
     const result = await functionsApi.patchDailyRecordWithClinicalAuthority.run(
       {
         date: '2026-05-13',
-        expectedLastUpdated: '2026-05-13T10:00:00.000Z',
+        expectedLastUpdated: '2026-05-13T10:00:05.000Z',
         mode: 'enforced',
         origin: 'direct_partial_update',
         syncContract: {
-          expectedVersion: '2026-05-13T10:00:00.000Z',
+          expectedVersion: '2026-05-13T10:00:05.000Z',
           changedPaths: ['beds.R1.pathology'],
           mutationId: 'mutation-1',
           clientId: 'client-1',
@@ -336,6 +336,44 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
       )
     ).rejects.toMatchObject({
       code: 'failed-precondition',
+    });
+
+    expect(set).not.toHaveBeenCalled();
+  });
+
+  it('rejects partial authority patches when expectedLastUpdated is older than the remote record', async () => {
+    const { admin, set } = createAdminMock({
+      remoteData: {
+        ...makeRecord(),
+        lastUpdated: '2026-05-13T10:30:00.000Z',
+        beds: {
+          R1: {
+            ...makeRecord().beds.R1,
+            pathology: 'Diagnostico remoto actualizado',
+          },
+        },
+      },
+    });
+    const functionsApi = createDailyRecordWriteAuthorityFunctions({
+      admin,
+      resolveRoleForEmail: vi.fn().mockResolvedValue('nurse_hospital'),
+    });
+
+    await expect(
+      functionsApi.patchDailyRecordWithClinicalAuthority.run(
+        {
+          date: '2026-05-13',
+          expectedLastUpdated: '2026-05-13T10:00:00.000Z',
+          mode: 'enforced',
+          origin: 'direct_partial_update',
+          patch: {
+            'beds.R1.pathology': 'Diagnostico stale desde cliente',
+          },
+        },
+        makeContext()
+      )
+    ).rejects.toMatchObject({
+      code: 'aborted',
     });
 
     expect(set).not.toHaveBeenCalled();
