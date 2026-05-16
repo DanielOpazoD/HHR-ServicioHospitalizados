@@ -14,6 +14,18 @@ interface SeedPersistedBedFieldsInput {
   fields: Record<string, string | boolean | number | null>;
 }
 
+const isNavigationContextReset = (error: unknown) => {
+  const message = String((error as Error)?.message || error);
+  return (
+    message.includes('Execution context was destroyed') ||
+    message.includes('Cannot find context with specified id')
+  );
+};
+
+const waitForDocumentAfterNavigation = async (page: Page) => {
+  await page.waitForLoadState('domcontentloaded').catch(() => undefined);
+};
+
 export const waitForPersistedBedFields = async ({
   page,
   date,
@@ -119,15 +131,18 @@ export const seedPersistedBedFields = async ({
       }
     );
 
-  try {
-    await seedInCurrentDocument();
-  } catch (error) {
-    const message = String((error as Error)?.message || error);
-    if (!message.includes('Execution context was destroyed')) {
-      throw error;
-    }
+  const maxAttempts = 4;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await waitForDocumentAfterNavigation(page);
+      await seedInCurrentDocument();
+      return;
+    } catch (error) {
+      if (!isNavigationContextReset(error) || attempt === maxAttempts) {
+        throw error;
+      }
 
-    await page.waitForLoadState('domcontentloaded');
-    await seedInCurrentDocument();
+      await page.waitForTimeout(250 * attempt);
+    }
   }
 };
