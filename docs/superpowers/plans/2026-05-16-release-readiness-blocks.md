@@ -109,6 +109,14 @@ Evidence captured on 2026-05-16:
 - Verification: `npm exec -- vitest run src/tests/hooks/controllers/dailyRecordPendingStatusEpisodeHydration.test.ts src/tests/hooks/controllers/dailyRecordPendingPatchController.test.ts src/tests/hooks/controllers/dailyRecordQueryController.test.ts` passed 16 tests.
 - Verification: `npm run typecheck`, `npm run check:quality`, and `npm run test:repository-compat` passed.
 - Broader accidental verification: `npm test -- --run ...` executed the repo wrapper and passed unit tests, Firestore rules, sync emulator, and emulator UI suites.
+- Additional risk matrix closure:
+  - Same bed + same episode: keep the pending clinical patch until remote confirms it, then release it.
+  - Same bed + different episode: purge tracked clinical census fields so stale status, pathology, or specialty cannot cross patient episodes.
+  - Same episode + different bed: treat it as a bed move; apply the pending clinical patch to the moved bed while preserving the original source-bed path as the episode anchor until remote confirms it.
+  - Mixed clinical/non-clinical patch: purge or release only tracked census fields (`pathology`, `specialty`, `secondarySpecialty`, `status`) and leave unrelated patch data untouched.
+- Additional code closure: `src/hooks/controllers/dailyRecordPendingPatchController.ts` now resolves same-episode bed moves before applying or releasing tracked pending census fields.
+- Additional regression closure: `src/tests/hooks/controllers/dailyRecordPendingPatchController.test.ts` covers same-episode bed transfer from `R1` to `R2` without reapplying the patch to the emptied source bed.
+- Additional verification: `npm exec -- vitest run src/tests/hooks/controllers/dailyRecordPendingPatchController.test.ts src/tests/hooks/controllers/dailyRecordPendingStatusEpisodeHydration.test.ts src/tests/hooks/controllers/dailyRecordQueryController.test.ts` passed 17 tests.
 
 ### Task 3: Operational UX For Degraded States
 

@@ -16,6 +16,23 @@ const getPatchPathValue = (record: DailyRecord, path: string): unknown =>
     return (value as Record<string, unknown>)[segment];
   }, record);
 
+const findIncomingBedIdForSameEpisode = (
+  incomingRecord: DailyRecord,
+  previousRecord: DailyRecord,
+  previousBedId: string
+): string | undefined => {
+  const previousPatient = previousRecord.beds[previousBedId];
+  if (!previousPatient) {
+    return undefined;
+  }
+
+  return Object.keys(incomingRecord.beds).find(
+    incomingBedId =>
+      incomingBedId !== previousBedId &&
+      isSameEpisodeForExplicitCensusPatch(incomingRecord.beds[incomingBedId], previousPatient)
+  );
+};
+
 export const registerPendingDailyRecordPatch = (
   date: string,
   patch: DailyRecordPatch
@@ -58,12 +75,16 @@ const collectPendingExplicitCensusPatch = (
       }
 
       if (
-        !isSameEpisodeForExplicitCensusPatch(incomingRecord.beds[bedId], previousRecord.beds[bedId])
+        isSameEpisodeForExplicitCensusPatch(incomingRecord.beds[bedId], previousRecord.beds[bedId])
       ) {
+        resolvedPatch[path] = value;
         return;
       }
 
-      resolvedPatch[path] = value;
+      const movedBedId = findIncomingBedIdForSameEpisode(incomingRecord, previousRecord, bedId);
+      if (movedBedId) {
+        resolvedPatch[`beds.${movedBedId}.${field}`] = value;
+      }
     });
   });
 
@@ -93,12 +114,22 @@ export const releaseConfirmedPendingDailyRecordPatches = (
       return;
     }
 
-    trackedEntries.forEach(([path]) => {
-      const [, bedId] = path.split('.');
+    trackedEntries.forEach(([path, value]) => {
+      const [, bedId, field] = path.split('.');
       if (
         bedId &&
         !isSameEpisodeForExplicitCensusPatch(incomingRecord.beds[bedId], previousRecord.beds[bedId])
       ) {
+        if (field) {
+          const movedBedId = findIncomingBedIdForSameEpisode(incomingRecord, previousRecord, bedId);
+          if (movedBedId) {
+            const movedPath = `beds.${movedBedId}.${field}`;
+            if (getPatchPathValue(incomingRecord, movedPath) === value) {
+              delete patchRecord[path];
+            }
+            return;
+          }
+        }
         delete patchRecord[path];
       }
     });
