@@ -10,6 +10,10 @@ describe('clinical release validation contract', () => {
     const markdown = formatClinicalReleaseValidationMarkdown(report);
 
     expect(report.overall).toBe('ok');
+    expect(report.runbook).toMatchObject({
+      file: 'docs/runbooks/deployment-checklist.md',
+      status: 'ok',
+    });
     expect(report.counts.scenarioCount).toBeGreaterThanOrEqual(5);
     expect(report.counts.highRiskScenarioCount).toBeGreaterThanOrEqual(2);
     expect(markdown).toContain('# Clinical Release Validation');

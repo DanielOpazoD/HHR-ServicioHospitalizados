@@ -7,8 +7,16 @@ import { loadReleaseConfidenceMatrixConfig } from './releaseConfidenceMatrixSupp
 
 const CONFIG_PATH = path.join('scripts', 'config', 'clinical-release-validation.json');
 const PACKAGE_JSON_PATH = 'package.json';
+const RUNBOOK_PATH = path.join('docs', 'runbooks', 'deployment-checklist.md');
 const REQUIRED_CLOSURE_GATES = ['codigo_corregido', 'regresion_automatizada', 'flujo_clinico_validado'];
 const VALID_RISK_LEVELS = new Set(['low', 'medium', 'high']);
+const REQUIRED_RUNBOOK_PATTERNS = [
+  'scripts/config/clinical-release-validation.json',
+  'npm run check:clinical-release-validation',
+  'codigo_corregido',
+  'regresion_automatizada',
+  'flujo_clinico_validado',
+];
 
 const readJson = filePath => JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
@@ -52,6 +60,20 @@ export const buildClinicalReleaseValidationReport = root => {
   const matrixAreaIds = new Set(loadReleaseConfidenceMatrixConfig(root).areas.map(area => area.id).filter(Boolean));
   const packageScripts = new Set(Object.keys(readJson(path.join(root, PACKAGE_JSON_PATH)).scripts || {}));
   const issues = [];
+  const runbookPath = path.join(root, RUNBOOK_PATH);
+  const runbookContent = fs.existsSync(runbookPath) ? fs.readFileSync(runbookPath, 'utf8') : '';
+  const missingRunbookPatterns = REQUIRED_RUNBOOK_PATTERNS.filter(pattern => !runbookContent.includes(pattern));
+  const runbook = {
+    file: RUNBOOK_PATH,
+    status: missingRunbookPatterns.length === 0 ? 'ok' : 'invalid',
+    missingPatterns: missingRunbookPatterns,
+  };
+
+  if (!runbookContent) {
+    issues.push(`${RUNBOOK_PATH} is missing.`);
+  } else if (missingRunbookPatterns.length > 0) {
+    issues.push(`${RUNBOOK_PATH} is missing references to: ${missingRunbookPatterns.join(', ')}`);
+  }
 
   if (config.version !== 1) {
     issues.push(`Expected clinical release validation version 1, received ${String(config.version || 'unknown')}`);
@@ -125,6 +147,7 @@ export const buildClinicalReleaseValidationReport = root => {
       scenarioCount: scenarios.length,
       highRiskScenarioCount: scenarios.filter(scenario => scenario.riskLevel === 'high').length,
     },
+    runbook,
     scenarios,
     issues,
   };
@@ -140,6 +163,7 @@ export const formatClinicalReleaseValidationMarkdown = report => {
     `Commit: ${report.gitSha || 'unknown'}`,
     `Worktree: ${formatWorktreeState(Boolean(report.gitDirty))}`,
     `Overall: ${report.overall}`,
+    `Runbook: ${report.runbook?.file || '-'} (${report.runbook?.status || 'unknown'})`,
     '',
     '## Closure Gates',
     '',
