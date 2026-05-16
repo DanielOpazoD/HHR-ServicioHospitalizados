@@ -193,6 +193,98 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
     expect(JSON.stringify(telemetryAdd.mock.calls[0]?.[0])).not.toContain('Paciente Uno');
   });
 
+  it('applies partial patches inside the authority transaction against the current remote record', async () => {
+    const { admin, set, docRef, historyDoc, telemetryAdd } = createAdminMock({
+      remoteData: {
+        ...makeRecord(),
+        lastUpdated: '2026-05-13T10:00:05.000Z',
+        meta: {
+          revision: 4,
+          lastMutationId: 'previous-mutation',
+        },
+        beds: {
+          R1: {
+            ...makeRecord().beds.R1,
+            pathology: 'Diagnostico remoto base',
+            status: 'Grave',
+          },
+        },
+      },
+    });
+    const functionsApi = createDailyRecordWriteAuthorityFunctions({
+      admin,
+      resolveRoleForEmail: vi.fn().mockResolvedValue('nurse_hospital'),
+    });
+
+    const result = await functionsApi.patchDailyRecordWithClinicalAuthority.run(
+      {
+        date: '2026-05-13',
+        expectedLastUpdated: '2026-05-13T10:00:00.000Z',
+        mode: 'enforced',
+        origin: 'direct_partial_update',
+        syncContract: {
+          expectedVersion: '2026-05-13T10:00:00.000Z',
+          changedPaths: ['beds.R1.pathology'],
+          mutationId: 'mutation-1',
+          clientId: 'client-1',
+          tabId: 'tab-1',
+        },
+        patch: {
+          'beds.R1.pathology': 'Diagnostico local nuevo',
+        },
+      },
+      makeContext()
+    );
+
+    expect(set).toHaveBeenCalledWith(
+      historyDoc,
+      expect.objectContaining({
+        date: '2026-05-13',
+        snapshotTimestamp: expect.anything(),
+      })
+    );
+    expect(set).toHaveBeenCalledWith(
+      docRef,
+      expect.objectContaining({
+        date: '2026-05-13',
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({
+            pathology: 'Diagnostico local nuevo',
+            status: 'Grave',
+          }),
+        }),
+        meta: expect.objectContaining({
+          revision: 5,
+          lastMutationId: 'mutation-1',
+          lastWriterClientId: 'client-1',
+          lastWriterTabId: 'tab-1',
+          lastChangedPaths: ['beds.R1.pathology'],
+        }),
+        lastUpdated: expect.anything(),
+      })
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        success: true,
+        date: '2026-05-13',
+        mode: 'enforced',
+        authorityStatus: 'ok',
+        revision: 5,
+        mutationId: 'mutation-1',
+      })
+    );
+    expect(telemetryAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        operation: 'patchDailyRecordWithClinicalAuthority',
+        status: 'success',
+        context: expect.objectContaining({
+          changedPathsCount: 1,
+          mutationId: 'mutation-1',
+        }),
+      })
+    );
+  });
+
   it('rejects full saves that duplicate an active clinical episode', async () => {
     const { admin, set } = createAdminMock();
     const record = makeRecord();
