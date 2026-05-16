@@ -14,7 +14,7 @@ describe('censusOperationalStateController', () => {
     ).toMatchObject({
       phase: 'using_local_cache',
       isSettled: false,
-      shouldShowBanner: false,
+      shouldShowBanner: true,
       severity: 'warning',
       message: expect.stringContaining('copia local'),
     });
@@ -32,7 +32,7 @@ describe('censusOperationalStateController', () => {
     ).toMatchObject({
       phase: 'reconciling_remote',
       isSettled: false,
-      shouldShowBanner: false,
+      shouldShowBanner: true,
       severity: 'info',
       message: expect.stringContaining('Firebase'),
     });
@@ -66,7 +66,7 @@ describe('censusOperationalStateController', () => {
     ).toMatchObject({
       phase: 'sync_pending',
       isSettled: false,
-      shouldShowBanner: false,
+      shouldShowBanner: true,
       severity: 'warning',
     });
 

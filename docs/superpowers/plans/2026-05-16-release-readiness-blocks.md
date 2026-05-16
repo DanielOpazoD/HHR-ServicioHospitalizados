@@ -117,19 +117,19 @@ Evidence captured on 2026-05-16:
 - Inspect/modify likely seams: `src/services/observability/`, `src/app-shell/`, `src/features/census/`, `src/features/clinical-documents/`
 - Add or extend tests in `src/tests/features/`, `src/tests/app-shell/`, or `src/tests/services/observability/`
 
-- [ ] **Step 1: Choose one silent or ambiguous state**
+- [x] **Step 1: Choose one silent or ambiguous state**
 
 Use current runtime contracts and tests to pick one user-visible ambiguity, such as sync retrying, permission denial, stale document state, or unavailable telemetry.
 
-- [ ] **Step 2: Add UI/regression coverage**
+- [x] **Step 2: Add UI/regression coverage**
 
 Add a focused test proving the state is visible and actionable, without adding a new parallel workflow.
 
-- [ ] **Step 3: Implement the smallest visible status improvement**
+- [x] **Step 3: Implement the smallest visible status improvement**
 
 Use existing status/banner/presentation patterns.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run the focused test, then:
 
@@ -141,12 +141,19 @@ PLAYWRIGHT_WEB_SERVER_PORT=4174 npm run test:e2e:clinical-visual-release
 
 Expected: all commands exit `0`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src e2e reports/e2e
 git commit -m "feat(ops): surface clinical degraded states"
 ```
+
+Evidence captured on 2026-05-16:
+
+- Selected ambiguity: the census operational controller already generated non-settled states for local cache, remote reconciliation, loading, and pending empty-day verification, but the existing banner was hidden for those states.
+- Code closure: `src/features/census/controllers/censusOperationalStateController.ts` now surfaces the existing banner for non-settled census states that can affect clinical interpretation.
+- Regression closure: `src/tests/views/census/censusOperationalStateController.test.ts` now asserts that local cache, remote reconciliation, and pending empty-day verification are visible.
+- Verification: `npm exec -- vitest run src/tests/views/census/censusOperationalStateController.test.ts`, `npm run lint`, `npm run check:quality`, and `PLAYWRIGHT_WEB_SERVER_PORT=4174 npm run test:e2e:clinical-visual-release` passed.
 
 ### Task 4: Security, Rules, And Dependency Risk Closure
 
