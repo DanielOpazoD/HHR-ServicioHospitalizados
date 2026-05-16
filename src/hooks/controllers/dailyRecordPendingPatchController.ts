@@ -16,6 +16,23 @@ const getPatchPathValue = (record: DailyRecord, path: string): unknown =>
     return (value as Record<string, unknown>)[segment];
   }, record);
 
+const findIncomingBedIdForSameEpisode = (
+  incomingRecord: DailyRecord,
+  previousRecord: DailyRecord,
+  previousBedId: string
+): string | undefined => {
+  const previousPatient = previousRecord.beds[previousBedId];
+  if (!previousPatient) {
+    return undefined;
+  }
+
+  return Object.keys(incomingRecord.beds).find(
+    incomingBedId =>
+      incomingBedId !== previousBedId &&
+      isSameEpisodeForExplicitCensusPatch(incomingRecord.beds[incomingBedId], previousPatient)
+  );
+};
+
 export const registerPendingDailyRecordPatch = (
   date: string,
   patch: DailyRecordPatch
@@ -58,12 +75,16 @@ const collectPendingExplicitCensusPatch = (
       }
 
       if (
-        !isSameEpisodeForExplicitCensusPatch(incomingRecord.beds[bedId], previousRecord.beds[bedId])
+        isSameEpisodeForExplicitCensusPatch(incomingRecord.beds[bedId], previousRecord.beds[bedId])
       ) {
+        resolvedPatch[path] = value;
         return;
       }
 
-      resolvedPatch[path] = value;
+      const movedBedId = findIncomingBedIdForSameEpisode(incomingRecord, previousRecord, bedId);
+      if (movedBedId) {
+        resolvedPatch[`beds.${movedBedId}.${field}`] = value;
+      }
     });
   });
 
@@ -81,25 +102,51 @@ export const releaseConfirmedPendingDailyRecordPatches = (
   }
 
   pendingPatches.forEach((patch, patchId) => {
-    const explicitEntries = Object.entries(patch as Record<string, unknown>).filter(([path]) => {
+    const patchRecord = patch as Record<string, unknown>;
+    const trackedEntries = Object.entries(patchRecord).filter(([path]) => {
       const [root, bedId, field] = path.split('.');
       return Boolean(
-        root === 'beds' &&
-        bedId &&
-        field &&
-        PENDING_LOCAL_CENSUS_PATCH_FIELDS.has(field) &&
-        isSameEpisodeForExplicitCensusPatch(incomingRecord.beds[bedId], previousRecord.beds[bedId])
+        root === 'beds' && bedId && field && PENDING_LOCAL_CENSUS_PATCH_FIELDS.has(field)
       );
     });
 
-    if (explicitEntries.length === 0) {
+    if (trackedEntries.length === 0) {
       return;
     }
 
-    const isRemoteConfirmed = explicitEntries.every(
-      ([path, value]) => getPatchPathValue(incomingRecord, path) === value
-    );
-    if (isRemoteConfirmed) {
+    trackedEntries.forEach(([path, value]) => {
+      const [, bedId, field] = path.split('.');
+      if (
+        bedId &&
+        !isSameEpisodeForExplicitCensusPatch(incomingRecord.beds[bedId], previousRecord.beds[bedId])
+      ) {
+        if (field) {
+          const movedBedId = findIncomingBedIdForSameEpisode(incomingRecord, previousRecord, bedId);
+          if (movedBedId) {
+            const movedPath = `beds.${movedBedId}.${field}`;
+            if (getPatchPathValue(incomingRecord, movedPath) === value) {
+              delete patchRecord[path];
+            }
+            return;
+          }
+        }
+        delete patchRecord[path];
+      }
+    });
+
+    const remainingTrackedEntries = Object.entries(patchRecord).filter(([path]) => {
+      const [root, bedId, field] = path.split('.');
+      return Boolean(
+        root === 'beds' && bedId && field && PENDING_LOCAL_CENSUS_PATCH_FIELDS.has(field)
+      );
+    });
+
+    const isRemoteConfirmed =
+      remainingTrackedEntries.length > 0 &&
+      remainingTrackedEntries.every(
+        ([path, value]) => getPatchPathValue(incomingRecord, path) === value
+      );
+    if (remainingTrackedEntries.length === 0 || isRemoteConfirmed) {
       pendingPatches.delete(patchId);
     }
   });

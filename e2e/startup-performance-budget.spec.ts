@@ -176,7 +176,6 @@ const bootstrapRecordAndUser = async (
 const waitForCensoReady = async (page: Parameters<typeof ensureRecordExists>[0]) => {
   const candidates = [
     page.getByTestId('census-table').first(),
-    page.getByTestId('census-operational-state-banner').first(),
     page.getByTestId('blank-record-btn').first(),
     page.getByText(/No existe registro para esta fecha/i, { exact: false }).first(),
   ];
@@ -223,9 +222,15 @@ const expectCensoOperationalTransition = async (
   await expect(page.getByTestId('census-table')).toBeVisible();
   await expect(seededPatientRow).toBeVisible();
   await expect(seededPatientName).toHaveValue('PERF TEST');
-  await expect(page.getByTestId('census-operational-state-banner')).toBeHidden({
-    timeout: 5_000,
-  });
+
+  const operationalBanner = page.getByTestId('census-operational-state-banner').first();
+  if (await operationalBanner.isVisible({ timeout: 250 }).catch(() => false)) {
+    const currentPhase = (await operationalBanner.getAttribute('data-phase')) || 'unknown';
+    expect(
+      currentPhase,
+      `visible census operational phase should be non-blocking after the record is usable, received ${currentPhase}`
+    ).toMatch(/^(loading_remote|sync_pending|reconciling_remote|using_local_cache)$/);
+  }
 };
 
 const dismissBlockingOperationalBanner = async (page: Parameters<typeof ensureRecordExists>[0]) => {

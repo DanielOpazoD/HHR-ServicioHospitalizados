@@ -71,7 +71,7 @@ describe('CensusRegisterContent', () => {
     expect(await screen.findByTestId('census-register-sections')).toBeInTheDocument();
   });
 
-  it('does not show informational operational banners while the visible census reconciles Firebase', () => {
+  it('keeps remote reconciliation as internal state without adding a visible banner', () => {
     mockUseDailyRecordStatus.mockReturnValue({
       syncStatus: 'idle',
       lastSyncTime: null,

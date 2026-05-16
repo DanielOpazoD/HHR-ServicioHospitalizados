@@ -81,7 +81,7 @@ const buildEmptyBed = (bedId: string): PatientData =>
     hasWristband: true,
   });
 
-const CURRENT_RECORD_DATE = new Date().toISOString().slice(0, 10);
+const CURRENT_RECORD_DATE = '2026-05-16';
 const isoAt = (date: string, time: string): string => `${date}T${time}.000Z`;
 
 describeEmulator('Firestore discharge-bed consistency flow', () => {

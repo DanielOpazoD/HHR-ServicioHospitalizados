@@ -369,7 +369,9 @@ describe('PrescriptionBedGridView', () => {
     const dialogImage = await screen.findByRole('img', { name: /receta 1 de 2/i });
     expect(dialogImage).toHaveAttribute('src', 'https://stub/prescriptions/hhr/rx-first/full.jpg');
 
-    fireEvent.click(screen.getByRole('button', { name: /receta siguiente/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /receta siguiente/i }));
+    });
 
     await waitFor(() =>
       expect(screen.getByRole('img', { name: /receta 2 de 2/i })).toHaveAttribute(

@@ -14,10 +14,13 @@ const trackedReports = [
   'reports/quality-metrics.json',
   'reports/system-confidence.json',
   'reports/operational-health.json',
+  'reports/clinical-release-validation.json',
+  'reports/clinical-release-signoff.json',
   'reports/release-confidence-matrix.json',
   'reports/release-readiness-scorecard.json',
   'reports/maintenance-debt-scorecard.json',
 ];
+const scenarioIds = ['census_reload_remote_reconcile', 'clinical_documents_pdf_print'];
 
 const clinicalVisualReleaseReport = {
   stats: {
@@ -67,6 +70,32 @@ const makeRoot = (reportPayload: Record<string, unknown>) => {
   tmpRoots.push(root);
   fs.mkdirSync(path.join(root, 'reports'), { recursive: true });
   fs.mkdirSync(path.join(root, 'reports/e2e'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'scripts/config'), { recursive: true });
+
+  fs.writeFileSync(
+    path.join(root, 'scripts/config/clinical-release-validation.json'),
+    JSON.stringify({
+      version: 1,
+      closureGates: ['codigo_corregido', 'regresion_automatizada', 'flujo_clinico_validado'],
+      scenarios: scenarioIds.map(scenarioId => ({ id: scenarioId })),
+    }),
+    'utf8'
+  );
+  fs.writeFileSync(
+    path.join(root, 'scripts/config/clinical-release-signoff.json'),
+    JSON.stringify({
+      version: 1,
+      releaseCandidate: 'test',
+      signoffs: scenarioIds.map(scenarioId => ({
+        scenarioId,
+        status: 'passed',
+        validatedBy: 'QA Clinico',
+        validatedAt: '2026-05-16T12:00:00.000Z',
+        evidence: [{ type: 'manual', reference: `evidence/${scenarioId}.md` }],
+      })),
+    }),
+    'utf8'
+  );
 
   for (const reportFile of trackedReports) {
     fs.writeFileSync(path.join(root, reportFile), JSON.stringify(reportPayload), 'utf8');
@@ -107,6 +136,29 @@ describe('release evidence guardrail', () => {
 
     expect(collectReleaseEvidenceIssues(root)).toContain(
       'reports/release-confidence-matrix.json is missing.'
+    );
+  });
+
+  it('blocks release evidence while clinical signoff is pending', () => {
+    const root = makeRoot({ gitSha: 'abc123', gitDirty: false });
+    fs.writeFileSync(
+      path.join(root, 'scripts/config/clinical-release-signoff.json'),
+      JSON.stringify({
+        version: 1,
+        releaseCandidate: 'test',
+        signoffs: scenarioIds.map(scenarioId => ({
+          scenarioId,
+          status: 'pending_human_review',
+          validatedBy: '',
+          validatedAt: '',
+          evidence: [],
+        })),
+      }),
+      'utf8'
+    );
+
+    expect(collectReleaseEvidenceIssues(root)).toContain(
+      'clinical release signoff: census_reload_remote_reconcile is pending_human_review; release signoff requires passed.'
     );
   });
 

@@ -9,10 +9,37 @@ const runGitCommand = (root, command) =>
 // list aligned with the tracked report artifacts that any CI flow rewrites
 // before `check:report-freshness` runs.
 const GENERATED_REPORT_STATUS_SUFFIXES = new Set([
+  'reports/clinical-release-validation.json',
+  'reports/clinical-release-validation.md',
+  'reports/clinical-release-signoff.json',
+  'reports/clinical-release-signoff.md',
+  'reports/compatibility-governance.json',
+  'reports/compatibility-governance.md',
+  'reports/compatibility-import-governance.json',
+  'reports/compatibility-import-governance.md',
+  'reports/critical-coverage.json',
+  'reports/critical-coverage.md',
+  'reports/e2e/clinical-visual-release-report.json',
+  'reports/guardrail-governance.json',
+  'reports/guardrail-governance.md',
   'reports/legacy-bridge-governance.json',
   'reports/legacy-bridge-governance.md',
+  'reports/maintenance-debt-scorecard.json',
+  'reports/maintenance-debt-scorecard.md',
+  'reports/operational-health.json',
+  'reports/operational-health.md',
+  'reports/quality-metrics.json',
+  'reports/quality-metrics.md',
+  'reports/release-confidence-matrix.json',
+  'reports/release-confidence-matrix.md',
+  'reports/release-readiness-scorecard.json',
+  'reports/release-readiness-scorecard.md',
   'reports/runtime-contracts.json',
   'reports/runtime-contracts.md',
+  'reports/system-confidence.json',
+  'reports/system-confidence.md',
+  'reports/technical-ownership-map.json',
+  'reports/technical-ownership-map.md',
 ]);
 
 const normalizeGitStatusPath = statusLine => {

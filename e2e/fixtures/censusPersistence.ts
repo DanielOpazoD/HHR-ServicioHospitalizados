@@ -56,65 +56,78 @@ export const seedPersistedBedFields = async ({
   bedId,
   fields,
 }: SeedPersistedBedFieldsInput) => {
-  await page.evaluate(
-    ({ targetDate, targetBedId, targetFields }) => {
-      const storageKey = 'hanga_roa_hospital_data';
-      const records = JSON.parse(window.localStorage.getItem(storageKey) || '{}') as Record<
-        string,
-        { beds?: Record<string, Record<string, unknown>>; lastUpdated?: string }
-      >;
-      const currentRecord = records[targetDate] || {};
-      const currentBeds = currentRecord.beds || {};
-      const nextRecord = {
-        ...currentRecord,
-        lastUpdated: new Date().toISOString(),
-        beds: {
-          ...currentBeds,
-          [targetBedId]: {
-            ...(currentBeds[targetBedId] || {}),
-            ...targetFields,
+  const seedInCurrentDocument = () =>
+    page.evaluate(
+      ({ targetDate, targetBedId, targetFields }) => {
+        const storageKey = 'hanga_roa_hospital_data';
+        const records = JSON.parse(window.localStorage.getItem(storageKey) || '{}') as Record<
+          string,
+          { beds?: Record<string, Record<string, unknown>>; lastUpdated?: string }
+        >;
+        const currentRecord = records[targetDate] || {};
+        const currentBeds = currentRecord.beds || {};
+        const nextRecord = {
+          ...currentRecord,
+          lastUpdated: new Date().toISOString(),
+          beds: {
+            ...currentBeds,
+            [targetBedId]: {
+              ...(currentBeds[targetBedId] || {}),
+              ...targetFields,
+            },
           },
-        },
-      };
+        };
 
-      records[targetDate] = nextRecord;
-      window.localStorage.setItem(storageKey, JSON.stringify(records));
+        records[targetDate] = nextRecord;
+        window.localStorage.setItem(storageKey, JSON.stringify(records));
 
-      const persistIndexedDbMirror = async () => {
-        const request = indexedDB.open('HangaRoaDB');
-        const db = await new Promise<IDBDatabase>((resolve, reject) => {
-          request.onerror = () => reject(request.error);
-          request.onsuccess = () => resolve(request.result);
-        });
-
-        try {
-          const transaction = db.transaction('dailyRecords', 'readwrite');
-          const store = transaction.objectStore('dailyRecords');
-          store.put(nextRecord);
-          await new Promise<void>((resolve, reject) => {
-            transaction.oncomplete = () => resolve();
-            transaction.onerror = () => reject(transaction.error);
-            transaction.onabort = () => reject(transaction.error);
+        const persistIndexedDbMirror = async () => {
+          const request = indexedDB.open('HangaRoaDB');
+          const db = await new Promise<IDBDatabase>((resolve, reject) => {
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
           });
-        } finally {
-          db.close();
-        }
-      };
 
-      const runtimeWindow = window as Window & {
-        __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
-      };
-      runtimeWindow.__HHR_E2E_OVERRIDE__ = {
-        ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
-        [targetDate]: nextRecord as unknown,
-      };
+          try {
+            const transaction = db.transaction('dailyRecords', 'readwrite');
+            const store = transaction.objectStore('dailyRecords');
+            store.put(nextRecord);
+            await new Promise<void>((resolve, reject) => {
+              transaction.oncomplete = () => resolve();
+              transaction.onerror = () => reject(transaction.error);
+              transaction.onabort = () => reject(transaction.error);
+            });
+          } finally {
+            db.close();
+          }
+        };
 
-      return persistIndexedDbMirror();
-    },
-    {
-      targetDate: date,
-      targetBedId: bedId,
-      targetFields: fields,
+        const runtimeWindow = window as Window & {
+          __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
+        };
+        runtimeWindow.__HHR_E2E_OVERRIDE__ = {
+          ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
+          [targetDate]: nextRecord as unknown,
+        };
+
+        return persistIndexedDbMirror();
+      },
+      {
+        targetDate: date,
+        targetBedId: bedId,
+        targetFields: fields,
+      }
+    );
+
+  try {
+    await seedInCurrentDocument();
+  } catch (error) {
+    const message = String((error as Error)?.message || error);
+    if (!message.includes('Execution context was destroyed')) {
+      throw error;
     }
-  );
+
+    await page.waitForLoadState('domcontentloaded');
+    await seedInCurrentDocument();
+  }
 };
