@@ -61,7 +61,10 @@ describe('BootstrapRouteChrome', () => {
         selectedDay: 22,
       })
     );
-    expect(screen.queryByTestId('census-operational-state-banner')).not.toBeInTheDocument();
+    expect(screen.getByTestId('census-operational-state-banner')).toHaveAttribute(
+      'data-phase',
+      'loading_remote'
+    );
     expect(screen.queryByTestId('view-loader')).not.toBeInTheDocument();
   });
 
