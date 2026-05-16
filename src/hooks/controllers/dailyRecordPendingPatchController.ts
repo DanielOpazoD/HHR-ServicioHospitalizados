@@ -8,6 +8,14 @@ import {
 const pendingPatchRegistry = new Map<string, Map<number, DailyRecordPatch>>();
 let pendingPatchSequence = 0;
 
+const getPatchPathValue = (record: DailyRecord, path: string): unknown =>
+  path.split('.').reduce<unknown>((value, segment) => {
+    if (!value || typeof value !== 'object') {
+      return undefined;
+    }
+    return (value as Record<string, unknown>)[segment];
+  }, record);
+
 export const registerPendingDailyRecordPatch = (
   date: string,
   patch: DailyRecordPatch
@@ -60,6 +68,45 @@ const collectPendingExplicitCensusPatch = (
   });
 
   return resolvedPatch as DailyRecordPatch;
+};
+
+export const releaseConfirmedPendingDailyRecordPatches = (
+  date: string,
+  incomingRecord: DailyRecord,
+  previousRecord: DailyRecord | undefined
+): void => {
+  const pendingPatches = pendingPatchRegistry.get(date);
+  if (!pendingPatches || !previousRecord) {
+    return;
+  }
+
+  pendingPatches.forEach((patch, patchId) => {
+    const explicitEntries = Object.entries(patch as Record<string, unknown>).filter(([path]) => {
+      const [root, bedId, field] = path.split('.');
+      return Boolean(
+        root === 'beds' &&
+        bedId &&
+        field &&
+        PENDING_LOCAL_CENSUS_PATCH_FIELDS.has(field) &&
+        isSameEpisodeForExplicitCensusPatch(incomingRecord.beds[bedId], previousRecord.beds[bedId])
+      );
+    });
+
+    if (explicitEntries.length === 0) {
+      return;
+    }
+
+    const isRemoteConfirmed = explicitEntries.every(
+      ([path, value]) => getPatchPathValue(incomingRecord, path) === value
+    );
+    if (isRemoteConfirmed) {
+      pendingPatches.delete(patchId);
+    }
+  });
+
+  if (pendingPatches.size === 0) {
+    pendingPatchRegistry.delete(date);
+  }
 };
 
 export const applyPendingExplicitCensusPatch = (

@@ -52,10 +52,10 @@ const patchDailyRecordWithCompatibility = async (
   return null;
 };
 
-const PENDING_PATCH_RELEASE_GRACE_MS = 5000;
+const PENDING_PATCH_RELEASE_FALLBACK_TTL_MS = 60000;
 
-const releasePendingPatchAfterRealtimeGrace = (release: () => void): void => {
-  const timer = globalThis.setTimeout(release, PENDING_PATCH_RELEASE_GRACE_MS);
+const releasePendingPatchAfterFallbackTtl = (release: () => void): void => {
+  const timer = globalThis.setTimeout(release, PENDING_PATCH_RELEASE_FALLBACK_TTL_MS);
   (timer as { unref?: () => void }).unref?.();
 };
 
@@ -247,7 +247,7 @@ export const usePatchDailyRecordMutation = (date: string) => {
         context.unregisterPendingPatch();
         return;
       }
-      releasePendingPatchAfterRealtimeGrace(context.unregisterPendingPatch);
+      releasePendingPatchAfterFallbackTtl(context.unregisterPendingPatch);
     },
   });
 };
