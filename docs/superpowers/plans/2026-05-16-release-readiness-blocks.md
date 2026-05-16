@@ -65,7 +65,7 @@ Evidence captured on 2026-05-16:
 - Inspect/modify likely seams: `src/services/repositories/dailyRecordRepositoryWriteService*.ts`, `src/services/repositories/dailyRecordPendingPatchController.ts`, `src/hooks/useDailyRecordQuery.ts`, `src/services/storage/**`
 - Add or extend tests in `src/tests/services/repositories/` or `src/tests/hooks/controllers/`
 
-- [ ] **Step 1: Identify one current high-risk sync path**
+- [x] **Step 1: Identify one current high-risk sync path**
 
 Run:
 
@@ -75,15 +75,15 @@ rg -n "pending|stale|writeAccepted|conflict|autoMerge|patch" src/services/reposi
 
 Expected: select one concrete clinical persistence path, not a broad rewrite.
 
-- [ ] **Step 2: Add focused regression coverage**
+- [x] **Step 2: Add focused regression coverage**
 
 Add a test that proves the selected path preserves the local clinical change across stale remote hydration, failed write, or retry state.
 
-- [ ] **Step 3: Implement only the minimal code needed**
+- [x] **Step 3: Implement only the minimal code needed**
 
 Keep the change inside the selected controller/repository seam.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run the focused test, then:
 
@@ -94,12 +94,21 @@ npm run test:repository-compat
 
 Expected: all commands exit `0`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src
 git commit -m "fix(sync): protect clinical census persistence"
 ```
+
+Evidence captured on 2026-05-16:
+
+- Selected risk: pending census patches registered for an older bed episode were not purged when realtime moved the bed to a different episode, leaving a path for stale clinical status to reappear on later snapshots.
+- Code closure: `src/hooks/controllers/dailyRecordPendingPatchController.ts` now removes tracked pending census paths when the incoming and previous bed episodes no longer match, and deletes the pending entry when nothing valid remains.
+- Regression closure: `src/tests/hooks/controllers/dailyRecordPendingStatusEpisodeHydration.test.ts` covers the two-snapshot reuse case where an old `GRAVE` status must not override a new `ESTABLE` episode.
+- Verification: `npm exec -- vitest run src/tests/hooks/controllers/dailyRecordPendingStatusEpisodeHydration.test.ts src/tests/hooks/controllers/dailyRecordPendingPatchController.test.ts src/tests/hooks/controllers/dailyRecordQueryController.test.ts` passed 16 tests.
+- Verification: `npm run typecheck`, `npm run check:quality`, and `npm run test:repository-compat` passed.
+- Broader accidental verification: `npm test -- --run ...` executed the repo wrapper and passed unit tests, Firestore rules, sync emulator, and emulator UI suites.
 
 ### Task 3: Operational UX For Degraded States
 
