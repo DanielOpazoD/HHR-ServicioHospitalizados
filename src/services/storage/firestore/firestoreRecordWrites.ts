@@ -282,7 +282,8 @@ export const updateRecordPartial = async (
       docRef,
       expectedLastUpdated,
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
-      'partial update'
+      'partial update',
+      { toleranceMs: 0 }
     );
 
     await saveHistorySnapshot(date);

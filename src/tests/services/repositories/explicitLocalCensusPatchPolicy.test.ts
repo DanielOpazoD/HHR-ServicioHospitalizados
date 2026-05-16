@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { isSameEpisodeForExplicitCensusPatch } from '@/services/repositories/explicitLocalCensusPatchPolicy';
+import {
+  EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS,
+  PENDING_LOCAL_CENSUS_PATCH_FIELDS,
+  isSameEpisodeForExplicitCensusPatch,
+} from '@/services/repositories/explicitLocalCensusPatchPolicy';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 type Patient = DailyRecord['beds'][string];
@@ -15,6 +19,32 @@ const patient = (overrides: Partial<Patient>): Patient =>
   }) as Patient;
 
 describe('explicitLocalCensusPatchPolicy', () => {
+  it('keeps the explicit and pending clinical census field lists aligned', () => {
+    const expectedClinicalFields = [
+      'pathology',
+      'diagnosisComments',
+      'snomedCode',
+      'cie10Code',
+      'cie10Description',
+      'specialty',
+      'secondarySpecialty',
+      'status',
+      'ginecobstetriciaType',
+      'deliveryRoute',
+      'deliveryDate',
+      'deliveryCesareanLabor',
+      'isUPC',
+      'upcChecklist',
+    ];
+
+    expect(Array.from(EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS).sort()).toEqual(
+      [...expectedClinicalFields].sort()
+    );
+    expect(Array.from(PENDING_LOCAL_CENSUS_PATCH_FIELDS).sort()).toEqual(
+      [...expectedClinicalFields].sort()
+    );
+  });
+
   it('matches the same persisted clinical episode id', () => {
     expect(
       isSameEpisodeForExplicitCensusPatch(

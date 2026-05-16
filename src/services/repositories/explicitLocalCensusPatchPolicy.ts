@@ -1,15 +1,29 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
-export const EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS = new Set([
+export const CLINICAL_CENSUS_EDITABLE_FIELDS = [
+  'pathology',
+  'diagnosisComments',
+  'snomedCode',
+  'cie10Code',
+  'cie10Description',
   'specialty',
   'secondarySpecialty',
   'status',
-]);
+  'ginecobstetriciaType',
+  'deliveryRoute',
+  'deliveryDate',
+  'deliveryCesareanLabor',
+  'isUPC',
+  'upcChecklist',
+] as const;
 
-export const PENDING_LOCAL_CENSUS_PATCH_FIELDS = new Set([
-  'pathology',
-  ...EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS,
-]);
+export const EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS: ReadonlySet<string> = new Set(
+  CLINICAL_CENSUS_EDITABLE_FIELDS
+);
+
+export const PENDING_LOCAL_CENSUS_PATCH_FIELDS: ReadonlySet<string> = new Set(
+  CLINICAL_CENSUS_EDITABLE_FIELDS
+);
 
 const normalizeEpisodeScalar = (value: unknown): string =>
   String(value || '')

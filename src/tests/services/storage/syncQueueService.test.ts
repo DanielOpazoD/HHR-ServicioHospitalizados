@@ -40,6 +40,7 @@ import {
   listRecentSyncQueueOperations,
 } from '@/services/storage/sync';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
+import { PatientStatus } from '@/types/domain/patientClassification';
 
 describe('storage/sync public entrypoint', () => {
   const FIXED_NOW = 1760000000000;
@@ -284,10 +285,62 @@ describe('storage/sync public entrypoint', () => {
 
     expect(setDoc).toHaveBeenCalledTimes(1);
     const writtenRecord = vi.mocked(setDoc).mock.calls[0][1] as DailyRecord;
-    expect(writtenRecord.beds.R1.pathology).toBe('Diagnostico Firebase vigente');
+    expect(writtenRecord.beds.R1.pathology).toBe('Diagnostico local stale');
     expect(writtenRecord.beds.R1.bedMode).toBe('Cama');
     expect(writtenRecord.lastUpdated).toBe('2025-01-13T10:20:00.000Z');
     await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
+  });
+
+  it('revalidates expected-version drift even when another browser wrote within 30 seconds', async () => {
+    const local = makeRecord('2025-01-16', '2025-01-16T10:00:10.000Z');
+    local.beds.R1 = {
+      bedId: 'R1',
+      patientName: 'Paciente Sync',
+      rut: '11.111.111-1',
+      age: '40a',
+      pathology: 'Diagnostico local nuevo',
+      specialty: 'Medicina',
+      status: 'Estable',
+      admissionDate: '2025-01-16',
+      admissionTime: '08:00',
+      isBlocked: false,
+      bedMode: 'Cama',
+      hasCompanionCrib: false,
+      hasWristband: true,
+      devices: [],
+      surgicalComplication: false,
+      isUPC: false,
+    } as DailyRecord['beds'][string];
+
+    const remote = makeRecord('2025-01-16', '2025-01-16T10:00:05.000Z');
+    remote.beds.R1 = {
+      ...local.beds.R1,
+      pathology: 'Diagnostico base remoto',
+      status: PatientStatus.GRAVE,
+    };
+
+    vi.mocked(getDoc).mockResolvedValue({
+      exists: () => true,
+      data: () => remote as unknown as Record<string, unknown>,
+    } as Awaited<ReturnType<typeof getDoc>>);
+
+    await queueSyncTask('UPDATE_DAILY_RECORD', local, {
+      contexts: ['clinical'],
+      origin: 'partial_update_retry',
+      syncContract: {
+        expectedVersion: '2025-01-16T10:00:00.000Z',
+        changedPaths: ['beds.R1.pathology'],
+      },
+    });
+
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    await processSyncQueue();
+
+    expect(setDoc).toHaveBeenCalledTimes(1);
+    const writtenRecord = vi.mocked(setDoc).mock.calls[0][1] as DailyRecord;
+    expect(writtenRecord.beds.R1.pathology).toBe('Diagnostico local nuevo');
+    expect(writtenRecord.beds.R1.status).toBe('Grave');
+    expect(writtenRecord.lastUpdated).toBe('2025-01-16T10:00:10.000Z');
   });
 
   it('writes non-stale daily record tasks without remote remerge', async () => {

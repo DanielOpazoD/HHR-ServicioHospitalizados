@@ -27,21 +27,12 @@ import {
 } from '@/services/storage/firestore/dailyRecordAuthorityMode';
 import { saveDailyRecordWithClinicalAuthorityCallable } from '@/services/storage/firestore/dailyRecordAuthorityCallableClient';
 
-/**
- * Tolerance window for same-session rapid edits (e.g. clicking checkboxes fast).
- * Changes within this window are assumed to come from the same user/tab and
- * are allowed through. Changes older than this are likely from a different
- * PC/session with stale data and are blocked.
- */
-const SAME_SESSION_TOLERANCE_MS = 30_000;
+const STRICT_REMOTE_DRIFT_TOLERANCE_MS = 0;
 
 /**
- * Checks whether the remote record has been updated significantly more
- * recently than the local copy. If so, throws a ConcurrencyError to prevent
- * overwriting newer data from another session/PC.
- *
- * Small differences (< 30s) are tolerated to allow rapid same-user edits
- * without false positives.
+ * Blocks writes when the remote record is newer than the local copy. Without
+ * client/tab metadata, the outbox cannot prove a rapid write came from the same
+ * session, so even short drifts must be treated as real concurrency.
  */
 const toMillis = (value: string | undefined): number => {
   if (!value) return 0;
@@ -65,7 +56,7 @@ const assertSyncQueueConcurrency = (
   if (!remoteLastUpdated) return;
 
   const drift = toMillis(remoteLastUpdated) - toMillis(localLastUpdated);
-  if (drift > SAME_SESSION_TOLERANCE_MS) {
+  if (drift > STRICT_REMOTE_DRIFT_TOLERANCE_MS) {
     throw new ConcurrencyError(
       `Sync queue: remote record for ${record.date} is newer ` +
         `(remote=${remoteLastUpdated}, local=${localLastUpdated}, drift=${Math.round(drift / 1000)}s). ` +
@@ -79,7 +70,7 @@ const shouldRevalidateAgainstRemote = (
   expectedVersion: string | undefined
 ): boolean => {
   if (!remoteLastUpdated || !expectedVersion) return false;
-  return toMillis(remoteLastUpdated) - toMillis(expectedVersion) > SAME_SESSION_TOLERANCE_MS;
+  return toMillis(remoteLastUpdated) > toMillis(expectedVersion);
 };
 
 const resolveRecordForSyncTask = async (
