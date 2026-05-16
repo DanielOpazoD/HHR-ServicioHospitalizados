@@ -8,6 +8,7 @@
 npm run test:ci:unit          # Tests unitarios
 npm run test:rules:ci         # Firestore rules
 npm run test:release-confidence  # Pack de confianza
+npm run check:clinical-release-validation # Contrato de validacion clinica manual minima
 ```
 
 ### 2. Verificar typecheck
@@ -56,7 +57,21 @@ npm run build       # Vite build
 - [ ] Botón MMRAD (radiología) conecta
 - [ ] Botón Lab (laboratorio) conecta (requiere red hospital + Express server)
 
-### 2. Verificar Firestore
+### 2. Validación clínica manual mínima
+
+Antes de marcar un release como listo, cada escenario crítico debe cerrar tres evidencias: código corregido, regresión automatizada y flujo clínico validado visualmente/manual. El contrato versionado vive en `scripts/config/clinical-release-validation.json` y se valida con:
+
+```bash
+npm run check:clinical-release-validation
+```
+
+No dupliques escenarios manualmente en este documento. Para agregar, cambiar o retirar un flujo clínico de release, actualiza `scripts/config/clinical-release-validation.json` y conserva los tres cierres obligatorios por escenario:
+
+- `codigo_corregido`
+- `regresion_automatizada`
+- `flujo_clinico_validado`
+
+### 3. Verificar Firestore
 
 - Consola Firebase → Firestore → verificar que documentos se escriben
 - Verificar reglas de seguridad aplicadas
