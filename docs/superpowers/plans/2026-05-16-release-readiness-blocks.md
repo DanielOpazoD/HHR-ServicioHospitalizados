@@ -162,7 +162,7 @@ Evidence captured on 2026-05-16:
 - Inspect/modify likely seams: `package-lock.json`, `functions/package-lock.json`, `rules/firestore/*.rules`, `firestore.rules`, `scripts/check-dependency-vulnerabilities.mjs`
 - Add or extend tests in `src/tests/security/` or `src/tests/build/`
 
-- [ ] **Step 1: Re-run current dependency and rules gates**
+- [x] **Step 1: Re-run current dependency and rules gates**
 
 Run:
 
@@ -174,11 +174,11 @@ npm run test:firestore:release:ci
 
 Expected: identify whether remaining dependency risk is policy-accepted moderate debt or an actionable safe patch.
 
-- [ ] **Step 2: Apply only safe dependency/rules changes**
+- [x] **Step 2: Apply only safe dependency/rules changes**
 
 Do not perform major Firebase/admin upgrades unless the command output proves they are required for high/critical closure.
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Run:
 
@@ -190,12 +190,21 @@ npm run test:firestore:release:ci
 
 Expected: all commands exit `0`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add package-lock.json functions/package-lock.json rules firestore.rules reports/security
 git commit -m "chore(security): close release security gates"
 ```
+
+Evidence captured on 2026-05-16:
+
+- Security/dependency closure: `npm run check:dependency-vulnerabilities` passed and regenerated `reports/security/dependency-audit.json` without tracked changes.
+- Rules/security closure: `npm run check:security` passed, including secret leak checks, generated rules sync, rules source governance, Firestore rules governance, critical access matrix, and security hardening.
+- Release gate finding: first `npm run test:firestore:release:ci` run exposed a performance-budget false signal after the Bloque 3 banner change: `waitForCensoReady` counted the informational operational banner as census readiness, then `ensureRecordExists` waited for `networkidle`.
+- Code closure: `e2e/startup-performance-budget.spec.ts` now treats the banner as operational context, not as the clinical surface ready signal, and still validates that any visible post-ready banner is non-blocking.
+- Verification: direct `PLAYWRIGHT_USE_PREVIEW=1 PLAYWRIGHT_SKIP_PREVIEW_BUILD=1 npm run test:e2e:flow-performance:built` passed.
+- Verification: repeated `npm run test:firestore:release:ci` passed fully: build, Firestore rules, sync emulator, emulator UI, critical E2E, built performance E2E, and flow budget report.
 
 ### Task 5: Final Release Gate And Visual Closure
 
