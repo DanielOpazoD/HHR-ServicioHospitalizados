@@ -245,7 +245,7 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
       expect.objectContaining({
         date: '2026-02-15',
         beds: expect.objectContaining({
-          R1: expect.objectContaining({ pathology: 'Diagnostico remoto' }),
+          R1: expect.objectContaining({ pathology: 'Diagnostico local' }),
         }),
       }),
       expect.objectContaining({

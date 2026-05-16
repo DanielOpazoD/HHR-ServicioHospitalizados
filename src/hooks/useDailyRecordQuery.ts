@@ -18,7 +18,10 @@ import {
   setDailyRecordQueryData,
   shouldUseDailyRecordRealtimeSync,
 } from '@/hooks/controllers/dailyRecordQueryController';
-import { registerPendingDailyRecordPatch } from '@/hooks/controllers/dailyRecordPendingPatchController';
+import {
+  PENDING_DAILY_RECORD_PATCH_TTL_MS,
+  registerPendingDailyRecordPatch,
+} from '@/hooks/controllers/dailyRecordPendingPatchController';
 import type {
   SaveDailyRecordResult,
   UpdatePartialDailyRecordResult,
@@ -52,10 +55,8 @@ const patchDailyRecordWithCompatibility = async (
   return null;
 };
 
-const PENDING_PATCH_RELEASE_FALLBACK_TTL_MS = 60000;
-
 const releasePendingPatchAfterFallbackTtl = (release: () => void): void => {
-  const timer = globalThis.setTimeout(release, PENDING_PATCH_RELEASE_FALLBACK_TTL_MS);
+  const timer = globalThis.setTimeout(release, PENDING_DAILY_RECORD_PATCH_TTL_MS);
   (timer as { unref?: () => void }).unref?.();
 };
 

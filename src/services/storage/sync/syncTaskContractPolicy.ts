@@ -2,6 +2,7 @@ import { resolveClinicalEpisodeIdentifier } from '@/application/patient-flow/cli
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
 import type { SyncTask, SyncTaskContract } from '@/services/storage/syncQueueTypes';
+import { buildSyncMutationIdentity } from '@/services/storage/sync/syncMutationIdentity';
 
 const normalizeText = (value: unknown): string => String(value || '').trim();
 
@@ -32,6 +33,7 @@ export const buildDailyRecordSyncContract = (
   record: DailyRecord,
   baseContract: SyncTaskContract = {}
 ): SyncTaskContract => {
+  const mutationIdentity = buildSyncMutationIdentity();
   const clinicalEpisodeKeys = Array.from(
     new Set([
       ...(baseContract.clinicalEpisodeKeys || []),
@@ -45,6 +47,9 @@ export const buildDailyRecordSyncContract = (
     recordRevision: record.lastUpdated,
     clinicalEpisodeKeys,
     changedPaths: baseContract.changedPaths?.length ? baseContract.changedPaths : undefined,
+    mutationId: baseContract.mutationId || mutationIdentity.mutationId,
+    clientId: baseContract.clientId || mutationIdentity.clientId,
+    tabId: baseContract.tabId || mutationIdentity.tabId,
   };
 };
 

@@ -39,6 +39,7 @@ import {
   getSyncQueueTelemetry,
   listRecentSyncQueueOperations,
 } from '@/services/storage/sync';
+import { resetSyncMutationIdentityForTests } from '@/services/storage/sync/syncMutationIdentity';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientStatus } from '@/types/domain/patientClassification';
 
@@ -58,6 +59,7 @@ describe('storage/sync public entrypoint', () => {
 
   beforeEach(async () => {
     await hospitalDB.syncQueue.clear();
+    resetSyncMutationIdentityForTests();
     vi.clearAllMocks();
     vi.mocked(getDoc).mockResolvedValue({
       exists: () => false,
@@ -105,8 +107,33 @@ describe('storage/sync public entrypoint', () => {
         recordRevision: '2025-01-12T10:00:00.000Z',
         changedPaths: ['beds.R1.pathology'],
         clinicalEpisodeKeys: ['11.111.111-1__2025-01-10__14:30'],
+        mutationId: expect.stringMatching(/^mutation_/),
+        clientId: expect.stringMatching(/^client_/),
+        tabId: expect.stringMatching(/^tab_/),
       })
     );
+  });
+
+  it('keeps client and tab identity stable while assigning a new mutation id per replaced queued edit', async () => {
+    await queueSyncTask(
+      'UPDATE_DAILY_RECORD',
+      makeRecord('2025-01-17', '2025-01-17T10:00:00.000Z')
+    );
+
+    const [firstTask] = await hospitalDB.syncQueue.toArray();
+    const firstContract = firstTask.syncContract;
+
+    await queueSyncTask(
+      'UPDATE_DAILY_RECORD',
+      makeRecord('2025-01-17', '2025-01-17T10:01:00.000Z')
+    );
+
+    const [reusedTask] = await hospitalDB.syncQueue.toArray();
+    expect(reusedTask.syncContract?.clientId).toBe(firstContract?.clientId);
+    expect(reusedTask.syncContract?.tabId).toBe(firstContract?.tabId);
+    expect(reusedTask.syncContract?.mutationId).toEqual(expect.stringMatching(/^mutation_/));
+    expect(reusedTask.syncContract?.mutationId).not.toBe(firstContract?.mutationId);
+    expect((reusedTask.payload as DailyRecord).lastUpdated).toBe('2025-01-17T10:01:00.000Z');
   });
 
   it('prefers persisted clinicalEpisodeId in sync contract episode keys', async () => {
