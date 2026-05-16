@@ -17,7 +17,7 @@
 - Modify generated reports under `reports/`
 - Test: existing report freshness and release evidence scripts
 
-- [ ] **Step 1: Regenerate release evidence reports**
+- [x] **Step 1: Regenerate release evidence reports**
 
 Run:
 
@@ -32,7 +32,7 @@ npm run report:maintenance-debt-scorecard
 
 Expected: each command exits `0` and report commits match current `HEAD`.
 
-- [ ] **Step 2: Verify strict freshness and release evidence**
+- [x] **Step 2: Verify strict freshness and release evidence**
 
 Run:
 
@@ -44,12 +44,19 @@ npm run check:quality
 
 Expected: all commands exit `0`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add reports
 git commit -m "chore(release): refresh evidence pack"
 ```
+
+Evidence captured on 2026-05-16:
+
+- `npm run report:release-readiness-scorecard` completed and regenerated critical coverage with 1235 passed test files, 6766 passed tests, 128 skipped, 6 todo.
+- `npm run check:report-freshness:strict` passed: reports match `a2b2a434` or a direct merge parent, worktree clean.
+- `npm run check:release-evidence` passed: fresh reports from a clean checkout.
+- `npm run check:quality` passed during the block before the checkpoint commit.
 
 ### Task 2: Clinical Sync And Persistence Shield
 
