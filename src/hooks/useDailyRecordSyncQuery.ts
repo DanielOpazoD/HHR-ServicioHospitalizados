@@ -34,6 +34,7 @@ import { presentDailyRecordRefreshOutcome } from '@/hooks/controllers/dailyRecor
 import { dailyRecordSyncLogger } from '@/hooks/hookLoggers';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
 import { setDailyRecordQueryData } from '@/hooks/controllers/dailyRecordQueryController';
+import { DailyRecordFreshnessGateError } from '@/hooks/controllers/dailyRecordFreshnessGateController';
 import type { RemoteSyncRuntimeStatus } from '@/services/repositories/repositoryConfig';
 import {
   resolveDailyRecordBootstrapPhase,
@@ -221,6 +222,11 @@ export const useDailyRecordSyncQuery = (
         presentChannelNotice(resolveSaveOutcomeFeedback(payload.result), 'Guardado');
         assertDailyRecordWriteAccepted(payload.result);
       } catch (err) {
+        if (err instanceof DailyRecordFreshnessGateError) {
+          warning('Censo en actualización', err.message);
+          throw err;
+        }
+
         const feedback = resolveSaveErrorFeedback(err);
         if (feedback) {
           notifyError(feedback.title, feedback.message);
@@ -240,16 +246,23 @@ export const useDailyRecordSyncQuery = (
         throw err;
       }
     },
-    [saveMutation, notifyError, refetch, clearPendingRefetchTimeout, presentChannelNotice]
+    [saveMutation, notifyError, refetch, clearPendingRefetchTimeout, presentChannelNotice, warning]
   );
 
   const patchRecord = useCallback(
     async (partial: DailyRecordPatch) => {
-      const payload = await patchMutation.mutateAsync(partial);
-      presentChannelNotice(resolvePatchOutcomeFeedback(payload.result), 'Actualización');
-      assertDailyRecordWriteAccepted(payload.result);
+      try {
+        const payload = await patchMutation.mutateAsync(partial);
+        presentChannelNotice(resolvePatchOutcomeFeedback(payload.result), 'Actualización');
+        assertDailyRecordWriteAccepted(payload.result);
+      } catch (err) {
+        if (err instanceof DailyRecordFreshnessGateError) {
+          warning('Censo en actualización', err.message);
+        }
+        throw err;
+      }
     },
-    [patchMutation, presentChannelNotice]
+    [patchMutation, presentChannelNotice, warning]
   );
 
   const setRecord = useCallback(

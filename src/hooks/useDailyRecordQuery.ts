@@ -19,6 +19,12 @@ import {
   shouldUseDailyRecordRealtimeSync,
 } from '@/hooks/controllers/dailyRecordQueryController';
 import {
+  DailyRecordFreshnessGateError,
+  ensureDailyRecordRemoteFreshness,
+  markDailyRecordTabHidden,
+  markDailyRecordTabVisible,
+} from '@/hooks/controllers/dailyRecordFreshnessGateController';
+import {
   PENDING_DAILY_RECORD_PATCH_TTL_MS,
   registerPendingDailyRecordPatch,
 } from '@/hooks/controllers/dailyRecordPendingPatchController';
@@ -29,6 +35,7 @@ import type {
 import { isDailyRecordWriteBlockedResult } from '@/services/repositories/contracts/dailyRecordResults';
 import type { DailyRecordQueryResult } from '@/services/repositories/contracts/dailyRecordQueries';
 import type { RemoteSyncRuntimeStatus } from '@/services/repositories/repositoryConfig';
+import { toRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
 
 const saveDailyRecordWithCompatibility = async (
   dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
@@ -59,6 +66,19 @@ const releasePendingPatchAfterFallbackTtl = (release: () => void): void => {
   const timer = globalThis.setTimeout(release, PENDING_DAILY_RECORD_PATCH_TTL_MS);
   (timer as { unref?: () => void }).unref?.();
 };
+
+const ensureFreshDailyRecordQuery = (
+  date: string,
+  dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
+  queryClient: ReturnType<typeof useQueryClient>,
+  reason: 'resume' | 'clinical_patch' | 'clinical_save'
+) =>
+  ensureDailyRecordRemoteFreshness({
+    date,
+    queryClient,
+    queryFn: createDailyRecordQueryFn(dailyRecord, date, true),
+    reason,
+  });
 
 /**
  * Hook for fetching a daily record by date with React Query.
@@ -116,6 +136,41 @@ export const useDailyRecordQuery = (
     return () => unsubscribe();
   }, [date, queryClient, dailyRecord, shouldSyncFromRemote]);
 
+  useEffect(() => {
+    if (!shouldSyncFromRemote) return;
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+
+    const handleResume = () => {
+      const resumeState = markDailyRecordTabVisible();
+      if (!resumeState.stale) {
+        return;
+      }
+
+      void ensureFreshDailyRecordQuery(date, dailyRecord, queryClient, 'resume');
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        markDailyRecordTabHidden();
+        return;
+      }
+
+      if (document.visibilityState === 'visible') {
+        handleResume();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleResume);
+    window.addEventListener('online', handleResume);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleResume);
+      window.removeEventListener('online', handleResume);
+    };
+  }, [dailyRecord, date, queryClient, shouldSyncFromRemote]);
+
   // Prefetch previous day for faster "copy from previous" functionality
   useEffect(() => {
     if (!shouldSyncFromRemote) return;
@@ -141,12 +196,40 @@ export const useSaveDailyRecordMutation = () => {
 
   return useMutation({
     mutationFn: async (record: DailyRecord) => {
+      const freshness = await ensureFreshDailyRecordQuery(
+        record.date,
+        dailyRecord,
+        queryClient,
+        'clinical_save'
+      );
+      if (
+        freshness.record &&
+        toRecordTimestamp(freshness.record.lastUpdated) > toRecordTimestamp(record.lastUpdated)
+      ) {
+        throw new DailyRecordFreshnessGateError(
+          'El censo remoto se actualizó al reactivar la pestaña. Revise los datos antes de guardar.'
+        );
+      }
       const result = await saveDailyRecordWithCompatibility(dailyRecord, record);
       return { record, result };
     },
-    onMutate: newRecord => {
-      // Cancel any outgoing refetches (don't await to avoid race conditions in rapid updates)
-      queryClient.cancelQueries({
+    onMutate: async newRecord => {
+      const freshness = await ensureFreshDailyRecordQuery(
+        newRecord.date,
+        dailyRecord,
+        queryClient,
+        'clinical_save'
+      );
+      if (
+        freshness.record &&
+        toRecordTimestamp(freshness.record.lastUpdated) > toRecordTimestamp(newRecord.lastUpdated)
+      ) {
+        throw new DailyRecordFreshnessGateError(
+          'El censo remoto se actualizó al reactivar la pestaña. Revise los datos antes de guardar.'
+        );
+      }
+
+      await queryClient.cancelQueries({
         queryKey: queryKeys.dailyRecord.byDate(newRecord.date),
       });
 
@@ -200,12 +283,14 @@ export const usePatchDailyRecordMutation = (date: string) => {
 
   return useMutation({
     mutationFn: async (partial: DailyRecordPatch) => {
+      await ensureFreshDailyRecordQuery(date, dailyRecord, queryClient, 'clinical_patch');
       const result = await patchDailyRecordWithCompatibility(dailyRecord, date, partial);
       return { partial, result };
     },
-    onMutate: partial => {
-      // Don't await cancelQueries to ensure the optimistic update happens in the same tick
-      queryClient.cancelQueries({
+    onMutate: async partial => {
+      await ensureFreshDailyRecordQuery(date, dailyRecord, queryClient, 'clinical_patch');
+
+      await queryClient.cancelQueries({
         queryKey: queryKeys.dailyRecord.byDate(date),
       });
       const unregisterPendingPatch = registerPendingDailyRecordPatch(date, partial);

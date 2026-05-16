@@ -1,0 +1,211 @@
+import { QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DailyRecordRepositoryPort } from '@/application/ports/dailyRecordPort';
+import { usePatchDailyRecordMutation } from '@/hooks/useDailyRecordQuery';
+import {
+  DailyRecordFreshnessGateError,
+  markDailyRecordTabHidden,
+  markDailyRecordTabVisible,
+  resetDailyRecordFreshnessGateForTests,
+} from '@/hooks/controllers/dailyRecordFreshnessGateController';
+import { RepositoryProvider, createRepositoryContainer } from '@/services/RepositoryContext';
+import {
+  createDailyRecordQueryResult,
+  createDailyRecordReadResult,
+} from '@/services/repositories/contracts/dailyRecordQueries';
+import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
+import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
+import { DataFactory } from '@/tests/factories/DataFactory';
+import { createTestQueryClient } from '@/tests/utils/queryClientTestUtils';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
+import { PatientStatus } from '@/types/domain/patientClassification';
+import { getDailyRecordQueryKey } from '@/hooks/controllers/dailyRecordQueryController';
+
+const buildMockDailyRecordRepository = (): DailyRecordRepositoryPort => ({
+  getForDate: vi.fn(),
+  getForDateWithMeta: vi.fn(),
+  getPreviousDay: vi.fn(),
+  getPreviousDayWithMeta: vi.fn(),
+  getAvailableDates: vi.fn(),
+  getMonthRecords: vi.fn(),
+  initializeDay: vi.fn(),
+  save: vi.fn(),
+  saveDetailed: vi.fn(),
+  updatePartial: vi.fn(),
+  updatePartialDetailed: vi.fn(),
+  syncWithFirestoreDetailed: vi.fn(),
+  subscribe: vi.fn(() => vi.fn()),
+  subscribeDetailed: vi.fn(() => vi.fn()),
+  delete: vi.fn(),
+  deleteDay: vi.fn(),
+  copyPatientToDateDetailed: vi.fn(),
+});
+
+describe('daily record remote freshness gate', () => {
+  const date = '2026-05-16';
+
+  beforeEach(() => {
+    setFirestoreEnabled(true);
+    resetDailyRecordFreshnessGateForTests();
+    vi.clearAllMocks();
+  });
+
+  it('waits for remote freshness before running a clinical patch from a stale resumed tab', async () => {
+    const dailyRecord = buildMockDailyRecordRepository();
+    const queryClient = createTestQueryClient();
+    const localRecord = DataFactory.createMockDailyRecord(date);
+    localRecord.beds.R1.pathology = 'Diagnostico local viejo';
+    const remoteRecord: DailyRecord = {
+      ...localRecord,
+      lastUpdated: '2026-05-16T10:30:00.000Z',
+      beds: {
+        ...localRecord.beds,
+        R1: {
+          ...localRecord.beds.R1,
+          pathology: 'Diagnostico Firebase vigente',
+        },
+      },
+    };
+
+    let resolveRemoteRead: (value: ReturnType<typeof createDailyRecordReadResult>) => void;
+    const remoteRead = new Promise<ReturnType<typeof createDailyRecordReadResult>>(resolve => {
+      resolveRemoteRead = resolve;
+    });
+    vi.mocked(dailyRecord.getForDateWithMeta).mockReturnValue(remoteRead);
+    vi.mocked(dailyRecord.updatePartialDetailed).mockResolvedValue(
+      createUpdatePartialDailyRecordResult({
+        date,
+        outcome: 'clean',
+        savedLocally: true,
+        updatedRemotely: true,
+        queuedForRetry: false,
+        autoMerged: false,
+        patchedFields: 1,
+      })
+    );
+    queryClient.setQueryData(
+      getDailyRecordQueryKey(date),
+      createDailyRecordQueryResult(localRecord, {
+        date,
+        availabilityState: 'resolved',
+        consistencyState: 'local_only',
+        sourceOfTruth: 'local',
+        retryability: 'not_applicable',
+        recoveryAction: 'none',
+        conflictSummary: null,
+        observabilityTags: ['daily_record', 'read'],
+        repairApplied: false,
+      })
+    );
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <RepositoryProvider value={createRepositoryContainer({ dailyRecord })}>
+          {children}
+        </RepositoryProvider>
+      </QueryClientProvider>
+    );
+    wrapper.displayName = 'DailyRecordFreshnessGateWrapper';
+
+    markDailyRecordTabHidden(0);
+    markDailyRecordTabVisible(6 * 60 * 1000);
+
+    const { result } = renderHook(() => usePatchDailyRecordMutation(date), { wrapper });
+    let mutationPromise!: Promise<unknown>;
+    act(() => {
+      mutationPromise = result.current.mutateAsync({
+        'beds.R1.status': PatientStatus.GRAVE,
+      } as never);
+    });
+
+    await waitFor(() => {
+      expect(dailyRecord.getForDateWithMeta).toHaveBeenCalledWith(date, true);
+    });
+    expect(dailyRecord.updatePartialDetailed).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveRemoteRead!(
+        createDailyRecordReadResult(date, remoteRecord, 'firestore', {
+          consistencyState: 'remote_authoritative',
+          sourceOfTruth: 'remote',
+          retryability: 'not_applicable',
+          recoveryAction: 'none',
+          conflictSummary: {
+            kind: 'hydrated_from_remote',
+            sourceOfTruth: 'remote',
+            localTimestamp: localRecord.lastUpdated,
+            remoteTimestamp: remoteRecord.lastUpdated,
+          },
+          observabilityTags: ['daily_record', 'read', 'remote_authoritative'],
+          repairApplied: false,
+        })
+      );
+      await mutationPromise;
+    });
+
+    expect(dailyRecord.updatePartialDetailed).toHaveBeenCalledWith(date, {
+      'beds.R1.status': PatientStatus.GRAVE,
+    });
+    expect(
+      queryClient.getQueryData<ReturnType<typeof createDailyRecordQueryResult>>(
+        getDailyRecordQueryKey(date)
+      )?.record?.beds.R1.pathology
+    ).toBe('Diagnostico Firebase vigente');
+  });
+
+  it('blocks the clinical patch when Firebase cannot be confirmed after stale resume', async () => {
+    const dailyRecord = buildMockDailyRecordRepository();
+    const queryClient = createTestQueryClient();
+    const localRecord = DataFactory.createMockDailyRecord(date);
+    vi.mocked(dailyRecord.getForDateWithMeta).mockResolvedValue(
+      createDailyRecordReadResult(date, localRecord, 'indexeddb', {
+        consistencyState: 'local_authoritative',
+        sourceOfTruth: 'local',
+        retryability: 'automatic_retry',
+        recoveryAction: 'defer_remote_sync',
+        conflictSummary: {
+          kind: 'remote_unavailable',
+          sourceOfTruth: 'local',
+          localTimestamp: localRecord.lastUpdated,
+          message: 'No fue posible consultar Firebase.',
+        },
+        observabilityTags: ['daily_record', 'read', 'local_authoritative'],
+        repairApplied: false,
+      })
+    );
+    vi.mocked(dailyRecord.updatePartialDetailed).mockResolvedValue(
+      createUpdatePartialDailyRecordResult({
+        date,
+        outcome: 'clean',
+        savedLocally: true,
+        updatedRemotely: true,
+        queuedForRetry: false,
+        autoMerged: false,
+        patchedFields: 1,
+      })
+    );
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <RepositoryProvider value={createRepositoryContainer({ dailyRecord })}>
+          {children}
+        </RepositoryProvider>
+      </QueryClientProvider>
+    );
+    wrapper.displayName = 'DailyRecordFreshnessGateBlockedWrapper';
+
+    markDailyRecordTabHidden(0);
+    markDailyRecordTabVisible(6 * 60 * 1000);
+
+    const { result } = renderHook(() => usePatchDailyRecordMutation(date), { wrapper });
+
+    await expect(
+      result.current.mutateAsync({
+        'beds.R1.status': PatientStatus.GRAVE,
+      } as never)
+    ).rejects.toBeInstanceOf(DailyRecordFreshnessGateError);
+    expect(dailyRecord.updatePartialDetailed).not.toHaveBeenCalled();
+  });
+});
