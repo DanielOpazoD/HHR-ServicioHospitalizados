@@ -158,10 +158,10 @@ git commit -m "feat(ops): surface clinical degraded states"
 
 Evidence captured on 2026-05-16:
 
-- Selected ambiguity: the census operational controller already generated non-settled states for local cache, remote reconciliation, loading, and pending empty-day verification, but the existing banner was hidden for those states.
-- Code closure: `src/features/census/controllers/censusOperationalStateController.ts` now surfaces the existing banner for non-settled census states that can affect clinical interpretation.
-- Regression closure: `src/tests/views/census/censusOperationalStateController.test.ts` now asserts that local cache, remote reconciliation, and pending empty-day verification are visible.
-- Verification: `npm exec -- vitest run src/tests/views/census/censusOperationalStateController.test.ts`, `npm run lint`, `npm run check:quality`, and `PLAYWRIGHT_WEB_SERVER_PORT=4174 npm run test:e2e:clinical-visual-release` passed.
+- Selected ambiguity: the census operational controller still distinguishes local cache, remote reconciliation, loading, and pending empty-day verification, but those transitional states must not look like blocking clinical alarms.
+- Code closure: `src/features/census/controllers/censusOperationalStateController.ts` keeps those non-settled states available for flow control while suppressing their visible banner presentation.
+- Regression closure: `src/tests/views/census/censusOperationalStateController.test.ts`, `src/tests/views/census/CensusRegisterContent.test.tsx`, `src/tests/views/census/CensusView.test.tsx`, and `src/tests/app-shell/BootstrapRouteChrome.test.tsx` assert that non-critical operational states do not add a visible banner or false blocking load state.
+- Verification: `npm exec -- vitest run src/tests/views/census/censusOperationalStateController.test.ts src/tests/views/census/CensusRegisterContent.test.tsx src/tests/views/census/CensusView.test.tsx src/tests/app-shell/BootstrapRouteChrome.test.tsx` passed 19 tests.
 
 ### Task 4: Security, Rules, And Dependency Risk Closure
 

@@ -71,7 +71,7 @@ describe('CensusRegisterContent', () => {
     expect(await screen.findByTestId('census-register-sections')).toBeInTheDocument();
   });
 
-  it('shows an informational operational banner while the visible census reconciles Firebase', () => {
+  it('keeps remote reconciliation as internal state without adding a visible banner', () => {
     mockUseDailyRecordStatus.mockReturnValue({
       syncStatus: 'idle',
       lastSyncTime: null,
@@ -96,12 +96,9 @@ describe('CensusRegisterContent', () => {
       />
     );
 
-    expect(screen.getByTestId('census-operational-state-banner')).toHaveAttribute(
-      'data-phase',
-      'reconciling_remote'
-    );
-    expect(screen.getByText('Reconciliando Firebase')).toBeInTheDocument();
-    expect(screen.getByText(/comparando la copia local con Firebase/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('census-operational-state-banner')).not.toBeInTheDocument();
+    expect(screen.queryByText('Reconciliando Firebase')).not.toBeInTheDocument();
+    expect(screen.queryByText(/comparando la copia local con Firebase/i)).not.toBeInTheDocument();
   });
 
   it('does not show the operational banner once the census is remote-confirmed', () => {

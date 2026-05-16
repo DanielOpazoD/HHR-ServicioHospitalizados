@@ -62,7 +62,7 @@ export const resolveCensusOperationalState = ({
     return {
       phase: isAuthenticated ? 'sync_pending' : 'loading_remote',
       isSettled: false,
-      shouldShowBanner: true,
+      shouldShowBanner: false,
       label: isAuthenticated ? 'Verificando censo' : 'Cargando censo',
       message:
         'Aun no se debe interpretar este dia como vacio: la app esta verificando Firebase y la copia local.',
@@ -85,7 +85,7 @@ export const resolveCensusOperationalState = ({
     return {
       phase: 'using_local_cache',
       isSettled: false,
-      shouldShowBanner: true,
+      shouldShowBanner: false,
       label: 'Mostrando copia local',
       message:
         'El censo visible proviene de la copia local. Firebase aun no esta disponible para confirmar cambios remotos.',
@@ -97,7 +97,7 @@ export const resolveCensusOperationalState = ({
     return {
       phase: 'reconciling_remote',
       isSettled: false,
-      shouldShowBanner: true,
+      shouldShowBanner: false,
       label: 'Reconciliando Firebase',
       message:
         'El censo ya es visible, pero la app aun esta comparando la copia local con Firebase.',
@@ -108,7 +108,7 @@ export const resolveCensusOperationalState = ({
   return {
     phase: 'loading_remote',
     isSettled: false,
-    shouldShowBanner: true,
+    shouldShowBanner: false,
     label: 'Cargando censo',
     message:
       'La app esta cargando el registro diario antes de mostrar pacientes o confirmar vacio.',
