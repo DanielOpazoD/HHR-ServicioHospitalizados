@@ -11,6 +11,8 @@ const trackedReports = [
   'reports/quality-metrics.json',
   'reports/system-confidence.json',
   'reports/operational-health.json',
+  'reports/clinical-release-validation.json',
+  'reports/clinical-release-signoff.json',
   'reports/release-confidence-matrix.json',
   'reports/release-readiness-scorecard.json',
   'reports/maintenance-debt-scorecard.json',

@@ -30,6 +30,12 @@ const trackedReports = [
     dependsOn: ['reports/e2e/preview-bootstrap/report.json'],
   },
   {
+    file: 'reports/clinical-release-signoff.json',
+    field: 'gitSha',
+    refreshScript: 'report:clinical-release-signoff',
+    dependsOn: ['scripts/config/clinical-release-signoff.json'],
+  },
+  {
     file: 'reports/release-confidence-matrix.json',
     field: 'gitSha',
     refreshScript: 'report:release-confidence-matrix',
