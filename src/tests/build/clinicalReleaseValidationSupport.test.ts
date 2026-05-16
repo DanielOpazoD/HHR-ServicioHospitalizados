@@ -1,13 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { buildClinicalReleaseValidationReport } from '../../../scripts/clinicalReleaseValidationSupport.mjs';
+import {
+  buildClinicalReleaseValidationReport,
+  formatClinicalReleaseValidationMarkdown,
+} from '../../../scripts/clinicalReleaseValidationSupport.mjs';
 
 describe('clinical release validation contract', () => {
   it('maps every manual clinical scenario to release matrix ownership and three closure gates', () => {
     const report = buildClinicalReleaseValidationReport(process.cwd());
+    const markdown = formatClinicalReleaseValidationMarkdown(report);
 
     expect(report.overall).toBe('ok');
     expect(report.counts.scenarioCount).toBeGreaterThanOrEqual(5);
     expect(report.counts.highRiskScenarioCount).toBeGreaterThanOrEqual(2);
+    expect(markdown).toContain('# Clinical Release Validation');
+    expect(markdown).toContain('codigo_corregido');
+    expect(markdown).toContain('regresion_automatizada');
+    expect(markdown).toContain('flujo_clinico_validado');
 
     for (const scenario of report.scenarios) {
       expect(

@@ -2,6 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { formatWorktreeState, getGitReportState } from './gitReportState.mjs';
 import { loadReleaseConfidenceMatrixConfig } from './releaseConfidenceMatrixSupport.mjs';
 
 const CONFIG_PATH = path.join('scripts', 'config', 'clinical-release-validation.json');
@@ -47,6 +48,7 @@ export const loadClinicalReleaseValidationConfig = root => {
 
 export const buildClinicalReleaseValidationReport = root => {
   const config = loadClinicalReleaseValidationConfig(root);
+  const gitState = getGitReportState(root);
   const matrixAreaIds = new Set(loadReleaseConfidenceMatrixConfig(root).areas.map(area => area.id).filter(Boolean));
   const packageScripts = new Set(Object.keys(readJson(path.join(root, PACKAGE_JSON_PATH)).scripts || {}));
   const issues = [];
@@ -116,6 +118,8 @@ export const buildClinicalReleaseValidationReport = root => {
   }
 
   return {
+    generatedAt: new Date().toISOString(),
+    ...gitState,
     overall: issues.length === 0 ? 'ok' : 'degraded',
     counts: {
       scenarioCount: scenarios.length,
@@ -124,4 +128,45 @@ export const buildClinicalReleaseValidationReport = root => {
     scenarios,
     issues,
   };
+};
+
+const formatList = values => (values.length > 0 ? values.join(', ') : '-');
+
+export const formatClinicalReleaseValidationMarkdown = report => {
+  const lines = [
+    '# Clinical Release Validation',
+    '',
+    `Generated at: ${report.generatedAt || 'unknown'}`,
+    `Commit: ${report.gitSha || 'unknown'}`,
+    `Worktree: ${formatWorktreeState(Boolean(report.gitDirty))}`,
+    `Overall: ${report.overall}`,
+    '',
+    '## Closure Gates',
+    '',
+    '- codigo_corregido',
+    '- regresion_automatizada',
+    '- flujo_clinico_validado',
+    '',
+    '## Scenarios',
+    '',
+    '| Scenario | Risk | Matrix areas | Automated regression | Manual validation |',
+    '| --- | --- | --- | --- | --- |',
+  ];
+
+  for (const scenario of report.scenarios) {
+    lines.push(
+      `| ${scenario.label || scenario.id} | ${scenario.riskLevel} | ${formatList(scenario.matrixAreas)} | ${formatList(
+        scenario.automatedRegression
+      )} | ${formatList(scenario.manualValidation)} |`
+    );
+  }
+
+  if (report.issues.length > 0) {
+    lines.push('', '## Issues', '');
+    for (const issue of report.issues) {
+      lines.push(`- ${issue}`);
+    }
+  }
+
+  return lines.join('\n');
 };
