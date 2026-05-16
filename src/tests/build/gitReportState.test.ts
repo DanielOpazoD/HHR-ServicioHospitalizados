@@ -22,6 +22,8 @@ describe('gitReportState', () => {
           ' M reports/system-confidence.md',
           ' M reports/operational-health.json',
           ' M reports/clinical-release-validation.md',
+          ' M reports/clinical-release-signoff.json',
+          ' M reports/clinical-release-signoff.md',
           ' M reports/release-confidence-matrix.json',
           ' M reports/release-readiness-scorecard.md',
           ' M reports/maintenance-debt-scorecard.json',

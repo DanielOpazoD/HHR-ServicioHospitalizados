@@ -11,6 +11,8 @@ const runGitCommand = (root, command) =>
 const GENERATED_REPORT_STATUS_SUFFIXES = new Set([
   'reports/clinical-release-validation.json',
   'reports/clinical-release-validation.md',
+  'reports/clinical-release-signoff.json',
+  'reports/clinical-release-signoff.md',
   'reports/compatibility-governance.json',
   'reports/compatibility-governance.md',
   'reports/compatibility-import-governance.json',

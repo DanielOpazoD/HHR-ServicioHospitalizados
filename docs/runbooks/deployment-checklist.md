@@ -9,6 +9,7 @@ npm run test:ci:unit          # Tests unitarios
 npm run test:rules:ci         # Firestore rules
 npm run test:release-confidence  # Pack de confianza
 npm run check:clinical-release-validation # Contrato de validacion clinica manual minima
+npm run check:clinical-release-signoff # Debe pasar antes de release productivo
 ```
 
 ### 2. Verificar typecheck
@@ -63,6 +64,8 @@ Antes de marcar un release como listo, cada escenario crítico debe cerrar tres 
 
 ```bash
 npm run check:clinical-release-validation
+npm run report:clinical-release-signoff
+npm run check:clinical-release-signoff
 ```
 
 No dupliques escenarios manualmente en este documento. Para agregar, cambiar o retirar un flujo clínico de release, actualiza `scripts/config/clinical-release-validation.json` y conserva los tres cierres obligatorios por escenario:
@@ -70,6 +73,8 @@ No dupliques escenarios manualmente en este documento. Para agregar, cambiar o r
 - `codigo_corregido`
 - `regresion_automatizada`
 - `flujo_clinico_validado`
+
+El signoff real vive en `scripts/config/clinical-release-signoff.json`. Mientras algún escenario esté en `pending_human_review`, `failed` o `blocked`, `npm run check:clinical-release-signoff` debe fallar. Solo se marca `passed` cuando hay responsable, fecha y evidencia manual/visual revisable.
 
 ### 3. Verificar Firestore
 

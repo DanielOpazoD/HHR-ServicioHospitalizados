@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "releaseCandidate": "codex/release-readiness-blocks",
+  "signoffs": [
+    {
+      "scenarioId": "census_reload_remote_reconcile",
+      "status": "pending_human_review",
+      "validatedBy": "",
+      "validatedAt": "",
+      "evidence": [],
+      "notes": "Automated visual and release evidence exists; human clinical walkthrough is still required."
+    },
+    {
+      "scenarioId": "pending_patch_patient_movement",
+      "status": "pending_human_review",
+      "validatedBy": "",
+      "validatedAt": "",
+      "evidence": [],
+      "notes": "Automated regression covers the matrix; clinical review must confirm movement semantics in the UI."
+    },
+    {
+      "scenarioId": "clinical_documents_pdf_print",
+      "status": "pending_human_review",
+      "validatedBy": "",
+      "validatedAt": "",
+      "evidence": [],
+      "notes": "Automated document tests exist; printable output still needs clinical-format review."
+    },
+    {
+      "scenarioId": "handoff_shift_export",
+      "status": "pending_human_review",
+      "validatedBy": "",
+      "validatedAt": "",
+      "evidence": [],
+      "notes": "Automated E2E coverage exists; real shift handoff readability must be reviewed."
+    },
+    {
+      "scenarioId": "external_clinical_dependencies",
+      "status": "pending_human_review",
+      "validatedBy": "",
+      "validatedAt": "",
+      "evidence": [],
+      "notes": "Platform tests exist; live unavailable/degraded states need operational review."
+    },
+    {
+      "scenarioId": "backup_restore_export",
+      "status": "pending_human_review",
+      "validatedBy": "",
+      "validatedAt": "",
+      "evidence": [],
+      "notes": "Automated export coverage exists; generated artifacts need manual inspection."
+    }
+  ]
+}
