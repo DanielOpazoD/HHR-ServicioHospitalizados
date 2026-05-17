@@ -1,0 +1,137 @@
+import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+
+export type HydratedRemotePatchRisk =
+  | 'independent_field'
+  | 'same_field'
+  | 'same_group'
+  | 'episode_changed'
+  | 'movement_changed'
+  | 'unknown_high_risk';
+
+const CLINICAL_FIELD_GROUPS: ReadonlyArray<ReadonlySet<string>> = [
+  new Set(['pathology', 'cie10Code', 'cie10Description', 'diagnosisComments']),
+  new Set(['status']),
+  new Set(['specialty', 'secondarySpecialty']),
+  new Set(['isUPC', 'upcChecklist']),
+  new Set(['surgicalComplication']),
+  new Set([
+    'ginecobstetriciaType',
+    'deliveryDate',
+    'deliveryRoute',
+    'deliveryCesareanLabor',
+    'clinicalCrib',
+  ]),
+];
+
+const EPISODE_FIELDS = new Set([
+  'clinicalEpisodeId',
+  'rut',
+  'patientName',
+  'admissionDate',
+  'firstSeenDate',
+]);
+
+const getPathValue = (source: unknown, path: string): unknown =>
+  path.split('.').reduce<unknown>((current, segment) => {
+    if (current === null || typeof current !== 'object') {
+      return undefined;
+    }
+    return (current as Record<string, unknown>)[segment];
+  }, source);
+
+const valuesDiffer = (left: unknown, right: unknown): boolean =>
+  JSON.stringify(left ?? null) !== JSON.stringify(right ?? null);
+
+const parseBedFieldPath = (
+  path: string
+): { bedId: string; field: string; canonicalPath: string } | null => {
+  const match = path.match(/^beds\.([^.]+)\.([^.]+)/);
+  if (!match) {
+    return null;
+  }
+  const [, bedId, field] = match;
+  return {
+    bedId,
+    field,
+    canonicalPath: `beds.${bedId}.${field}`,
+  };
+};
+
+const resolveClinicalGroup = (field: string): ReadonlySet<string> | null =>
+  CLINICAL_FIELD_GROUPS.find(group => group.has(field)) ?? null;
+
+const collectChangedBedFields = (
+  previousRecord: DailyRecord,
+  hydratedRecord: DailyRecord,
+  bedId: string
+): Set<string> => {
+  const fields = new Set<string>();
+  const previousBed = (previousRecord.beds?.[bedId] ?? {}) as unknown as Record<string, unknown>;
+  const hydratedBed = (hydratedRecord.beds?.[bedId] ?? {}) as unknown as Record<string, unknown>;
+  const keys = new Set([...Object.keys(previousBed), ...Object.keys(hydratedBed)]);
+
+  keys.forEach(field => {
+    if (valuesDiffer(previousBed[field], hydratedBed[field])) {
+      fields.add(field);
+    }
+  });
+
+  return fields;
+};
+
+export const classifyHydratedRemotePatchRisk = ({
+  attemptedPatch,
+  previousRecord,
+  hydratedRecord,
+}: {
+  attemptedPatch: DailyRecordPatch;
+  previousRecord: DailyRecord | null | undefined;
+  hydratedRecord: DailyRecord | null | undefined;
+}): HydratedRemotePatchRisk => {
+  if (!previousRecord || !hydratedRecord) {
+    return 'unknown_high_risk';
+  }
+
+  if (
+    valuesDiffer(previousRecord.discharges, hydratedRecord.discharges) ||
+    valuesDiffer(previousRecord.transfers, hydratedRecord.transfers)
+  ) {
+    return 'movement_changed';
+  }
+
+  const attemptedPaths = Object.keys(attemptedPatch);
+  for (const attemptedPath of attemptedPaths) {
+    const attemptedBedField = parseBedFieldPath(attemptedPath);
+    if (!attemptedBedField) {
+      return 'unknown_high_risk';
+    }
+
+    const changedFields = collectChangedBedFields(
+      previousRecord,
+      hydratedRecord,
+      attemptedBedField.bedId
+    );
+    if (Array.from(EPISODE_FIELDS).some(field => changedFields.has(field))) {
+      return 'episode_changed';
+    }
+
+    if (
+      valuesDiffer(
+        getPathValue(previousRecord, attemptedBedField.canonicalPath),
+        getPathValue(hydratedRecord, attemptedBedField.canonicalPath)
+      )
+    ) {
+      return 'same_field';
+    }
+
+    const attemptedGroup = resolveClinicalGroup(attemptedBedField.field);
+    if (attemptedGroup && Array.from(attemptedGroup).some(field => changedFields.has(field))) {
+      return 'same_group';
+    }
+  }
+
+  return 'independent_field';
+};
+
+export const isHydratedRemotePatchRiskBlocking = (risk: HydratedRemotePatchRisk): boolean =>
+  risk !== 'independent_field';

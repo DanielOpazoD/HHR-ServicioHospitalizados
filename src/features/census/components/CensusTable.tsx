@@ -15,6 +15,7 @@ import { useNotification } from '@/context/UIContext';
 import { isFeatureEnabled } from '@/services/utils/featureFlags';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import { useDailyRecordFreshnessUi } from '@/hooks/useDailyRecordFreshnessUi';
 
 const censusTableAdmitLogger = createScopedLogger('CensusTableAdmit');
 export type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
@@ -37,9 +38,11 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   accessProfile = 'default',
 }) => {
   const [activeEmptyBedId, setActiveEmptyBedId] = useState<string | null>(null);
+  const freshnessUi = useDailyRecordFreshnessUi(currentDateString);
+  const effectiveReadOnly = readOnly || freshnessUi.isClinicalEditingBlocked;
   const { isReady, bindings, clinicalDocumentInfoByBedId } = useCensusTableBindingsModel({
     currentDateString,
-    readOnly,
+    readOnly: effectiveReadOnly,
     accessProfile,
   });
 
@@ -66,9 +69,15 @@ export const CensusTable: React.FC<CensusTableProps> = ({
     setActiveEmptyBedId(null);
   }, []);
 
-  const openEmptyBedDemographics = useCallback((bedId: string) => {
-    setActiveEmptyBedId(bedId);
-  }, []);
+  const openEmptyBedDemographics = useCallback(
+    (bedId: string) => {
+      if (freshnessUi.isClinicalEditingBlocked) {
+        return;
+      }
+      setActiveEmptyBedId(bedId);
+    },
+    [freshnessUi.isClinicalEditingBlocked]
+  );
 
   const saveEmptyBedDemographics = useCallback(
     async (updatedFields: Partial<PatientData>) => {
@@ -139,6 +148,19 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   return (
     <div className="card print:border-none print:shadow-none !overflow-visible">
       <div className="relative overflow-visible">
+        {freshnessUi.userMessage ? (
+          <div
+            className={`mb-2 rounded-md border px-3 py-2 text-sm ${
+              freshnessUi.messageLevel === 'warning'
+                ? 'border-amber-200 bg-amber-50 text-amber-800'
+                : 'border-sky-100 bg-sky-50 text-sky-700'
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            {freshnessUi.userMessage}
+          </div>
+        ) : null}
         <table
           data-testid="census-table"
           className="text-left border-collapse print:text-xs relative text-[12px] leading-tight table-fixed"
@@ -148,7 +170,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
           <CensusTableBody
             {...bodyProps}
             onActivateEmptyBed={openEmptyBedDemographics}
-            dragDrop={readOnly ? undefined : dragDrop}
+            dragDrop={effectiveReadOnly ? undefined : dragDrop}
             clinicalDocumentInfoByBedId={clinicalDocumentInfoByBedId}
           />
         </table>

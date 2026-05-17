@@ -19,6 +19,7 @@ import {
   shouldUseDailyRecordRealtimeSync,
 } from '@/hooks/controllers/dailyRecordQueryController';
 import {
+  markDailyRecordRemoteConfirmed,
   markDailyRecordTabHidden,
   markDailyRecordTabVisible,
 } from '@/hooks/controllers/dailyRecordFreshnessGateController';
@@ -27,6 +28,7 @@ import { isDailyRecordWriteBlockedResult } from '@/services/repositories/contrac
 import type { DailyRecordQueryResult } from '@/services/repositories/contracts/dailyRecordQueries';
 import type { RemoteSyncRuntimeStatus } from '@/services/repositories/repositoryConfig';
 import {
+  assertHydratedRemotePatchCanProceed,
   ensureFreshClinicalPatchMutation,
   ensureFreshClinicalSaveMutation,
   ensureFreshDailyRecordQuery,
@@ -65,6 +67,24 @@ export const useDailyRecordQuery = (
     queryFn: createDailyRecordQueryFn(dailyRecord, date, shouldSyncFromRemote),
     enabled: !!date,
   });
+
+  useEffect(() => {
+    if (!shouldSyncFromRemote || !query.data?.record) {
+      return;
+    }
+    if (
+      query.data.runtime.consistencyState === 'unavailable' ||
+      query.data.runtime.sourceOfTruth !== 'remote' ||
+      query.data.runtime.conflictSummary?.kind === 'remote_unavailable'
+    ) {
+      return;
+    }
+
+    markDailyRecordRemoteConfirmed(date, {
+      source: 'query',
+      remoteLastUpdated: query.data.record.lastUpdated,
+    });
+  }, [date, query.data, shouldSyncFromRemote]);
 
   useEffect(() => {
     const didRemoteSyncJustBecomeReady =
@@ -218,7 +238,15 @@ export const usePatchDailyRecordMutation = (date: string) => {
       return { partial, result };
     },
     onMutate: async partial => {
-      await ensureFreshClinicalPatchMutation(date, { dailyRecord, queryClient });
+      const previousRecordBeforeFreshness = queryClient.getQueryData<DailyRecordQueryResult>(
+        getDailyRecordQueryKey(date)
+      )?.record;
+      const freshness = await ensureFreshClinicalPatchMutation(date, { dailyRecord, queryClient });
+      assertHydratedRemotePatchCanProceed({
+        attemptedPatch: partial,
+        previousRecord: previousRecordBeforeFreshness,
+        freshness,
+      });
 
       await queryClient.cancelQueries({
         queryKey: queryKeys.dailyRecord.byDate(date),

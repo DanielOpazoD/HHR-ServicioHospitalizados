@@ -17,6 +17,10 @@ import type {
 } from '@/services/repositories/contracts/dailyRecordResults';
 import type { DailyRecordQueryResult } from '@/services/repositories/contracts/dailyRecordQueries';
 import { toRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
+import {
+  classifyHydratedRemotePatchRisk,
+  isHydratedRemotePatchRiskBlocking,
+} from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
 
 type FreshnessReason = 'resume' | 'clinical_patch' | 'clinical_save';
 
@@ -84,6 +88,33 @@ export const ensureFreshClinicalPatchMutation = (
   dependencies: FreshnessDependencies
 ): Promise<DailyRecordQueryResult> =>
   ensureFreshDailyRecordQuery(date, dependencies, 'clinical_patch');
+
+export const assertHydratedRemotePatchCanProceed = ({
+  attemptedPatch,
+  previousRecord,
+  freshness,
+}: {
+  attemptedPatch: DailyRecordPatch;
+  previousRecord: DailyRecord | null | undefined;
+  freshness: DailyRecordQueryResult;
+}): void => {
+  if (!didDailyRecordFreshnessHydrateNewerRemote(freshness)) {
+    return;
+  }
+
+  const risk = classifyHydratedRemotePatchRisk({
+    attemptedPatch,
+    previousRecord,
+    hydratedRecord: freshness.record,
+  });
+  if (!isHydratedRemotePatchRiskBlocking(risk)) {
+    return;
+  }
+
+  throw new DailyRecordFreshnessGateError(
+    'El censo remoto actualizó este dato. Revise los datos antes de editar.'
+  );
+};
 
 export const ensureFreshClinicalSaveMutation = async (
   record: DailyRecord,

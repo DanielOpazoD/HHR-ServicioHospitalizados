@@ -1,0 +1,72 @@
+import { useMemo, useSyncExternalStore } from 'react';
+import {
+  didDailyRecordFreshnessHydrateNewerRemoteForDate,
+  getDailyRecordFreshnessStatus,
+  getDailyRecordLastRemoteConfirmedAt,
+  subscribeDailyRecordFreshness,
+  type DailyRecordFreshnessStatus,
+} from '@/hooks/controllers/dailyRecordFreshnessGateController';
+
+export type DailyRecordFreshnessMessageLevel = 'none' | 'subtle' | 'notice' | 'warning';
+
+export interface DailyRecordFreshnessUiState {
+  status: DailyRecordFreshnessStatus;
+  isClinicalEditingBlocked: boolean;
+  isQuietlyRefreshing: boolean;
+  remoteHydratedNewerRecord: boolean;
+  lastRemoteConfirmedAt?: number;
+  messageLevel: DailyRecordFreshnessMessageLevel;
+  userMessage?: string;
+}
+
+const BLOCKING_FRESHNESS_STATUSES = new Set<DailyRecordFreshnessStatus>([
+  'stale_due_to_inactivity',
+  'refreshing_on_resume',
+  'blocked_until_remote_check',
+]);
+
+const resolveFreshnessMessageLevel = (
+  status: DailyRecordFreshnessStatus
+): DailyRecordFreshnessMessageLevel => {
+  if (status === 'blocked_until_remote_check') {
+    return 'warning';
+  }
+  if (status === 'stale_due_to_inactivity' || status === 'refreshing_on_resume') {
+    return 'subtle';
+  }
+  return 'none';
+};
+
+const resolveFreshnessUserMessage = (status: DailyRecordFreshnessStatus): string | undefined => {
+  if (status === 'blocked_until_remote_check') {
+    return 'No fue posible actualizar el censo. Reintentando...';
+  }
+  if (status === 'stale_due_to_inactivity' || status === 'refreshing_on_resume') {
+    return 'Actualizando censo con los últimos datos disponibles...';
+  }
+  return undefined;
+};
+
+export const useDailyRecordFreshnessUi = (date: string): DailyRecordFreshnessUiState => {
+  const snapshot = useSyncExternalStore(
+    subscribeDailyRecordFreshness,
+    () => getDailyRecordFreshnessStatus(date),
+    () => 'fresh_remote_confirmed' as const
+  );
+  const remoteHydratedNewerRecord = didDailyRecordFreshnessHydrateNewerRemoteForDate(date);
+  const lastRemoteConfirmedAt = getDailyRecordLastRemoteConfirmedAt(date);
+
+  return useMemo(
+    () => ({
+      status: snapshot,
+      isClinicalEditingBlocked: BLOCKING_FRESHNESS_STATUSES.has(snapshot),
+      isQuietlyRefreshing:
+        snapshot === 'stale_due_to_inactivity' || snapshot === 'refreshing_on_resume',
+      remoteHydratedNewerRecord,
+      lastRemoteConfirmedAt,
+      messageLevel: resolveFreshnessMessageLevel(snapshot),
+      userMessage: resolveFreshnessUserMessage(snapshot),
+    }),
+    [lastRemoteConfirmedAt, remoteHydratedNewerRecord, snapshot]
+  );
+};
