@@ -53,7 +53,7 @@ describe('daily record remote freshness gate', () => {
     vi.clearAllMocks();
   });
 
-  it('blocks the original clinical patch when stale resume hydrates a newer remote record', async () => {
+  it('hydrates a newer remote record before applying a clinical patch after stale resume', async () => {
     const dailyRecord = buildMockDailyRecordRepository();
     const queryClient = createTestQueryClient();
     const localRecord = DataFactory.createMockDailyRecord(date);
@@ -143,15 +143,22 @@ describe('daily record remote freshness gate', () => {
           repairApplied: false,
         })
       );
-      await expect(mutationPromise).rejects.toBeInstanceOf(DailyRecordFreshnessGateError);
+      await expect(mutationPromise).resolves.toBeDefined();
     });
 
-    expect(dailyRecord.updatePartialDetailed).not.toHaveBeenCalled();
+    expect(dailyRecord.updatePartialDetailed).toHaveBeenCalledWith(date, {
+      'beds.R1.status': PatientStatus.GRAVE,
+    });
     expect(
       queryClient.getQueryData<ReturnType<typeof createDailyRecordQueryResult>>(
         getDailyRecordQueryKey(date)
       )?.record?.beds.R1.pathology
     ).toBe('Diagnostico Firebase vigente');
+    expect(
+      queryClient.getQueryData<ReturnType<typeof createDailyRecordQueryResult>>(
+        getDailyRecordQueryKey(date)
+      )?.record?.beds.R1.status
+    ).toBe(PatientStatus.GRAVE);
   });
 
   it('blocks the clinical patch when Firebase cannot be confirmed after stale resume', async () => {

@@ -82,11 +82,8 @@ const assertClinicalMutationDidNotStartFromStaleRemoteHydration = (
 export const ensureFreshClinicalPatchMutation = (
   date: string,
   dependencies: FreshnessDependencies
-) =>
-  ensureFreshDailyRecordQuery(date, dependencies, 'clinical_patch').then(freshness => {
-    assertClinicalMutationDidNotStartFromStaleRemoteHydration(freshness);
-    return freshness;
-  });
+): Promise<DailyRecordQueryResult> =>
+  ensureFreshDailyRecordQuery(date, dependencies, 'clinical_patch');
 
 export const ensureFreshClinicalSaveMutation = async (
   record: DailyRecord,

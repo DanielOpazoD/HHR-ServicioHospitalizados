@@ -11,7 +11,6 @@ import { clearAllRecords, getRecordForDate, saveRecord } from '@/services/storag
 import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { resolveFirestoreRulesEmulatorConfig } from '@/tests/security/firestoreRulesEmulatorConfig';
 import {
-  DailyRecordFreshnessGateError,
   markDailyRecordTabHidden,
   markDailyRecordTabVisible,
   resetDailyRecordFreshnessGateForTests,
@@ -283,7 +282,7 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     expect(local?.beds?.R1?.pathology).toBe('Diag UI Patch');
   });
 
-  it('blocks a stale local client patch until Firebase freshness is reviewed', async () => {
+  it('hydrates a newer Firebase record before accepting a stale local client patch', async () => {
     const date = TODAY_ISO;
     const staleClientRecord = buildRecord(date, 'Paciente Cliente B', 'Diag Cliente B stale');
     const remoteBaseline = buildRecord(date, 'Paciente Cliente B', 'Diag Base Firebase');
@@ -339,17 +338,16 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     markDailyRecordTabVisible(6 * 60 * 1000);
 
     await act(async () => {
-      await expect(
-        resultRef.current.patchRecord({
-          'beds.R1.status': 'Grave',
-        })
-      ).rejects.toBeInstanceOf(DailyRecordFreshnessGateError);
+      await resultRef.current.patchRecord({
+        'beds.R1.status': 'Grave',
+      });
     });
 
     await waitFor(() => {
       expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag Firebase actualizado por A');
+      expect(resultRef.current.record?.beds?.R1?.status).toBe('Grave');
     });
-    expect(mockNotifyWarning).toHaveBeenCalledWith(
+    expect(mockNotifyWarning).not.toHaveBeenCalledWith(
       'Censo en actualización',
       expect.stringContaining('Revise los datos antes de editar')
     );
@@ -362,10 +360,11 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
       beds?: Record<string, { pathology?: string; status?: string }>;
     };
     expect(remoteData?.beds?.R1?.pathology).toBe('Diag Firebase actualizado por A');
-    expect(remoteData?.beds?.R1?.status).toBe('Estable');
+    expect(remoteData?.beds?.R1?.status).toBe('Grave');
 
     const local = await getRecordForDate(date);
     expect(local?.beds?.R1?.pathology).toBe('Diag Firebase actualizado por A');
+    expect(local?.beds?.R1?.status).toBe('Grave');
   });
 
   it('keeps the current day record visible when Firestore emits a missing document after it was loaded', async () => {
