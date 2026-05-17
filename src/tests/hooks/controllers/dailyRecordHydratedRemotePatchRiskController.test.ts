@@ -143,6 +143,62 @@ describe('dailyRecordHydratedRemotePatchRiskController', () => {
     ).toBe('independent_field');
   });
 
+  it('allows clinical crib status and specialty edits after a crib diagnosis hydration', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    previousRecord.beds.R1 = DataFactory.createMockPatient('R1', {
+      patientName: 'Madre',
+      clinicalCrib: DataFactory.createMockPatient('R1', {
+        patientName: 'RN de Madre',
+        bedMode: 'Cuna',
+        pathology: 'Diagnóstico local',
+      }),
+    });
+    const hydratedRecord = {
+      ...previousRecord,
+      lastUpdated: '2026-05-16T10:30:00.000Z',
+      beds: {
+        ...previousRecord.beds,
+        R1: {
+          ...previousRecord.beds.R1,
+          clinicalCrib: {
+            ...previousRecord.beds.R1.clinicalCrib!,
+            pathology: 'Diagnóstico Firebase',
+          },
+        },
+      },
+    };
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R1.clinicalCrib.status': PatientStatus.ESTABLE,
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('independent_field');
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R1.clinicalCrib.specialty': 'Neonatología',
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('independent_field');
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R1.clinicalCrib.cie10Code': 'P22',
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('same_group');
+  });
+
   it('allows full-bed move patches after self-confirmed remote hydration', () => {
     const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
     previousRecord.beds.R2 = DataFactory.createMockPatient('R2', {

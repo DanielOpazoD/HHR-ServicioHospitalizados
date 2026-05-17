@@ -60,6 +60,14 @@ const resolveGroupFromField = (field: string): DailyRecordClinicalFieldGroup | n
 const parseBedPatchPath = (
   path: string
 ): { bedId: string; fieldGroup: DailyRecordClinicalFieldGroup | null } | null => {
+  const clinicalCribMatch = path.match(/^beds\.([^.]+)\.clinicalCrib\.([^.]+)/);
+  if (clinicalCribMatch) {
+    return {
+      bedId: clinicalCribMatch[1],
+      fieldGroup: resolveGroupFromField(clinicalCribMatch[2]),
+    };
+  }
+
   const match = path.match(/^beds\.([^.]+)(?:\.([^.]+))?/);
   if (!match) return null;
   return {

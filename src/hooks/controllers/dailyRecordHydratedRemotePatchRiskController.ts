@@ -1,4 +1,11 @@
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import {
+  normalizeDailyRecordClinicalField,
+  parseDailyRecordBedPatchPath,
+  resolveDailyRecordClinicalGroup,
+  resolveDailyRecordClinicalLockKey,
+  type DailyRecordClinicalLockKey,
+} from '@/hooks/controllers/dailyRecordClinicalPatchPathController';
 
 export type HydratedRemotePatchRisk =
   | 'independent_field'
@@ -8,12 +15,9 @@ export type HydratedRemotePatchRisk =
   | 'movement_changed'
   | 'unknown_high_risk';
 
-export interface HydratedRemoteClinicalFieldLocks {
-  diagnosis?: boolean;
-  status?: boolean;
-  specialty?: boolean;
-  upc?: boolean;
-  surgicalComplication?: boolean;
+export interface HydratedRemoteClinicalFieldLocks extends Partial<
+  Record<DailyRecordClinicalLockKey, boolean>
+> {
   allClinical?: boolean;
 }
 
@@ -21,21 +25,6 @@ export type HydratedRemoteClinicalFieldLocksByBedId = Record<
   string,
   HydratedRemoteClinicalFieldLocks
 >;
-
-const CLINICAL_FIELD_GROUPS: ReadonlyArray<ReadonlySet<string>> = [
-  new Set(['pathology', 'cie10Code', 'cie10Description', 'diagnosisComments']),
-  new Set(['status']),
-  new Set(['specialty', 'secondarySpecialty']),
-  new Set(['isUPC', 'upcChecklist']),
-  new Set(['surgicalComplication']),
-  new Set([
-    'ginecobstetriciaType',
-    'deliveryDate',
-    'deliveryRoute',
-    'deliveryCesareanLabor',
-    'clinicalCrib',
-  ]),
-];
 
 const VISIBLE_EPISODE_FIELDS = new Set(['rut', 'patientName', 'admissionDate', 'firstSeenDate']);
 const MOVEMENT_LIST_KEYS = new Set(['discharges', 'transfers', 'cma']);
@@ -62,62 +51,7 @@ const normalizeComparableText = (value: unknown): string =>
 
 const hasMeaningfulText = (value: unknown): boolean => normalizeComparableText(value).length > 0;
 
-const parseBedPatchPath = (
-  path: string
-): { bedId: string; field?: string; canonicalPath?: string } | null => {
-  const bedMatch = path.match(/^beds\.([^.]+)$/);
-  if (bedMatch) {
-    return {
-      bedId: bedMatch[1],
-    };
-  }
-
-  const fieldMatch = path.match(/^beds\.([^.]+)\.([^.]+)/);
-  if (!fieldMatch) {
-    return null;
-  }
-  const [, bedId, field] = fieldMatch;
-  return {
-    bedId,
-    field,
-    canonicalPath: `beds.${bedId}.${field}`,
-  };
-};
-
 const isMovementListPatchPath = (path: string): boolean => MOVEMENT_LIST_KEYS.has(path);
-
-const resolveClinicalGroup = (field: string): ReadonlySet<string> | null =>
-  CLINICAL_FIELD_GROUPS.find(group => group.has(field)) ?? null;
-
-const resolveClinicalLockKey = (field: string): keyof HydratedRemoteClinicalFieldLocks | null => {
-  if (['pathology', 'cie10Code', 'cie10Description', 'diagnosisComments'].includes(field)) {
-    return 'diagnosis';
-  }
-  if (field === 'status') {
-    return 'status';
-  }
-  if (field === 'specialty' || field === 'secondarySpecialty') {
-    return 'specialty';
-  }
-  if (field === 'isUPC' || field === 'upcChecklist') {
-    return 'upc';
-  }
-  if (field === 'surgicalComplication') {
-    return 'surgicalComplication';
-  }
-  if (
-    [
-      'ginecobstetriciaType',
-      'deliveryDate',
-      'deliveryRoute',
-      'deliveryCesareanLabor',
-      'clinicalCrib',
-    ].includes(field)
-  ) {
-    return 'diagnosis';
-  }
-  return null;
-};
 
 const collectChangedBedFields = (
   previousRecord: DailyRecord,
@@ -135,11 +69,28 @@ const collectChangedBedFields = (
     }
   });
 
+  const previousCrib = (previousBed.clinicalCrib ?? {}) as Record<string, unknown>;
+  const hydratedCrib = (hydratedBed.clinicalCrib ?? {}) as Record<string, unknown>;
+  const cribKeys = new Set([...Object.keys(previousCrib), ...Object.keys(hydratedCrib)]);
+  cribKeys.forEach(field => {
+    if (valuesDiffer(previousCrib[field], hydratedCrib[field])) {
+      fields.add(`clinicalCrib.${field}`);
+    }
+  });
+
   return fields;
 };
 
 const hasVisibleEpisodeChange = (changedFields: Set<string>): boolean =>
   Array.from(VISIBLE_EPISODE_FIELDS).some(field => changedFields.has(field));
+
+const hasChangedFieldInClinicalGroup = (
+  changedFields: Set<string>,
+  attemptedGroup: ReadonlySet<string>
+): boolean =>
+  Array.from(changedFields).some(changedField =>
+    attemptedGroup.has(normalizeDailyRecordClinicalField(changedField))
+  );
 
 const patchValueMatchesHydratedRecord = (
   attemptedPatch: DailyRecordPatch,
@@ -242,7 +193,7 @@ export const classifyHydratedRemotePatchRisk = ({
       continue;
     }
 
-    const attemptedBedPatch = parseBedPatchPath(attemptedPath);
+    const attemptedBedPatch = parseDailyRecordBedPatchPath(attemptedPath);
     if (!attemptedBedPatch) {
       return 'unknown_high_risk';
     }
@@ -264,7 +215,7 @@ export const classifyHydratedRemotePatchRisk = ({
 
     if (!attemptedBedPatch.field) {
       if (changedFields.size > 0) {
-        return Array.from(changedFields).some(field => resolveClinicalGroup(field))
+        return Array.from(changedFields).some(field => resolveDailyRecordClinicalGroup(field))
           ? 'same_group'
           : 'unknown_high_risk';
       }
@@ -299,11 +250,11 @@ export const classifyHydratedRemotePatchRisk = ({
       return 'same_field';
     }
 
-    const attemptedGroup = resolveClinicalGroup(attemptedBedPatch.field);
+    const attemptedGroup = resolveDailyRecordClinicalGroup(attemptedBedPatch.field);
     if (
       !isClinicalCribActivation &&
       attemptedGroup &&
-      Array.from(attemptedGroup).some(field => changedFields.has(field))
+      hasChangedFieldInClinicalGroup(changedFields, attemptedGroup)
     ) {
       return 'same_group';
     }
@@ -320,7 +271,7 @@ export const doesPatchTouchHydratedRemoteClinicalLocks = (
   locksByBedId: HydratedRemoteClinicalFieldLocksByBedId
 ): boolean =>
   Object.keys(attemptedPatch).some(path => {
-    const attemptedBedPatch = parseBedPatchPath(path);
+    const attemptedBedPatch = parseDailyRecordBedPatchPath(path);
     if (!attemptedBedPatch) {
       return false;
     }
@@ -338,7 +289,7 @@ export const doesPatchTouchHydratedRemoteClinicalLocks = (
       return Object.values(locks).some(Boolean);
     }
 
-    const lockKey = resolveClinicalLockKey(attemptedBedPatch.field);
+    const lockKey = resolveDailyRecordClinicalLockKey(attemptedBedPatch.field);
     return lockKey ? locks[lockKey] === true : false;
   });
 
@@ -371,7 +322,7 @@ export const buildHydratedRemoteClinicalFieldLocks = ({
     }
 
     changedFields.forEach(field => {
-      const lockKey = resolveClinicalLockKey(field);
+      const lockKey = resolveDailyRecordClinicalLockKey(field);
       if (lockKey) {
         locks[lockKey] = true;
       }
