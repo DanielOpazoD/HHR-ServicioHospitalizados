@@ -176,10 +176,7 @@ export const useDailyRecordQuery = (
   };
 };
 
-/**
- * Hook for saving/updating a daily record.
- * Provides optimistic updates and automatic cache invalidation.
- */
+/** Hook for saving/updating a daily record. */
 export const useSaveDailyRecordMutation = () => {
   const queryClient = useQueryClient();
   const { dailyRecord } = useRepositories();
@@ -222,6 +219,7 @@ export const useSaveDailyRecordMutation = () => {
       markDailyRecordRemoteConfirmed(payload.record.date, {
         source: 'write',
         remoteLastUpdated: payload.record.lastUpdated,
+        confirmedRecord: payload.record,
       });
     },
     onSettled: payload => {
@@ -303,6 +301,7 @@ export const usePatchDailyRecordMutation = (date: string) => {
       markDailyRecordRemoteConfirmed(date, {
         source: 'write',
         remoteLastUpdated: current?.lastUpdated,
+        confirmedRecord: current,
       });
     },
     // Note: We don't invalidate queries here because the Firestore subscription

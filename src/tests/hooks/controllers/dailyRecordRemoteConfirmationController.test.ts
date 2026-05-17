@@ -51,4 +51,34 @@ describe('daily record remote confirmation locks', () => {
 
     expect(getDailyRecordClinicalFieldLocksByBedId(date).R1?.diagnosis).toBe(true);
   });
+
+  it('does not create hard locks when the newer snapshot confirms the local write', () => {
+    const emptyRecord = DataFactory.createMockDailyRecord(date);
+    emptyRecord.lastUpdated = '2026-05-16T10:00:00.000Z';
+    const admittedRecord: DailyRecord = {
+      ...emptyRecord,
+      lastUpdated: '2026-05-16T10:45:00.000Z',
+      beds: {
+        ...emptyRecord.beds,
+        R3: DataFactory.createMockPatient('R3', {
+          patientName: 'Paciente Nuevo',
+          rut: '17.752.753-K',
+          admissionDate: date,
+        }),
+      },
+    };
+
+    markDailyRecordRemoteConfirmed(date, {
+      source: 'subscription',
+      confirmedRecord: emptyRecord,
+      remoteLastUpdated: emptyRecord.lastUpdated,
+    });
+    markDailyRecordRemoteConfirmed(date, {
+      source: 'write',
+      confirmedRecord: admittedRecord,
+      remoteLastUpdated: admittedRecord.lastUpdated,
+    });
+
+    expect(getDailyRecordClinicalFieldLocksByBedId(date).R3?.allClinical).toBeUndefined();
+  });
 });

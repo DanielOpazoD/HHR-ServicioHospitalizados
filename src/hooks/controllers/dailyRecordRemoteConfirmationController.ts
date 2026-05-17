@@ -11,6 +11,7 @@ export interface DailyRecordRemoteConfirmationState {
 }
 
 export interface DailyRecordRemoteConfirmationParams {
+  source?: 'query' | 'subscription' | 'manual_refresh' | 'write';
   remoteHydratedNewerRecord?: boolean;
   previousRecord?: DailyRecord | null;
   confirmedRecord?: DailyRecord | null;
@@ -33,7 +34,8 @@ export const applyDailyRecordRemoteConfirmation = (
     toRecordTimestamp(params.confirmedRecord.lastUpdated) >
       toRecordTimestamp(previousRecord.lastUpdated);
   const shouldBuildLocks =
-    params.remoteHydratedNewerRecord === true || didConfirmNewerRecord === true;
+    params.source !== 'write' &&
+    (params.remoteHydratedNewerRecord === true || didConfirmNewerRecord === true);
 
   state.remoteHydratedNewerRecord = shouldBuildLocks || state.remoteHydratedNewerRecord;
   if (shouldBuildLocks) {
