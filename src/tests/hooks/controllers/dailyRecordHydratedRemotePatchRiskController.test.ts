@@ -64,4 +64,73 @@ describe('dailyRecordHydratedRemotePatchRiskController', () => {
       })
     ).toBe('episode_changed');
   });
+
+  it('allows full-bed move patches after self-confirmed remote hydration', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    previousRecord.beds.R2 = DataFactory.createMockPatient('R2', {
+      patientName: 'Paciente trasladado',
+      rut: '12.345.678-9',
+      clinicalEpisodeId: 'episode-r2',
+    });
+    previousRecord.beds.R3.location = 'Sala R3';
+    const hydratedRecord = {
+      ...previousRecord,
+      lastUpdated: '2026-05-16T10:30:00.000Z',
+    };
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R3': {
+            ...previousRecord.beds.R2,
+            bedId: 'R3',
+            location: previousRecord.beds.R3.location,
+          },
+          'beds.R2': {
+            ...previousRecord.beds.R2,
+            patientName: '',
+            rut: '',
+            clinicalEpisodeId: undefined,
+          },
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('independent_field');
+  });
+
+  it('blocks full-bed move patches when the hydrated source bed changed remotely', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    previousRecord.beds.R2 = DataFactory.createMockPatient('R2', {
+      patientName: 'Paciente local',
+      rut: '12.345.678-9',
+      clinicalEpisodeId: 'episode-local',
+    });
+    const hydratedRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    hydratedRecord.beds.R2 = {
+      ...previousRecord.beds.R2,
+      patientName: 'Paciente remoto',
+      clinicalEpisodeId: 'episode-remoto',
+    };
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R3': {
+            ...previousRecord.beds.R2,
+            bedId: 'R3',
+            location: previousRecord.beds.R3.location,
+          },
+          'beds.R2': {
+            ...previousRecord.beds.R2,
+            patientName: '',
+            rut: '',
+            clinicalEpisodeId: undefined,
+          },
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('episode_changed');
+  });
 });

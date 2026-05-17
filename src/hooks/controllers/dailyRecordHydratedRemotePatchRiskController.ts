@@ -56,14 +56,21 @@ const getPathValue = (source: unknown, path: string): unknown =>
 const valuesDiffer = (left: unknown, right: unknown): boolean =>
   JSON.stringify(left ?? null) !== JSON.stringify(right ?? null);
 
-const parseBedFieldPath = (
+const parseBedPatchPath = (
   path: string
-): { bedId: string; field: string; canonicalPath: string } | null => {
-  const match = path.match(/^beds\.([^.]+)\.([^.]+)/);
-  if (!match) {
+): { bedId: string; field?: string; canonicalPath?: string } | null => {
+  const bedMatch = path.match(/^beds\.([^.]+)$/);
+  if (bedMatch) {
+    return {
+      bedId: bedMatch[1],
+    };
+  }
+
+  const fieldMatch = path.match(/^beds\.([^.]+)\.([^.]+)/);
+  if (!fieldMatch) {
     return null;
   }
-  const [, bedId, field] = match;
+  const [, bedId, field] = fieldMatch;
   return {
     bedId,
     field,
@@ -145,30 +152,40 @@ export const classifyHydratedRemotePatchRisk = ({
 
   const attemptedPaths = Object.keys(attemptedPatch);
   for (const attemptedPath of attemptedPaths) {
-    const attemptedBedField = parseBedFieldPath(attemptedPath);
-    if (!attemptedBedField) {
+    const attemptedBedPatch = parseBedPatchPath(attemptedPath);
+    if (!attemptedBedPatch) {
       return 'unknown_high_risk';
     }
 
     const changedFields = collectChangedBedFields(
       previousRecord,
       hydratedRecord,
-      attemptedBedField.bedId
+      attemptedBedPatch.bedId
     );
     if (Array.from(EPISODE_FIELDS).some(field => changedFields.has(field))) {
       return 'episode_changed';
     }
 
+    if (!attemptedBedPatch.field) {
+      if (changedFields.size > 0) {
+        return Array.from(changedFields).some(field => resolveClinicalGroup(field))
+          ? 'same_group'
+          : 'unknown_high_risk';
+      }
+      continue;
+    }
+
     if (
+      attemptedBedPatch.canonicalPath &&
       valuesDiffer(
-        getPathValue(previousRecord, attemptedBedField.canonicalPath),
-        getPathValue(hydratedRecord, attemptedBedField.canonicalPath)
+        getPathValue(previousRecord, attemptedBedPatch.canonicalPath),
+        getPathValue(hydratedRecord, attemptedBedPatch.canonicalPath)
       )
     ) {
       return 'same_field';
     }
 
-    const attemptedGroup = resolveClinicalGroup(attemptedBedField.field);
+    const attemptedGroup = resolveClinicalGroup(attemptedBedPatch.field);
     if (attemptedGroup && Array.from(attemptedGroup).some(field => changedFields.has(field))) {
       return 'same_group';
     }
