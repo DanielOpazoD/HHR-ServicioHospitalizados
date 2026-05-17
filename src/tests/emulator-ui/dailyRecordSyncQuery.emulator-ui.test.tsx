@@ -16,6 +16,7 @@ import {
   markDailyRecordTabVisible,
   resetDailyRecordFreshnessGateForTests,
 } from '@/hooks/controllers/dailyRecordFreshnessGateController';
+import { clearPendingDailyRecordPatchesForTests } from '@/hooks/controllers/dailyRecordPendingPatchController';
 
 const runEmulatorUiTests =
   process.env.RUN_FIRESTORE_EMULATOR_TESTS === '1' ||
@@ -147,6 +148,7 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     await testEnv.clearFirestore();
     await clearAllRecords();
     resetDailyRecordFreshnessGateForTests();
+    clearPendingDailyRecordPatchesForTests();
     setFirestoreEnabled(true);
 
     activeDb = testEnv
@@ -169,6 +171,7 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     await act(async () => {
       await Promise.resolve();
     });
+    clearPendingDailyRecordPatchesForTests();
   });
 
   it('loads record from emulator and reflects remote updates via subscription', async () => {
