@@ -152,6 +152,33 @@ describe('usePatientTransfers', () => {
     expect(mockSaveAndUpdate).toHaveBeenCalled();
   });
 
+  it('updates transfer through a movement patch when available', () => {
+    const recordWithTransfer = {
+      ...mockRecord,
+      transfers: [{ id: 'transfer-1', patientName: 'Test', time: '' }],
+    } as unknown as DailyRecord;
+
+    const { result } = renderHook(() =>
+      usePatientTransfers(recordWithTransfer, mockSaveAndUpdate, undefined, mockPatchRecord)
+    );
+
+    act(() => {
+      result.current.updateTransfer('transfer-1', { time: '10:00' });
+    });
+
+    expect(mockPatchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transfers: [
+          expect.objectContaining({
+            id: 'transfer-1',
+            time: '10:00',
+          }),
+        ],
+      })
+    );
+    expect(mockSaveAndUpdate).not.toHaveBeenCalled();
+  });
+
   it('should delete transfer', () => {
     const recordWithTransfer = {
       ...mockRecord,
@@ -165,6 +192,33 @@ describe('usePatientTransfers', () => {
     });
 
     expect(mockSaveAndUpdate).toHaveBeenCalled();
+  });
+
+  it('deletes transfer through a movement patch when available', () => {
+    const recordWithTransfer = {
+      ...mockRecord,
+      transfers: [{ id: 'transfer-1', patientName: 'Test' }],
+    } as unknown as DailyRecord;
+
+    const { result } = renderHook(() =>
+      usePatientTransfers(recordWithTransfer, mockSaveAndUpdate, undefined, mockPatchRecord)
+    );
+
+    act(() => {
+      result.current.deleteTransfer('transfer-1');
+    });
+
+    expect(mockPatchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transfers: [
+          expect.objectContaining({
+            id: 'transfer-1',
+            deletedAt: expect.any(String),
+          }),
+        ],
+      })
+    );
+    expect(mockSaveAndUpdate).not.toHaveBeenCalled();
   });
 
   it('should undo transfer and restore patient snapshot', () => {
@@ -205,6 +259,51 @@ describe('usePatientTransfers', () => {
       })
     );
     expect(isMovementDeleted(payload.transfers[0])).toBe(true);
+  });
+
+  it('undoes transfer through a movement patch when available', () => {
+    const recordWithTransfer = {
+      ...mockRecord,
+      transfers: [
+        {
+          id: 't-1',
+          bedId: 'R2',
+          bedName: 'R2',
+          patientName: 'Transferred',
+          originalData: {
+            bedId: 'R2',
+            patientName: 'Recovered',
+            rut: '22-2',
+            location: 'Old Location',
+          },
+          isNested: false,
+        },
+      ],
+    } as unknown as DailyRecord;
+
+    const { result } = renderHook(() =>
+      usePatientTransfers(recordWithTransfer, mockSaveAndUpdate, undefined, mockPatchRecord)
+    );
+
+    act(() => {
+      result.current.undoTransfer('t-1');
+    });
+
+    expect(mockPatchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transfers: [
+          expect.objectContaining({
+            id: 't-1',
+            deletedAt: expect.any(String),
+          }),
+        ],
+        'beds.R2': expect.objectContaining({
+          patientName: 'Recovered',
+          rut: '22-2',
+        }),
+      })
+    );
+    expect(mockSaveAndUpdate).not.toHaveBeenCalled();
   });
 
   it('should notify runtime when undo transfer is blocked', () => {

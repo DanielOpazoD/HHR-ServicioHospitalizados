@@ -153,6 +153,54 @@ describe('firestoreRecordWrites authority patch routing', () => {
     expect(saveHistorySnapshot).not.toHaveBeenCalled();
   });
 
+  it('routes clinical patches through the authority callable even when repository invariants add derived fields', async () => {
+    (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_MODE =
+      'enforced';
+    mockGetCurrentUser.mockReturnValue({
+      uid: 'nurse-1',
+      email: 'nurse@example.com',
+      isAnonymous: false,
+    });
+
+    await updateRecordPartial(
+      '2026-03-14',
+      {
+        'beds.R1.pathology': 'Diagnostico atomico',
+        'beds.R1.fhir_resource': { resourceType: 'Patient', id: 'R1' },
+        dateTimestamp: 1773446400000,
+      } as never,
+      '2026-03-14T10:00:00.000Z',
+      {
+        syncContract: {
+          expectedVersion: '2026-03-14T10:00:00.000Z',
+          changedPaths: ['beds.R1.pathology'],
+          mutationId: 'mutation-partial-2',
+          clientId: 'client-1',
+          tabId: 'tab-1',
+        },
+      }
+    );
+
+    expect(mockHttpsCallable).toHaveBeenCalledWith(
+      { name: 'functions-runtime' },
+      'patchDailyRecordWithClinicalAuthority'
+    );
+    expect(mockAuthorityCallable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        date: '2026-03-14',
+        patch: {
+          'beds.R1.pathology': 'Diagnostico atomico',
+        },
+        syncContract: expect.objectContaining({
+          changedPaths: ['beds.R1.pathology'],
+          mutationId: 'mutation-partial-2',
+        }),
+      })
+    );
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(saveHistorySnapshot).not.toHaveBeenCalled();
+  });
+
   it('keeps non-clinical partial updates on direct Firestore writes in enforced mode', async () => {
     (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_MODE =
       'enforced';

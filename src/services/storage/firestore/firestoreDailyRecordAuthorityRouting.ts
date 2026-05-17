@@ -44,12 +44,45 @@ const isClinicalAuthorityPatchPath = (path: string): boolean => {
   );
 };
 
+const isClinicalAuthorityDerivedPatchPath = (path: string): boolean => {
+  if (path === 'dateTimestamp') {
+    return true;
+  }
+
+  const [root, bedId, field, nestedField, ...rest] = path.split('.');
+  if (root !== 'beds' || !bedId || rest.length > 0) {
+    return false;
+  }
+
+  return (
+    field === 'fhir_resource' ||
+    field === 'clinicalEpisodeId' ||
+    (field === 'clinicalCrib' && nestedField === 'fhir_resource')
+  );
+};
+
 const isDoctorSpecialistRole = (role: UserRole | null): role is 'doctor_specialist' =>
   role === 'doctor_specialist';
 
 export const isClinicalAuthorityPatch = (patch: Record<string, unknown>): boolean => {
   const paths = Object.keys(patch);
   return paths.length > 0 && paths.every(isClinicalAuthorityPatchPath);
+};
+
+export const extractClinicalAuthorityPatch = (
+  patch: Record<string, unknown>
+): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(patch).filter(([path]) => isClinicalAuthorityPatchPath(path)));
+
+export const shouldRouteClinicalAuthorityPatch = (patch: Record<string, unknown>): boolean => {
+  const paths = Object.keys(patch);
+  if (paths.length === 0 || Object.keys(extractClinicalAuthorityPatch(patch)).length === 0) {
+    return false;
+  }
+
+  return paths.every(
+    path => isClinicalAuthorityPatchPath(path) || isClinicalAuthorityDerivedPatchPath(path)
+  );
 };
 
 export const shouldRouteSpecialistPatchViaCallable = async (): Promise<boolean> => {

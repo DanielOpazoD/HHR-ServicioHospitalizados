@@ -50,11 +50,15 @@ export const usePatientTransfers = (
   const executeMovementMutation = usePatientMovementMutationExecutor({
     recordRef,
     saveAndUpdate,
+    patchRecord,
+    movementKey: 'transfers',
   });
   const withCurrentRecord = usePatientMovementCurrentRecord({ recordRef });
   const executeMovementUndo = usePatientMovementUndoExecutor({
     createEmptyPatient,
     saveAndUpdate,
+    patchRecord,
+    movementKey: 'transfers',
     notifyUndoError,
   });
 

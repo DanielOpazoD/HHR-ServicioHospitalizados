@@ -31,7 +31,8 @@ import {
 } from '@/services/storage/firestore/dailyRecordAuthorityCallableClient';
 import {
   assertDailyRecordClinicalAuthority,
-  isClinicalAuthorityPatch,
+  extractClinicalAuthorityPatch,
+  shouldRouteClinicalAuthorityPatch,
   shouldRouteDailyRecordSaveViaCallable,
   shouldRouteSpecialistPatchViaCallable,
   tryShadowDailyRecordPatchViaCallable,
@@ -39,6 +40,7 @@ import {
   updateSpecialistMedicalHandoffViaCallable,
   type DailyRecordPartialWriteOptions,
 } from '@/services/storage/firestore/firestoreDailyRecordAuthorityRouting';
+import type { SyncTaskContract } from '@/services/storage/syncQueueTypes';
 
 const logFirestoreWriteRetry = (
   operation: 'save' | 'partialUpdate' | 'delete',
@@ -103,6 +105,25 @@ const tryRefreshCurrentUserRoleClaim = async (date: string): Promise<boolean> =>
 };
 
 export { ConcurrencyError } from '@/services/storage/firestore/firestoreWriteSupport';
+
+const buildAuthorityPatchSyncContract = (
+  syncContract: SyncTaskContract | undefined,
+  authorityPatch: Record<string, unknown>
+): SyncTaskContract | undefined => {
+  if (!syncContract) {
+    return undefined;
+  }
+
+  const authorityPaths = Object.keys(authorityPatch);
+  const changedPaths = (syncContract.changedPaths ?? []).filter(path =>
+    authorityPaths.includes(path)
+  );
+
+  return {
+    ...syncContract,
+    changedPaths: changedPaths.length > 0 ? changedPaths : authorityPaths,
+  };
+};
 
 export const saveRecordToFirestore = async (
   record: DailyRecord,
@@ -206,17 +227,18 @@ export const updateRecordPartial = async (
           });
         }
 
-        const isClinicalPatchForAuthority = isClinicalAuthorityPatch(sanitizedPatch);
+        const isClinicalPatchForAuthority = shouldRouteClinicalAuthorityPatch(sanitizedPatch);
+        const authorityPatch = extractClinicalAuthorityPatch(sanitizedPatch);
         if (isClinicalPatchForAuthority && (await shouldRouteDailyRecordSaveViaCallable())) {
           return withRetry(
             () =>
               patchDailyRecordWithClinicalAuthorityCallable({
                 date,
-                patch: sanitizedPatch,
+                patch: authorityPatch,
                 expectedLastUpdated,
                 mode: resolveDailyRecordAuthorityMode() === 'enforced' ? 'enforced' : 'shadow',
                 origin: 'direct_partial_update',
-                syncContract: options.syncContract,
+                syncContract: buildAuthorityPatchSyncContract(options.syncContract, authorityPatch),
               }),
             {
               onRetry: (err: unknown, attempt: number) =>
@@ -228,9 +250,9 @@ export const updateRecordPartial = async (
         if (isClinicalPatchForAuthority) {
           await tryShadowDailyRecordPatchViaCallable(
             date,
-            sanitizedPatch,
+            authorityPatch,
             expectedLastUpdated,
-            options.syncContract
+            buildAuthorityPatchSyncContract(options.syncContract, authorityPatch)
           );
         }
         await saveHistorySnapshot(date);
