@@ -18,6 +18,7 @@ export interface PatientInputCellsProps {
   onChange: PatientInputChangeHandlers;
   onDemo: () => void;
   readOnly?: boolean;
+  clinicalEditingDisabled?: boolean;
   diagnosisMode?: DiagnosisMode;
   accessProfile?: CensusAccessProfile;
 }

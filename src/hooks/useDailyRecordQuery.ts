@@ -203,7 +203,12 @@ export const useSaveDailyRecordMutation = () => {
     onSuccess: (payload, _newRecord, context) => {
       if (isDailyRecordWriteBlockedResult(payload.result)) {
         setDailyRecordQueryData(queryClient, payload.record.date, context?.previousRecord ?? null);
+        return;
       }
+      markDailyRecordRemoteConfirmed(payload.record.date, {
+        source: 'write',
+        remoteLastUpdated: payload.record.lastUpdated,
+      });
     },
     onSettled: payload => {
       // Refetch to ensure we're in sync
@@ -275,7 +280,15 @@ export const usePatchDailyRecordMutation = (date: string) => {
     onSuccess: (payload, _partial, context) => {
       if (isDailyRecordWriteBlockedResult(payload.result)) {
         setDailyRecordQueryData(queryClient, date, context?.previousRecord ?? null);
+        return;
       }
+      const current = queryClient.getQueryData<DailyRecordQueryResult>(
+        getDailyRecordQueryKey(date)
+      )?.record;
+      markDailyRecordRemoteConfirmed(date, {
+        source: 'write',
+        remoteLastUpdated: current?.lastUpdated,
+      });
     },
     // Note: We don't invalidate queries here because the Firestore subscription
     // will automatically update the cache when the write completes.
@@ -306,6 +319,18 @@ export const usePrefetchDailyRecord = () => {
 
   return async (date: string) => {
     await prefetchDailyRecordQuery(queryClient, dailyRecord, date);
+    const result = queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date));
+    if (
+      result?.record &&
+      result.runtime.sourceOfTruth === 'remote' &&
+      result.runtime.consistencyState !== 'unavailable' &&
+      result.runtime.conflictSummary?.kind !== 'remote_unavailable'
+    ) {
+      markDailyRecordRemoteConfirmed(date, {
+        source: 'manual_refresh',
+        remoteLastUpdated: result.record.lastUpdated,
+      });
+    }
   };
 };
 

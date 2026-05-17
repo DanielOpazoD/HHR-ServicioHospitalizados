@@ -20,6 +20,7 @@ export interface PatientMainRowActionCellProps
   extends PatientActionMenuCallbacks, Required<PatientActionMenuIndicators> {
   isBlocked: boolean;
   readOnly: boolean;
+  clinicalEditingDisabled?: boolean;
   align: RowMenuAlign;
   showCmaAction?: boolean;
   accessProfile?: CensusAccessProfile;
@@ -41,6 +42,7 @@ export interface PatientMainRowViewProps
   currentDateString: string;
   style?: CSSProperties;
   readOnly: boolean;
+  clinicalEditingDisabled?: boolean;
   actionMenuAlign: RowMenuAlign;
   diagnosisMode: DiagnosisMode;
   isBlocked: boolean;
@@ -69,6 +71,7 @@ export interface PatientSubRowViewProps {
   data: PatientData;
   currentDateString: string;
   readOnly: boolean;
+  clinicalEditingDisabled?: boolean;
   diagnosisMode: DiagnosisMode;
   accessProfile?: CensusAccessProfile;
   style?: CSSProperties;

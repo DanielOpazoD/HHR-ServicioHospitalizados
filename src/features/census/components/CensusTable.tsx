@@ -39,10 +39,11 @@ export const CensusTable: React.FC<CensusTableProps> = ({
 }) => {
   const [activeEmptyBedId, setActiveEmptyBedId] = useState<string | null>(null);
   const freshnessUi = useDailyRecordFreshnessUi(currentDateString);
-  const effectiveReadOnly = readOnly || freshnessUi.isClinicalEditingBlocked;
+  const clinicalEditingDisabled = freshnessUi.isClinicalEditingBlocked;
   const { isReady, bindings, clinicalDocumentInfoByBedId } = useCensusTableBindingsModel({
     currentDateString,
-    readOnly: effectiveReadOnly,
+    readOnly,
+    clinicalEditingDisabled,
     accessProfile,
   });
 
@@ -71,12 +72,12 @@ export const CensusTable: React.FC<CensusTableProps> = ({
 
   const openEmptyBedDemographics = useCallback(
     (bedId: string) => {
-      if (freshnessUi.isClinicalEditingBlocked) {
+      if (clinicalEditingDisabled) {
         return;
       }
       setActiveEmptyBedId(bedId);
     },
-    [freshnessUi.isClinicalEditingBlocked]
+    [clinicalEditingDisabled]
   );
 
   const saveEmptyBedDemographics = useCallback(
@@ -170,7 +171,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
           <CensusTableBody
             {...bodyProps}
             onActivateEmptyBed={openEmptyBedDemographics}
-            dragDrop={effectiveReadOnly ? undefined : dragDrop}
+            dragDrop={readOnly || clinicalEditingDisabled ? undefined : dragDrop}
             clinicalDocumentInfoByBedId={clinicalDocumentInfoByBedId}
           />
         </table>

@@ -12,6 +12,7 @@ export interface PatientInputSectionSharedProps {
   readonly isSubRow: boolean;
   readonly isEmpty: boolean;
   readonly isLocked: boolean;
+  readonly clinicalEditingDisabled?: boolean;
 }
 
 export interface PatientInputSectionBindingsParams extends PatientInputSectionSharedProps {

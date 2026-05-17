@@ -322,7 +322,7 @@ describe('usePatientDischarges', () => {
     expect(mockSaveAndUpdate).toHaveBeenCalled();
   });
 
-  it('should undo discharge and restore patient snapshot', () => {
+  it('should undo discharge and restore patient snapshot', async () => {
     const recordWithDischarge = {
       ...mockRecord,
       discharges: [
@@ -346,8 +346,9 @@ describe('usePatientDischarges', () => {
       usePatientDischarges(recordWithDischarge, mockSaveAndUpdate)
     );
 
-    act(() => {
+    await act(async () => {
       result.current.undoDischarge('d-1');
+      await Promise.resolve();
     });
 
     expect(mockSaveAndUpdate).toHaveBeenCalledTimes(1);

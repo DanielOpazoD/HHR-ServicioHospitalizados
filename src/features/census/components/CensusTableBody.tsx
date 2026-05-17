@@ -20,6 +20,7 @@ export const CensusTableBody: React.FC<
   unifiedRows,
   currentDateString,
   readOnly,
+  clinicalEditingDisabled = false,
   diagnosisMode,
   columns,
   visibleColumnCount,
@@ -77,6 +78,7 @@ export const CensusTableBody: React.FC<
             currentDateString={currentDateString}
             onAction={onAction}
             readOnly={readOnly}
+            clinicalEditingDisabled={clinicalEditingDisabled}
             actionMenuAlign={resolved.actionMenuAlign}
             diagnosisMode={diagnosisMode}
             isSubRow={row.isSubRow}

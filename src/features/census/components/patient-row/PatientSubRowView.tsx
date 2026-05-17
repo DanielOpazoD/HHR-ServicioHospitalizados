@@ -10,6 +10,7 @@ export const PatientSubRowView: React.FC<PatientSubRowViewProps> = ({
   data,
   currentDateString,
   readOnly,
+  clinicalEditingDisabled,
   diagnosisMode,
   accessProfile = 'default',
   style,
@@ -56,6 +57,7 @@ export const PatientSubRowView: React.FC<PatientSubRowViewProps> = ({
         onChange={onChange}
         onDemo={onOpenDemographics}
         readOnly={readOnly}
+        clinicalEditingDisabled={clinicalEditingDisabled}
         accessProfile={accessProfile}
       />
     </tr>

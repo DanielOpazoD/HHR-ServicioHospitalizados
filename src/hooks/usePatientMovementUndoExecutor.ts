@@ -49,7 +49,7 @@ export const usePatientMovementUndoExecutor = ({
   notifyUndoError,
 }: UsePatientMovementUndoExecutorParams) => {
   return useCallback(
-    ({ kind, movement, record, applyUndoRecord, onSuccess }: ExecuteUndoParams) => {
+    async ({ kind, movement, record, applyUndoRecord, onSuccess }: ExecuteUndoParams) => {
       if (!movement?.originalData) {
         return;
       }
@@ -75,19 +75,19 @@ export const usePatientMovementUndoExecutor = ({
         bedId: movement.bedId,
         updatedBed: resolution.value.updatedBed,
       });
-      onSuccess?.({ movement, updatedBed: resolution.value.updatedBed });
       if (patchRecord && movementKey) {
-        void patchRecord(
+        await patchRecord(
           buildAtomicPatientMovementPatch({
             updatedRecord: nextRecord,
             movementKey,
             sourceBedIds: [movement.bedId],
           })
         );
-        return;
+      } else {
+        await saveAndUpdate(nextRecord);
       }
 
-      void saveAndUpdate(nextRecord);
+      onSuccess?.({ movement, updatedBed: resolution.value.updatedBed });
     },
     [createEmptyPatient, movementKey, notifyUndoError, patchRecord, saveAndUpdate]
   );

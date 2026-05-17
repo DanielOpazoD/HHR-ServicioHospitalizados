@@ -22,6 +22,7 @@ import {
 export interface CensusTableLayoutParams {
   currentDateString: string;
   readOnly: boolean;
+  clinicalEditingDisabled?: boolean;
   columns: TableColumnConfig;
   isEditMode: boolean;
   canDeleteRecord: boolean;
@@ -92,6 +93,7 @@ export const buildCensusTableLayoutBindings = (
       unifiedRows: params.unifiedRows,
       currentDateString: params.currentDateString,
       readOnly: params.readOnly,
+      clinicalEditingDisabled: params.clinicalEditingDisabled,
       diagnosisMode: params.diagnosisMode,
       columns: projectedColumns,
       visibleColumnCount,

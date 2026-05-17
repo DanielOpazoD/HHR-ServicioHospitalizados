@@ -40,6 +40,7 @@ interface BuildMainSectionBindingsParams {
   data: PatientData;
   currentDateString: string;
   readOnly: boolean;
+  clinicalEditingDisabled?: boolean;
   actionMenuAlign: RowMenuAlign;
   diagnosisMode: DiagnosisMode;
   accessProfile?: CensusAccessProfile;
@@ -54,6 +55,7 @@ export const buildPatientMainSectionBindings = ({
   data,
   currentDateString,
   readOnly,
+  clinicalEditingDisabled = false,
   actionMenuAlign,
   diagnosisMode,
   accessProfile,
@@ -63,7 +65,7 @@ export const buildPatientMainSectionBindings = ({
 }: BuildMainSectionBindingsParams): PatientMainRowBindings => {
   const mainRowViewState = buildPatientMainRowViewState({
     bedId: bed.id,
-    readOnly,
+    readOnly: readOnly || clinicalEditingDisabled,
     isEmpty: runtime.rowState.isEmpty,
     isBlocked: runtime.rowState.isBlocked,
     capabilities: viewContext.capabilities,
@@ -78,6 +80,7 @@ export const buildPatientMainSectionBindings = ({
     currentDateString,
     style,
     readOnly,
+    clinicalEditingDisabled,
     actionMenuAlign,
     diagnosisMode,
     accessProfile,
@@ -103,6 +106,7 @@ interface BuildSubSectionBindingsParams {
   data: PatientData;
   currentDateString: string;
   readOnly: boolean;
+  clinicalEditingDisabled?: boolean;
   diagnosisMode: DiagnosisMode;
   accessProfile?: CensusAccessProfile;
   style?: React.CSSProperties;
@@ -113,6 +117,7 @@ export const buildPatientSubSectionBindings = ({
   data,
   currentDateString,
   readOnly,
+  clinicalEditingDisabled = false,
   diagnosisMode,
   accessProfile,
   style,
@@ -121,6 +126,7 @@ export const buildPatientSubSectionBindings = ({
   data,
   currentDateString,
   readOnly,
+  clinicalEditingDisabled,
   diagnosisMode,
   accessProfile,
   style,

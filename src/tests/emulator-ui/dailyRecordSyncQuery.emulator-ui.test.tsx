@@ -11,6 +11,7 @@ import { clearAllRecords, getRecordForDate, saveRecord } from '@/services/storag
 import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { resolveFirestoreRulesEmulatorConfig } from '@/tests/security/firestoreRulesEmulatorConfig';
 import {
+  getDailyRecordFreshnessStatus,
   markDailyRecordTabHidden,
   markDailyRecordTabVisible,
   resetDailyRecordFreshnessGateForTests,
@@ -365,6 +366,82 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     const local = await getRecordForDate(date);
     expect(local?.beds?.R1?.pathology).toBe('Diag Firebase actualizado por A');
     expect(local?.beds?.R1?.status).toBe('Grave');
+  });
+
+  it('lets a stale resumed client edit only after the realtime snapshot from another client confirms Firebase', async () => {
+    const date = TODAY_ISO;
+    const seed = buildRecord(date, 'Paciente Dos Clientes', 'Diag Inicial');
+    const updatedByClientA = {
+      ...seed,
+      beds: {
+        ...seed.beds,
+        R1: {
+          ...seed.beds.R1,
+          pathology: 'Diag confirmado por cliente A',
+        },
+      },
+      lastUpdated: `${date}T10:45:00.000Z`,
+    };
+
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(seed);
+    });
+    await saveRecord(seed);
+
+    const { wrapper } = createQueryClientTestWrapper();
+    let safeResult: { current: unknown } | null = null;
+    let safeUnmount: (() => void) | null = null;
+    await act(async () => {
+      const hook = renderHook(() => useDailyRecordSyncQuery(date, false, 'ready'), { wrapper });
+      safeResult = hook.result;
+      safeUnmount = hook.unmount;
+    });
+    if (!safeResult || !safeUnmount) {
+      throw new Error('Failed to initialize two-client freshness harness');
+    }
+    const resultRef = safeResult as {
+      current: {
+        record: DailyRecord | null;
+        patchRecord: (patch: Record<string, unknown>) => Promise<void>;
+      };
+    };
+    unmounts.push(safeUnmount);
+
+    await waitFor(() => {
+      expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag Inicial');
+    });
+
+    markDailyRecordTabHidden(0);
+    markDailyRecordTabVisible(6 * 60 * 1000);
+    expect(getDailyRecordFreshnessStatus(date)).toBe('stale_due_to_inactivity');
+
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context
+        .firestore()
+        .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
+        .set(updatedByClientA);
+    });
+
+    await waitFor(() => {
+      expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag confirmado por cliente A');
+      expect(getDailyRecordFreshnessStatus(date)).toBe('fresh_remote_confirmed');
+    });
+
+    await act(async () => {
+      await resultRef.current.patchRecord({
+        'beds.R1.status': 'Grave',
+      });
+    });
+
+    let remoteSnap: { data: () => Record<string, unknown> | undefined } | undefined;
+    await testEnv.withSecurityRulesDisabled(async context => {
+      remoteSnap = await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).get();
+    });
+    const remoteData = remoteSnap?.data() as {
+      beds?: Record<string, { pathology?: string; status?: string }>;
+    };
+    expect(remoteData?.beds?.R1?.pathology).toBe('Diag confirmado por cliente A');
+    expect(remoteData?.beds?.R1?.status).toBe('Grave');
   });
 
   it('keeps the current day record visible when Firestore emits a missing document after it was loaded', async () => {

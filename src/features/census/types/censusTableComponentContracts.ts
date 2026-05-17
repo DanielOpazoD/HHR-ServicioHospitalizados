@@ -28,6 +28,7 @@ export interface CensusTableBodyProps {
   unifiedRows: UnifiedBedRow[];
   currentDateString: string;
   readOnly: boolean;
+  clinicalEditingDisabled?: boolean;
   diagnosisMode: DiagnosisMode;
   columns: TableColumnConfig;
   visibleColumnCount: number;

@@ -72,7 +72,7 @@ export const PatientInputClinicalSection: React.FC<
       data={shared.data}
       isSubRow={shared.isSubRow}
       isEmpty={shared.isEmpty}
-      readOnly={shared.isLocked}
+      readOnly={shared.isLocked || shared.clinicalEditingDisabled}
       diagnosisMode={diagnosisMode}
       onChange={handleDebouncedText}
       onMultipleUpdate={onChange.multiple}
@@ -82,7 +82,7 @@ export const PatientInputClinicalSection: React.FC<
       data={shared.data}
       isSubRow={shared.isSubRow}
       isEmpty={shared.isEmpty}
-      readOnly={shared.isLocked}
+      readOnly={shared.isLocked || shared.clinicalEditingDisabled}
       onChange={onChange.text}
       onMultipleUpdate={onChange.multiple}
     />
@@ -91,7 +91,7 @@ export const PatientInputClinicalSection: React.FC<
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
-        readOnly={shared.isLocked}
+        readOnly={shared.isLocked || shared.clinicalEditingDisabled}
         onChange={onChange.text}
       />
     )}
@@ -155,7 +155,7 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
-        readOnly={shared.isLocked}
+        readOnly={shared.isLocked || shared.clinicalEditingDisabled}
         field="surgicalComplication"
         onChange={onChange.check}
         title="Comp. Qx"
@@ -165,7 +165,7 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
-        readOnly={shared.isLocked}
+        readOnly={shared.isLocked || shared.clinicalEditingDisabled}
         checklist={shared.data.upcChecklist}
         onSave={handleUpcSave}
         eligible={upcEligible}

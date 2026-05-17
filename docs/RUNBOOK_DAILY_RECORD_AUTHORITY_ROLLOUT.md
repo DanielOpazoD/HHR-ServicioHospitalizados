@@ -36,11 +36,37 @@ El flag recomendado para rollout nuevo es `VITE_DAILY_RECORD_AUTHORITY_MODE`.
    - `violationCount`.
 5. Si no aparecen fallos inesperados, cambiar a `enforced`.
 
+## Freshness De Pestañas Inactivas
+
+En `enforced`, una pestaña reactivada despues de inactividad no debe aceptar ediciones
+clinicas hasta confirmar Firebase. La confirmacion puede llegar por query/refresh manual,
+snapshot realtime sin `hasPendingWrites` o escritura aceptada. Durante ese intervalo solo
+se bloquean campos y acciones clinicas sensibles; lectura, navegacion de historial y
+documentos clinicos siguen disponibles.
+
+Medir en telemetria:
+
+- `daily_record_resume_refresh_started`: inicio del bloqueo por inactividad.
+- `daily_record_resume_refresh_completed`: cierre del bloqueo. Revisar `blockedForMs`,
+  `source`, `consistencyState` y `sourceOfTruth`.
+- `daily_record_clinical_patch_blocked_until_fresh`: intento de escritura clinica antes
+  de confirmar frescura remota.
+- `daily_record_resume_refresh_failed`: bloqueo persistente por Firebase no confirmado.
+
+Gate operativo para llamar estable al rollout: p95 de `blockedForMs` menor a 3 segundos
+en red hospitalaria normal, cero `remote_unavailable` sostenidos y sin reportes de exito
+clinico antes de persistencia aceptada en altas, traslados, undo y auditoria.
+
 ## Rollback
 
 Volver a `VITE_DAILY_RECORD_AUTHORITY_MODE=client_only` deja las validaciones cliente activas
 y desactiva el uso obligatorio del callable. Si se estaba usando el flag legacy, remover
 `VITE_DAILY_RECORD_AUTHORITY_CALLABLE=true`.
+
+Si el problema es especificamente bloqueo por frescura al reactivar pestañas, rollback
+operativo inmediato: volver a `client_only`, mantener realtime activo, limpiar cache local
+solo en usuarios afectados y revisar eventos `daily_record_resume_refresh_failed` antes de
+reintentar `shadow` o `enforced`.
 
 ## Privacidad De Telemetria
 

@@ -4,7 +4,6 @@ import type {
   DailyRecord,
   PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
-import { usePatientMovementCurrentRecord } from '@/hooks/usePatientMovementCurrentRecord';
 import {
   buildAtomicPatientMovementPatch,
   type AtomicPatientMovementListKey,
@@ -23,26 +22,27 @@ export const usePatientMovementMutationExecutor = ({
   patchRecord,
   movementKey,
 }: UsePatientMovementMutationExecutorParams) => {
-  const withCurrentRecord = usePatientMovementCurrentRecord({ recordRef });
-
   return useCallback(
-    (mutation: (record: DailyRecord) => DailyRecord) => {
-      withCurrentRecord(record => {
-        const updatedRecord = mutation(record);
-        if (patchRecord && movementKey) {
-          void patchRecord(
-            buildAtomicPatientMovementPatch({
-              updatedRecord,
-              movementKey,
-              sourceBedIds: [],
-            })
-          );
-          return;
-        }
+    async (mutation: (record: DailyRecord) => DailyRecord): Promise<void> => {
+      const record = recordRef.current;
+      if (!record) {
+        return;
+      }
 
-        void saveAndUpdate(updatedRecord);
-      });
+      const updatedRecord = mutation(record);
+      if (patchRecord && movementKey) {
+        await patchRecord(
+          buildAtomicPatientMovementPatch({
+            updatedRecord,
+            movementKey,
+            sourceBedIds: [],
+          })
+        );
+        return;
+      }
+
+      await saveAndUpdate(updatedRecord);
     },
-    [movementKey, patchRecord, saveAndUpdate, withCurrentRecord]
+    [movementKey, patchRecord, recordRef, saveAndUpdate]
   );
 };

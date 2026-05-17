@@ -38,6 +38,7 @@ export interface PatientRowProps {
   currentDateString: string;
   onAction: (action: PatientRowAction, bedId: string, patient: PatientData) => void;
   readOnly?: boolean;
+  clinicalEditingDisabled?: boolean;
   actionMenuAlign?: RowMenuAlign;
   diagnosisMode?: DiagnosisMode;
   isSubRow?: boolean;

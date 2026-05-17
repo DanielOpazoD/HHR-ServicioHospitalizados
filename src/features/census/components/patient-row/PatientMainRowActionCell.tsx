@@ -5,6 +5,7 @@ import type { PatientMainRowActionCellProps } from '@/features/census/components
 export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> = ({
   isBlocked,
   readOnly,
+  clinicalEditingDisabled,
   align,
   showCmaAction = true,
   accessProfile = 'default',
@@ -32,6 +33,7 @@ export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> =
       onViewMedicalIndications={onViewMedicalIndications}
       onViewHistory={onViewHistory}
       readOnly={readOnly}
+      clinicalEditingDisabled={clinicalEditingDisabled}
       accessProfile={accessProfile}
       hasPatientIdentity={hasPatientIdentity}
       align={align}

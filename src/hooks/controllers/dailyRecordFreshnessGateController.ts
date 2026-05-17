@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/config/queryClient';
 import type { DailyRecordQueryResult } from '@/services/repositories/contracts/dailyRecordQueries';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
-import { getDailyRecordQueryKey } from '@/hooks/controllers/dailyRecordQueryController';
 
 export type DailyRecordFreshnessStatus =
   | 'fresh_remote_confirmed'
@@ -23,6 +23,7 @@ interface DailyRecordFreshnessState {
   confirmedResumeEpoch: number;
   lastRemoteConfirmedAt?: number;
   remoteHydratedNewerRecord: boolean;
+  blockedStartedAt?: number;
   refreshPromise?: Promise<DailyRecordQueryResult>;
 }
 
@@ -40,6 +41,7 @@ const freshnessByDate = new Map<string, DailyRecordFreshnessState>();
 const freshnessListeners = new Set<() => void>();
 
 const getNow = (): number => Date.now();
+const getDailyRecordFreshnessQueryKey = (date: string) => queryKeys.dailyRecord.byDate(date);
 
 const notifyFreshnessListeners = (): void => {
   freshnessListeners.forEach(listener => listener());
@@ -98,6 +100,7 @@ export const markDailyRecordTabVisible = (
     if (state.status !== 'refreshing_on_resume') {
       state.status = 'stale_due_to_inactivity';
       state.remoteHydratedNewerRecord = false;
+      state.blockedStartedAt = now;
     }
   });
   notifyFreshnessListeners();
@@ -132,10 +135,26 @@ export const markDailyRecordRemoteConfirmed = (
   }
 ): void => {
   const state = getOrCreateFreshnessState(date);
+  const confirmedAt = params.confirmedAt ?? getNow();
+  const blockedForMs =
+    typeof state.blockedStartedAt === 'number' ? confirmedAt - state.blockedStartedAt : undefined;
   state.confirmedResumeEpoch = resumeEpoch;
-  state.lastRemoteConfirmedAt = params.confirmedAt ?? getNow();
+  state.lastRemoteConfirmedAt = confirmedAt;
   state.remoteHydratedNewerRecord = false;
+  state.blockedStartedAt = undefined;
   setFreshnessStatus(state, 'fresh_remote_confirmed');
+  if (typeof blockedForMs === 'number') {
+    dailyRecordObservability.recordEvent('daily_record_resume_refresh_completed', 'success', {
+      issues: [],
+      context: {
+        date,
+        source: params.source,
+        resumeEpoch,
+        remoteLastUpdated: params.remoteLastUpdated,
+        blockedForMs,
+      },
+    });
+  }
 };
 
 const requiresRemoteFreshness = (date: string): boolean => {
@@ -178,7 +197,9 @@ export const ensureDailyRecordRemoteFreshness = ({
     typeof state.lastRemoteConfirmedAt === 'number' &&
     now - state.lastRemoteConfirmedAt >= DAILY_RECORD_RESUME_STALE_THRESHOLD_MS;
   if (!requiresRemoteFreshness(date) && !hasExpiredRemoteConfirmation) {
-    const current = queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date));
+    const current = queryClient.getQueryData<DailyRecordQueryResult>(
+      getDailyRecordFreshnessQueryKey(date)
+    );
     return Promise.resolve(current || queryFn());
   }
 
@@ -202,10 +223,11 @@ export const ensureDailyRecordRemoteFreshness = ({
     );
   }
 
+  state.blockedStartedAt = state.blockedStartedAt ?? now;
   setFreshnessStatus(state, 'refreshing_on_resume');
   const refreshPromise = queryClient
     .fetchQuery({
-      queryKey: getDailyRecordQueryKey(date),
+      queryKey: getDailyRecordFreshnessQueryKey(date),
       queryFn,
       staleTime: 0,
     })
@@ -221,6 +243,8 @@ export const ensureDailyRecordRemoteFreshness = ({
             resumeEpoch,
             consistencyState: result.runtime.consistencyState,
             conflictKind: result.runtime.conflictSummary?.kind,
+            blockedForMs:
+              typeof state.blockedStartedAt === 'number' ? getNow() - state.blockedStartedAt : 0,
           },
         });
         throw new DailyRecordFreshnessGateError(
@@ -228,9 +252,12 @@ export const ensureDailyRecordRemoteFreshness = ({
         );
       }
 
+      const blockedForMs =
+        typeof state.blockedStartedAt === 'number' ? getNow() - state.blockedStartedAt : 0;
       state.confirmedResumeEpoch = resumeEpoch;
       state.lastRemoteConfirmedAt = now;
       state.remoteHydratedNewerRecord = didDailyRecordFreshnessHydrateNewerRemote(result);
+      state.blockedStartedAt = undefined;
       setFreshnessStatus(state, 'fresh_remote_confirmed');
 
       dailyRecordObservability.recordEvent('daily_record_resume_refresh_completed', 'success', {
@@ -241,6 +268,7 @@ export const ensureDailyRecordRemoteFreshness = ({
           resumeEpoch,
           consistencyState: result.runtime.consistencyState,
           sourceOfTruth: result.runtime.sourceOfTruth,
+          blockedForMs,
         },
       });
 

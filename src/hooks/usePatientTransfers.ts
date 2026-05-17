@@ -101,7 +101,7 @@ export const usePatientTransfers = (
 
   const updateTransfer: UpdateTransferAction = useCallback(
     (id, updates) => {
-      executeTransferMutation(
+      void executeTransferMutation(
         (record, movementId) =>
           resolveUpdateTransferMovement({
             record,
@@ -109,21 +109,21 @@ export const usePatientTransfers = (
             updates,
           }),
         id
-      );
+      ).catch(() => undefined);
     },
     [executeTransferMutation]
   );
 
   const deleteTransfer: DeleteTransferAction = useCallback(
     id => {
-      executeTransferMutation(
+      void executeTransferMutation(
         (record, movementId) =>
           resolveDeleteTransferMovement({
             record,
             id: movementId,
           }),
         id
-      );
+      ).catch(() => undefined);
     },
     [executeTransferMutation]
   );
@@ -132,7 +132,7 @@ export const usePatientTransfers = (
     id => {
       withCurrentRecord(currentRecord => {
         const transfer = selectTransferUndoMovement(currentRecord, id);
-        executeMovementUndo({
+        void executeMovementUndo({
           kind: 'transfer',
           movement: transfer,
           record: currentRecord,
@@ -143,7 +143,7 @@ export const usePatientTransfers = (
               bedId,
               updatedBed,
             }),
-        });
+        }).catch(() => undefined);
       });
     },
     [executeMovementUndo, withCurrentRecord]

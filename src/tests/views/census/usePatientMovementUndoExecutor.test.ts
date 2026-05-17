@@ -5,7 +5,7 @@ import { usePatientMovementUndoExecutor } from '@/features/census/hooks/usePatie
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 
 describe('usePatientMovementUndoExecutor', () => {
-  it('applies undo and persists updated record on success', () => {
+  it('applies undo and persists updated record on success', async () => {
     const record = DataFactory.createMockDailyRecord('2025-01-01');
     const saveAndUpdate = vi.fn();
     const notifyUndoError = vi.fn();
@@ -20,7 +20,7 @@ describe('usePatientMovementUndoExecutor', () => {
       })
     );
 
-    result.current({
+    await result.current({
       kind: 'discharge',
       movement: {
         id: 'd-1',
@@ -36,6 +36,48 @@ describe('usePatientMovementUndoExecutor', () => {
     expect(notifyUndoError).not.toHaveBeenCalled();
     expect(applyUndoRecord).toHaveBeenCalledTimes(1);
     expect(saveAndUpdate).toHaveBeenCalledWith(updatedRecord);
+  });
+
+  it('fires undo success only after persistence accepts the change', async () => {
+    const record = DataFactory.createMockDailyRecord('2025-01-01');
+    const deferred = Promise.withResolvers<void>();
+    const saveAndUpdate = vi.fn().mockReturnValue(deferred.promise);
+    const notifyUndoError = vi.fn();
+    const onSuccess = vi.fn();
+    const updatedRecord = DataFactory.createMockDailyRecord('2025-01-02');
+    const applyUndoRecord = vi.fn(() => updatedRecord);
+
+    const { result } = renderHook(() =>
+      usePatientMovementUndoExecutor({
+        createEmptyPatient,
+        saveAndUpdate,
+        notifyUndoError,
+      })
+    );
+
+    const execution = result.current({
+      kind: 'discharge',
+      movement: {
+        id: 'd-1',
+        bedId: 'R1',
+        bedName: 'R1',
+        patientName: 'Paciente X',
+        originalData: DataFactory.createMockPatient('R1', { patientName: 'Restaurado' }),
+      },
+      record,
+      applyUndoRecord,
+      onSuccess,
+    });
+
+    await Promise.resolve();
+    expect(onSuccess).not.toHaveBeenCalled();
+
+    deferred.resolve();
+    await execution;
+    expect(onSuccess).toHaveBeenCalledWith({
+      movement: expect.objectContaining({ id: 'd-1' }),
+      updatedBed: expect.objectContaining({ patientName: 'Restaurado' }),
+    });
   });
 
   it('notifies undo error when restore validation fails', () => {

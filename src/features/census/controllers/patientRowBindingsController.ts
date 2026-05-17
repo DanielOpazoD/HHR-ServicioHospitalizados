@@ -27,6 +27,7 @@ export interface BuildPatientRowBindingsParams {
   data: PatientData;
   currentDateString: string;
   readOnly: boolean;
+  clinicalEditingDisabled?: boolean;
   actionMenuAlign: RowMenuAlign;
   diagnosisMode: DiagnosisMode;
   isSubRow: boolean;
@@ -76,6 +77,7 @@ export const buildPatientMainRowBindings = ({
   data,
   currentDateString,
   readOnly,
+  clinicalEditingDisabled = false,
   actionMenuAlign,
   diagnosisMode,
   role,
@@ -92,6 +94,7 @@ export const buildPatientMainRowBindings = ({
   | 'data'
   | 'currentDateString'
   | 'readOnly'
+  | 'clinicalEditingDisabled'
   | 'actionMenuAlign'
   | 'diagnosisMode'
   | 'role'
@@ -118,6 +121,7 @@ export const buildPatientMainRowBindings = ({
     data,
     currentDateString,
     readOnly,
+    clinicalEditingDisabled,
     actionMenuAlign,
     diagnosisMode,
     accessProfile,
@@ -131,6 +135,7 @@ export const buildPatientSubRowBindings = ({
   data,
   currentDateString,
   readOnly,
+  clinicalEditingDisabled = false,
   diagnosisMode,
   accessProfile,
   style,
@@ -140,6 +145,7 @@ export const buildPatientSubRowBindings = ({
   | 'data'
   | 'currentDateString'
   | 'readOnly'
+  | 'clinicalEditingDisabled'
   | 'diagnosisMode'
   | 'accessProfile'
   | 'style'
@@ -149,6 +155,7 @@ export const buildPatientSubRowBindings = ({
     data,
     currentDateString,
     readOnly,
+    clinicalEditingDisabled,
     diagnosisMode,
     accessProfile,
     style,
@@ -192,6 +199,7 @@ export const buildPatientRowBindings = ({
   data,
   currentDateString,
   readOnly,
+  clinicalEditingDisabled = false,
   actionMenuAlign,
   diagnosisMode,
   isSubRow,
@@ -216,6 +224,7 @@ export const buildPatientRowBindings = ({
       data,
       currentDateString,
       readOnly,
+      clinicalEditingDisabled,
       actionMenuAlign,
       diagnosisMode,
       role,
@@ -230,6 +239,7 @@ export const buildPatientRowBindings = ({
       data,
       currentDateString,
       readOnly,
+      clinicalEditingDisabled,
       diagnosisMode,
       accessProfile,
       style,

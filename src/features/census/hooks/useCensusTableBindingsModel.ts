@@ -12,6 +12,7 @@ import { useDeferredCensusEnhancement } from '@/features/census/hooks/useDeferre
 interface UseCensusTableBindingsModelParams {
   currentDateString: string;
   readOnly?: boolean;
+  clinicalEditingDisabled?: boolean;
   accessProfile?: CensusAccessProfile;
 }
 
@@ -33,6 +34,7 @@ const buildDischargedRuts = (
 export const useCensusTableBindingsModel = ({
   currentDateString,
   readOnly = false,
+  clinicalEditingDisabled = false,
   accessProfile = 'default',
 }: UseCensusTableBindingsModelParams) => {
   const { remoteSyncStatus } = useAuth();
@@ -66,6 +68,7 @@ export const useCensusTableBindingsModel = ({
     return buildCensusTableLayoutBindings({
       currentDateString,
       readOnly,
+      clinicalEditingDisabled,
       columns: tableViewModel.columns,
       isEditMode: tableViewModel.isEditMode,
       canDeleteRecord: tableViewModel.canDeleteRecord,
@@ -87,6 +90,7 @@ export const useCensusTableBindingsModel = ({
   }, [
     clinicalDocumentPresenceByBedId,
     currentDateString,
+    clinicalEditingDisabled,
     dischargedRuts,
     readOnly,
     accessProfile,

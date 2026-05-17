@@ -115,7 +115,7 @@ export const usePatientDischarges = (
 
   const updateDischarge: UpdateDischargeAction = useCallback(
     (id, status, dischargeType, dischargeTypeOther, time, movementDate, ieehData) => {
-      executeDischargeMutation(
+      void executeDischargeMutation(
         (record, movementId) =>
           resolveUpdateDischargeMovement({
             record,
@@ -128,21 +128,21 @@ export const usePatientDischarges = (
             ieehData,
           }),
         id
-      );
+      ).catch(() => undefined);
     },
     [executeDischargeMutation]
   );
 
   const deleteDischarge: DeleteDischargeAction = useCallback(
     id => {
-      executeDischargeMutation(
+      void executeDischargeMutation(
         (record, movementId) =>
           resolveDeleteDischargeMovement({
             record,
             id: movementId,
           }),
         id
-      );
+      ).catch(() => undefined);
     },
     [executeDischargeMutation]
   );
@@ -151,7 +151,7 @@ export const usePatientDischarges = (
     id => {
       withCurrentRecord(currentRecord => {
         const discharge = selectDischargeUndoMovement(currentRecord, id);
-        executeMovementUndo({
+        void executeMovementUndo({
           kind: 'discharge',
           movement: discharge,
           record: currentRecord,
@@ -174,7 +174,7 @@ export const usePatientDischarges = (
               bedId,
               updatedBed,
             }),
-        });
+        }).catch(() => undefined);
       });
     },
     [executeMovementUndo, logDischargeUndoEntry, withCurrentRecord]
@@ -189,10 +189,10 @@ export const usePatientDischarges = (
         if (updatedRecord === currentRecord) return;
 
         if (patchRecord) {
-          patchRecord({
+          void patchRecord({
             discharges: updatedRecord.discharges,
             cma: updatedRecord.cma,
-          });
+          }).catch(() => undefined);
           return;
         }
 
