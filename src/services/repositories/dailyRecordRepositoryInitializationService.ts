@@ -1,15 +1,19 @@
 import { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import {
   getForDate,
   getForDateWithMeta,
 } from '@/services/repositories/dailyRecordRepositoryReadService';
-import { save } from '@/services/repositories/dailyRecordRepositoryWriteService';
+import {
+  save,
+  updatePartialDetailed,
+} from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import {
-  assignCarriedPatientToRecord,
   buildInitializedDayRecord,
   enrichInitializationRecordFromCopySource,
+  preparePatientForCarryover,
 } from '@/services/repositories/dailyRecordInitializationSupport';
 import {
   createCopySourceInitializationSeed,
@@ -242,8 +246,21 @@ export const copyPatientToDateDetailed = async (
     throw new Error(`No patient found in bed ${command.sourceBedId} on ${command.sourceDate}`);
   }
 
-  const targetRecord = await resolveTargetRecordForCopy(command.targetDate);
-  await save(assignCarriedPatientToRecord(targetRecord, command.targetBedId, sourcePatient));
+  await resolveTargetRecordForCopy(command.targetDate);
+  const carriedPatientPatch = {
+    [`beds.${command.targetBedId}`]: preparePatientForCarryover(sourcePatient, command.targetBedId),
+  } as DailyRecordPatch;
+  const writeResult = await updatePartialDetailed(command.targetDate, carriedPatientPatch);
+  if (
+    writeResult.blockingError ||
+    writeResult.outcome === 'blocked' ||
+    writeResult.outcome === 'unrecoverable'
+  ) {
+    throw (
+      writeResult.blockingError ??
+      new Error(writeResult.userSafeMessage || 'No fue posible sincronizar la copia del paciente.')
+    );
+  }
 
   return {
     ...createCopyPatientResult({

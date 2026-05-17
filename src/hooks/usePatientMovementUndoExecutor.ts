@@ -1,11 +1,14 @@
 import { useCallback } from 'react';
 import type {
+  ApplyDailyRecordPatch,
   DailyRecord,
   PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
 import {
+  buildAtomicPatientMovementPatch,
   resolveUndoPatientMovement,
+  type AtomicPatientMovementListKey,
   UndoMovementKind,
   UndoPatientMovementErrorCode,
   UndoMovementDescriptor,
@@ -21,6 +24,8 @@ interface UndoApplyParams {
 interface UsePatientMovementUndoExecutorParams {
   createEmptyPatient: (bedId: string) => PatientData;
   saveAndUpdate: PersistDailyRecord;
+  patchRecord?: ApplyDailyRecordPatch;
+  movementKey?: AtomicPatientMovementListKey;
   notifyUndoError: (
     kind: UndoMovementKind,
     code: UndoPatientMovementErrorCode,
@@ -39,6 +44,8 @@ interface ExecuteUndoParams {
 export const usePatientMovementUndoExecutor = ({
   createEmptyPatient,
   saveAndUpdate,
+  patchRecord,
+  movementKey,
   notifyUndoError,
 }: UsePatientMovementUndoExecutorParams) => {
   return useCallback(
@@ -69,8 +76,19 @@ export const usePatientMovementUndoExecutor = ({
         updatedBed: resolution.value.updatedBed,
       });
       onSuccess?.({ movement, updatedBed: resolution.value.updatedBed });
-      saveAndUpdate(nextRecord);
+      if (patchRecord && movementKey) {
+        void patchRecord(
+          buildAtomicPatientMovementPatch({
+            updatedRecord: nextRecord,
+            movementKey,
+            sourceBedIds: [movement.bedId],
+          })
+        );
+        return;
+      }
+
+      void saveAndUpdate(nextRecord);
     },
-    [createEmptyPatient, notifyUndoError, saveAndUpdate]
+    [createEmptyPatient, movementKey, notifyUndoError, patchRecord, saveAndUpdate]
   );
 };

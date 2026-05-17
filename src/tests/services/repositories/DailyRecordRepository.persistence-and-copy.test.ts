@@ -97,25 +97,78 @@ describe('DailyRecordRepository persistence and copy flows', () => {
         }),
       },
     };
+    const targetRecord = {
+      ...mockRecord,
+      date: targetDate,
+      beds: {
+        R2: buildPatient({ bedId: 'R2', patientName: '' }),
+      },
+      lastUpdated: `${targetDate}T00:00:00.000Z`,
+    };
 
     indexedDbFacadeMock.getRecordForDate.mockImplementation(async date => {
       if (date === sourceDate) return sourceRecord;
+      if (date === targetDate) return targetRecord;
       return null;
     });
 
     await Repository.copyPatientToDate(sourceDate, 'R1', targetDate, 'R2');
 
-    expect(indexedDbFacadeMock.saveRecord).toHaveBeenCalledWith(
+    expect(firestoreMock.updateRecordPartial).toHaveBeenCalledWith(
+      targetDate,
       expect.objectContaining({
-        date: targetDate,
-        beds: expect.objectContaining({
-          R2: expect.objectContaining({
-            patientName: 'Patient X',
-            cudyr: undefined,
-          }),
+        'beds.R2': expect.objectContaining({
+          patientName: 'Patient X',
+          cudyr: undefined,
         }),
-      })
+      }),
+      targetRecord.lastUpdated
     );
+  });
+
+  it('copies patient to the target day through a partial Firebase update', async () => {
+    const sourceDate = '2024-12-30';
+    const targetDate = '2024-12-31';
+    const sourceRecord = {
+      ...mockRecord,
+      date: sourceDate,
+      beds: {
+        R1: buildPatient({
+          patientName: 'Patient X',
+          rut: '11.111.111-1',
+        }),
+      },
+    };
+    const targetRecord = {
+      ...mockRecord,
+      date: targetDate,
+      beds: {
+        R2: buildPatient({ bedId: 'R2', patientName: '' }),
+      },
+      lastUpdated: `${targetDate}T00:00:00.000Z`,
+    };
+
+    indexedDbFacadeMock.getRecordForDate.mockImplementation(async date => {
+      if (date === sourceDate) return sourceRecord;
+      if (date === targetDate) return targetRecord;
+      return null;
+    });
+
+    await Repository.copyPatientToDateDetailed(sourceDate, 'R1', targetDate, 'R2');
+
+    expect(firestoreMock.updateRecordPartial).toHaveBeenCalledWith(
+      targetDate,
+      expect.objectContaining({
+        'beds.R2': expect.objectContaining({
+          bedId: 'R2',
+          patientName: 'Patient X',
+          rut: '11.111.111-1',
+          cudyr: undefined,
+        }),
+      }),
+      targetRecord.lastUpdated
+    );
+    expect(firestoreMock.saveRecordToFirestore).not.toHaveBeenCalled();
   });
 
   it('returns copy metadata through copyPatientToDateDetailed', async () => {
@@ -131,9 +184,18 @@ describe('DailyRecordRepository persistence and copy flows', () => {
         } as unknown as Partial<PatientData>),
       },
     };
+    const targetRecord = {
+      ...mockRecord,
+      date: targetDate,
+      beds: {
+        R2: buildPatient({ bedId: 'R2', patientName: '' }),
+      },
+      lastUpdated: `${targetDate}T00:00:00.000Z`,
+    };
 
     indexedDbFacadeMock.getRecordForDate.mockImplementation(async date => {
       if (date === sourceDate) return sourceRecord;
+      if (date === targetDate) return targetRecord;
       return null;
     });
 
