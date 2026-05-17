@@ -34,18 +34,12 @@ const resolveFreshnessMessageLevel = (
   if (status === 'blocked_until_remote_check') {
     return 'warning';
   }
-  if (status === 'stale_due_to_inactivity' || status === 'refreshing_on_resume') {
-    return 'subtle';
-  }
   return 'none';
 };
 
 const resolveFreshnessUserMessage = (status: DailyRecordFreshnessStatus): string | undefined => {
   if (status === 'blocked_until_remote_check') {
-    return 'Estamos sincronizando los últimos datos. Intente nuevamente en unos segundos.';
-  }
-  if (status === 'stale_due_to_inactivity' || status === 'refreshing_on_resume') {
-    return 'Actualizando censo con los últimos datos disponibles...';
+    return 'Estamos actualizando los datos. Intente nuevamente en unos segundos.';
   }
   return undefined;
 };

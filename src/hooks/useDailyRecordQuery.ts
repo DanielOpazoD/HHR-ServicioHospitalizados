@@ -19,6 +19,7 @@ import {
   shouldUseDailyRecordRealtimeSync,
 } from '@/hooks/controllers/dailyRecordQueryController';
 import {
+  getDailyRecordLastRemoteConfirmedAt,
   markDailyRecordRemoteConfirmed,
   markDailyRecordStaleBaseline,
   markDailyRecordTabHidden,
@@ -246,12 +247,14 @@ export const usePatchDailyRecordMutation = (date: string) => {
       const previousRecordBeforeFreshness = queryClient.getQueryData<DailyRecordQueryResult>(
         getDailyRecordQueryKey(date)
       )?.record;
+      const remoteConfirmedAtBeforeMutation = getDailyRecordLastRemoteConfirmedAt(date);
       const freshness = await ensureFreshClinicalPatchMutation(date, { dailyRecord, queryClient });
       assertHydratedRemotePatchCanProceed({
         date,
         attemptedPatch: partial,
         previousRecord: previousRecordBeforeFreshness,
         freshness,
+        remoteConfirmedAtBeforeMutation,
       });
 
       await queryClient.cancelQueries({

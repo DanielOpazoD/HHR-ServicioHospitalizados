@@ -123,7 +123,7 @@ const buildRecord = (date: string, patientName: string, pathology: string): Dail
     handoffNightChecklist: {},
   }) as unknown as DailyRecord;
 
-describeUiEmulator('UI sync flow diagnostic locks with Firestore emulator', () => {
+describeUiEmulator('UI sync flow silent refresh with Firestore emulator', () => {
   let testEnv: RulesTestEnvironment;
   const unmounts: Array<() => void> = [];
 
@@ -173,7 +173,7 @@ describeUiEmulator('UI sync flow diagnostic locks with Firestore emulator', () =
     await testEnv.cleanup();
   });
 
-  it('blocks same diagnostic group edits after a realtime snapshot hydrates a newer Firebase record', async () => {
+  it('allows a new diagnostic group edit after a realtime snapshot confirms the refreshed record', async () => {
     const date = TODAY_ISO;
     const seed = buildRecord(date, 'Paciente Diagnostico', 'Diag Inicial');
     const updatedByClientA = {
@@ -224,19 +224,12 @@ describeUiEmulator('UI sync flow diagnostic locks with Firestore emulator', () =
       expect(getDailyRecordClinicalFieldLocksByBedId(date)?.R1?.diagnosis).toBe(true);
     });
 
-    let rejectedError: unknown;
     await act(async () => {
-      try {
-        await resultRef.current.patchRecord({
-          'beds.R1.cie10Code': 'I10',
-        });
-      } catch (error) {
-        rejectedError = error;
-      }
+      await resultRef.current.patchRecord({
+        'beds.R1.cie10Code': 'I10',
+      });
     });
 
-    expect(rejectedError).toBeInstanceOf(Error);
-    expect(String((rejectedError as Error).message)).toContain('Actualizado recién');
     expect(mockNotifyWarning).not.toHaveBeenCalled();
 
     let remoteSnap: { data: () => Record<string, unknown> | undefined } | undefined;
@@ -247,6 +240,6 @@ describeUiEmulator('UI sync flow diagnostic locks with Firestore emulator', () =
       beds?: Record<string, { cie10Code?: string; pathology?: string }>;
     };
     expect(remoteData?.beds?.R1?.pathology).toBe('Diag confirmado por cliente A');
-    expect(remoteData?.beds?.R1?.cie10Code).toBeUndefined();
+    expect(remoteData?.beds?.R1?.cie10Code).toBe('I10');
   });
 });

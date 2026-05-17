@@ -71,8 +71,7 @@ export const CensusTableBody: React.FC<
         const resolved = resolvedOccupiedMap.get(row.id);
         if (!resolved) return null;
         const clinicalFieldLocks = clinicalFieldLocksByBedId?.[row.bed.id];
-        const rowClinicalEditingDisabled =
-          clinicalEditingDisabled || Boolean(clinicalFieldLocks?.allClinical);
+        const rowClinicalEditingDisabled = clinicalEditingDisabled;
 
         return (
           <PatientRow
@@ -91,7 +90,7 @@ export const CensusTableBody: React.FC<
             role={role}
             accessProfile={accessProfile}
             indicators={resolved.indicators}
-            draggable={!readOnly && !row.isSubRow && !!dragDrop && !clinicalFieldLocks?.allClinical}
+            draggable={!readOnly && !row.isSubRow && !!dragDrop}
             isDragging={dragDrop?.state.dragSourceBedId === row.bed.id}
             onDragStart={dragDrop?.patientHandlers.onDragStart(row.bed.id)}
             onDragEnd={dragDrop?.patientHandlers.onDragEnd}

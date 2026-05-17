@@ -9,6 +9,7 @@ import {
   DailyRecordFreshnessGateError,
   ensureDailyRecordRemoteFreshness,
   getDailyRecordClinicalFieldLocksByBedId,
+  getDailyRecordLastRemoteConfirmedAt,
 } from '@/hooks/controllers/dailyRecordFreshnessGateController';
 import { didDailyRecordFreshnessHydrateNewerRemote } from '@/hooks/controllers/dailyRecordFreshnessHydrationController';
 import { PENDING_DAILY_RECORD_PATCH_TTL_MS } from '@/hooks/controllers/dailyRecordPendingPatchController';
@@ -96,11 +97,13 @@ export const assertHydratedRemotePatchCanProceed = ({
   attemptedPatch,
   previousRecord,
   freshness,
+  remoteConfirmedAtBeforeMutation,
 }: {
   date: string;
   attemptedPatch: DailyRecordPatch;
   previousRecord: DailyRecord | null | undefined;
   freshness: DailyRecordQueryResult;
+  remoteConfirmedAtBeforeMutation?: number;
 }): void => {
   const lockDecision = resolveDailyRecordClinicalPatchLockDecision(
     date,
@@ -116,22 +119,32 @@ export const assertHydratedRemotePatchCanProceed = ({
     throw new DailyRecordFreshnessGateError(lockDecision.message);
   }
 
-  if (!didDailyRecordFreshnessHydrateNewerRemote(freshness)) {
+  const didHydrateNewerRemote = didDailyRecordFreshnessHydrateNewerRemote(freshness);
+  if (!didHydrateNewerRemote) {
     return;
   }
 
-  const risk = classifyHydratedRemotePatchRisk({
-    attemptedPatch,
-    previousRecord,
-    hydratedRecord: freshness.record,
-  });
-  if (!isHydratedRemotePatchRiskBlocking(risk)) {
-    return;
+  const remoteConfirmedAtAfterFreshness = getDailyRecordLastRemoteConfirmedAt(date);
+  const mutationStartedBeforeNewConfirmation =
+    typeof remoteConfirmedAtAfterFreshness === 'number' &&
+    remoteConfirmedAtAfterFreshness !== remoteConfirmedAtBeforeMutation;
+  if (mutationStartedBeforeNewConfirmation) {
+    const risk = classifyHydratedRemotePatchRisk({
+      attemptedPatch,
+      previousRecord,
+      hydratedRecord: freshness.record,
+    });
+    if (!isHydratedRemotePatchRiskBlocking(risk)) {
+      return;
+    }
+
+    throw new DailyRecordFreshnessGateError(
+      'El censo se actualizó hace un momento. Intente nuevamente para continuar.',
+      { presentation: 'silent' }
+    );
   }
 
-  throw new DailyRecordFreshnessGateError(
-    'Este dato se actualizó hace un momento. Intente nuevamente para editar.'
-  );
+  return;
 };
 
 export const ensureFreshClinicalSaveMutation = async (

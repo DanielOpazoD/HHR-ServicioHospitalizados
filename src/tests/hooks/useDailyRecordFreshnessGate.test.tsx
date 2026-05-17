@@ -54,7 +54,7 @@ describe('daily record remote freshness gate', () => {
     vi.clearAllMocks();
   });
 
-  it('exposes a quiet UI blocking state after stale resume until Firebase is confirmed', async () => {
+  it('blocks clinical editing silently after stale resume until the current record is confirmed', async () => {
     const { result } = renderHook(() => useDailyRecordFreshnessUi(date));
 
     expect(result.current.status).toBe('fresh_remote_confirmed');
@@ -71,10 +71,8 @@ describe('daily record remote freshness gate', () => {
     });
     expect(result.current.isClinicalEditingBlocked).toBe(true);
     expect(result.current.isQuietlyRefreshing).toBe(true);
-    expect(result.current.messageLevel).toBe('subtle');
-    expect(result.current.userMessage).toBe(
-      'Actualizando censo con los últimos datos disponibles...'
-    );
+    expect(result.current.messageLevel).toBe('none');
+    expect(result.current.userMessage).toBeUndefined();
 
     act(() => {
       markDailyRecordRemoteConfirmed(date, {
@@ -256,7 +254,7 @@ describe('daily record remote freshness gate', () => {
     expect(dailyRecord.updatePartialDetailed).not.toHaveBeenCalled();
   });
 
-  it('blocks a same-field patch after hydrating a newer remote record', async () => {
+  it('cancels the stale same-field attempt but allows a new edit after the refreshed record is visible', async () => {
     const dailyRecord = buildMockDailyRecordRepository();
     const queryClient = createTestQueryClient();
     const localRecord = DataFactory.createMockDailyRecord(date);
@@ -335,9 +333,20 @@ describe('daily record remote freshness gate', () => {
       } as never)
     ).rejects.toMatchObject({
       name: 'DailyRecordFreshnessGateError',
-      message: 'Actualizado recién. Intente nuevamente para editar.',
+      message: 'El censo se actualizó hace un momento. Intente nuevamente para continuar.',
+      presentation: 'silent',
     });
     expect(dailyRecord.updatePartialDetailed).not.toHaveBeenCalled();
+
+    await result.current.mutateAsync({
+      'beds.R1.pathology': 'Diagnostico usuario despues de ver remoto',
+    } as never);
+    expect(dailyRecord.updatePartialDetailed).toHaveBeenCalledWith(
+      date,
+      expect.objectContaining({
+        'beds.R1.pathology': 'Diagnostico usuario despues de ver remoto',
+      })
+    );
   });
 
   it('requires a new remote confirmation when the previous freshness check is older than the threshold', async () => {

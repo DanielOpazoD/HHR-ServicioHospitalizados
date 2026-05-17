@@ -142,28 +142,10 @@ export const registerDailyRecordClinicalFieldPauses = (
   locksByBedId: HydratedRemoteClinicalFieldLocksByBedId,
   createdAt: number
 ): void => {
-  const next: Record<
-    string,
-    Partial<Record<DailyRecordClinicalFieldGroup, ClinicalFieldPauseState>>
-  > = {};
-  const hardLockedBeds = new Set<string>();
-
-  Object.entries(locksByBedId).forEach(([bedId, locks]) => {
-    if (locks.allClinical) {
-      hardLockedBeds.add(bedId);
-      return;
-    }
-    (['diagnosis', 'status', 'specialty', 'upc', 'surgicalComplication'] as const).forEach(
-      fieldGroup => {
-        if (!locks[fieldGroup]) return;
-        next[bedId] ??= {};
-        next[bedId][fieldGroup] = { createdAt, acknowledged: false };
-      }
-    );
-  });
-
-  pausesByDate.set(date, next);
-  hardLockedBedsByDate.set(date, hardLockedBeds);
+  void locksByBedId;
+  void createdAt;
+  pausesByDate.delete(date);
+  hardLockedBedsByDate.delete(date);
 };
 
 export const getDailyRecordClinicalFieldPause = (
@@ -184,7 +166,6 @@ export const acknowledgeDailyRecordClinicalFieldPause = (
   bedId: string,
   fieldGroup: DailyRecordClinicalFieldGroup
 ): 'acknowledged' | 'already_acknowledged' | 'hard_locked' | 'none' => {
-  if (hardLockedBedsByDate.get(date)?.has(bedId)) return 'hard_locked';
   const state = pausesByDate.get(date)?.[bedId]?.[fieldGroup];
   if (!state) return 'none';
   if (state.acknowledged) return 'already_acknowledged';
@@ -201,13 +182,6 @@ export const resolveDailyRecordClinicalPatchPauseDecision = (
   for (const path of Object.keys(patch)) {
     const parsed = parseBedPatchPath(path);
     if (!parsed?.fieldGroup) continue;
-    if (hardLockedBedsByDate.get(date)?.has(parsed.bedId)) {
-      return {
-        kind: 'hard_lock',
-        bedId: parsed.bedId,
-        message: DAILY_RECORD_CONTEXT_RESET_MESSAGE,
-      };
-    }
     const pause = getDailyRecordClinicalFieldPause(date, parsed.bedId, parsed.fieldGroup, now);
     if (!pause || pause.acknowledged) continue;
     if (isEmptyBedIdentityActivationPatch(patch, parsed.bedId, options.previousRecord)) continue;
@@ -229,19 +203,7 @@ export const resolveDailyRecordClinicalPatchLockDecision = (
   now: number = Date.now(),
   options: ResolveClinicalPatchDecisionOptions = {}
 ): DailyRecordClinicalPatchPauseDecision => {
-  for (const path of Object.keys(patch)) {
-    const parsed = parseBedPatchPath(path);
-    if (!parsed) continue;
-    const locks = locksByBedId[parsed.bedId];
-    if (!locks) continue;
-    if (locks.allClinical) {
-      return {
-        kind: 'hard_lock',
-        bedId: parsed.bedId,
-        message: DAILY_RECORD_CONTEXT_RESET_MESSAGE,
-      };
-    }
-  }
+  void locksByBedId;
   return resolveDailyRecordClinicalPatchPauseDecision(date, patch, now, options);
 };
 

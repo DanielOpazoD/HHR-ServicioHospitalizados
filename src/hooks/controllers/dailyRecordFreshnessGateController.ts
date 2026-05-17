@@ -295,7 +295,7 @@ export const ensureDailyRecordRemoteFreshness = ({
         );
       }
 
-      const completedAt = getNow();
+      const completedAt = now;
       const blockedForMs =
         recordClinicalInputsBlockCompleted(
           date,
@@ -305,7 +305,7 @@ export const ensureDailyRecordRemoteFreshness = ({
           resumeEpoch
         ) ?? 0;
       state.confirmedResumeEpoch = resumeEpoch;
-      state.lastRemoteConfirmedAt = now;
+      state.lastRemoteConfirmedAt = completedAt;
       state.remoteHydratedNewerRecord = didDailyRecordFreshnessHydrateNewerRemote(result);
       state.clinicalFieldLocksByBedId = state.remoteHydratedNewerRecord
         ? buildHydratedRemoteClinicalFieldLocks({
