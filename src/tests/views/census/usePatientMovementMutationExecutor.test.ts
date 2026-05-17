@@ -68,4 +68,42 @@ describe('usePatientMovementMutationExecutor', () => {
     await execution;
     expect(settled).toBe(true);
   });
+
+  it('persists movement mutations through an atomic movement patch when patchRecord is available', async () => {
+    const saveAndUpdate = vi.fn();
+    const patchRecord = vi.fn().mockResolvedValue(undefined);
+    const record = DataFactory.createMockDailyRecord('2025-01-01', {
+      discharges: [
+        DataFactory.createMockDischarge({ id: 'd-1', status: 'Vivo', time: '08:00' }),
+        DataFactory.createMockDischarge({ id: 'd-2', status: 'Vivo', time: '09:00' }),
+      ],
+      transfers: [DataFactory.createMockTransfer({ id: 't-untouched' })],
+    });
+    const recordRef = { current: record };
+    const { result } = renderHook(() =>
+      usePatientMovementMutationExecutor({
+        recordRef,
+        saveAndUpdate,
+        patchRecord,
+        movementKey: 'discharges',
+      })
+    );
+
+    await result.current(currentRecord => ({
+      ...currentRecord,
+      discharges: currentRecord.discharges.map(discharge =>
+        discharge.id === 'd-2' ? { ...discharge, time: '10:30' } : discharge
+      ),
+    }));
+
+    expect(saveAndUpdate).not.toHaveBeenCalled();
+    expect(patchRecord).toHaveBeenCalledWith({
+      discharges: [
+        expect.objectContaining({ id: 'd-1', time: '08:00' }),
+        expect.objectContaining({ id: 'd-2', time: '10:30' }),
+      ],
+    });
+    expect(patchRecord.mock.calls[0]?.[0]).not.toHaveProperty('transfers');
+    expect(patchRecord.mock.calls[0]?.[0]).not.toHaveProperty('cma');
+  });
 });
