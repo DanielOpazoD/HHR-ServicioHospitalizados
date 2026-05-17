@@ -179,4 +179,59 @@ describe('dailyRecordHydratedRemotePatchRiskController', () => {
       })
     ).toBe('episode_changed');
   });
+
+  it('allows movement patches when hydration did not change movement lists or source bed', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    previousRecord.beds.R1 = DataFactory.createMockPatient('R1', {
+      patientName: 'Paciente Alta',
+      rut: '12.345.678-9',
+      clinicalEpisodeId: 'episode-alta',
+    });
+    const hydratedRecord = {
+      ...previousRecord,
+      lastUpdated: '2026-05-16T10:30:00.000Z',
+    };
+    const emptyBed = DataFactory.createMockPatient('R1', {
+      patientName: '',
+      rut: '',
+      clinicalEpisodeId: undefined,
+    });
+    const discharge = DataFactory.createMockDischarge({
+      id: 'discharge-1',
+      bedId: 'R1',
+      patientName: 'Paciente Alta',
+      rut: '12.345.678-9',
+      clinicalEpisodeId: 'episode-alta',
+    });
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          discharges: [discharge],
+          'beds.R1': emptyBed,
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('independent_field');
+  });
+
+  it('blocks movement patches when Firebase changed the same movement list first', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    const hydratedRecord = {
+      ...previousRecord,
+      lastUpdated: '2026-05-16T10:30:00.000Z',
+      cma: [DataFactory.createMockCMA({ id: 'remote-cma-1' })],
+    };
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          cma: [DataFactory.createMockCMA({ id: 'local-cma-1' })],
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('movement_changed');
+  });
 });

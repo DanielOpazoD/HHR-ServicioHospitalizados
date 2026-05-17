@@ -38,6 +38,7 @@ const CLINICAL_FIELD_GROUPS: ReadonlyArray<ReadonlySet<string>> = [
 ];
 
 const VISIBLE_EPISODE_FIELDS = new Set(['rut', 'patientName', 'admissionDate', 'firstSeenDate']);
+const MOVEMENT_LIST_KEYS = new Set(['discharges', 'transfers', 'cma']);
 
 const getPathValue = (source: unknown, path: string): unknown =>
   path.split('.').reduce<unknown>((current, segment) => {
@@ -82,6 +83,8 @@ const parseBedPatchPath = (
     canonicalPath: `beds.${bedId}.${field}`,
   };
 };
+
+const isMovementListPatchPath = (path: string): boolean => MOVEMENT_LIST_KEYS.has(path);
 
 const resolveClinicalGroup = (field: string): ReadonlySet<string> | null =>
   CLINICAL_FIELD_GROUPS.find(group => group.has(field)) ?? null;
@@ -206,13 +209,18 @@ export const classifyHydratedRemotePatchRisk = ({
 
   if (
     valuesDiffer(previousRecord.discharges, hydratedRecord.discharges) ||
-    valuesDiffer(previousRecord.transfers, hydratedRecord.transfers)
+    valuesDiffer(previousRecord.transfers, hydratedRecord.transfers) ||
+    valuesDiffer(previousRecord.cma, hydratedRecord.cma)
   ) {
     return 'movement_changed';
   }
 
   const attemptedPaths = Object.keys(attemptedPatch);
   for (const attemptedPath of attemptedPaths) {
+    if (isMovementListPatchPath(attemptedPath)) {
+      continue;
+    }
+
     const attemptedBedPatch = parseBedPatchPath(attemptedPath);
     if (!attemptedBedPatch) {
       return 'unknown_high_risk';
