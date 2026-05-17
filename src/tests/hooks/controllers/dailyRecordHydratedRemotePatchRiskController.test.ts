@@ -48,7 +48,24 @@ describe('dailyRecordHydratedRemotePatchRiskController', () => {
     ).toBe('same_group');
   });
 
-  it('blocks patches when the remote patient episode changed', () => {
+  it('blocks patches when the remote patient episode visibly changed', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    const hydratedRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    previousRecord.beds.R1.patientName = 'Paciente local';
+    hydratedRecord.beds.R1.patientName = 'Paciente remoto';
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R1.status': PatientStatus.GRAVE,
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('episode_changed');
+  });
+
+  it('allows isolated clinicalEpisodeId repairs when visible episode data is unchanged', () => {
     const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
     const hydratedRecord = DataFactory.createMockDailyRecord('2026-05-16');
     previousRecord.beds.R1.clinicalEpisodeId = 'episode-local';
@@ -62,7 +79,7 @@ describe('dailyRecordHydratedRemotePatchRiskController', () => {
         previousRecord,
         hydratedRecord,
       })
-    ).toBe('episode_changed');
+    ).toBe('independent_field');
   });
 
   it('allows full-bed move patches after self-confirmed remote hydration', () => {
