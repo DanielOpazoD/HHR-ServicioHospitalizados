@@ -3,6 +3,8 @@ import type { DailyRecordPatch } from '@/application/shared/dailyRecordCoreContr
 import {
   acknowledgeDailyRecordClinicalFieldPause,
   clearDailyRecordClinicalFieldPausesForTests,
+  DAILY_RECORD_CONTEXT_RESET_MESSAGE,
+  DAILY_RECORD_FIELD_PAUSE_MESSAGE,
   registerDailyRecordClinicalFieldPauses,
   resolveDailyRecordClinicalPatchPauseDecision,
 } from '@/hooks/controllers/dailyRecordClinicalFieldAcknowledgementController';
@@ -23,7 +25,7 @@ describe('dailyRecordClinicalFieldAcknowledgementController', () => {
       kind: 'soft_pause',
       bedId: 'R1',
       fieldGroup: 'diagnosis',
-      message: 'Actualizado recién. Clic nuevamente para editar.',
+      message: 'Actualizado recién. Intente nuevamente para editar.',
     });
 
     expect(acknowledgeDailyRecordClinicalFieldPause(date, 'R1', 'diagnosis')).toBe('acknowledged');
@@ -52,8 +54,19 @@ describe('dailyRecordClinicalFieldAcknowledgementController', () => {
     ).toEqual({
       kind: 'hard_lock',
       bedId: 'R1',
-      message: 'La cama fue actualizada. Seleccione nuevamente el paciente.',
+      message:
+        'Esta cama se actualizó hace un momento. Seleccione nuevamente el paciente para continuar.',
     });
     expect(acknowledgeDailyRecordClinicalFieldPause(date, 'R1', 'diagnosis')).toBe('hard_locked');
+  });
+
+  it('keeps user-facing pause and lock copy free of technical sync wording', () => {
+    const forbiddenTechnicalWording = [/firebase/i, /remot[oa]/i, /stale/i, /cache/i, /concurr/i];
+
+    for (const message of [DAILY_RECORD_FIELD_PAUSE_MESSAGE, DAILY_RECORD_CONTEXT_RESET_MESSAGE]) {
+      for (const pattern of forbiddenTechnicalWording) {
+        expect(message).not.toMatch(pattern);
+      }
+    }
   });
 });

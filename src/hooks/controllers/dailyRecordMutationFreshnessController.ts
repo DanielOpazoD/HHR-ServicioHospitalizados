@@ -81,7 +81,7 @@ const assertClinicalMutationDidNotStartFromStaleRemoteHydration = (
   }
 
   throw new DailyRecordFreshnessGateError(
-    'El censo remoto se actualizó al reactivar la pestaña. Revise los datos antes de editar.'
+    'El censo se actualizó hace un momento. Intente nuevamente para continuar.'
   );
 };
 
@@ -128,7 +128,7 @@ export const assertHydratedRemotePatchCanProceed = ({
   }
 
   throw new DailyRecordFreshnessGateError(
-    'El censo remoto actualizó este dato. Revise los datos antes de editar.'
+    'Este dato se actualizó hace un momento. Intente nuevamente para editar.'
   );
 };
 
@@ -143,7 +143,7 @@ export const ensureFreshClinicalSaveMutation = async (
     toRecordTimestamp(freshness.record.lastUpdated) > toRecordTimestamp(record.lastUpdated)
   ) {
     throw new DailyRecordFreshnessGateError(
-      'El censo remoto se actualizó al reactivar la pestaña. Revise los datos antes de guardar.'
+      'El censo se actualizó hace un momento. Intente nuevamente para continuar.'
     );
   }
   return freshness;

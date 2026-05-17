@@ -144,4 +144,50 @@ describe('PatientInputCells', () => {
     fireEvent.mouseDown(diagnosisInput);
     expect(screen.getByText(/Actualizado recién/i)).toBeInTheDocument();
   });
+
+  it('uses friendly copy for hard clinical locks without exposing sync internals', () => {
+    vi.mocked(useDailyRecordStability).mockReturnValue({
+      canEditField: () => true,
+    } as unknown as ReturnType<typeof useDailyRecordStability>);
+
+    const data = DataFactory.createMockPatient('R1');
+    data.pathology = 'ACV';
+    const textHandler = vi.fn();
+    const onChange = {
+      text: vi.fn().mockReturnValue(textHandler),
+      check: vi.fn().mockReturnValue(vi.fn()),
+      devices: vi.fn(),
+      deviceDetails: vi.fn(),
+      deviceHistory: vi.fn(),
+      toggleDocType: vi.fn(),
+      deliveryRoute: vi.fn(),
+      multiple: vi.fn(),
+    };
+
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <PatientInputCells
+              data={data}
+              currentDateString="2026-02-15"
+              onChange={onChange}
+              onDemo={vi.fn()}
+              readOnly={false}
+              diagnosisMode="free"
+              clinicalFieldLocks={{ allClinical: true }}
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    const diagnosisInput = screen.getByPlaceholderText('Diagnóstico (texto libre)');
+    expect(diagnosisInput).toBeDisabled();
+    expect(diagnosisInput).toHaveAttribute(
+      'title',
+      'Esta cama se actualizó hace un momento. Seleccione nuevamente el paciente para continuar.'
+    );
+    expect(diagnosisInput.getAttribute('title')).not.toMatch(/firebase|remot[oa]|stale|cache/i);
+  });
 });

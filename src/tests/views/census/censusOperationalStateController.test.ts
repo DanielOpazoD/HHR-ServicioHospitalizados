@@ -16,11 +16,11 @@ describe('censusOperationalStateController', () => {
       isSettled: false,
       shouldShowBanner: false,
       severity: 'warning',
-      message: expect.stringContaining('copia local'),
+      message: expect.stringContaining('últimos datos'),
     });
   });
 
-  it('marks a visible record as reconciling while Firebase resolution is still pending', () => {
+  it('marks a visible record as reconciling with friendly copy while resolution is still pending', () => {
     expect(
       resolveCensusOperationalState({
         branch: 'register',
@@ -34,8 +34,47 @@ describe('censusOperationalStateController', () => {
       isSettled: false,
       shouldShowBanner: false,
       severity: 'info',
-      message: expect.stringContaining('Firebase'),
+      label: 'Actualizando censo',
+      message: expect.stringContaining('últimos datos'),
     });
+  });
+
+  it('keeps operational census messages free of technical sync wording', () => {
+    const states = [
+      resolveCensusOperationalState({
+        branch: 'register',
+        bootstrapPhase: 'local_only',
+        syncStatus: 'idle',
+        hasRecord: true,
+        isAuthenticated: true,
+      }),
+      resolveCensusOperationalState({
+        branch: 'register',
+        bootstrapPhase: 'remote_record_bootstrapping',
+        syncStatus: 'idle',
+        hasRecord: true,
+        isAuthenticated: true,
+      }),
+      resolveCensusOperationalState({
+        branch: 'empty',
+        bootstrapPhase: 'remote_record_bootstrapping',
+        syncStatus: 'idle',
+        hasRecord: false,
+        isAuthenticated: true,
+      }),
+      resolveCensusOperationalState({
+        branch: 'empty',
+        bootstrapPhase: 'confirmed_empty',
+        syncStatus: 'idle',
+        hasRecord: false,
+        isAuthenticated: true,
+      }),
+    ];
+    const forbiddenTechnicalWording = /firebase|remot[oa]|stale|cache|concurr/i;
+
+    for (const state of states) {
+      expect(`${state.label} ${state.message}`).not.toMatch(forbiddenTechnicalWording);
+    }
   });
 
   it('does not show an operational banner once the remote-backed census is ready', () => {

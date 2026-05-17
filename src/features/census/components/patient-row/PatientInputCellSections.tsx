@@ -29,10 +29,9 @@ import {
 } from '@/hooks/controllers/dailyRecordClinicalFieldAcknowledgementController';
 
 const patientInputFlagsLogger = logger.child('PatientInputFlagsSection');
-const REMOTE_FIELD_LOCK_REASON =
-  'Firebase actualizó este dato. Revise el registro antes de editarlo.';
+const REMOTE_FIELD_LOCK_REASON = 'Este dato se actualizó hace un momento.';
 const REMOTE_EPISODE_LOCK_REASON =
-  'Firebase actualizó el paciente o episodio de esta cama. Revise el registro antes de editar.';
+  'Esta cama se actualizó hace un momento. Seleccione nuevamente el paciente para continuar.';
 
 const isRemoteLocked = (locked?: boolean): boolean => Boolean(locked);
 

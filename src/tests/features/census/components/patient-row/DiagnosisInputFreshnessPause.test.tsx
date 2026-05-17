@@ -19,7 +19,7 @@ const PausedDiagnosisInput = ({ onChange }: { onChange: (value: string) => void 
             onChange={() => value => onChange(value)}
             clinicalPause={{
               isPaused: paused,
-              message: 'Actualizado recién. Clic nuevamente para editar.',
+              message: 'Actualizado recién. Intente nuevamente para editar.',
               onAcknowledge: () => setPaused(false),
             }}
           />

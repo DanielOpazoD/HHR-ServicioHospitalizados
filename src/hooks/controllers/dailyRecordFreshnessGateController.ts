@@ -284,7 +284,7 @@ export const ensureDailyRecordRemoteFreshness = ({
           },
         });
         throw new DailyRecordFreshnessGateError(
-          'No se pudo confirmar Firebase antes de aceptar la edición clínica.'
+          'Estamos verificando los últimos datos. Intente nuevamente en unos segundos.'
         );
       }
 
@@ -353,7 +353,7 @@ export const ensureDailyRecordRemoteFreshness = ({
             message: 'No fue posible confirmar Firebase al reactivar la pestaña.',
             severity: 'warning',
             userSafeMessage:
-              'No se pudo confirmar la versión remota. Evite editar campos clínicos hasta reconectar.',
+              'Estamos sincronizando los últimos datos. La edición clínica se habilitará automáticamente.',
           },
           {
             date,

@@ -24,9 +24,10 @@ export type DailyRecordClinicalPatchPauseDecision =
   | { kind: 'hard_lock'; bedId: string; message: string };
 
 const FIELD_PAUSE_TTL_MS = 3 * 60 * 1_000;
-export const DAILY_RECORD_FIELD_PAUSE_MESSAGE = 'Actualizado recién. Clic nuevamente para editar.';
+export const DAILY_RECORD_FIELD_PAUSE_MESSAGE =
+  'Actualizado recién. Intente nuevamente para editar.';
 export const DAILY_RECORD_CONTEXT_RESET_MESSAGE =
-  'La cama fue actualizada. Seleccione nuevamente el paciente.';
+  'Esta cama se actualizó hace un momento. Seleccione nuevamente el paciente para continuar.';
 
 const pausesByDate = new Map<
   string,

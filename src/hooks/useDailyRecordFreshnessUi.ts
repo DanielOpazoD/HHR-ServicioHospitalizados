@@ -42,7 +42,7 @@ const resolveFreshnessMessageLevel = (
 
 const resolveFreshnessUserMessage = (status: DailyRecordFreshnessStatus): string | undefined => {
   if (status === 'blocked_until_remote_check') {
-    return 'No fue posible actualizar el censo. Reintentando...';
+    return 'Estamos sincronizando los últimos datos. Intente nuevamente en unos segundos.';
   }
   if (status === 'stale_due_to_inactivity' || status === 'refreshing_on_resume') {
     return 'Actualizando censo con los últimos datos disponibles...';

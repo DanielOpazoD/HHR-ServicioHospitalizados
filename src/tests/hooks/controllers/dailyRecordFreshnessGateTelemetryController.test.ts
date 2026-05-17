@@ -74,7 +74,7 @@ describe('dailyRecordFreshnessGate clinical input block telemetry', () => {
     );
   });
 
-  it('records clinical input block failure duration when Firebase cannot be confirmed', async () => {
+  it('records clinical input block failure duration when the latest data cannot be confirmed', async () => {
     const queryClient = new QueryClient();
     const record = DataFactory.createMockDailyRecord(date);
 
@@ -107,7 +107,7 @@ describe('dailyRecordFreshnessGate clinical input block telemetry', () => {
             })
           ),
       })
-    ).rejects.toThrow('No se pudo confirmar Firebase');
+    ).rejects.toThrow('Estamos verificando los últimos datos');
 
     expect(mockRecordEvent).toHaveBeenCalledWith(
       'daily_record_clinical_inputs_block_failed',

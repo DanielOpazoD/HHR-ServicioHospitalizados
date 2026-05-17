@@ -6,7 +6,6 @@ import type { DailyRecordRepositoryPort } from '@/application/ports/dailyRecordP
 import { usePatchDailyRecordMutation } from '@/hooks/useDailyRecordQuery';
 import { useDailyRecordFreshnessUi } from '@/hooks/useDailyRecordFreshnessUi';
 import {
-  DailyRecordFreshnessGateError,
   ensureDailyRecordRemoteFreshness,
   markDailyRecordRemoteConfirmed,
   markDailyRecordTabHidden,
@@ -250,7 +249,10 @@ describe('daily record remote freshness gate', () => {
       result.current.mutateAsync({
         'beds.R1.status': PatientStatus.GRAVE,
       } as never)
-    ).rejects.toBeInstanceOf(DailyRecordFreshnessGateError);
+    ).rejects.toMatchObject({
+      name: 'DailyRecordFreshnessGateError',
+      message: 'Estamos verificando los últimos datos. Intente nuevamente en unos segundos.',
+    });
     expect(dailyRecord.updatePartialDetailed).not.toHaveBeenCalled();
   });
 
@@ -331,7 +333,10 @@ describe('daily record remote freshness gate', () => {
       result.current.mutateAsync({
         'beds.R1.pathology': 'Diagnostico usuario',
       } as never)
-    ).rejects.toBeInstanceOf(DailyRecordFreshnessGateError);
+    ).rejects.toMatchObject({
+      name: 'DailyRecordFreshnessGateError',
+      message: 'Actualizado recién. Intente nuevamente para editar.',
+    });
     expect(dailyRecord.updatePartialDetailed).not.toHaveBeenCalled();
   });
 
