@@ -30,7 +30,10 @@ const ALLOWED_DAILY_RECORD_PATCH_FIELDS = new Set([
   'deliveryCesareanLabor',
   'isUPC',
   'upcChecklist',
+  'surgicalComplication',
 ]);
+
+const ALLOWED_DAILY_RECORD_BED_TYPE_OVERRIDE_VALUES = new Set(['UTI', 'UCI', 'MEDIA', null]);
 
 const FORBIDDEN_PATCH_PATH_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor']);
 
@@ -117,26 +120,65 @@ const parseAuthorizedPatchPath = path => {
     .filter(Boolean);
 
   if (
-    parts.length !== 3 ||
-    parts[0] !== 'beds' ||
-    parts.some(part => FORBIDDEN_PATCH_PATH_SEGMENTS.has(part)) ||
-    !ALLOWED_DAILY_RECORD_PATCH_FIELDS.has(parts[2])
+    parts.length === 3 &&
+    parts[0] === 'beds' &&
+    !parts.some(part => FORBIDDEN_PATCH_PATH_SEGMENTS.has(part)) &&
+    ALLOWED_DAILY_RECORD_PATCH_FIELDS.has(parts[2])
   ) {
+    return {
+      kind: 'patientField',
+      bedId: parts[1],
+      field: parts[2],
+    };
+  }
+
+  if (
+    parts.length === 2 &&
+    parts[0] === 'bedTypeOverrides' &&
+    !parts.some(part => FORBIDDEN_PATCH_PATH_SEGMENTS.has(part))
+  ) {
+    return {
+      kind: 'bedTypeOverride',
+      bedId: parts[1],
+      field: 'bedTypeOverride',
+    };
+  }
+
+  throw new functions.https.HttpsError(
+    'invalid-argument',
+    `Daily record patch path is not allowed: ${String(path).slice(0, 120)}`
+  );
+};
+
+const assertAuthorizedPatchValue = ({ path, value, parsedPath, patchPaths }) => {
+  if (parsedPath.kind !== 'bedTypeOverride') {
+    return;
+  }
+
+  if (!ALLOWED_DAILY_RECORD_BED_TYPE_OVERRIDE_VALUES.has(value)) {
     throw new functions.https.HttpsError(
       'invalid-argument',
-      `Daily record patch path is not allowed: ${String(path).slice(0, 120)}`
+      `Daily record bed type override value is not allowed: ${String(path).slice(0, 120)}`
     );
   }
 
-  return {
-    bedId: parts[1],
-    field: parts[2],
-  };
+  if (
+    !patchPaths.has(`beds.${parsedPath.bedId}.upcChecklist`) &&
+    !patchPaths.has(`beds.${parsedPath.bedId}.isUPC`)
+  ) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      `Daily record bed type override must accompany a UPC patch: ${String(path).slice(0, 120)}`
+    );
+  }
 };
 
 const assertPatchTargetsCurrentClinicalEpisode = ({ remoteData, patch }) => {
-  Object.keys(patch).forEach(path => {
-    const { bedId } = parseAuthorizedPatchPath(path);
+  const patchPaths = new Set(Object.keys(patch));
+  Object.entries(patch).forEach(([path, value]) => {
+    const parsedPath = parseAuthorizedPatchPath(path);
+    assertAuthorizedPatchValue({ path, value, parsedPath, patchPaths });
+    const { bedId } = parsedPath;
     const patient = remoteData?.beds?.[bedId];
     if (!isPlainObject(patient)) {
       throw new functions.https.HttpsError(

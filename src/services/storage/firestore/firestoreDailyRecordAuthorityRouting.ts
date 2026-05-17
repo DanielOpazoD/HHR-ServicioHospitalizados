@@ -44,6 +44,14 @@ const isClinicalAuthorityPatchPath = (path: string): boolean => {
   );
 };
 
+const isClinicalAuthorityBedTypeOverridePath = (path: string): boolean => {
+  const [root, bedId, ...rest] = path.split('.');
+  return root === 'bedTypeOverrides' && Boolean(bedId) && rest.length === 0;
+};
+
+const isClinicalAuthorityCallablePatchPath = (path: string): boolean =>
+  isClinicalAuthorityPatchPath(path) || isClinicalAuthorityBedTypeOverridePath(path);
+
 const isClinicalAuthorityDerivedPatchPath = (path: string): boolean => {
   if (path === 'dateTimestamp') {
     return true;
@@ -72,16 +80,18 @@ export const isClinicalAuthorityPatch = (patch: Record<string, unknown>): boolea
 export const extractClinicalAuthorityPatch = (
   patch: Record<string, unknown>
 ): Record<string, unknown> =>
-  Object.fromEntries(Object.entries(patch).filter(([path]) => isClinicalAuthorityPatchPath(path)));
+  Object.fromEntries(
+    Object.entries(patch).filter(([path]) => isClinicalAuthorityCallablePatchPath(path))
+  );
 
 export const shouldRouteClinicalAuthorityPatch = (patch: Record<string, unknown>): boolean => {
   const paths = Object.keys(patch);
-  if (paths.length === 0 || Object.keys(extractClinicalAuthorityPatch(patch)).length === 0) {
+  if (paths.length === 0 || !paths.some(isClinicalAuthorityPatchPath)) {
     return false;
   }
 
   return paths.every(
-    path => isClinicalAuthorityPatchPath(path) || isClinicalAuthorityDerivedPatchPath(path)
+    path => isClinicalAuthorityCallablePatchPath(path) || isClinicalAuthorityDerivedPatchPath(path)
   );
 };
 

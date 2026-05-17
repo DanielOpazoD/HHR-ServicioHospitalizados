@@ -201,6 +201,107 @@ describe('firestoreRecordWrites authority patch routing', () => {
     expect(saveHistorySnapshot).not.toHaveBeenCalled();
   });
 
+  it('routes Qx classification patches through the clinical authority callable in enforced mode', async () => {
+    (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_MODE =
+      'enforced';
+    mockGetCurrentUser.mockReturnValue({
+      uid: 'nurse-1',
+      email: 'nurse@example.com',
+      isAnonymous: false,
+    });
+
+    await updateRecordPartial(
+      '2026-03-14',
+      { 'beds.R1.surgicalComplication': true } as never,
+      '2026-03-14T10:00:00.000Z',
+      {
+        syncContract: {
+          expectedVersion: '2026-03-14T10:00:00.000Z',
+          changedPaths: ['beds.R1.surgicalComplication'],
+          mutationId: 'mutation-qx-1',
+          clientId: 'client-1',
+          tabId: 'tab-1',
+        },
+      }
+    );
+
+    expect(mockHttpsCallable).toHaveBeenCalledWith(
+      { name: 'functions-runtime' },
+      'patchDailyRecordWithClinicalAuthority'
+    );
+    expect(mockAuthorityCallable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        date: '2026-03-14',
+        patch: {
+          'beds.R1.surgicalComplication': true,
+        },
+        syncContract: expect.objectContaining({
+          changedPaths: ['beds.R1.surgicalComplication'],
+          mutationId: 'mutation-qx-1',
+        }),
+      })
+    );
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(saveHistorySnapshot).not.toHaveBeenCalled();
+  });
+
+  it('routes UPC checklist patches with derived bed type overrides through the authority callable', async () => {
+    (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_MODE =
+      'enforced';
+    mockGetCurrentUser.mockReturnValue({
+      uid: 'nurse-1',
+      email: 'nurse@example.com',
+      isAnonymous: false,
+    });
+
+    await updateRecordPartial(
+      '2026-03-14',
+      {
+        'beds.R1.upcChecklist': {
+          uciCriteria: ['uci_vmi'],
+          utiCriteria: [],
+          classification: 'UPC_UCI',
+          evaluatedAt: '2026-03-14T10:05:00.000Z',
+        },
+        'beds.R1.isUPC': true,
+        'bedTypeOverrides.R1': 'UCI',
+      } as never,
+      '2026-03-14T10:00:00.000Z',
+      {
+        syncContract: {
+          expectedVersion: '2026-03-14T10:00:00.000Z',
+          changedPaths: ['beds.R1.upcChecklist', 'beds.R1.isUPC', 'bedTypeOverrides.R1'],
+          mutationId: 'mutation-upc-1',
+          clientId: 'client-1',
+          tabId: 'tab-1',
+        },
+      }
+    );
+
+    expect(mockHttpsCallable).toHaveBeenCalledWith(
+      { name: 'functions-runtime' },
+      'patchDailyRecordWithClinicalAuthority'
+    );
+    expect(mockAuthorityCallable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        date: '2026-03-14',
+        patch: expect.objectContaining({
+          'beds.R1.upcChecklist': expect.objectContaining({
+            classification: 'UPC_UCI',
+          }),
+          'beds.R1.isUPC': true,
+          'bedTypeOverrides.R1': 'UCI',
+        }),
+        syncContract: expect.objectContaining({
+          changedPaths: ['beds.R1.upcChecklist', 'beds.R1.isUPC', 'bedTypeOverrides.R1'],
+          mutationId: 'mutation-upc-1',
+        }),
+      })
+    );
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(saveHistorySnapshot).not.toHaveBeenCalled();
+  });
+
   it('keeps non-clinical partial updates on direct Firestore writes in enforced mode', async () => {
     (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_MODE =
       'enforced';

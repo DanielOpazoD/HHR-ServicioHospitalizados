@@ -15,6 +15,7 @@ export const CLINICAL_CENSUS_EDITABLE_FIELDS = [
   'deliveryCesareanLabor',
   'isUPC',
   'upcChecklist',
+  'surgicalComplication',
 ] as const;
 
 export const EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS: ReadonlySet<string> = new Set(

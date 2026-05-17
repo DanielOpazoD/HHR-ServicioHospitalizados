@@ -285,6 +285,75 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
     );
   });
 
+  it('applies Qx and derived UPC bed type patches inside the authority transaction', async () => {
+    const { admin, set, docRef } = createAdminMock({
+      remoteData: {
+        ...makeRecord(),
+        bedTypeOverrides: {},
+        beds: {
+          R1: {
+            ...makeRecord().beds.R1,
+            surgicalComplication: false,
+            isUPC: false,
+          },
+        },
+      },
+    });
+    const functionsApi = createDailyRecordWriteAuthorityFunctions({
+      admin,
+      resolveRoleForEmail: vi.fn().mockResolvedValue('nurse_hospital'),
+    });
+
+    await functionsApi.patchDailyRecordWithClinicalAuthority.run(
+      {
+        date: '2026-05-13',
+        expectedLastUpdated: '2026-05-13T10:00:00.000Z',
+        mode: 'enforced',
+        origin: 'direct_partial_update',
+        syncContract: {
+          expectedVersion: '2026-05-13T10:00:00.000Z',
+          changedPaths: [
+            'beds.R1.surgicalComplication',
+            'beds.R1.upcChecklist',
+            'beds.R1.isUPC',
+            'bedTypeOverrides.R1',
+          ],
+          mutationId: 'mutation-upc-qx-1',
+        },
+        patch: {
+          'beds.R1.surgicalComplication': true,
+          'beds.R1.upcChecklist': {
+            uciCriteria: ['uci_vmi'],
+            utiCriteria: [],
+            classification: 'UPC_UCI',
+            evaluatedAt: '2026-05-13T10:05:00.000Z',
+          },
+          'beds.R1.isUPC': true,
+          'bedTypeOverrides.R1': 'UCI',
+        },
+      },
+      makeContext()
+    );
+
+    expect(set).toHaveBeenCalledWith(
+      docRef,
+      expect.objectContaining({
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({
+            surgicalComplication: true,
+            isUPC: true,
+            upcChecklist: expect.objectContaining({
+              classification: 'UPC_UCI',
+            }),
+          }),
+        }),
+        bedTypeOverrides: expect.objectContaining({
+          R1: 'UCI',
+        }),
+      })
+    );
+  });
+
   it('rejects authority patches that target non-clinical census paths', async () => {
     const { admin, set } = createAdminMock({
       remoteData: makeRecord(),

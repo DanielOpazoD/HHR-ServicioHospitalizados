@@ -35,6 +35,7 @@ describe('explicitLocalCensusPatchPolicy', () => {
       'deliveryCesareanLabor',
       'isUPC',
       'upcChecklist',
+      'surgicalComplication',
     ];
 
     expect(Array.from(EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS).sort()).toEqual(
