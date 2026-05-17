@@ -1,11 +1,17 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/config/queryClient';
+import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import type { DailyRecordQueryResult } from '@/services/repositories/contracts/dailyRecordQueries';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
 import {
   buildHydratedRemoteClinicalFieldLocks,
   type HydratedRemoteClinicalFieldLocksByBedId,
 } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
+import {
+  recordClinicalInputsBlockCompleted,
+  recordClinicalInputsBlockFailed,
+  recordClinicalInputsBlockStarted,
+} from '@/hooks/controllers/dailyRecordFreshnessGateTelemetryController';
 
 export type DailyRecordFreshnessStatus =
   | 'fresh_remote_confirmed'
@@ -42,6 +48,7 @@ interface EnsureDailyRecordRemoteFreshnessInput {
 
 let hiddenSince: number | null = null;
 let resumeEpoch = 0;
+let lastStaleResumeAt: number | undefined;
 const freshnessByDate = new Map<string, DailyRecordFreshnessState>();
 const freshnessListeners = new Set<() => void>();
 
@@ -76,6 +83,15 @@ const getOrCreateFreshnessState = (date: string): DailyRecordFreshnessState => {
     remoteHydratedNewerRecord: false,
     clinicalFieldLocksByBedId: {},
   };
+  if (state.status === 'stale_due_to_inactivity') {
+    recordClinicalInputsBlockStarted(
+      date,
+      state,
+      lastStaleResumeAt ?? getNow(),
+      'stale_due_to_inactivity',
+      resumeEpoch
+    );
+  }
   freshnessByDate.set(date, state);
   return state;
 };
@@ -102,11 +118,12 @@ export const markDailyRecordTabVisible = (
   }
 
   resumeEpoch += 1;
-  freshnessByDate.forEach(state => {
+  lastStaleResumeAt = now;
+  freshnessByDate.forEach((state, date) => {
     if (state.status !== 'refreshing_on_resume') {
       state.status = 'stale_due_to_inactivity';
       state.remoteHydratedNewerRecord = false;
-      state.blockedStartedAt = now;
+      recordClinicalInputsBlockStarted(date, state, now, 'stale_due_to_inactivity', resumeEpoch);
     }
   });
   notifyFreshnessListeners();
@@ -143,17 +160,30 @@ export const markDailyRecordRemoteConfirmed = (
     source: 'query' | 'subscription' | 'manual_refresh' | 'write';
     remoteLastUpdated?: string;
     confirmedAt?: number;
+    remoteHydratedNewerRecord?: boolean;
+    previousRecord?: DailyRecord | null;
+    confirmedRecord?: DailyRecord | null;
   }
 ): void => {
   const state = getOrCreateFreshnessState(date);
   const confirmedAt = params.confirmedAt ?? getNow();
-  const blockedForMs =
-    typeof state.blockedStartedAt === 'number' ? confirmedAt - state.blockedStartedAt : undefined;
+  const blockedForMs = recordClinicalInputsBlockCompleted(
+    date,
+    state,
+    confirmedAt,
+    params.source,
+    resumeEpoch
+  );
+  const remoteHydratedNewerRecord = params.remoteHydratedNewerRecord === true;
   state.confirmedResumeEpoch = resumeEpoch;
   state.lastRemoteConfirmedAt = confirmedAt;
-  state.remoteHydratedNewerRecord = false;
-  state.clinicalFieldLocksByBedId = {};
-  state.blockedStartedAt = undefined;
+  state.remoteHydratedNewerRecord = remoteHydratedNewerRecord;
+  state.clinicalFieldLocksByBedId = remoteHydratedNewerRecord
+    ? buildHydratedRemoteClinicalFieldLocks({
+        previousRecord: params.previousRecord,
+        hydratedRecord: params.confirmedRecord,
+      })
+    : {};
   setFreshnessStatus(state, 'fresh_remote_confirmed');
   if (typeof blockedForMs === 'number') {
     dailyRecordObservability.recordEvent('daily_record_resume_refresh_completed', 'success', {
@@ -239,7 +269,7 @@ export const ensureDailyRecordRemoteFreshness = ({
     );
   }
 
-  state.blockedStartedAt = state.blockedStartedAt ?? now;
+  recordClinicalInputsBlockStarted(date, state, now, 'refreshing_on_resume', resumeEpoch);
   setFreshnessStatus(state, 'refreshing_on_resume');
   const refreshPromise = queryClient
     .fetchQuery({
@@ -250,6 +280,13 @@ export const ensureDailyRecordRemoteFreshness = ({
     .then(result => {
       if (isRemoteUnavailableRead(result)) {
         setFreshnessStatus(state, 'blocked_until_remote_check');
+        const blockedForMs = recordClinicalInputsBlockFailed(
+          date,
+          state,
+          reason,
+          getNow(),
+          resumeEpoch
+        );
         dailyRecordObservability.recordEvent('daily_record_resume_refresh_failed', 'failed', {
           runtimeState: 'blocked',
           issues: ['No se pudo confirmar Firebase antes de aceptar una edición clínica.'],
@@ -259,8 +296,7 @@ export const ensureDailyRecordRemoteFreshness = ({
             resumeEpoch,
             consistencyState: result.runtime.consistencyState,
             conflictKind: result.runtime.conflictSummary?.kind,
-            blockedForMs:
-              typeof state.blockedStartedAt === 'number' ? getNow() - state.blockedStartedAt : 0,
+            blockedForMs,
           },
         });
         throw new DailyRecordFreshnessGateError(
@@ -268,8 +304,15 @@ export const ensureDailyRecordRemoteFreshness = ({
         );
       }
 
+      const completedAt = getNow();
       const blockedForMs =
-        typeof state.blockedStartedAt === 'number' ? getNow() - state.blockedStartedAt : 0;
+        recordClinicalInputsBlockCompleted(
+          date,
+          state,
+          completedAt,
+          'freshness_query',
+          resumeEpoch
+        ) ?? 0;
       state.confirmedResumeEpoch = resumeEpoch;
       state.lastRemoteConfirmedAt = now;
       state.remoteHydratedNewerRecord = didDailyRecordFreshnessHydrateNewerRemote(result);
@@ -279,7 +322,6 @@ export const ensureDailyRecordRemoteFreshness = ({
             hydratedRecord: result.record,
           })
         : {};
-      state.blockedStartedAt = undefined;
       setFreshnessStatus(state, 'fresh_remote_confirmed');
 
       dailyRecordObservability.recordEvent('daily_record_resume_refresh_completed', 'success', {
@@ -351,6 +393,7 @@ export const ensureDailyRecordRemoteFreshness = ({
 export const resetDailyRecordFreshnessGateForTests = (): void => {
   hiddenSince = null;
   resumeEpoch = 0;
+  lastStaleResumeAt = undefined;
   freshnessByDate.clear();
   freshnessListeners.clear();
 };

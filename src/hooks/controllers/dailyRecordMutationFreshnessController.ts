@@ -9,6 +9,7 @@ import {
   DailyRecordFreshnessGateError,
   didDailyRecordFreshnessHydrateNewerRemote,
   ensureDailyRecordRemoteFreshness,
+  getDailyRecordClinicalFieldLocksByBedId,
 } from '@/hooks/controllers/dailyRecordFreshnessGateController';
 import { PENDING_DAILY_RECORD_PATCH_TTL_MS } from '@/hooks/controllers/dailyRecordPendingPatchController';
 import type {
@@ -19,6 +20,7 @@ import type { DailyRecordQueryResult } from '@/services/repositories/contracts/d
 import { toRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
 import {
   classifyHydratedRemotePatchRisk,
+  doesPatchTouchHydratedRemoteClinicalLocks,
   isHydratedRemotePatchRiskBlocking,
 } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
 
@@ -90,14 +92,27 @@ export const ensureFreshClinicalPatchMutation = (
   ensureFreshDailyRecordQuery(date, dependencies, 'clinical_patch');
 
 export const assertHydratedRemotePatchCanProceed = ({
+  date,
   attemptedPatch,
   previousRecord,
   freshness,
 }: {
+  date: string;
   attemptedPatch: DailyRecordPatch;
   previousRecord: DailyRecord | null | undefined;
   freshness: DailyRecordQueryResult;
 }): void => {
+  if (
+    doesPatchTouchHydratedRemoteClinicalLocks(
+      attemptedPatch,
+      getDailyRecordClinicalFieldLocksByBedId(date)
+    )
+  ) {
+    throw new DailyRecordFreshnessGateError(
+      'El censo remoto actualizó este dato. Revise los datos antes de editar.'
+    );
+  }
+
   if (!didDailyRecordFreshnessHydrateNewerRemote(freshness)) {
     return;
   }

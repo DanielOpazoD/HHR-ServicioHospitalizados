@@ -248,6 +248,7 @@ export const usePatchDailyRecordMutation = (date: string) => {
       )?.record;
       const freshness = await ensureFreshClinicalPatchMutation(date, { dailyRecord, queryClient });
       assertHydratedRemotePatchCanProceed({
+        date,
         attemptedPatch: partial,
         previousRecord: previousRecordBeforeFreshness,
         freshness,

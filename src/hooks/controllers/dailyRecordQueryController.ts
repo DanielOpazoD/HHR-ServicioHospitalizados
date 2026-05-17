@@ -21,7 +21,10 @@ import {
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
 import type { SyncDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import { toRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
-import { markDailyRecordRemoteConfirmed } from '@/hooks/controllers/dailyRecordFreshnessGateController';
+import {
+  didDailyRecordFreshnessHydrateNewerRemote,
+  markDailyRecordRemoteConfirmed,
+} from '@/hooks/controllers/dailyRecordFreshnessGateController';
 
 interface DailyRecordReader {
   getForDate: (date: string) => Promise<DailyRecord | null>;
@@ -294,6 +297,9 @@ export const createDailyRecordSubscription = (
         markDailyRecordRemoteConfirmed(date, {
           source: 'subscription',
           remoteLastUpdated: result.record.lastUpdated,
+          remoteHydratedNewerRecord: didDailyRecordFreshnessHydrateNewerRemote(result),
+          previousRecord: previousResult?.record,
+          confirmedRecord: result.record,
         });
       }
       return;
