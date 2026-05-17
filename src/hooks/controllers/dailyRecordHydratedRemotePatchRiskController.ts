@@ -37,13 +37,7 @@ const CLINICAL_FIELD_GROUPS: ReadonlyArray<ReadonlySet<string>> = [
   ]),
 ];
 
-const EPISODE_FIELDS = new Set([
-  'clinicalEpisodeId',
-  'rut',
-  'patientName',
-  'admissionDate',
-  'firstSeenDate',
-]);
+const VISIBLE_EPISODE_FIELDS = new Set(['rut', 'patientName', 'admissionDate', 'firstSeenDate']);
 
 const getPathValue = (source: unknown, path: string): unknown =>
   path.split('.').reduce<unknown>((current, segment) => {
@@ -130,6 +124,9 @@ const collectChangedBedFields = (
   return fields;
 };
 
+const hasVisibleEpisodeChange = (changedFields: Set<string>): boolean =>
+  Array.from(VISIBLE_EPISODE_FIELDS).some(field => changedFields.has(field));
+
 export const classifyHydratedRemotePatchRisk = ({
   attemptedPatch,
   previousRecord,
@@ -162,7 +159,7 @@ export const classifyHydratedRemotePatchRisk = ({
       hydratedRecord,
       attemptedBedPatch.bedId
     );
-    if (Array.from(EPISODE_FIELDS).some(field => changedFields.has(field))) {
+    if (hasVisibleEpisodeChange(changedFields)) {
       return 'episode_changed';
     }
 
@@ -248,7 +245,7 @@ export const buildHydratedRemoteClinicalFieldLocks = ({
     }
 
     const locks: HydratedRemoteClinicalFieldLocks = {};
-    if (Array.from(EPISODE_FIELDS).some(field => changedFields.has(field))) {
+    if (hasVisibleEpisodeChange(changedFields)) {
       locks.allClinical = true;
     }
 

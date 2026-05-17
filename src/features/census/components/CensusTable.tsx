@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CensusTableHeader } from '@/features/census/components/CensusTableHeader';
 import { CensusTableBody } from '@/features/census/components/CensusTableBody';
 import { useCensusTableBindingsModel } from '@/features/census/hooks/useCensusTableBindingsModel';
@@ -38,6 +38,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   accessProfile = 'default',
 }) => {
   const [activeEmptyBedId, setActiveEmptyBedId] = useState<string | null>(null);
+  const tableRootRef = useRef<HTMLDivElement>(null);
   const freshnessUi = useDailyRecordFreshnessUi(currentDateString);
   const clinicalEditingDisabled = freshnessUi.isClinicalEditingBlocked;
   const { isReady, bindings, clinicalDocumentInfoByBedId } = useCensusTableBindingsModel({
@@ -61,6 +62,20 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   );
 
   const dragDrop = useCensusTableDragDrop(handleMoveToBed, beds ?? {});
+
+  useEffect(() => {
+    const hasHardContextReset = Object.values(freshnessUi.clinicalFieldLocksByBedId).some(
+      locks => locks.allClinical
+    );
+    const activeElement = document.activeElement;
+    if (
+      hasHardContextReset &&
+      activeElement instanceof HTMLElement &&
+      tableRootRef.current?.contains(activeElement)
+    ) {
+      activeElement.blur();
+    }
+  }, [freshnessUi.clinicalFieldLocksByBedId]);
 
   const emptyBedData = useMemo(
     () => (activeEmptyBedId ? createEmptyPatient(activeEmptyBedId) : null),
@@ -148,7 +163,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   const { headerProps, bodyProps, tableStyle } = bindings;
 
   return (
-    <div className="card print:border-none print:shadow-none !overflow-visible">
+    <div ref={tableRootRef} className="card print:border-none print:shadow-none !overflow-visible">
       <div className="relative overflow-visible">
         {freshnessUi.userMessage ? (
           <div

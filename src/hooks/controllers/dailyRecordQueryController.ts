@@ -21,10 +21,8 @@ import {
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
 import type { SyncDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import { toRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
-import {
-  didDailyRecordFreshnessHydrateNewerRemote,
-  markDailyRecordRemoteConfirmed,
-} from '@/hooks/controllers/dailyRecordFreshnessGateController';
+import { markDailyRecordRemoteConfirmed } from '@/hooks/controllers/dailyRecordFreshnessGateController';
+import { didDailyRecordFreshnessHydrateNewerRemote } from '@/hooks/controllers/dailyRecordFreshnessHydrationController';
 
 interface DailyRecordReader {
   getForDate: (date: string) => Promise<DailyRecord | null>;

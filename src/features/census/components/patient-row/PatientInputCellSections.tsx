@@ -21,6 +21,12 @@ import { isUpcEligibleBedId } from '@/shared/census/upcBedPolicy';
 import { useAuth } from '@/context/AuthContext';
 import type { UpcChecklistRecord } from '@/features/census/contracts/censusUpcContracts';
 import { logger } from '@/services/utils/loggerService';
+import {
+  acknowledgeDailyRecordClinicalFieldPause,
+  DAILY_RECORD_FIELD_PAUSE_MESSAGE,
+  getDailyRecordClinicalFieldPause,
+  type DailyRecordClinicalFieldGroup,
+} from '@/hooks/controllers/dailyRecordClinicalFieldAcknowledgementController';
 
 const patientInputFlagsLogger = logger.child('PatientInputFlagsSection');
 const REMOTE_FIELD_LOCK_REASON =
@@ -29,6 +35,23 @@ const REMOTE_EPISODE_LOCK_REASON =
   'Firebase actualizó el paciente o episodio de esta cama. Revise el registro antes de editar.';
 
 const isRemoteLocked = (locked?: boolean): boolean => Boolean(locked);
+
+const buildClinicalPause = (
+  date: string,
+  bedId: string,
+  fieldGroup: DailyRecordClinicalFieldGroup,
+  paused: boolean
+) => {
+  const pause = paused ? getDailyRecordClinicalFieldPause(date, bedId, fieldGroup) : null;
+  return {
+    isPaused: Boolean(pause && !pause.acknowledged),
+    message: DAILY_RECORD_FIELD_PAUSE_MESSAGE,
+    token: pause ? `${date}:${bedId}:${fieldGroup}:${pause.createdAt}` : undefined,
+    onAcknowledge: () => {
+      acknowledgeDailyRecordClinicalFieldPause(date, bedId, fieldGroup);
+    },
+  };
+};
 
 export const PatientInputIdentitySection: React.FC<PatientInputIdentitySectionBindings> = ({
   shared,
@@ -87,8 +110,14 @@ export const PatientInputClinicalSection: React.FC<
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
-        readOnly={baseClinicalReadOnly || diagnosisLocked}
-        readOnlyReason={diagnosisLocked ? readOnlyReason : undefined}
+        readOnly={baseClinicalReadOnly || allClinicalLocked}
+        readOnlyReason={allClinicalLocked ? readOnlyReason : undefined}
+        clinicalPause={buildClinicalPause(
+          shared.currentDateString,
+          shared.data.bedId,
+          'diagnosis',
+          !baseClinicalReadOnly && !allClinicalLocked && diagnosisLocked
+        )}
         diagnosisMode={diagnosisMode}
         onChange={handleDebouncedText}
         onMultipleUpdate={onChange.multiple}
@@ -98,8 +127,14 @@ export const PatientInputClinicalSection: React.FC<
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
-        readOnly={baseClinicalReadOnly || specialtyLocked}
-        readOnlyReason={specialtyLocked ? readOnlyReason : undefined}
+        readOnly={baseClinicalReadOnly || allClinicalLocked}
+        readOnlyReason={allClinicalLocked ? readOnlyReason : undefined}
+        clinicalPause={buildClinicalPause(
+          shared.currentDateString,
+          shared.data.bedId,
+          'specialty',
+          !baseClinicalReadOnly && !allClinicalLocked && specialtyLocked
+        )}
         onChange={onChange.text}
         onMultipleUpdate={onChange.multiple}
       />
@@ -108,8 +143,14 @@ export const PatientInputClinicalSection: React.FC<
           data={shared.data}
           isSubRow={shared.isSubRow}
           isEmpty={shared.isEmpty}
-          readOnly={baseClinicalReadOnly || statusLocked}
-          readOnlyReason={statusLocked ? readOnlyReason : undefined}
+          readOnly={baseClinicalReadOnly || allClinicalLocked}
+          readOnlyReason={allClinicalLocked ? readOnlyReason : undefined}
+          clinicalPause={buildClinicalPause(
+            shared.currentDateString,
+            shared.data.bedId,
+            'status',
+            !baseClinicalReadOnly && !allClinicalLocked && statusLocked
+          )}
           onChange={onChange.text}
         />
       )}
@@ -181,8 +222,14 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
-        readOnly={baseClinicalReadOnly || surgicalComplicationLocked}
-        readOnlyReason={surgicalComplicationLocked ? readOnlyReason : undefined}
+        readOnly={baseClinicalReadOnly || allClinicalLocked}
+        readOnlyReason={allClinicalLocked ? readOnlyReason : undefined}
+        clinicalPause={buildClinicalPause(
+          shared.currentDateString,
+          shared.data.bedId,
+          'surgicalComplication',
+          !baseClinicalReadOnly && !allClinicalLocked && surgicalComplicationLocked
+        )}
         field="surgicalComplication"
         onChange={onChange.check}
         title="Comp. Qx"
@@ -192,8 +239,14 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
-        readOnly={baseClinicalReadOnly || upcLocked}
-        readOnlyReason={upcLocked ? readOnlyReason : undefined}
+        readOnly={baseClinicalReadOnly || allClinicalLocked}
+        readOnlyReason={allClinicalLocked ? readOnlyReason : undefined}
+        clinicalPause={buildClinicalPause(
+          shared.currentDateString,
+          shared.data.bedId,
+          'upc',
+          !baseClinicalReadOnly && !allClinicalLocked && upcLocked
+        )}
         checklist={shared.data.upcChecklist}
         onSave={handleUpcSave}
         eligible={upcEligible}

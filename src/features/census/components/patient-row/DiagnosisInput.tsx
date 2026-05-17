@@ -21,6 +21,7 @@ import type { PatientData } from '@/features/census/components/patient-row/patie
 import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';
+import { useClinicalFieldFreshnessPause } from './useClinicalFieldFreshnessPause';
 
 interface DiagnosisInputProps extends BaseCellProps {
   diagnosisMode: DiagnosisMode;
@@ -39,11 +40,13 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
   isEmpty = false,
   readOnly = false,
   readOnlyReason,
+  clinicalPause,
   diagnosisMode,
   onChange,
   onMultipleUpdate,
   onDeliveryRouteChange,
 }) => {
+  const freshnessPause = useClinicalFieldFreshnessPause(clinicalPause);
   const isGinecobstetricia = isGinecobstetriciaSpecialty(data.specialty);
   const canShowDeliveryRoute =
     isGinecobstetricia && isObstetricGinecobstetricia(data.ginecobstetriciaType);
@@ -58,13 +61,19 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
   // CIE-10 Mode
   if (diagnosisMode === 'cie10') {
     return (
-      <td className="py-0.5 px-1 border-r border-slate-200 min-w-[160px]" title={readOnlyReason}>
+      <td
+        className="py-0.5 px-1 border-r border-slate-200 min-w-[160px]"
+        title={readOnlyReason}
+        onMouseDownCapture={freshnessPause.acknowledge}
+        onFocusCapture={freshnessPause.acknowledge}
+      >
         <div className="relative w-full flex flex-col gap-0.5">
           <TerminologySuggestor
             className={clsx(
               'w-full border rounded transition-all duration-200 focus:ring-2 focus:outline-none text-[13px] h-7',
               'border-slate-200 focus:ring-medical-500/20 focus:border-medical-500',
-              isSubRow && 'text-xs h-6'
+              isSubRow && 'text-xs h-6',
+              freshnessPause.pauseClassName
             )}
             placeholder="Buscar diagnóstico CIE-10..."
             value={
@@ -127,6 +136,7 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
               )}
             </span>
           )}
+          {freshnessPause.hint}
         </div>
       </td>
     );
@@ -134,7 +144,12 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
 
   // Free Text Mode
   return (
-    <td className="py-0.5 px-1 border-r border-slate-200 min-w-[160px]" title={readOnlyReason}>
+    <td
+      className="py-0.5 px-1 border-r border-slate-200 min-w-[160px]"
+      title={readOnlyReason}
+      onMouseDownCapture={freshnessPause.acknowledge}
+      onFocusCapture={freshnessPause.acknowledge}
+    >
       <div className="relative w-full">
         <DebouncedInput
           type="text"
@@ -144,7 +159,8 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
               ? 'border-red-400 focus:ring-red-200 focus:border-red-500'
               : 'border-slate-200 focus:ring-medical-500/20 focus:border-medical-500',
             isSubRow && 'text-xs h-6',
-            canShowDeliveryRoute && 'pr-8'
+            canShowDeliveryRoute && 'pr-8',
+            freshnessPause.pauseClassName
           )}
           placeholder="Diagnóstico (texto libre)"
           value={data.pathology || ''}
@@ -164,6 +180,7 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
             />
           )}
         </div>
+        {freshnessPause.hint}
       </div>
     </td>
   );

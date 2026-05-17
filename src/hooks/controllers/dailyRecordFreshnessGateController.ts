@@ -10,7 +10,15 @@ import {
   recordClinicalInputsBlockFailed,
   recordClinicalInputsBlockStarted,
 } from '@/hooks/controllers/dailyRecordFreshnessGateTelemetryController';
+import {
+  clearDailyRecordClinicalFieldPausesForTests,
+  registerDailyRecordClinicalFieldPauses,
+} from '@/hooks/controllers/dailyRecordClinicalFieldAcknowledgementController';
+import { DailyRecordFreshnessGateError } from '@/hooks/controllers/dailyRecordFreshnessGateError';
 import { applyDailyRecordRemoteConfirmation } from '@/hooks/controllers/dailyRecordRemoteConfirmationController';
+import { didDailyRecordFreshnessHydrateNewerRemote } from '@/hooks/controllers/dailyRecordFreshnessHydrationController';
+
+export { DailyRecordFreshnessGateError } from '@/hooks/controllers/dailyRecordFreshnessGateError';
 
 export type DailyRecordFreshnessStatus =
   | 'fresh_remote_confirmed'
@@ -19,13 +27,6 @@ export type DailyRecordFreshnessStatus =
   | 'blocked_until_remote_check';
 
 export const DAILY_RECORD_RESUME_STALE_THRESHOLD_MS = 5 * 60 * 1000;
-
-export class DailyRecordFreshnessGateError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DailyRecordFreshnessGateError';
-  }
-}
 
 interface DailyRecordFreshnessState {
   status: DailyRecordFreshnessStatus;
@@ -182,7 +183,10 @@ export const markDailyRecordRemoteConfirmed = (
   );
   state.confirmedResumeEpoch = resumeEpoch;
   state.lastRemoteConfirmedAt = confirmedAt;
-  applyDailyRecordRemoteConfirmation(state, params);
+  const { builtLocks } = applyDailyRecordRemoteConfirmation(state, params);
+  if (builtLocks) {
+    registerDailyRecordClinicalFieldPauses(date, state.clinicalFieldLocksByBedId, confirmedAt);
+  }
   setFreshnessStatus(state, 'fresh_remote_confirmed');
   if (typeof blockedForMs === 'number') {
     dailyRecordObservability.recordEvent('daily_record_resume_refresh_completed', 'success', {
@@ -206,25 +210,6 @@ const requiresRemoteFreshness = (date: string): boolean => {
 const isRemoteUnavailableRead = (result: DailyRecordQueryResult): boolean =>
   result.runtime.consistencyState === 'unavailable' ||
   result.runtime.conflictSummary?.kind === 'remote_unavailable';
-
-const toRecordTimestamp = (value: string | undefined): number => {
-  if (!value) return 0;
-  const millis = Date.parse(value);
-  return Number.isFinite(millis) ? millis : 0;
-};
-
-export const didDailyRecordFreshnessHydrateNewerRemote = (
-  result: DailyRecordQueryResult
-): boolean => {
-  const conflictSummary = result.runtime.conflictSummary;
-  if (conflictSummary?.kind !== 'hydrated_from_remote') {
-    return false;
-  }
-
-  const remoteTimestamp = toRecordTimestamp(conflictSummary.remoteTimestamp);
-  const localTimestamp = toRecordTimestamp(conflictSummary.localTimestamp);
-  return remoteTimestamp > localTimestamp;
-};
 
 export const ensureDailyRecordRemoteFreshness = ({
   date,
@@ -321,6 +306,9 @@ export const ensureDailyRecordRemoteFreshness = ({
             hydratedRecord: result.record,
           })
         : {};
+      if (state.remoteHydratedNewerRecord) {
+        registerDailyRecordClinicalFieldPauses(date, state.clinicalFieldLocksByBedId, completedAt);
+      }
       setFreshnessStatus(state, 'fresh_remote_confirmed');
 
       dailyRecordObservability.recordEvent('daily_record_resume_refresh_completed', 'success', {
@@ -395,4 +383,5 @@ export const resetDailyRecordFreshnessGateForTests = (): void => {
   lastStaleResumeAt = undefined;
   freshnessByDate.clear();
   freshnessListeners.clear();
+  clearDailyRecordClinicalFieldPausesForTests();
 };

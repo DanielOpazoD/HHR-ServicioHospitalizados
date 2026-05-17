@@ -223,7 +223,9 @@ export const useDailyRecordSyncQuery = (
         assertDailyRecordWriteAccepted(payload.result);
       } catch (err) {
         if (err instanceof DailyRecordFreshnessGateError) {
-          warning('Censo en actualización', err.message);
+          if (err.presentation !== 'silent') {
+            warning('Censo en actualización', err.message);
+          }
           throw err;
         }
 
@@ -257,7 +259,9 @@ export const useDailyRecordSyncQuery = (
         assertDailyRecordWriteAccepted(payload.result);
       } catch (err) {
         if (err instanceof DailyRecordFreshnessGateError) {
-          warning('Censo en actualización', err.message);
+          if (err.presentation !== 'silent') {
+            warning('Censo en actualización', err.message);
+          }
         }
         throw err;
       }

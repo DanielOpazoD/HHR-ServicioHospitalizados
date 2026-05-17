@@ -7,10 +7,10 @@ import {
 } from '@/hooks/controllers/dailyRecordQueryController';
 import {
   DailyRecordFreshnessGateError,
-  didDailyRecordFreshnessHydrateNewerRemote,
   ensureDailyRecordRemoteFreshness,
   getDailyRecordClinicalFieldLocksByBedId,
 } from '@/hooks/controllers/dailyRecordFreshnessGateController';
+import { didDailyRecordFreshnessHydrateNewerRemote } from '@/hooks/controllers/dailyRecordFreshnessHydrationController';
 import { PENDING_DAILY_RECORD_PATCH_TTL_MS } from '@/hooks/controllers/dailyRecordPendingPatchController';
 import type {
   SaveDailyRecordResult,
@@ -20,9 +20,9 @@ import type { DailyRecordQueryResult } from '@/services/repositories/contracts/d
 import { toRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
 import {
   classifyHydratedRemotePatchRisk,
-  doesPatchTouchHydratedRemoteClinicalLocks,
   isHydratedRemotePatchRiskBlocking,
 } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
+import { resolveDailyRecordClinicalPatchLockDecision } from '@/hooks/controllers/dailyRecordClinicalFieldAcknowledgementController';
 
 type FreshnessReason = 'resume' | 'clinical_patch' | 'clinical_save';
 
@@ -102,15 +102,16 @@ export const assertHydratedRemotePatchCanProceed = ({
   previousRecord: DailyRecord | null | undefined;
   freshness: DailyRecordQueryResult;
 }): void => {
-  if (
-    doesPatchTouchHydratedRemoteClinicalLocks(
-      attemptedPatch,
-      getDailyRecordClinicalFieldLocksByBedId(date)
-    )
-  ) {
-    throw new DailyRecordFreshnessGateError(
-      'El censo remoto actualizó este dato. Revise los datos antes de editar.'
-    );
+  const lockDecision = resolveDailyRecordClinicalPatchLockDecision(
+    date,
+    attemptedPatch,
+    getDailyRecordClinicalFieldLocksByBedId(date)
+  );
+  if (lockDecision.kind === 'soft_pause') {
+    throw new DailyRecordFreshnessGateError(lockDecision.message, { presentation: 'silent' });
+  }
+  if (lockDecision.kind === 'hard_lock') {
+    throw new DailyRecordFreshnessGateError(lockDecision.message);
   }
 
   if (!didDailyRecordFreshnessHydrateNewerRemote(freshness)) {

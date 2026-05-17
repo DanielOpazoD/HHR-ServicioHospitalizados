@@ -8,6 +8,7 @@ import { AlertCircle } from 'lucide-react';
 import { STATUS_OPTIONS } from '@/constants/clinicalSpecialtyConstants';
 import { BaseCellProps, EventTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';
+import { useClinicalFieldFreshnessPause } from './useClinicalFieldFreshnessPause';
 
 interface StatusSelectProps extends BaseCellProps {
   onChange: EventTextHandler;
@@ -19,8 +20,10 @@ export const StatusSelect: React.FC<StatusSelectProps> = ({
   isEmpty = false,
   readOnly = false,
   readOnlyReason,
+  clinicalPause,
   onChange,
 }) => {
+  const freshnessPause = useClinicalFieldFreshnessPause(clinicalPause);
   const isCriticalEmpty = !data.status && !!data.patientName;
 
   if (isEmpty && !isSubRow) {
@@ -28,7 +31,11 @@ export const StatusSelect: React.FC<StatusSelectProps> = ({
   }
 
   return (
-    <td className="py-0.5 px-1 border-r border-slate-200 w-24">
+    <td
+      className="py-0.5 px-1 border-r border-slate-200 w-24"
+      onMouseDownCapture={freshnessPause.acknowledge}
+      onFocusCapture={freshnessPause.acknowledge}
+    >
       <div className="relative">
         <select
           className={clsx(
@@ -44,7 +51,8 @@ export const StatusSelect: React.FC<StatusSelectProps> = ({
                 : data.status
                   ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200/80 font-semibold focus:ring-medical-500/20 focus:border-medical-500'
                   : 'border-slate-200 focus:ring-medical-500/20 focus:border-medical-500',
-            isSubRow && 'h-6'
+            isSubRow && 'h-6',
+            freshnessPause.pauseClassName
           )}
           value={data.status || ''}
           onChange={onChange('status')}
@@ -69,6 +77,7 @@ export const StatusSelect: React.FC<StatusSelectProps> = ({
             <AlertCircle size={8} className="text-white" />
           </div>
         )}
+        {freshnessPause.hint}
       </div>
     </td>
   );

@@ -236,11 +236,8 @@ describeUiEmulator('UI sync flow diagnostic locks with Firestore emulator', () =
     });
 
     expect(rejectedError).toBeInstanceOf(Error);
-    expect(String((rejectedError as Error).message)).toContain('actualizó este dato');
-    expect(mockNotifyWarning).toHaveBeenCalledWith(
-      'Censo en actualización',
-      expect.stringContaining('Revise los datos antes de editar')
-    );
+    expect(String((rejectedError as Error).message)).toContain('Actualizado recién');
+    expect(mockNotifyWarning).not.toHaveBeenCalled();
 
     let remoteSnap: { data: () => Record<string, unknown> | undefined } | undefined;
     await testEnv.withSecurityRulesDisabled(async context => {

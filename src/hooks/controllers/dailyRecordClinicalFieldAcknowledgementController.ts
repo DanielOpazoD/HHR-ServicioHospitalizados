@@ -1,0 +1,180 @@
+import type { DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type { HydratedRemoteClinicalFieldLocksByBedId } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
+
+export type DailyRecordClinicalFieldGroup =
+  | 'diagnosis'
+  | 'status'
+  | 'specialty'
+  | 'upc'
+  | 'surgicalComplication';
+
+export interface ClinicalFieldPauseState {
+  createdAt: number;
+  acknowledged: boolean;
+}
+
+export type DailyRecordClinicalPatchPauseDecision =
+  | { kind: 'allowed' }
+  | {
+      kind: 'soft_pause';
+      bedId: string;
+      fieldGroup: DailyRecordClinicalFieldGroup;
+      message: string;
+    }
+  | { kind: 'hard_lock'; bedId: string; message: string };
+
+const FIELD_PAUSE_TTL_MS = 3 * 60 * 1_000;
+export const DAILY_RECORD_FIELD_PAUSE_MESSAGE = 'Actualizado recién. Clic nuevamente para editar.';
+export const DAILY_RECORD_CONTEXT_RESET_MESSAGE =
+  'La cama fue actualizada. Seleccione nuevamente el paciente.';
+
+const pausesByDate = new Map<
+  string,
+  Record<string, Partial<Record<DailyRecordClinicalFieldGroup, ClinicalFieldPauseState>>>
+>();
+const hardLockedBedsByDate = new Map<string, Set<string>>();
+
+const resolveGroupFromField = (field: string): DailyRecordClinicalFieldGroup | null => {
+  if (['pathology', 'cie10Code', 'cie10Description', 'diagnosisComments'].includes(field)) {
+    return 'diagnosis';
+  }
+  if (field === 'status') return 'status';
+  if (field === 'specialty' || field === 'secondarySpecialty') return 'specialty';
+  if (field === 'isUPC' || field === 'upcChecklist') return 'upc';
+  if (field === 'surgicalComplication') return 'surgicalComplication';
+  if (
+    [
+      'ginecobstetriciaType',
+      'deliveryDate',
+      'deliveryRoute',
+      'deliveryCesareanLabor',
+      'clinicalCrib',
+    ].includes(field)
+  ) {
+    return 'diagnosis';
+  }
+  return null;
+};
+
+const parseBedPatchPath = (
+  path: string
+): { bedId: string; fieldGroup: DailyRecordClinicalFieldGroup | null } | null => {
+  const match = path.match(/^beds\.([^.]+)(?:\.([^.]+))?/);
+  if (!match) return null;
+  return {
+    bedId: match[1],
+    fieldGroup: match[2] ? resolveGroupFromField(match[2]) : null,
+  };
+};
+
+const isPauseExpired = (state: ClinicalFieldPauseState, now: number): boolean =>
+  now - state.createdAt >= FIELD_PAUSE_TTL_MS;
+
+export const registerDailyRecordClinicalFieldPauses = (
+  date: string,
+  locksByBedId: HydratedRemoteClinicalFieldLocksByBedId,
+  createdAt: number
+): void => {
+  const next: Record<
+    string,
+    Partial<Record<DailyRecordClinicalFieldGroup, ClinicalFieldPauseState>>
+  > = {};
+  const hardLockedBeds = new Set<string>();
+
+  Object.entries(locksByBedId).forEach(([bedId, locks]) => {
+    if (locks.allClinical) {
+      hardLockedBeds.add(bedId);
+      return;
+    }
+    (['diagnosis', 'status', 'specialty', 'upc', 'surgicalComplication'] as const).forEach(
+      fieldGroup => {
+        if (!locks[fieldGroup]) return;
+        next[bedId] ??= {};
+        next[bedId][fieldGroup] = { createdAt, acknowledged: false };
+      }
+    );
+  });
+
+  pausesByDate.set(date, next);
+  hardLockedBedsByDate.set(date, hardLockedBeds);
+};
+
+export const getDailyRecordClinicalFieldPause = (
+  date: string,
+  bedId: string,
+  fieldGroup: DailyRecordClinicalFieldGroup,
+  now: number = Date.now()
+): ClinicalFieldPauseState | null => {
+  const state = pausesByDate.get(date)?.[bedId]?.[fieldGroup];
+  if (!state || isPauseExpired(state, now)) {
+    return null;
+  }
+  return state;
+};
+
+export const acknowledgeDailyRecordClinicalFieldPause = (
+  date: string,
+  bedId: string,
+  fieldGroup: DailyRecordClinicalFieldGroup
+): 'acknowledged' | 'already_acknowledged' | 'hard_locked' | 'none' => {
+  if (hardLockedBedsByDate.get(date)?.has(bedId)) return 'hard_locked';
+  const state = pausesByDate.get(date)?.[bedId]?.[fieldGroup];
+  if (!state) return 'none';
+  if (state.acknowledged) return 'already_acknowledged';
+  state.acknowledged = true;
+  return 'acknowledged';
+};
+
+export const resolveDailyRecordClinicalPatchPauseDecision = (
+  date: string,
+  patch: DailyRecordPatch,
+  now: number = Date.now()
+): DailyRecordClinicalPatchPauseDecision => {
+  for (const path of Object.keys(patch)) {
+    const parsed = parseBedPatchPath(path);
+    if (!parsed?.fieldGroup) continue;
+    if (hardLockedBedsByDate.get(date)?.has(parsed.bedId)) {
+      return {
+        kind: 'hard_lock',
+        bedId: parsed.bedId,
+        message: DAILY_RECORD_CONTEXT_RESET_MESSAGE,
+      };
+    }
+    const pause = getDailyRecordClinicalFieldPause(date, parsed.bedId, parsed.fieldGroup, now);
+    if (!pause || pause.acknowledged) continue;
+    return {
+      kind: 'soft_pause',
+      bedId: parsed.bedId,
+      fieldGroup: parsed.fieldGroup,
+      message: DAILY_RECORD_FIELD_PAUSE_MESSAGE,
+    };
+  }
+  return { kind: 'allowed' };
+};
+
+export const resolveDailyRecordClinicalPatchLockDecision = (
+  date: string,
+  patch: DailyRecordPatch,
+  locksByBedId: HydratedRemoteClinicalFieldLocksByBedId,
+  now: number = Date.now()
+): DailyRecordClinicalPatchPauseDecision => {
+  for (const path of Object.keys(patch)) {
+    const parsed = parseBedPatchPath(path);
+    if (!parsed) continue;
+    const locks = locksByBedId[parsed.bedId];
+    if (!locks) continue;
+    if (locks.allClinical) {
+      return {
+        kind: 'hard_lock',
+        bedId: parsed.bedId,
+        message: DAILY_RECORD_CONTEXT_RESET_MESSAGE,
+      };
+    }
+  }
+  return resolveDailyRecordClinicalPatchPauseDecision(date, patch, now);
+};
+
+export const clearDailyRecordClinicalFieldPausesForTests = (): void => {
+  pausesByDate.clear();
+  hardLockedBedsByDate.clear();
+};
