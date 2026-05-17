@@ -11,7 +11,9 @@ import { clearAllRecords, saveRecord } from '@/services/storage/indexedDBService
 import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { resolveFirestoreRulesEmulatorConfig } from '@/tests/security/firestoreRulesEmulatorConfig';
 import {
+  getDailyRecordClinicalFieldLocksByBedId,
   getDailyRecordFreshnessStatus,
+  markDailyRecordStaleBaseline,
   markDailyRecordTabHidden,
   markDailyRecordTabVisible,
   resetDailyRecordFreshnessGateForTests,
@@ -207,6 +209,7 @@ describeUiEmulator('UI sync flow diagnostic locks with Firestore emulator', () =
 
     markDailyRecordTabHidden(0);
     markDailyRecordTabVisible(6 * 60 * 1000);
+    markDailyRecordStaleBaseline(date, resultRef.current.record);
 
     await testEnv.withSecurityRulesDisabled(async context => {
       await context
@@ -218,6 +221,7 @@ describeUiEmulator('UI sync flow diagnostic locks with Firestore emulator', () =
     await waitFor(() => {
       expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag confirmado por cliente A');
       expect(getDailyRecordFreshnessStatus(date)).toBe('fresh_remote_confirmed');
+      expect(getDailyRecordClinicalFieldLocksByBedId(date)?.R1?.diagnosis).toBe(true);
     });
 
     let rejectedError: unknown;

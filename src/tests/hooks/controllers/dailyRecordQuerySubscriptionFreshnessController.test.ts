@@ -25,7 +25,7 @@ describe('dailyRecordQueryController subscription freshness', () => {
     resetDailyRecordFreshnessGateForTests();
   });
 
-  it('confirms freshness when a realtime subscription receives a non-pending remote snapshot', () => {
+  it('confirms freshness when a non-pending snapshot selects the local record', () => {
     const queryClient = new QueryClient();
     const record = DataFactory.createMockDailyRecord('2025-01-08');
     let emit:
@@ -35,7 +35,7 @@ describe('dailyRecordQueryController subscription freshness', () => {
             outcome: 'clean';
             record: typeof record;
             consistencyState: 'remote_applied';
-            sourceOfTruth: 'remote';
+            sourceOfTruth: 'local';
             retryability: 'not_applicable';
             recoveryAction: 'none';
             conflictSummary: null;
@@ -66,7 +66,7 @@ describe('dailyRecordQueryController subscription freshness', () => {
         outcome: 'clean',
         record,
         consistencyState: 'remote_applied',
-        sourceOfTruth: 'remote',
+        sourceOfTruth: 'local',
         retryability: 'not_applicable',
         recoveryAction: 'none',
         conflictSummary: null,

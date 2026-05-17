@@ -3,15 +3,14 @@ import { queryKeys } from '@/config/queryClient';
 import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import type { DailyRecordQueryResult } from '@/services/repositories/contracts/dailyRecordQueries';
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
-import {
-  buildHydratedRemoteClinicalFieldLocks,
-  type HydratedRemoteClinicalFieldLocksByBedId,
-} from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
+import { buildHydratedRemoteClinicalFieldLocks } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
+import type { HydratedRemoteClinicalFieldLocksByBedId } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
 import {
   recordClinicalInputsBlockCompleted,
   recordClinicalInputsBlockFailed,
   recordClinicalInputsBlockStarted,
 } from '@/hooks/controllers/dailyRecordFreshnessGateTelemetryController';
+import { applyDailyRecordRemoteConfirmation } from '@/hooks/controllers/dailyRecordRemoteConfirmationController';
 
 export type DailyRecordFreshnessStatus =
   | 'fresh_remote_confirmed'
@@ -34,6 +33,7 @@ interface DailyRecordFreshnessState {
   lastRemoteConfirmedAt?: number;
   remoteHydratedNewerRecord: boolean;
   clinicalFieldLocksByBedId: HydratedRemoteClinicalFieldLocksByBedId;
+  lastConfirmedRecord?: DailyRecord | null;
   blockedStartedAt?: number;
   refreshPromise?: Promise<DailyRecordQueryResult>;
 }
@@ -154,6 +154,12 @@ export const getDailyRecordClinicalFieldLocksByBedId = (
 ): HydratedRemoteClinicalFieldLocksByBedId =>
   getOrCreateFreshnessState(date).clinicalFieldLocksByBedId;
 
+export const markDailyRecordStaleBaseline = (date: string, record: DailyRecord | null): void => {
+  if (!record) return;
+  const state = getOrCreateFreshnessState(date);
+  state.lastConfirmedRecord = record;
+};
+
 export const markDailyRecordRemoteConfirmed = (
   date: string,
   params: {
@@ -174,16 +180,9 @@ export const markDailyRecordRemoteConfirmed = (
     params.source,
     resumeEpoch
   );
-  const remoteHydratedNewerRecord = params.remoteHydratedNewerRecord === true;
   state.confirmedResumeEpoch = resumeEpoch;
   state.lastRemoteConfirmedAt = confirmedAt;
-  state.remoteHydratedNewerRecord = remoteHydratedNewerRecord;
-  state.clinicalFieldLocksByBedId = remoteHydratedNewerRecord
-    ? buildHydratedRemoteClinicalFieldLocks({
-        previousRecord: params.previousRecord,
-        hydratedRecord: params.confirmedRecord,
-      })
-    : {};
+  applyDailyRecordRemoteConfirmation(state, params);
   setFreshnessStatus(state, 'fresh_remote_confirmed');
   if (typeof blockedForMs === 'number') {
     dailyRecordObservability.recordEvent('daily_record_resume_refresh_completed', 'success', {

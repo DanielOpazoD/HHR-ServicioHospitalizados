@@ -20,6 +20,7 @@ import {
 } from '@/hooks/controllers/dailyRecordQueryController';
 import {
   markDailyRecordRemoteConfirmed,
+  markDailyRecordStaleBaseline,
   markDailyRecordTabHidden,
   markDailyRecordTabVisible,
 } from '@/hooks/controllers/dailyRecordFreshnessGateController';
@@ -60,6 +61,7 @@ export const useDailyRecordQuery = (
     remoteSyncStatus
   );
   const previousShouldSyncFromRemoteRef = useRef(shouldSyncFromRemote);
+  const lastRemoteConfirmedRecordRef = useRef<{ date: string; record: DailyRecord } | null>(null);
 
   const queryKey = getDailyRecordQueryKey(date);
   const query = useQuery<DailyRecordQueryResult>({
@@ -80,10 +82,17 @@ export const useDailyRecordQuery = (
       return;
     }
 
+    const previousRecord =
+      lastRemoteConfirmedRecordRef.current?.date === date
+        ? lastRemoteConfirmedRecordRef.current.record
+        : null;
     markDailyRecordRemoteConfirmed(date, {
       source: 'query',
       remoteLastUpdated: query.data.record.lastUpdated,
+      previousRecord,
+      confirmedRecord: query.data.record,
     });
+    lastRemoteConfirmedRecordRef.current = { date, record: query.data.record };
   }, [date, query.data, shouldSyncFromRemote]);
 
   useEffect(() => {
@@ -122,6 +131,11 @@ export const useDailyRecordQuery = (
         return;
       }
 
+      markDailyRecordStaleBaseline(
+        date,
+        queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date))?.record ??
+          null
+      );
       void ensureFreshDailyRecordQuery(date, { dailyRecord, queryClient }, 'resume');
     };
 

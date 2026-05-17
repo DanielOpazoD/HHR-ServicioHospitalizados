@@ -283,14 +283,12 @@ export const createDailyRecordSubscription = (
     const previousResult = queryClient.getQueryData<DailyRecordQueryResult>(
       getDailyRecordQueryKey(date)
     );
-
     if (result.record) {
       if (shouldPreservePreviousRecord(previousResult, result)) {
         return;
       }
       applyResolvedRecord(result, previousResult);
       if (
-        result.runtime.sourceOfTruth === 'remote' &&
         result.runtime.consistencyState !== 'unavailable' &&
         result.runtime.conflictSummary?.kind !== 'remote_unavailable'
       ) {
