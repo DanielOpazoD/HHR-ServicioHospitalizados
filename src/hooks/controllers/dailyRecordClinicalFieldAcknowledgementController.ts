@@ -1,4 +1,4 @@
-import type { DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import type { HydratedRemoteClinicalFieldLocksByBedId } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
 
 export type DailyRecordClinicalFieldGroup =
@@ -68,6 +68,48 @@ const parseBedPatchPath = (
   };
 };
 
+interface ResolveClinicalPatchDecisionOptions {
+  previousRecord?: DailyRecord | null;
+}
+
+const hasMeaningfulIdentityValue = (value: unknown): boolean =>
+  typeof value === 'string' && value.trim().length > 0;
+
+const hasOwnPatchPath = (patch: DailyRecordPatch, path: string): boolean =>
+  Object.prototype.hasOwnProperty.call(patch, path);
+
+const getPatchPathValue = (patch: DailyRecordPatch, path: string): unknown =>
+  (patch as Record<string, unknown>)[path];
+
+const isEmptyBedIdentityActivationPatch = (
+  patch: DailyRecordPatch,
+  bedId: string,
+  previousRecord: DailyRecord | null | undefined
+): boolean => {
+  const previousBed = previousRecord?.beds?.[bedId];
+  if (!previousBed) return false;
+
+  const hadIdentity =
+    hasMeaningfulIdentityValue(previousBed.patientName) ||
+    hasMeaningfulIdentityValue(previousBed.rut);
+  if (hadIdentity) return false;
+
+  const patientNamePath = `beds.${bedId}.patientName`;
+  const rutPath = `beds.${bedId}.rut`;
+  const touchesIdentity =
+    hasOwnPatchPath(patch, patientNamePath) || hasOwnPatchPath(patch, rutPath);
+  if (!touchesIdentity) return false;
+
+  const nextPatientName = hasOwnPatchPath(patch, patientNamePath)
+    ? getPatchPathValue(patch, patientNamePath)
+    : previousBed.patientName;
+  const nextRut = hasOwnPatchPath(patch, rutPath)
+    ? getPatchPathValue(patch, rutPath)
+    : previousBed.rut;
+
+  return hasMeaningfulIdentityValue(nextPatientName) || hasMeaningfulIdentityValue(nextRut);
+};
+
 const isPauseExpired = (state: ClinicalFieldPauseState, now: number): boolean =>
   now - state.createdAt >= FIELD_PAUSE_TTL_MS;
 
@@ -129,7 +171,8 @@ export const acknowledgeDailyRecordClinicalFieldPause = (
 export const resolveDailyRecordClinicalPatchPauseDecision = (
   date: string,
   patch: DailyRecordPatch,
-  now: number = Date.now()
+  now: number = Date.now(),
+  options: ResolveClinicalPatchDecisionOptions = {}
 ): DailyRecordClinicalPatchPauseDecision => {
   for (const path of Object.keys(patch)) {
     const parsed = parseBedPatchPath(path);
@@ -143,6 +186,7 @@ export const resolveDailyRecordClinicalPatchPauseDecision = (
     }
     const pause = getDailyRecordClinicalFieldPause(date, parsed.bedId, parsed.fieldGroup, now);
     if (!pause || pause.acknowledged) continue;
+    if (isEmptyBedIdentityActivationPatch(patch, parsed.bedId, options.previousRecord)) continue;
     return {
       kind: 'soft_pause',
       bedId: parsed.bedId,
@@ -157,7 +201,8 @@ export const resolveDailyRecordClinicalPatchLockDecision = (
   date: string,
   patch: DailyRecordPatch,
   locksByBedId: HydratedRemoteClinicalFieldLocksByBedId,
-  now: number = Date.now()
+  now: number = Date.now(),
+  options: ResolveClinicalPatchDecisionOptions = {}
 ): DailyRecordClinicalPatchPauseDecision => {
   for (const path of Object.keys(patch)) {
     const parsed = parseBedPatchPath(path);
@@ -172,7 +217,7 @@ export const resolveDailyRecordClinicalPatchLockDecision = (
       };
     }
   }
-  return resolveDailyRecordClinicalPatchPauseDecision(date, patch, now);
+  return resolveDailyRecordClinicalPatchPauseDecision(date, patch, now, options);
 };
 
 export const clearDailyRecordClinicalFieldPausesForTests = (): void => {

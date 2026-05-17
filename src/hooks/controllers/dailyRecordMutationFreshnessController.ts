@@ -105,7 +105,9 @@ export const assertHydratedRemotePatchCanProceed = ({
   const lockDecision = resolveDailyRecordClinicalPatchLockDecision(
     date,
     attemptedPatch,
-    getDailyRecordClinicalFieldLocksByBedId(date)
+    getDailyRecordClinicalFieldLocksByBedId(date),
+    Date.now(),
+    { previousRecord }
   );
   if (lockDecision.kind === 'soft_pause') {
     throw new DailyRecordFreshnessGateError(lockDecision.message, { presentation: 'silent' });

@@ -82,6 +82,35 @@ describe('dailyRecordHydratedRemotePatchRiskController', () => {
     ).toBe('independent_field');
   });
 
+  it('allows an empty-bed admission patch when Firebase already confirms the same new patient', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    const hydratedRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    hydratedRecord.lastUpdated = '2026-05-16T10:30:00.000Z';
+    hydratedRecord.beds.R3 = DataFactory.createMockPatient('R3', {
+      patientName: 'Paciente Nuevo',
+      rut: '17.752.753-K',
+      admissionDate: '2026-05-16',
+      pathology: 'Diagnóstico inicial',
+      specialty: 'Med Interna',
+      status: PatientStatus.ESTABLE,
+    });
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R3.patientName': 'Paciente Nuevo',
+          'beds.R3.rut': '17.752.753-K',
+          'beds.R3.admissionDate': '2026-05-16',
+          'beds.R3.pathology': 'Diagnóstico inicial',
+          'beds.R3.specialty': 'Med Interna',
+          'beds.R3.status': PatientStatus.ESTABLE,
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('independent_field');
+  });
+
   it('allows full-bed move patches after self-confirmed remote hydration', () => {
     const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
     previousRecord.beds.R2 = DataFactory.createMockPatient('R2', {

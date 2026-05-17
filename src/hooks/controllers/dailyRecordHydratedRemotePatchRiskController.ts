@@ -50,6 +50,17 @@ const getPathValue = (source: unknown, path: string): unknown =>
 const valuesDiffer = (left: unknown, right: unknown): boolean =>
   JSON.stringify(left ?? null) !== JSON.stringify(right ?? null);
 
+const hasOwnPatchPath = (patch: DailyRecordPatch, path: string): boolean =>
+  Object.prototype.hasOwnProperty.call(patch, path);
+
+const getPatchValue = (patch: DailyRecordPatch, path: string): unknown =>
+  (patch as Record<string, unknown>)[path];
+
+const normalizeComparableText = (value: unknown): string =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+const hasMeaningfulText = (value: unknown): boolean => normalizeComparableText(value).length > 0;
+
 const parseBedPatchPath = (
   path: string
 ): { bedId: string; field?: string; canonicalPath?: string } | null => {
@@ -127,6 +138,59 @@ const collectChangedBedFields = (
 const hasVisibleEpisodeChange = (changedFields: Set<string>): boolean =>
   Array.from(VISIBLE_EPISODE_FIELDS).some(field => changedFields.has(field));
 
+const patchValueMatchesHydratedRecord = (
+  attemptedPatch: DailyRecordPatch,
+  attemptedPath: string,
+  hydratedRecord: DailyRecord,
+  canonicalPath: string
+): boolean => {
+  if (!hasOwnPatchPath(attemptedPatch, attemptedPath)) {
+    return false;
+  }
+  return !valuesDiffer(
+    getPatchValue(attemptedPatch, attemptedPath),
+    getPathValue(hydratedRecord, canonicalPath)
+  );
+};
+
+const isSameHydratedAdmissionActivation = (
+  attemptedPatch: DailyRecordPatch,
+  previousRecord: DailyRecord,
+  hydratedRecord: DailyRecord,
+  bedId: string
+): boolean => {
+  const previousBed = previousRecord.beds?.[bedId];
+  const hydratedBed = hydratedRecord.beds?.[bedId];
+  if (!previousBed || !hydratedBed) return false;
+
+  if (hasMeaningfulText(previousBed.patientName) || hasMeaningfulText(previousBed.rut)) {
+    return false;
+  }
+
+  const identityFields = ['patientName', 'rut'] as const;
+  const touchesIdentity = identityFields.some(field =>
+    hasOwnPatchPath(attemptedPatch, `beds.${bedId}.${field}`)
+  );
+  if (!touchesIdentity) return false;
+
+  const touchedFieldsMatchHydrated = [...identityFields, 'admissionDate'].every(field => {
+    const path = `beds.${bedId}.${field}`;
+    if (!hasOwnPatchPath(attemptedPatch, path)) {
+      return true;
+    }
+    const hydratedBedValues = hydratedBed as unknown as Record<string, unknown>;
+    return (
+      normalizeComparableText(getPatchValue(attemptedPatch, path)) ===
+      normalizeComparableText(hydratedBedValues[field])
+    );
+  });
+
+  return (
+    touchedFieldsMatchHydrated &&
+    (hasMeaningfulText(hydratedBed.patientName) || hasMeaningfulText(hydratedBed.rut))
+  );
+};
+
 export const classifyHydratedRemotePatchRisk = ({
   attemptedPatch,
   previousRecord,
@@ -159,7 +223,13 @@ export const classifyHydratedRemotePatchRisk = ({
       hydratedRecord,
       attemptedBedPatch.bedId
     );
-    if (hasVisibleEpisodeChange(changedFields)) {
+    const sameHydratedAdmissionActivation = isSameHydratedAdmissionActivation(
+      attemptedPatch,
+      previousRecord,
+      hydratedRecord,
+      attemptedBedPatch.bedId
+    );
+    if (hasVisibleEpisodeChange(changedFields) && !sameHydratedAdmissionActivation) {
       return 'episode_changed';
     }
 
@@ -179,6 +249,16 @@ export const classifyHydratedRemotePatchRisk = ({
         getPathValue(hydratedRecord, attemptedBedPatch.canonicalPath)
       )
     ) {
+      if (
+        patchValueMatchesHydratedRecord(
+          attemptedPatch,
+          attemptedPath,
+          hydratedRecord,
+          attemptedBedPatch.canonicalPath
+        )
+      ) {
+        continue;
+      }
       return 'same_field';
     }
 

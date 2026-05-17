@@ -173,7 +173,9 @@ export const executeBedManagementAction = ({
       bedManagementDispatchLogger.error('Audit logging failed', error);
     }
 
-    void patchRecord(patch);
+    void patchRecord(patch).catch(error => {
+      bedManagementDispatchLogger.warn('Bed management patch failed', error);
+    });
   } catch (error) {
     bedManagementDispatchLogger.warn('Bed management action failed', error);
   }
