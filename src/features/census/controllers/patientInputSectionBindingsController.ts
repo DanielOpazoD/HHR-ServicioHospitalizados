@@ -12,6 +12,7 @@ const buildPatientInputSectionSharedProps = ({
   isEmpty,
   isLocked,
   clinicalEditingDisabled,
+  clinicalFieldLocks,
 }: Pick<
   PatientInputSectionBindingsParams,
   | 'data'
@@ -21,6 +22,7 @@ const buildPatientInputSectionSharedProps = ({
   | 'isEmpty'
   | 'isLocked'
   | 'clinicalEditingDisabled'
+  | 'clinicalFieldLocks'
 >): PatientInputSectionSharedProps => ({
   data,
   currentDateString,
@@ -29,6 +31,7 @@ const buildPatientInputSectionSharedProps = ({
   isEmpty,
   isLocked,
   clinicalEditingDisabled,
+  clinicalFieldLocks,
 });
 
 export const buildPatientInputSectionBindings = ({
@@ -39,6 +42,7 @@ export const buildPatientInputSectionBindings = ({
   isEmpty,
   isLocked,
   clinicalEditingDisabled,
+  clinicalFieldLocks,
   diagnosisMode,
   hasRutError,
   handleDebouncedText,
@@ -53,6 +57,7 @@ export const buildPatientInputSectionBindings = ({
     isEmpty,
     isLocked,
     clinicalEditingDisabled,
+    clinicalFieldLocks,
   });
 
   return {

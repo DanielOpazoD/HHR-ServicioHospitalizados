@@ -18,6 +18,7 @@ export const StatusSelect: React.FC<StatusSelectProps> = ({
   isSubRow = false,
   isEmpty = false,
   readOnly = false,
+  readOnlyReason,
   onChange,
 }) => {
   const isCriticalEmpty = !data.status && !!data.patientName;
@@ -48,7 +49,9 @@ export const StatusSelect: React.FC<StatusSelectProps> = ({
           value={data.status || ''}
           onChange={onChange('status')}
           disabled={readOnly}
-          title={isCriticalEmpty ? 'Campo crítico requerido para entrega' : undefined}
+          title={
+            readOnlyReason || (isCriticalEmpty ? 'Campo crítico requerido para entrega' : undefined)
+          }
         >
           <option value="">-- Est --</option>
           {STATUS_OPTIONS.map(opt => (

@@ -37,6 +37,7 @@ export const SpecialtyCell: React.FC<SpecialtyCellProps> = ({
   isSubRow = false,
   isEmpty = false,
   readOnly = false,
+  readOnlyReason,
   onChange,
   onMultipleUpdate,
 }) => {
@@ -145,7 +146,10 @@ export const SpecialtyCell: React.FC<SpecialtyCellProps> = ({
   }
 
   return (
-    <td className="py-0.5 px-1 border-r border-slate-200 w-28 relative group/spec bg-white/50">
+    <td
+      className="py-0.5 px-1 border-r border-slate-200 w-28 relative group/spec bg-white/50"
+      title={readOnlyReason}
+    >
       {/* Main Outer Box - Matches "encuadre" of other columns */}
       <div
         className={clsx(
@@ -165,6 +169,7 @@ export const SpecialtyCell: React.FC<SpecialtyCellProps> = ({
                 onChange={handlePrimarySpecialtyTextChange}
                 placeholder="Esp"
                 disabled={readOnly}
+                title={readOnlyReason}
               />
             </div>
           ) : (
@@ -178,6 +183,7 @@ export const SpecialtyCell: React.FC<SpecialtyCellProps> = ({
                 value={data.specialty || ''}
                 onChange={handlePrimarySpecialtySelectChange}
                 disabled={readOnly}
+                title={readOnlyReason}
               >
                 <option value="" className="text-slate-700">
                   -- Esp --

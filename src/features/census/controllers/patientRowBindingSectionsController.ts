@@ -12,6 +12,7 @@ import type { PatientRowCapabilities } from '@/features/census/controllers/patie
 import type { PatientRowResolvedIndicators } from '@/features/census/controllers/patientRowIndicatorsController';
 import { buildPatientMainRowViewState } from '@/features/census/controllers/patientRowMainViewController';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
+import type { HydratedRemoteClinicalFieldLocks } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
 
 export interface PatientRowViewContext {
   capabilities: PatientRowCapabilities;
@@ -41,6 +42,7 @@ interface BuildMainSectionBindingsParams {
   currentDateString: string;
   readOnly: boolean;
   clinicalEditingDisabled?: boolean;
+  clinicalFieldLocks?: HydratedRemoteClinicalFieldLocks;
   actionMenuAlign: RowMenuAlign;
   diagnosisMode: DiagnosisMode;
   accessProfile?: CensusAccessProfile;
@@ -56,6 +58,7 @@ export const buildPatientMainSectionBindings = ({
   currentDateString,
   readOnly,
   clinicalEditingDisabled = false,
+  clinicalFieldLocks,
   actionMenuAlign,
   diagnosisMode,
   accessProfile,
@@ -81,6 +84,7 @@ export const buildPatientMainSectionBindings = ({
     style,
     readOnly,
     clinicalEditingDisabled,
+    clinicalFieldLocks,
     actionMenuAlign,
     diagnosisMode,
     accessProfile,
@@ -107,6 +111,7 @@ interface BuildSubSectionBindingsParams {
   currentDateString: string;
   readOnly: boolean;
   clinicalEditingDisabled?: boolean;
+  clinicalFieldLocks?: HydratedRemoteClinicalFieldLocks;
   diagnosisMode: DiagnosisMode;
   accessProfile?: CensusAccessProfile;
   style?: React.CSSProperties;
@@ -118,6 +123,7 @@ export const buildPatientSubSectionBindings = ({
   currentDateString,
   readOnly,
   clinicalEditingDisabled = false,
+  clinicalFieldLocks,
   diagnosisMode,
   accessProfile,
   style,
@@ -127,6 +133,7 @@ export const buildPatientSubSectionBindings = ({
   currentDateString,
   readOnly,
   clinicalEditingDisabled,
+  clinicalFieldLocks,
   diagnosisMode,
   accessProfile,
   style,

@@ -44,6 +44,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
     currentDateString,
     readOnly,
     clinicalEditingDisabled,
+    clinicalFieldLocksByBedId: freshnessUi.clinicalFieldLocksByBedId,
     accessProfile,
   });
 

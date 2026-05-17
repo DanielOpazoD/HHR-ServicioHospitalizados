@@ -26,6 +26,7 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
   isSubRow = false,
   isEmpty = false,
   readOnly = false,
+  readOnlyReason,
   checklist,
   onSave,
   eligible,
@@ -98,9 +99,10 @@ export const UpcChecklistPopover: React.FC<UpcChecklistPopoverProps> = ({
               )
         )}
         title={
-          label
+          readOnlyReason ||
+          (label
             ? `UPC-${label} — Click para editar criterios`
-            : 'Sin clasificación UPC — Click para evaluar'
+            : 'Sin clasificación UPC — Click para evaluar')
         }
       >
         {label ? label : <ShieldCheck size={11} className="text-slate-300" />}

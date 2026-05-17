@@ -18,6 +18,7 @@ export const usePatientRowBindingsModel = ({
   onAction,
   readOnly,
   clinicalEditingDisabled,
+  clinicalFieldLocks,
   actionMenuAlign,
   diagnosisMode,
   isSubRow,
@@ -38,6 +39,7 @@ export const usePatientRowBindingsModel = ({
         currentDateString,
         readOnly,
         clinicalEditingDisabled,
+        clinicalFieldLocks,
         actionMenuAlign,
         diagnosisMode,
         isSubRow,
@@ -60,6 +62,7 @@ export const usePatientRowBindingsModel = ({
       accessProfile,
       readOnly,
       clinicalEditingDisabled,
+      clinicalFieldLocks,
       runtime,
       style,
     ]

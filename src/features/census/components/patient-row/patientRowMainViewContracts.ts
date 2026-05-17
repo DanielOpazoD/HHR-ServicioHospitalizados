@@ -15,6 +15,7 @@ import type {
 import type { PatientBedConfigCallbacks } from '@/features/census/components/patient-row/patientRowBedConfigContracts';
 import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowUiContracts';
 import type { PatientMainRowViewState } from '@/features/census/controllers/patientRowMainViewController';
+import type { HydratedRemoteClinicalFieldLocks } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
 
 export interface PatientMainRowActionCellProps
   extends PatientActionMenuCallbacks, Required<PatientActionMenuIndicators> {
@@ -43,6 +44,7 @@ export interface PatientMainRowViewProps
   style?: CSSProperties;
   readOnly: boolean;
   clinicalEditingDisabled?: boolean;
+  clinicalFieldLocks?: HydratedRemoteClinicalFieldLocks;
   actionMenuAlign: RowMenuAlign;
   diagnosisMode: DiagnosisMode;
   isBlocked: boolean;
@@ -72,6 +74,7 @@ export interface PatientSubRowViewProps {
   currentDateString: string;
   readOnly: boolean;
   clinicalEditingDisabled?: boolean;
+  clinicalFieldLocks?: HydratedRemoteClinicalFieldLocks;
   diagnosisMode: DiagnosisMode;
   accessProfile?: CensusAccessProfile;
   style?: CSSProperties;

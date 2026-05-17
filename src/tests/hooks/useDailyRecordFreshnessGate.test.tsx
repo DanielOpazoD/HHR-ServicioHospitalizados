@@ -372,14 +372,16 @@ describe('daily record remote freshness gate', () => {
         })
       );
 
-    markDailyRecordTabHidden(0);
-    markDailyRecordTabVisible(6 * 60 * 1000);
-    await ensureDailyRecordRemoteFreshness({
-      date,
-      queryClient,
-      queryFn,
-      reason: 'clinical_patch',
-      now: 6 * 60 * 1000,
+    await act(async () => {
+      markDailyRecordTabHidden(0);
+      markDailyRecordTabVisible(6 * 60 * 1000);
+      await ensureDailyRecordRemoteFreshness({
+        date,
+        queryClient,
+        queryFn,
+        reason: 'clinical_patch',
+        now: 6 * 60 * 1000,
+      });
     });
     await ensureDailyRecordRemoteFreshness({
       date,
@@ -390,5 +392,83 @@ describe('daily record remote freshness gate', () => {
     });
 
     expect(queryFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('exposes field-level clinical locks after hydrating a newer remote record', async () => {
+    const queryClient = createTestQueryClient();
+    const localRecord = DataFactory.createMockDailyRecord(date);
+    localRecord.beds.R1.pathology = 'Diagnostico local viejo';
+    localRecord.beds.R1.status = PatientStatus.ESTABLE;
+    const remoteRecord: DailyRecord = {
+      ...localRecord,
+      lastUpdated: '2026-05-16T10:30:00.000Z',
+      beds: {
+        ...localRecord.beds,
+        R1: {
+          ...localRecord.beds.R1,
+          pathology: 'Diagnostico Firebase vigente',
+        },
+      },
+    };
+    const queryFn = vi.fn().mockResolvedValue(
+      createDailyRecordQueryResult(remoteRecord, {
+        date,
+        availabilityState: 'resolved',
+        consistencyState: 'remote_authoritative',
+        sourceOfTruth: 'remote',
+        retryability: 'not_applicable',
+        recoveryAction: 'none',
+        conflictSummary: {
+          kind: 'hydrated_from_remote',
+          sourceOfTruth: 'remote',
+          localTimestamp: localRecord.lastUpdated,
+          remoteTimestamp: remoteRecord.lastUpdated,
+        },
+        observabilityTags: ['daily_record', 'read', 'remote_authoritative'],
+        repairApplied: false,
+      })
+    );
+    queryClient.setQueryData(
+      getDailyRecordQueryKey(date),
+      createDailyRecordQueryResult(localRecord, {
+        date,
+        availabilityState: 'resolved',
+        consistencyState: 'local_only',
+        sourceOfTruth: 'local',
+        retryability: 'not_applicable',
+        recoveryAction: 'none',
+        conflictSummary: null,
+        observabilityTags: ['daily_record', 'read'],
+        repairApplied: false,
+      })
+    );
+
+    markDailyRecordTabHidden(0);
+    markDailyRecordTabVisible(6 * 60 * 1000);
+    await ensureDailyRecordRemoteFreshness({
+      date,
+      queryClient,
+      queryFn,
+      reason: 'clinical_patch',
+      now: 6 * 60 * 1000,
+    });
+
+    const { result } = renderHook(() => useDailyRecordFreshnessUi(date));
+    expect(result.current.status).toBe('fresh_remote_confirmed');
+    expect(result.current.isClinicalEditingBlocked).toBe(false);
+    expect(
+      (
+        result.current as {
+          clinicalFieldLocksByBedId?: Record<string, { diagnosis?: boolean; status?: boolean }>;
+        }
+      ).clinicalFieldLocksByBedId?.R1?.diagnosis
+    ).toBe(true);
+    expect(
+      (
+        result.current as {
+          clinicalFieldLocksByBedId?: Record<string, { diagnosis?: boolean; status?: boolean }>;
+        }
+      ).clinicalFieldLocksByBedId?.R1?.status
+    ).not.toBe(true);
   });
 });

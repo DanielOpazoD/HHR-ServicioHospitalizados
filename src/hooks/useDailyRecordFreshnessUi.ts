@@ -2,10 +2,12 @@ import { useMemo, useSyncExternalStore } from 'react';
 import {
   didDailyRecordFreshnessHydrateNewerRemoteForDate,
   getDailyRecordFreshnessStatus,
+  getDailyRecordClinicalFieldLocksByBedId,
   getDailyRecordLastRemoteConfirmedAt,
   subscribeDailyRecordFreshness,
   type DailyRecordFreshnessStatus,
 } from '@/hooks/controllers/dailyRecordFreshnessGateController';
+import type { HydratedRemoteClinicalFieldLocksByBedId } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
 
 export type DailyRecordFreshnessMessageLevel = 'none' | 'subtle' | 'notice' | 'warning';
 
@@ -14,6 +16,7 @@ export interface DailyRecordFreshnessUiState {
   isClinicalEditingBlocked: boolean;
   isQuietlyRefreshing: boolean;
   remoteHydratedNewerRecord: boolean;
+  clinicalFieldLocksByBedId: HydratedRemoteClinicalFieldLocksByBedId;
   lastRemoteConfirmedAt?: number;
   messageLevel: DailyRecordFreshnessMessageLevel;
   userMessage?: string;
@@ -54,6 +57,7 @@ export const useDailyRecordFreshnessUi = (date: string): DailyRecordFreshnessUiS
     () => 'fresh_remote_confirmed' as const
   );
   const remoteHydratedNewerRecord = didDailyRecordFreshnessHydrateNewerRemoteForDate(date);
+  const clinicalFieldLocksByBedId = getDailyRecordClinicalFieldLocksByBedId(date);
   const lastRemoteConfirmedAt = getDailyRecordLastRemoteConfirmedAt(date);
 
   return useMemo(
@@ -63,10 +67,11 @@ export const useDailyRecordFreshnessUi = (date: string): DailyRecordFreshnessUiS
       isQuietlyRefreshing:
         snapshot === 'stale_due_to_inactivity' || snapshot === 'refreshing_on_resume',
       remoteHydratedNewerRecord,
+      clinicalFieldLocksByBedId,
       lastRemoteConfirmedAt,
       messageLevel: resolveFreshnessMessageLevel(snapshot),
       userMessage: resolveFreshnessUserMessage(snapshot),
     }),
-    [lastRemoteConfirmedAt, remoteHydratedNewerRecord, snapshot]
+    [clinicalFieldLocksByBedId, lastRemoteConfirmedAt, remoteHydratedNewerRecord, snapshot]
   );
 };

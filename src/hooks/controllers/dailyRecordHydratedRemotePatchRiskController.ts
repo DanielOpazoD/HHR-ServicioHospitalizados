@@ -8,6 +8,20 @@ export type HydratedRemotePatchRisk =
   | 'movement_changed'
   | 'unknown_high_risk';
 
+export interface HydratedRemoteClinicalFieldLocks {
+  diagnosis?: boolean;
+  status?: boolean;
+  specialty?: boolean;
+  upc?: boolean;
+  surgicalComplication?: boolean;
+  allClinical?: boolean;
+}
+
+export type HydratedRemoteClinicalFieldLocksByBedId = Record<
+  string,
+  HydratedRemoteClinicalFieldLocks
+>;
+
 const CLINICAL_FIELD_GROUPS: ReadonlyArray<ReadonlySet<string>> = [
   new Set(['pathology', 'cie10Code', 'cie10Description', 'diagnosisComments']),
   new Set(['status']),
@@ -59,6 +73,36 @@ const parseBedFieldPath = (
 
 const resolveClinicalGroup = (field: string): ReadonlySet<string> | null =>
   CLINICAL_FIELD_GROUPS.find(group => group.has(field)) ?? null;
+
+const resolveClinicalLockKey = (field: string): keyof HydratedRemoteClinicalFieldLocks | null => {
+  if (['pathology', 'cie10Code', 'cie10Description', 'diagnosisComments'].includes(field)) {
+    return 'diagnosis';
+  }
+  if (field === 'status') {
+    return 'status';
+  }
+  if (field === 'specialty' || field === 'secondarySpecialty') {
+    return 'specialty';
+  }
+  if (field === 'isUPC' || field === 'upcChecklist') {
+    return 'upc';
+  }
+  if (field === 'surgicalComplication') {
+    return 'surgicalComplication';
+  }
+  if (
+    [
+      'ginecobstetriciaType',
+      'deliveryDate',
+      'deliveryRoute',
+      'deliveryCesareanLabor',
+      'clinicalCrib',
+    ].includes(field)
+  ) {
+    return 'diagnosis';
+  }
+  return null;
+};
 
 const collectChangedBedFields = (
   previousRecord: DailyRecord,
@@ -135,3 +179,46 @@ export const classifyHydratedRemotePatchRisk = ({
 
 export const isHydratedRemotePatchRiskBlocking = (risk: HydratedRemotePatchRisk): boolean =>
   risk !== 'independent_field';
+
+export const buildHydratedRemoteClinicalFieldLocks = ({
+  previousRecord,
+  hydratedRecord,
+}: {
+  previousRecord: DailyRecord | null | undefined;
+  hydratedRecord: DailyRecord | null | undefined;
+}): HydratedRemoteClinicalFieldLocksByBedId => {
+  if (!previousRecord || !hydratedRecord) {
+    return {};
+  }
+
+  const bedIds = new Set([
+    ...Object.keys(previousRecord.beds ?? {}),
+    ...Object.keys(hydratedRecord.beds ?? {}),
+  ]);
+  const locksByBedId: HydratedRemoteClinicalFieldLocksByBedId = {};
+
+  bedIds.forEach(bedId => {
+    const changedFields = collectChangedBedFields(previousRecord, hydratedRecord, bedId);
+    if (changedFields.size === 0) {
+      return;
+    }
+
+    const locks: HydratedRemoteClinicalFieldLocks = {};
+    if (Array.from(EPISODE_FIELDS).some(field => changedFields.has(field))) {
+      locks.allClinical = true;
+    }
+
+    changedFields.forEach(field => {
+      const lockKey = resolveClinicalLockKey(field);
+      if (lockKey) {
+        locks[lockKey] = true;
+      }
+    });
+
+    if (Object.keys(locks).length > 0) {
+      locksByBedId[bedId] = locks;
+    }
+  });
+
+  return locksByBedId;
+};

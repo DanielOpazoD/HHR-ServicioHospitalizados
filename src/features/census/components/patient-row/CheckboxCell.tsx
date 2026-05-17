@@ -22,6 +22,7 @@ export const CheckboxCell: React.FC<CheckboxCellProps> = ({
   isSubRow = false,
   isEmpty = false,
   readOnly = false,
+  readOnlyReason,
   field,
   onChange,
   title,
@@ -45,7 +46,7 @@ export const CheckboxCell: React.FC<CheckboxCellProps> = ({
         checked={checked ?? Boolean(data[field])}
         onChange={onChange(field)}
         className={`w-4 h-4 ${colorClass} rounded`}
-        title={title}
+        title={readOnlyReason || title}
         disabled={readOnly || disabled}
       />
     </td>

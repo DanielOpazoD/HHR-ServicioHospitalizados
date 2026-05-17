@@ -38,6 +38,7 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
   isSubRow = false,
   isEmpty = false,
   readOnly = false,
+  readOnlyReason,
   diagnosisMode,
   onChange,
   onMultipleUpdate,
@@ -57,7 +58,7 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
   // CIE-10 Mode
   if (diagnosisMode === 'cie10') {
     return (
-      <td className="py-0.5 px-1 border-r border-slate-200 min-w-[160px]">
+      <td className="py-0.5 px-1 border-r border-slate-200 min-w-[160px]" title={readOnlyReason}>
         <div className="relative w-full flex flex-col gap-0.5">
           <TerminologySuggestor
             className={clsx(
@@ -92,6 +93,7 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
               }
             }}
             disabled={readOnly}
+            title={readOnlyReason}
           />
 
           {data.cie10Code && (
@@ -132,7 +134,7 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
 
   // Free Text Mode
   return (
-    <td className="py-0.5 px-1 border-r border-slate-200 min-w-[160px]">
+    <td className="py-0.5 px-1 border-r border-slate-200 min-w-[160px]" title={readOnlyReason}>
       <div className="relative w-full">
         <DebouncedInput
           type="text"
@@ -148,6 +150,7 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
           value={data.pathology || ''}
           onChange={onChange('pathology')}
           disabled={readOnly}
+          title={readOnlyReason}
         />
 
         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">

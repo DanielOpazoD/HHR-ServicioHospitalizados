@@ -23,6 +23,12 @@ import type { UpcChecklistRecord } from '@/features/census/contracts/censusUpcCo
 import { logger } from '@/services/utils/loggerService';
 
 const patientInputFlagsLogger = logger.child('PatientInputFlagsSection');
+const REMOTE_FIELD_LOCK_REASON =
+  'Firebase actualizó este dato. Revise el registro antes de editarlo.';
+const REMOTE_EPISODE_LOCK_REASON =
+  'Firebase actualizó el paciente o episodio de esta cama. Revise el registro antes de editar.';
+
+const isRemoteLocked = (locked?: boolean): boolean => Boolean(locked);
 
 export const PatientInputIdentitySection: React.FC<PatientInputIdentitySectionBindings> = ({
   shared,
@@ -66,37 +72,50 @@ export const PatientInputIdentitySection: React.FC<PatientInputIdentitySectionBi
 
 export const PatientInputClinicalSection: React.FC<
   PatientInputClinicalSectionBindings & { accessProfile?: CensusAccessProfile }
-> = ({ shared, diagnosisMode, handleDebouncedText, onChange, accessProfile = 'default' }) => (
-  <>
-    <DiagnosisInput
-      data={shared.data}
-      isSubRow={shared.isSubRow}
-      isEmpty={shared.isEmpty}
-      readOnly={shared.isLocked || shared.clinicalEditingDisabled}
-      diagnosisMode={diagnosisMode}
-      onChange={handleDebouncedText}
-      onMultipleUpdate={onChange.multiple}
-      onDeliveryRouteChange={onChange.deliveryRoute}
-    />
-    <SpecialtyCell
-      data={shared.data}
-      isSubRow={shared.isSubRow}
-      isEmpty={shared.isEmpty}
-      readOnly={shared.isLocked || shared.clinicalEditingDisabled}
-      onChange={onChange.text}
-      onMultipleUpdate={onChange.multiple}
-    />
-    {!isSpecialistCensusAccessProfile(accessProfile) && (
-      <StatusSelect
+> = ({ shared, diagnosisMode, handleDebouncedText, onChange, accessProfile = 'default' }) => {
+  const fieldLocks = shared.clinicalFieldLocks;
+  const allClinicalLocked = isRemoteLocked(fieldLocks?.allClinical);
+  const diagnosisLocked = allClinicalLocked || isRemoteLocked(fieldLocks?.diagnosis);
+  const specialtyLocked = allClinicalLocked || isRemoteLocked(fieldLocks?.specialty);
+  const statusLocked = allClinicalLocked || isRemoteLocked(fieldLocks?.status);
+  const readOnlyReason = allClinicalLocked ? REMOTE_EPISODE_LOCK_REASON : REMOTE_FIELD_LOCK_REASON;
+  const baseClinicalReadOnly = shared.isLocked || shared.clinicalEditingDisabled;
+
+  return (
+    <>
+      <DiagnosisInput
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
-        readOnly={shared.isLocked || shared.clinicalEditingDisabled}
-        onChange={onChange.text}
+        readOnly={baseClinicalReadOnly || diagnosisLocked}
+        readOnlyReason={diagnosisLocked ? readOnlyReason : undefined}
+        diagnosisMode={diagnosisMode}
+        onChange={handleDebouncedText}
+        onMultipleUpdate={onChange.multiple}
+        onDeliveryRouteChange={onChange.deliveryRoute}
       />
-    )}
-  </>
-);
+      <SpecialtyCell
+        data={shared.data}
+        isSubRow={shared.isSubRow}
+        isEmpty={shared.isEmpty}
+        readOnly={baseClinicalReadOnly || specialtyLocked}
+        readOnlyReason={specialtyLocked ? readOnlyReason : undefined}
+        onChange={onChange.text}
+        onMultipleUpdate={onChange.multiple}
+      />
+      {!isSpecialistCensusAccessProfile(accessProfile) && (
+        <StatusSelect
+          data={shared.data}
+          isSubRow={shared.isSubRow}
+          isEmpty={shared.isEmpty}
+          readOnly={baseClinicalReadOnly || statusLocked}
+          readOnlyReason={statusLocked ? readOnlyReason : undefined}
+          onChange={onChange.text}
+        />
+      )}
+    </>
+  );
+};
 
 export const PatientInputFlowSection: React.FC<
   PatientInputFlowSectionBindings & { accessProfile?: CensusAccessProfile }
@@ -134,6 +153,13 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
 }) => {
   const upcEligible = isUpcEligibleBedId(shared.data.bedId);
   const { currentUser } = useAuth();
+  const fieldLocks = shared.clinicalFieldLocks;
+  const allClinicalLocked = isRemoteLocked(fieldLocks?.allClinical);
+  const surgicalComplicationLocked =
+    allClinicalLocked || isRemoteLocked(fieldLocks?.surgicalComplication);
+  const upcLocked = allClinicalLocked || isRemoteLocked(fieldLocks?.upc);
+  const readOnlyReason = allClinicalLocked ? REMOTE_EPISODE_LOCK_REASON : REMOTE_FIELD_LOCK_REASON;
+  const baseClinicalReadOnly = shared.isLocked || shared.clinicalEditingDisabled;
   const upcActor = currentUser
     ? { uid: currentUser.uid, displayName: currentUser.displayName || currentUser.email || '' }
     : null;
@@ -155,7 +181,8 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
-        readOnly={shared.isLocked || shared.clinicalEditingDisabled}
+        readOnly={baseClinicalReadOnly || surgicalComplicationLocked}
+        readOnlyReason={surgicalComplicationLocked ? readOnlyReason : undefined}
         field="surgicalComplication"
         onChange={onChange.check}
         title="Comp. Qx"
@@ -165,7 +192,8 @@ export const PatientInputFlagsSection: React.FC<PatientInputFlagsSectionBindings
         data={shared.data}
         isSubRow={shared.isSubRow}
         isEmpty={shared.isEmpty}
-        readOnly={shared.isLocked || shared.clinicalEditingDisabled}
+        readOnly={baseClinicalReadOnly || upcLocked}
+        readOnlyReason={upcLocked ? readOnlyReason : undefined}
         checklist={shared.data.upcChecklist}
         onSave={handleUpcSave}
         eligible={upcEligible}
