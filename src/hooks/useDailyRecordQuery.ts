@@ -231,19 +231,7 @@ export const useSaveDailyRecordMutation = () => {
   });
 };
 
-/**
- * Hook for partial updates (patches).
- * Provides granular optimistic updates for better performance.
- *
- * Flow for "Atomicity & Sync":
- * 1. onMutate: Cancels refetches, snapshots old data, and applies patches locally
- *    using dot-notation paths. This gives immediate UI feedback.
- * 2. mutationFn: Sends only the patch to the server (DailyRecordRepository.updatePartial).
- * 3. Firestore: Merges the patch server-side.
- * 4. Real-time Subscription: The query observer in useDailyRecordQuery receives the
- *    update from Firestore and updates the cache, ensuring the UI aligns with
- *    the final server state (eventual consistency).
- */
+/** Hook for granular partial updates with optimistic cache state. */
 export const usePatchDailyRecordMutation = (date: string) => {
   const queryClient = useQueryClient();
   const { dailyRecord } = useRepositories();
@@ -298,9 +286,12 @@ export const usePatchDailyRecordMutation = (date: string) => {
       const current = queryClient.getQueryData<DailyRecordQueryResult>(
         getDailyRecordQueryKey(date)
       )?.record;
+      if (!current) {
+        return;
+      }
       markDailyRecordRemoteConfirmed(date, {
         source: 'write',
-        remoteLastUpdated: current?.lastUpdated,
+        remoteLastUpdated: current.lastUpdated,
         confirmedRecord: current,
       });
     },

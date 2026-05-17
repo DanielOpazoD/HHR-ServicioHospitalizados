@@ -17,8 +17,10 @@ import { useCallback } from 'react';
 import type {
   ApplyDailyRecordPatch,
   DailyRecord,
+  DailyRecordPatch,
 } from '@/application/shared/dailyRecordCoreContracts';
 import { useAuditContext } from '@/context/AuditContext';
+import { bedOperationsLogger } from '@/hooks/hookLoggers';
 import {
   createApplicationFailed,
   createApplicationSuccess,
@@ -104,16 +106,30 @@ export const useBedOperations = (
 ): BedOperationsActions => {
   const { logEvent, logPatientCleared } = useAuditContext();
 
+  const persistBedOperationPatch = useCallback(
+    (patch: DailyRecordPatch, onSuccess?: () => void): void => {
+      void patchRecord(patch)
+        .then(() => {
+          onSuccess?.();
+        })
+        .catch(error => {
+          bedOperationsLogger.warn('Bed operation patch failed', error);
+        });
+    },
+    [patchRecord]
+  );
+
   const applyResolvedOperation = useCallback(
     (resolvedOperation: BedOperationResolution): BedOperationOutcome => {
       if (resolvedOperation.kind === 'noop') {
         return buildNoopOutcome(resolvedOperation.warning);
       }
-      patchRecord(resolvedOperation.patch);
-      logEvent(...toBedOperationAuditArgs(resolvedOperation));
+      persistBedOperationPatch(resolvedOperation.patch, () => {
+        logEvent(...toBedOperationAuditArgs(resolvedOperation));
+      });
       return APPLIED_OUTCOME;
     },
-    [logEvent, patchRecord]
+    [logEvent, persistBedOperationPatch]
   );
 
   // ========================================================================
@@ -129,22 +145,21 @@ export const useBedOperations = (
 
       const { patch } = buildClearPatientPatch(record, bedId);
 
-      // Audit Log
       const patientName = bed.patientName;
-      if (patientName) {
-        logPatientCleared(bedId, patientName, bed.rut, record.date);
-      }
-
-      patchRecord(patch);
+      persistBedOperationPatch(patch, () => {
+        if (patientName) {
+          logPatientCleared(bedId, patientName, bed.rut, record.date);
+        }
+      });
       return APPLIED_OUTCOME;
     },
-    [record, patchRecord, logPatientCleared]
+    [record, persistBedOperationPatch, logPatientCleared]
   );
 
   const clearAllBeds = useCallback(() => {
     if (!record) return;
-    patchRecord(buildClearAllBedsPatch(record));
-  }, [record, patchRecord]);
+    persistBedOperationPatch(buildClearAllBedsPatch(record));
+  }, [record, persistBedOperationPatch]);
 
   // ========================================================================
   // Move/Copy Operations

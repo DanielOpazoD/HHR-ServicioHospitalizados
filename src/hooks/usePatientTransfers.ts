@@ -25,6 +25,7 @@ import { usePatientMovementUndoExecutor } from '@/hooks/usePatientMovementUndoEx
 import { usePatientMovementCurrentRecord } from '@/hooks/usePatientMovementCurrentRecord';
 import { usePatientMovementMutationExecutor } from '@/hooks/usePatientMovementMutationExecutor';
 import { usePatientMovementMutationByIdExecutor } from '@/hooks/usePatientMovementMutationByIdExecutor';
+import { patientMovementRuntimeLogger } from '@/hooks/controllers/hookControllerLoggers';
 import type {
   AddTransferAction,
   DeleteTransferAction,
@@ -32,6 +33,10 @@ import type {
   UndoTransferAction,
   UpdateTransferAction,
 } from '@/types/movements';
+
+const logTransferPersistenceFailure = (action: string, error: unknown): void => {
+  patientMovementRuntimeLogger.warn(`Transfer ${action} persistence failed`, error);
+};
 
 export const usePatientTransfers = (
   record: DailyRecord | null,
@@ -93,7 +98,9 @@ export const usePatientTransfers = (
           onSuccess: value => {
             logTransferEntry(value.auditEntry, currentRecord.date);
           },
-        }).catch(() => undefined);
+        }).catch(error => {
+          logTransferPersistenceFailure('create', error);
+        });
       });
     },
     [executeMovementCreation, logTransferEntry, withCurrentRecord]
@@ -109,7 +116,9 @@ export const usePatientTransfers = (
             updates,
           }),
         id
-      ).catch(() => undefined);
+      ).catch(error => {
+        logTransferPersistenceFailure('update', error);
+      });
     },
     [executeTransferMutation]
   );
@@ -123,7 +132,9 @@ export const usePatientTransfers = (
             id: movementId,
           }),
         id
-      ).catch(() => undefined);
+      ).catch(error => {
+        logTransferPersistenceFailure('delete', error);
+      });
     },
     [executeTransferMutation]
   );
@@ -143,7 +154,9 @@ export const usePatientTransfers = (
               bedId,
               updatedBed,
             }),
-        }).catch(() => undefined);
+        }).catch(error => {
+          logTransferPersistenceFailure('undo', error);
+        });
       });
     },
     [executeMovementUndo, withCurrentRecord]

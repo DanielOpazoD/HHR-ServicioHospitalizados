@@ -111,6 +111,38 @@ describe('dailyRecordHydratedRemotePatchRiskController', () => {
     ).toBe('independent_field');
   });
 
+  it('allows editing a newly created clinical crib after Firebase confirms it', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    previousRecord.beds.R1 = DataFactory.createMockPatient('R1', {
+      patientName: 'Madre',
+      clinicalCrib: undefined,
+    });
+    const hydratedRecord = {
+      ...previousRecord,
+      lastUpdated: '2026-05-16T10:30:00.000Z',
+      beds: {
+        ...previousRecord.beds,
+        R1: {
+          ...previousRecord.beds.R1,
+          clinicalCrib: DataFactory.createMockPatient('R1', {
+            patientName: 'RN de Madre',
+            bedMode: 'Cuna',
+          }),
+        },
+      },
+    };
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R1.clinicalCrib.patientName': 'RN actualizado',
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('independent_field');
+  });
+
   it('allows full-bed move patches after self-confirmed remote hydration', () => {
     const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
     previousRecord.beds.R2 = DataFactory.createMockPatient('R2', {

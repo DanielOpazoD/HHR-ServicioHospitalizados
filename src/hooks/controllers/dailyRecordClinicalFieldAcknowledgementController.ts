@@ -110,6 +110,22 @@ const isEmptyBedIdentityActivationPatch = (
   return hasMeaningfulIdentityValue(nextPatientName) || hasMeaningfulIdentityValue(nextRut);
 };
 
+const isClinicalCribActivationPatch = (
+  patch: DailyRecordPatch,
+  bedId: string,
+  previousRecord: DailyRecord | null | undefined
+): boolean => {
+  const previousCrib = previousRecord?.beds?.[bedId]?.clinicalCrib;
+  const previousHadCribIdentity =
+    hasMeaningfulIdentityValue(previousCrib?.patientName) ||
+    hasMeaningfulIdentityValue(previousCrib?.rut);
+
+  return (
+    !previousHadCribIdentity &&
+    Object.keys(patch).some(path => path.startsWith(`beds.${bedId}.clinicalCrib.`))
+  );
+};
+
 const isPauseExpired = (state: ClinicalFieldPauseState, now: number): boolean =>
   now - state.createdAt >= FIELD_PAUSE_TTL_MS;
 
@@ -187,6 +203,7 @@ export const resolveDailyRecordClinicalPatchPauseDecision = (
     const pause = getDailyRecordClinicalFieldPause(date, parsed.bedId, parsed.fieldGroup, now);
     if (!pause || pause.acknowledged) continue;
     if (isEmptyBedIdentityActivationPatch(patch, parsed.bedId, options.previousRecord)) continue;
+    if (isClinicalCribActivationPatch(patch, parsed.bedId, options.previousRecord)) continue;
     return {
       kind: 'soft_pause',
       bedId: parsed.bedId,

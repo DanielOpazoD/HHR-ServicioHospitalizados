@@ -194,6 +194,27 @@ const isSameHydratedAdmissionActivation = (
   );
 };
 
+const isHydratedClinicalCribActivation = (
+  attemptedPath: string,
+  previousRecord: DailyRecord,
+  hydratedRecord: DailyRecord,
+  bedId: string
+): boolean => {
+  if (!attemptedPath.startsWith(`beds.${bedId}.clinicalCrib.`)) {
+    return false;
+  }
+
+  const previousCrib = previousRecord.beds?.[bedId]?.clinicalCrib;
+  const hydratedCrib = hydratedRecord.beds?.[bedId]?.clinicalCrib;
+  const previousHadIdentity =
+    hasMeaningfulText(previousCrib?.patientName) || hasMeaningfulText(previousCrib?.rut);
+
+  return (
+    !previousHadIdentity &&
+    (hasMeaningfulText(hydratedCrib?.patientName) || hasMeaningfulText(hydratedCrib?.rut))
+  );
+};
+
 export const classifyHydratedRemotePatchRisk = ({
   attemptedPatch,
   previousRecord,
@@ -250,7 +271,15 @@ export const classifyHydratedRemotePatchRisk = ({
       continue;
     }
 
+    const isClinicalCribActivation = isHydratedClinicalCribActivation(
+      attemptedPath,
+      previousRecord,
+      hydratedRecord,
+      attemptedBedPatch.bedId
+    );
+
     if (
+      !isClinicalCribActivation &&
       attemptedBedPatch.canonicalPath &&
       valuesDiffer(
         getPathValue(previousRecord, attemptedBedPatch.canonicalPath),
@@ -271,7 +300,11 @@ export const classifyHydratedRemotePatchRisk = ({
     }
 
     const attemptedGroup = resolveClinicalGroup(attemptedBedPatch.field);
-    if (attemptedGroup && Array.from(attemptedGroup).some(field => changedFields.has(field))) {
+    if (
+      !isClinicalCribActivation &&
+      attemptedGroup &&
+      Array.from(attemptedGroup).some(field => changedFields.has(field))
+    ) {
       return 'same_group';
     }
   }

@@ -82,6 +82,22 @@ describe('dailyRecordClinicalFieldAcknowledgementController', () => {
     ).toEqual({ kind: 'allowed' });
   });
 
+  it('allows editing a newly created clinical crib without consuming a recent diagnosis pause', () => {
+    registerDailyRecordClinicalFieldPauses(date, { R1: { diagnosis: true } }, 1_000);
+    const previousRecord = buildRecordWithEmptyBed('R1');
+    previousRecord.beds.R1.patientName = 'Madre';
+
+    expect(
+      resolveDailyRecordClinicalPatchLockDecision(
+        date,
+        { 'beds.R1.clinicalCrib.patientName': 'RN actualizado' },
+        { R1: { diagnosis: true } },
+        1_100,
+        { previousRecord }
+      )
+    ).toEqual({ kind: 'allowed' });
+  });
+
   it('keeps episode-level locks hard even after repeated attempts', () => {
     registerDailyRecordClinicalFieldPauses(
       date,

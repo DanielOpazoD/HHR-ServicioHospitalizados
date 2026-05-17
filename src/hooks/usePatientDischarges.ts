@@ -28,6 +28,7 @@ import { usePatientMovementUndoExecutor } from '@/hooks/usePatientMovementUndoEx
 import { usePatientMovementCurrentRecord } from '@/hooks/usePatientMovementCurrentRecord';
 import { usePatientMovementMutationExecutor } from '@/hooks/usePatientMovementMutationExecutor';
 import { usePatientMovementMutationByIdExecutor } from '@/hooks/usePatientMovementMutationByIdExecutor';
+import { patientMovementRuntimeLogger } from '@/hooks/controllers/hookControllerLoggers';
 import type {
   AddDischargeAction,
   ConvertDischargeToCmaAction,
@@ -36,6 +37,10 @@ import type {
   UndoDischargeAction,
   UpdateDischargeAction,
 } from '@/types/movements';
+
+const logDischargePersistenceFailure = (action: string, error: unknown): void => {
+  patientMovementRuntimeLogger.warn(`Discharge ${action} persistence failed`, error);
+};
 
 export const usePatientDischarges = (
   record: DailyRecord | null,
@@ -107,7 +112,9 @@ export const usePatientDischarges = (
           onSuccess: value => {
             logDischargeEntries(value.auditEntries, currentRecord.date);
           },
-        }).catch(() => undefined);
+        }).catch(error => {
+          logDischargePersistenceFailure('create', error);
+        });
       });
     },
     [executeMovementCreation, logDischargeEntries, withCurrentRecord]
@@ -128,7 +135,9 @@ export const usePatientDischarges = (
             ieehData,
           }),
         id
-      ).catch(() => undefined);
+      ).catch(error => {
+        logDischargePersistenceFailure('update', error);
+      });
     },
     [executeDischargeMutation]
   );
@@ -142,7 +151,9 @@ export const usePatientDischarges = (
             id: movementId,
           }),
         id
-      ).catch(() => undefined);
+      ).catch(error => {
+        logDischargePersistenceFailure('delete', error);
+      });
     },
     [executeDischargeMutation]
   );
@@ -174,7 +185,9 @@ export const usePatientDischarges = (
               bedId,
               updatedBed,
             }),
-        }).catch(() => undefined);
+        }).catch(error => {
+          logDischargePersistenceFailure('undo', error);
+        });
       });
     },
     [executeMovementUndo, logDischargeUndoEntry, withCurrentRecord]
@@ -192,11 +205,15 @@ export const usePatientDischarges = (
           void patchRecord({
             discharges: updatedRecord.discharges,
             cma: updatedRecord.cma,
-          }).catch(() => undefined);
+          }).catch(error => {
+            logDischargePersistenceFailure('convert_to_cma', error);
+          });
           return;
         }
 
-        void saveAndUpdate(updatedRecord);
+        void saveAndUpdate(updatedRecord).catch(error => {
+          logDischargePersistenceFailure('convert_to_cma', error);
+        });
       });
     },
     [patchRecord, saveAndUpdate, withCurrentRecord]

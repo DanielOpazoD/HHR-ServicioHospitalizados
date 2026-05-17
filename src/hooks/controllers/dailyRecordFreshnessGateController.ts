@@ -226,7 +226,14 @@ export const ensureDailyRecordRemoteFreshness = ({
     const current = queryClient.getQueryData<DailyRecordQueryResult>(
       getDailyRecordFreshnessQueryKey(date)
     );
-    return Promise.resolve(current || queryFn());
+    if (current) {
+      return Promise.resolve(current);
+    }
+    return queryClient.fetchQuery({
+      queryKey: getDailyRecordFreshnessQueryKey(date),
+      queryFn,
+      staleTime: 0,
+    });
   }
 
   if (state.refreshPromise) {
