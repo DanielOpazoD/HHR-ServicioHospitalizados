@@ -91,6 +91,44 @@ describe('clinical movement-bed consistency policy', () => {
     expect(resolved.beds.R1.rut).toBe('44.444.444-4');
   });
 
+  it('keeps a same-day readmission for the same RUT when the prior discharge belongs to an older admission', () => {
+    const remote = makeRecord('2026-02-18T10:00:00.000Z');
+    remote.discharges = [
+      {
+        id: 'discharge-1',
+        bedId: 'R1',
+        patientName: 'Paciente Reingresado',
+        rut: '33.333.333-3',
+        admissionDate: '2026-02-10',
+        clinicalEpisodeId: 'ep_old_admission',
+        status: 'Vivo',
+        dischargeType: 'Fuga',
+        movementDate: '2026-02-18',
+      },
+    ] as unknown as DailyRecord['discharges'];
+
+    const local = makeRecord('2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Reingresado',
+        rut: '33.333.333-3',
+        pathology: 'Reingreso posterior a fuga',
+        admissionDate: '2026-02-18',
+        clinicalEpisodeId: 'ep_new_admission',
+        status: 'Estable',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    expect(resolved.discharges).toHaveLength(1);
+    expect(resolved.beds.R1.patientName).toBe('Paciente Reingresado');
+    expect(resolved.beds.R1.rut).toBe('33.333.333-3');
+    expect(resolved.beds.R1.pathology).toBe('Reingreso posterior a fuga');
+    expect(resolved.beds.R1.admissionDate).toBe('2026-02-18');
+  });
+
   it('ignores tombstoned discharges when normalizing bed consistency', () => {
     const remote = makeRecord('2026-02-18T10:00:00.000Z');
     remote.discharges = [
@@ -201,6 +239,45 @@ describe('clinical movement-bed consistency policy', () => {
     expect(resolved.cma).toHaveLength(1);
     expect(resolved.beds.R1.patientName).toBe('Paciente Sin Rut');
     expect(resolved.beds.R1.pathology).toBe('Ingreso posterior sin RUT');
+  });
+
+  it('keeps a same-RUT readmission when a prior CMA entry belongs to an older admission', () => {
+    const remote = makeRecord('2026-02-18T10:00:00.000Z');
+    remote.cma = [
+      {
+        id: 'cma-old-admission',
+        originalBedId: 'R1',
+        bedName: 'R1',
+        patientName: 'Paciente Reingresado',
+        rut: '55.555.555-5',
+        diagnosis: 'Procedimiento CMA',
+        specialty: 'Cirugia',
+        interventionType: 'Cirugía Mayor Ambulatoria',
+        clinicalEpisodeId: 'ep_old_cma',
+        originalData: {
+          admissionDate: '2026-02-10',
+        },
+      },
+    ] as unknown as DailyRecord['cma'];
+
+    const local = makeRecord('2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Reingresado',
+        rut: '55.555.555-5',
+        pathology: 'Nuevo ingreso hospitalizado',
+        admissionDate: '2026-02-18',
+        clinicalEpisodeId: 'ep_new_hospitalization',
+        status: 'Estable',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local);
+
+    expect(resolved.cma).toHaveLength(1);
+    expect(resolved.beds.R1.patientName).toBe('Paciente Reingresado');
+    expect(resolved.beds.R1.pathology).toBe('Nuevo ingreso hospitalizado');
   });
 
   it('clears a name-only CMA match when original admission date confirms the same episode', () => {
