@@ -444,7 +444,7 @@ describe('PrescriptionBedGridView', () => {
     await screen.findByRole('dialog', { name: /vista ampliada/i });
 
     fireEvent.click(screen.getByRole('button', { name: /eliminar receta/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /^eliminar$/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /eliminar respaldo/i }));
 
     await waitFor(() =>
       expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: record.id }))
