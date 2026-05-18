@@ -1,13 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PatientInputCells } from '@/features/census/components/patient-row/PatientInputCells';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import { useDailyRecordStability } from '@/context/DailyRecordContext';
 import { PatientStatus } from '@/types/domain/patientClassification';
-import {
-  clearDailyRecordClinicalFieldPausesForTests,
-  registerDailyRecordClinicalFieldPauses,
-} from '@/hooks/controllers/dailyRecordClinicalFieldAcknowledgementController';
+import { clearDailyRecordClinicalFieldPausesForTests } from '@/hooks/controllers/dailyRecordClinicalFieldAcknowledgementController';
 
 vi.mock('@/context/DailyRecordContext', () => ({
   useDailyRecordStability: vi.fn(),
@@ -98,7 +95,7 @@ describe('PatientInputCells', () => {
     expect(screen.queryByDisplayValue(/DE|ES|CU/)).not.toBeInTheDocument();
   });
 
-  it('soft-pauses only remote-updated clinical field groups', () => {
+  it('keeps remote-updated clinical field groups editable after successful refresh', () => {
     vi.mocked(useDailyRecordStability).mockReturnValue({
       canEditField: () => true,
     } as unknown as ReturnType<typeof useDailyRecordStability>);
@@ -106,7 +103,6 @@ describe('PatientInputCells', () => {
     const data = DataFactory.createMockPatient('R1');
     data.pathology = 'ACV';
     data.status = PatientStatus.ESTABLE;
-    registerDailyRecordClinicalFieldPauses('2026-02-15', { R1: { diagnosis: true } }, Date.now());
     const textHandler = vi.fn();
     const onChange = {
       text: vi.fn().mockReturnValue(textHandler),
@@ -140,12 +136,10 @@ describe('PatientInputCells', () => {
     const diagnosisInput = screen.getByPlaceholderText('Diagnóstico (texto libre)');
     expect(diagnosisInput).not.toBeDisabled();
     expect(screen.getByDisplayValue(PatientStatus.ESTABLE)).not.toBeDisabled();
-
-    fireEvent.mouseDown(diagnosisInput);
-    expect(screen.getByText(/Actualizado recién/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Actualizado recién/i)).not.toBeInTheDocument();
   });
 
-  it('uses friendly copy for hard clinical locks without exposing sync internals', () => {
+  it('does not keep allClinical as a persistent UI lock after successful refresh', () => {
     vi.mocked(useDailyRecordStability).mockReturnValue({
       canEditField: () => true,
     } as unknown as ReturnType<typeof useDailyRecordStability>);
@@ -183,11 +177,9 @@ describe('PatientInputCells', () => {
     );
 
     const diagnosisInput = screen.getByPlaceholderText('Diagnóstico (texto libre)');
-    expect(diagnosisInput).toBeDisabled();
-    expect(diagnosisInput).toHaveAttribute(
-      'title',
-      'Esta cama se actualizó hace un momento. Seleccione nuevamente el paciente para continuar.'
+    expect(diagnosisInput).not.toBeDisabled();
+    expect(diagnosisInput.getAttribute('title') ?? '').not.toMatch(
+      /firebase|remot[oa]|stale|cache|concurr/i
     );
-    expect(diagnosisInput.getAttribute('title')).not.toMatch(/firebase|remot[oa]|stale|cache/i);
   });
 });
