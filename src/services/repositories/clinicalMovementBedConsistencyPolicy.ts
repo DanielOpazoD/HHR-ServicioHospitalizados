@@ -15,7 +15,7 @@ import {
 
 type MovementRecord = Pick<
   DischargeData | TransferData,
-  'bedId' | 'patientName' | 'rut' | 'admissionDate' | 'isNested'
+  'bedId' | 'patientName' | 'rut' | 'admissionDate' | 'clinicalEpisodeId' | 'isNested'
 >;
 
 type CmaMovementRecord = CMAData;
@@ -51,7 +51,27 @@ const matchesMovementPatient = (
   const patientRut = normalizeIdentity(patient?.rut);
   const movementRut = normalizeIdentity(movement.rut);
   if (patientRut && movementRut) {
-    return patientRut === movementRut;
+    if (patientRut !== movementRut) {
+      return false;
+    }
+
+    const patientEpisodeId = normalizeIdentity(patient?.clinicalEpisodeId);
+    const movementEpisodeId = normalizeIdentity(movement.clinicalEpisodeId);
+    if (patientEpisodeId && movementEpisodeId && patientEpisodeId !== movementEpisodeId) {
+      return false;
+    }
+
+    const patientAdmissionDate = normalizeIdentity(patient?.admissionDate);
+    const movementAdmissionDate = normalizeIdentity(resolveMovementAdmissionDate(movement));
+    if (
+      patientAdmissionDate &&
+      movementAdmissionDate &&
+      patientAdmissionDate !== movementAdmissionDate
+    ) {
+      return false;
+    }
+
+    return true;
   }
 
   const patientName = normalizeIdentity(patient?.patientName);
