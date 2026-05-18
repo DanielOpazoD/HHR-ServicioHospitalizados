@@ -72,6 +72,19 @@ Abrir en este orden:
 2. [CI_GATES_AND_FAILURE_RUNBOOKS.md](./CI_GATES_AND_FAILURE_RUNBOOKS.md)
 3. [SERVERLESS_SENSITIVE_CONTRACTS.md](./SERVERLESS_SENSITIVE_CONTRACTS.md)
 
+### Recetas, respaldo mensual o eliminación manual
+
+Usa cuando:
+
+- necesitas cerrar el respaldo mensual de recetas
+- vas a eliminar recetas desde el visor
+- quieres confirmar que no hay eliminación automática programada
+
+Abrir en este orden:
+
+1. [RUNBOOK_PRESCRIPTIONS_BACKUP.md](./RUNBOOK_PRESCRIPTIONS_BACKUP.md)
+2. [CI_GATES_AND_FAILURE_RUNBOOKS.md](./CI_GATES_AND_FAILURE_RUNBOOKS.md) si el cambio requiere deploy de Functions
+
 ### Release, preview o gates de CI
 
 Usa cuando:

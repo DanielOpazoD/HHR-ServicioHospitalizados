@@ -13,8 +13,8 @@
  *       Single canonical write path. Accepts either an authenticated
  *       caller (admin/nurse_hospital/doctor) or a PIN. Uploads two JPEG
  *       blobs (full + thumbnail) and writes the metadata document. The
- *       document carries a precomputed `expiresAt` based on per-type
- *       retention so the cleanup scheduler stays simple.
+ *       legacy `expiresAt` field now marks the suggested monthly backup
+ *       review date; records are removed only by manual admin deletion.
  *
  *   - `listPrescriptionUploadPatientOptions({ pin?, date? })`
  *       Returns a minimal census-derived bed picker for the upload form.
@@ -33,7 +33,7 @@ const { HOSPITAL_ID } = require('./runtime/runtimeConfig');
 
 const PRESCRIPTION_TYPES = new Set(['comun', 'psicotropicos', 'benzodiazepinas']);
 const PRESCRIPTION_ASSIGNMENT_SCOPES = new Set(['patient', 'unassigned', 'hospitalized_stock']);
-const RETENTION_DAYS_BY_TYPE = {
+const MONTHLY_BACKUP_DAYS_BY_TYPE = {
   comun: 30,
   psicotropicos: 30,
   benzodiazepinas: 30,
@@ -91,7 +91,7 @@ const generatePinSalt = () => crypto.randomBytes(16).toString('hex');
 const generatePrescriptionId = () => `rx_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
 
 const computeExpiresAt = (prescriptionType, createdAtIso) => {
-  const days = RETENTION_DAYS_BY_TYPE[prescriptionType] ?? 30;
+  const days = MONTHLY_BACKUP_DAYS_BY_TYPE[prescriptionType] ?? 30;
   return new Date(new Date(createdAtIso).getTime() + days * DAY_MS).toISOString();
 };
 

@@ -128,7 +128,8 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
         <CheckCircle2 size={36} className="mx-auto mb-3 text-emerald-600" />
         <h2 className="mb-1 text-lg font-semibold text-emerald-900">Receta registrada</h2>
         <p className="text-sm text-emerald-800">
-          La foto se guardó como respaldo transitorio. Se eliminará automáticamente el{' '}
+          La foto quedó guardada para respaldo mensual. El administrador debe respaldarla antes de
+          eliminarla manualmente. Revisión sugerida:{' '}
           <span className="font-semibold">
             {new Date(lastResult.expiresAt).toLocaleDateString('es-CL')}
           </span>
@@ -153,8 +154,8 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
       <header>
         <h1 className="text-lg font-semibold text-slate-800">Subir foto de receta</h1>
         <p className="mt-1 text-xs text-slate-500">
-          Respaldo transitorio del servicio. La receta original queda en farmacia. Las fotos se
-          eliminan a los 30 días.
+          Respaldo mensual del servicio. La receta original queda en farmacia; la eliminación manual
+          la realiza el administrador después del respaldo.
         </p>
       </header>
 

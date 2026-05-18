@@ -111,6 +111,86 @@ describe('dailyRecordHydratedRemotePatchRiskController', () => {
     ).toBe('independent_field');
   });
 
+  it('allows first status and specialty edits after Firebase confirms a newly created patient', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    const hydratedRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    hydratedRecord.lastUpdated = '2026-05-16T10:30:00.000Z';
+    hydratedRecord.beds.R3 = DataFactory.createMockPatient('R3', {
+      patientName: 'Paciente Nuevo',
+      rut: '17.752.753-K',
+      admissionDate: '2026-05-16',
+      clinicalEpisodeId: 'episode-new',
+      specialty: '',
+      status: undefined,
+    });
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R3.status': PatientStatus.ESTABLE,
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('independent_field');
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R3.specialty': 'Med Interna',
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('independent_field');
+  });
+
+  it('allows the first diagnosis edit after Firebase confirms a newly created patient', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    const hydratedRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    hydratedRecord.lastUpdated = '2026-05-16T10:30:00.000Z';
+    hydratedRecord.beds.R3 = DataFactory.createMockPatient('R3', {
+      patientName: 'Paciente Nuevo',
+      rut: '17.752.753-K',
+      admissionDate: '2026-05-16',
+      clinicalEpisodeId: 'episode-new',
+      pathology: '',
+    });
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R3.pathology': 'Diagnóstico inicial',
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('independent_field');
+  });
+
+  it('blocks overwriting a hydrated diagnosis for a newly created patient', () => {
+    const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    const hydratedRecord = DataFactory.createMockDailyRecord('2026-05-16');
+    hydratedRecord.lastUpdated = '2026-05-16T10:30:00.000Z';
+    hydratedRecord.beds.R3 = DataFactory.createMockPatient('R3', {
+      patientName: 'Paciente Nuevo',
+      rut: '17.752.753-K',
+      admissionDate: '2026-05-16',
+      clinicalEpisodeId: 'episode-new',
+      pathology: 'Diagnóstico Firebase',
+    });
+
+    expect(
+      classifyHydratedRemotePatchRisk({
+        attemptedPatch: {
+          'beds.R3.pathology': 'Diagnóstico usuario',
+        },
+        previousRecord,
+        hydratedRecord,
+      })
+    ).toBe('episode_changed');
+  });
+
   it('allows editing a newly created clinical crib after Firebase confirms it', () => {
     const previousRecord = DataFactory.createMockDailyRecord('2026-05-16');
     previousRecord.beds.R1 = DataFactory.createMockPatient('R1', {

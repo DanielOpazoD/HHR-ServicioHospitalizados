@@ -1,4 +1,5 @@
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
+import { isHydratedAdmissionFollowUpClinicalPatch } from '@/hooks/controllers/dailyRecordHydratedAdmissionFollowUpController';
 import {
   normalizeDailyRecordClinicalField,
   parseDailyRecordBedPatchPath,
@@ -209,7 +210,17 @@ export const classifyHydratedRemotePatchRisk = ({
       hydratedRecord,
       attemptedBedPatch.bedId
     );
-    if (hasVisibleEpisodeChange(changedFields) && !sameHydratedAdmissionActivation) {
+    const hydratedAdmissionFollowUpClinicalPatch = isHydratedAdmissionFollowUpClinicalPatch(
+      attemptedPatch,
+      previousRecord,
+      hydratedRecord,
+      attemptedBedPatch.bedId
+    );
+    if (
+      hasVisibleEpisodeChange(changedFields) &&
+      !sameHydratedAdmissionActivation &&
+      !hydratedAdmissionFollowUpClinicalPatch
+    ) {
       return 'episode_changed';
     }
 
@@ -231,6 +242,7 @@ export const classifyHydratedRemotePatchRisk = ({
 
     if (
       !isClinicalCribActivation &&
+      !hydratedAdmissionFollowUpClinicalPatch &&
       attemptedBedPatch.canonicalPath &&
       valuesDiffer(
         getPathValue(previousRecord, attemptedBedPatch.canonicalPath),
@@ -253,6 +265,7 @@ export const classifyHydratedRemotePatchRisk = ({
     const attemptedGroup = resolveDailyRecordClinicalGroup(attemptedBedPatch.field);
     if (
       !isClinicalCribActivation &&
+      !hydratedAdmissionFollowUpClinicalPatch &&
       attemptedGroup &&
       hasChangedFieldInClinicalGroup(changedFields, attemptedGroup)
     ) {

@@ -117,8 +117,13 @@ export const useClinicalDocumentDraftAutosave = ({
               result.data.sourceDailyRecordDate
             );
           }
+          const currentDraft = draftRef.current;
+          if ((currentDraft?.id ?? null) !== result.data.id) {
+            dispatch({ type: 'SET_IS_SAVING', value: false });
+            return;
+          }
           const savedSnapshot = serializeClinicalDocument(result.data);
-          const currentDraftSnapshot = serializeClinicalDocument(draftRef.current);
+          const currentDraftSnapshot = serializeClinicalDocument(currentDraft);
           const commitMode = resolveClinicalDocumentAutosaveCommit({
             requestedSnapshot,
             currentDraftSnapshot,

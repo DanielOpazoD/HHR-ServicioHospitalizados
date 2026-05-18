@@ -34,13 +34,13 @@ describe('Prescription constants TS↔JS drift guard', () => {
     }
   });
 
-  it('uses the same default retention (30 days) for every type', () => {
+  it('uses the same default monthly backup review window (30 days) for every type', () => {
     expect(PRESCRIPTION_RETENTION_DAYS).toBe(30);
     for (const type of PRESCRIPTION_TYPES) {
       expect(PRESCRIPTION_RETENTION_DAYS_BY_TYPE[type]).toBe(30);
     }
     expect(accessFunctionsSource).toMatch(
-      /RETENTION_DAYS_BY_TYPE\s*=\s*\{\s*comun:\s*30,\s*psicotropicos:\s*30,\s*benzodiazepinas:\s*30,?\s*\}/
+      /MONTHLY_BACKUP_DAYS_BY_TYPE\s*=\s*\{\s*comun:\s*30,\s*psicotropicos:\s*30,\s*benzodiazepinas:\s*30,?\s*\}/
     );
   });
 

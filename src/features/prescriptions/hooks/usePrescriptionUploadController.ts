@@ -71,7 +71,7 @@ export interface PrescriptionUploadControllerHandle {
     value: PrescriptionUploadFormValues[K]
   ) => void;
   errorMessage: string | null;
-  /** Result of the most recent successful upload (id + expiresAt). */
+  /** Result of the most recent successful upload (id + monthly review date). */
   lastResult: SubmitPrescriptionResult | null;
   /** Preview object URL for the currently captured image, if any. */
   previewObjectUrl: string | null;

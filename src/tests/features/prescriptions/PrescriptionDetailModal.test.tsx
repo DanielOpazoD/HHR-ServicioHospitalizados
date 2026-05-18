@@ -61,6 +61,41 @@ describe('PrescriptionDetailModal type editor', () => {
     expect(screen.getByText(/1200×900 px/)).toBeTruthy();
   });
 
+  it('labels the 30-day date as a backup review date, not expiration', async () => {
+    renderDetailModal(
+      <PrescriptionDetailModal
+        record={baseRecord}
+        canEdit
+        canDelete={false}
+        onClose={vi.fn()}
+        onReassign={vi.fn(async () => undefined)}
+        onDelete={vi.fn(async () => undefined)}
+      />
+    );
+
+    await screen.findByRole('img', { name: /receta/i });
+    expect(screen.getByText(/respaldo sugerido/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^expira$/i)).toBeNull();
+  });
+
+  it('warns admins to confirm monthly backup before manual deletion', async () => {
+    renderDetailModal(
+      <PrescriptionDetailModal
+        record={baseRecord}
+        canEdit
+        canDelete
+        onClose={vi.fn()}
+        onReassign={vi.fn(async () => undefined)}
+        onDelete={vi.fn(async () => undefined)}
+      />
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /^eliminar$/i }));
+
+    expect(screen.getByText(/confirme que el respaldo mensual ya fue realizado/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /eliminar respaldo/i })).toBeTruthy();
+  });
+
   it('switches to a select on "Cambiar" and persists the new type via onUpdateType', async () => {
     const onUpdateType = vi.fn(async () => undefined);
     renderDetailModal(

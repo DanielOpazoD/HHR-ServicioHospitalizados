@@ -12,9 +12,6 @@ name: Deploy Firebase Functions
 # with at least these IAM roles on `hhr-serviciohospitalizados`:
 #   - Cloud Functions Developer (roles/cloudfunctions.developer)
 #   - Service Account User      (roles/iam.serviceAccountUser)
-#   - Cloud Scheduler Admin     (roles/cloudscheduler.admin)
-#     Required for scheduled functions such as `cleanExpiredPrescriptions`,
-#     because Firebase updates the backing Cloud Scheduler job during deploy.
 #   - Firebase Admin SDK Administrator Service Agent
 #     (roles/firebase.sdkAdminServiceAgent)  — only if the function reads/writes
 #     Firestore via firebase-admin under a privileged path; otherwise omit.

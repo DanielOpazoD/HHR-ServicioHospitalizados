@@ -8,7 +8,7 @@ interface PrescriptionDateStripProps {
   onSelectDate: (isoDate: string | null) => void;
   /** Records used to flag days that have backups (green dot). */
   records: PrescriptionRecord[];
-  /** How many days back from today to render. Defaults to 30 (the retention window). */
+  /** How many days back from today to render. Defaults to the monthly backup review window. */
   daysBack?: number;
 }
 
