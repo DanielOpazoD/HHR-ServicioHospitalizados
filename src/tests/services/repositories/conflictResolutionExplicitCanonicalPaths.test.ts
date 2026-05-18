@@ -234,6 +234,55 @@ describe('conflictResolution explicit canonical paths', () => {
     );
   });
 
+  it('keeps newer local status and specialty visible for the same episode during whole-record reconciliation', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        clinicalEpisodeId: 'ep_r1_generated',
+        patientName: 'Paciente vigente',
+        rut: '11.111.111-1',
+        admissionDate: '2026-02-18',
+        admissionTime: '08:00',
+        status: '',
+        specialty: '',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:00:05.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        clinicalEpisodeId: undefined,
+        patientName: 'Paciente vigente',
+        rut: '11.111.111-1',
+        admissionDate: '2026-02-18',
+        admissionTime: '08:00',
+        status: 'Grave',
+        specialty: 'Medicina',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const result = resolveDailyRecordConflictWithTrace(remote, local, { changedPaths: ['*'] });
+
+    expect(result.record.beds.R1.status).toBe('Grave');
+    expect(result.record.beds.R1.specialty).toBe('Medicina');
+    expect(result.trace.entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: 'beds.R1.status',
+          winner: 'local',
+          reason: 'explicit_local_census_patch_same_episode',
+        }),
+        expect.objectContaining({
+          path: 'beds.R1.specialty',
+          winner: 'local',
+          reason: 'explicit_local_census_patch_same_episode',
+        }),
+      ])
+    );
+  });
+
   it('does not keep explicit local specialty and status edits for a different episode', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
     remote.beds = {

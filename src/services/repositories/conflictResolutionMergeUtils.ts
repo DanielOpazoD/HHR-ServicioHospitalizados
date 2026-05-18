@@ -6,6 +6,10 @@ import {
   isLocalNarrativePatientField,
 } from '@/services/repositories/conflictResolutionPolicy';
 import {
+  EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS,
+  isSameEpisodeForExplicitCensusPatch,
+} from '@/services/repositories/explicitLocalCensusPatchPolicy';
+import {
   hasPatientIdentityOrClinicalContent,
   isLocallyClearedPatient,
   shouldPreserveLocalPatientNarrative,
@@ -82,6 +86,12 @@ const filterDeviceDetailsToActiveOrRetired = (patient: Record<string, unknown>):
     })
   );
 };
+
+const isEmptyClinicalValue = (value: unknown): boolean =>
+  value === '' ||
+  value === null ||
+  value === undefined ||
+  (Array.isArray(value) && value.length === 0);
 
 export const mergeArrayById = <T>(
   remote: T[] = [],
@@ -276,6 +286,23 @@ export const mergePatientData = (
   keys.forEach(key => {
     const remoteValue = remoteRecord[key];
     const localValue = localRecord[key];
+
+    if (
+      preferLocal &&
+      EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS.has(key) &&
+      isSameEpisodeForExplicitCensusPatch(remotePatient, localPatient) &&
+      isEmptyClinicalValue(remoteValue) &&
+      !isEmptyClinicalValue(localValue)
+    ) {
+      merged[key] = localValue;
+      traceContext?.add({
+        path: `${pathPrefix}.${key}`,
+        strategy: 'copy_local_value',
+        winner: 'local',
+        reason: 'explicit_local_census_patch_same_episode',
+      });
+      return;
+    }
 
     if (isClinicalCensusRemotePriorityField(key)) {
       const decision = decideScalarByPolicy(
