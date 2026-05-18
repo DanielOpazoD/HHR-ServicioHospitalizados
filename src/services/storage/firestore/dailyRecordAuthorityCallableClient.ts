@@ -19,6 +19,8 @@ export interface DailyRecordAuthorityCallableResponse {
   date: string;
   mode: Exclude<DailyRecordAuthorityMode, 'client_only'>;
   authorityStatus: 'ok' | 'blocked';
+  revision?: number;
+  mutationId?: string;
   coverage?: {
     activePatients: number;
     canonicalEpisodeIds: number;
@@ -34,6 +36,16 @@ export interface DailyRecordAuthorityCallableResponse {
   }>;
 }
 
+export interface DailyRecordAuthorityPatchCallablePayload {
+  date: string;
+  patch: Record<string, unknown>;
+  expectedLastUpdated?: string;
+  mode: Exclude<DailyRecordAuthorityMode, 'client_only'>;
+  origin?: string;
+  syncContract?: SyncTaskContract;
+  dryRun?: boolean;
+}
+
 export const saveDailyRecordWithClinicalAuthorityCallable = async (
   payload: DailyRecordAuthorityCallablePayload
 ): Promise<DailyRecordAuthorityCallableResponse> => {
@@ -42,6 +54,19 @@ export const saveDailyRecordWithClinicalAuthorityCallable = async (
     DailyRecordAuthorityCallablePayload,
     DailyRecordAuthorityCallableResponse
   >(functions, 'saveDailyRecordWithClinicalAuthority');
+
+  const result = await callable(payload);
+  return result.data;
+};
+
+export const patchDailyRecordWithClinicalAuthorityCallable = async (
+  payload: DailyRecordAuthorityPatchCallablePayload
+): Promise<DailyRecordAuthorityCallableResponse> => {
+  const functions = await defaultFunctionsRuntime.getFunctions();
+  const callable = httpsCallable<
+    DailyRecordAuthorityPatchCallablePayload,
+    DailyRecordAuthorityCallableResponse
+  >(functions, 'patchDailyRecordWithClinicalAuthority');
 
   const result = await callable(payload);
   return result.data;

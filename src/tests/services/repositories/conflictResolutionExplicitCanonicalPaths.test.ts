@@ -95,6 +95,102 @@ describe('conflictResolution explicit canonical paths', () => {
     );
   });
 
+  it('keeps explicit local diagnosis, obstetric and UPC edits for the same active episode', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        clinicalEpisodeId: 'episode-r1',
+        patientName: 'Paciente vigente',
+        rut: '11.111.111-1',
+        admissionDate: '2026-02-17',
+        pathology: 'Diagnostico remoto anterior',
+        diagnosisComments: 'Comentario remoto anterior',
+        snomedCode: '123',
+        cie10Code: 'J18.9',
+        cie10Description: 'Neumonia remota',
+        ginecobstetriciaType: undefined,
+        deliveryRoute: undefined,
+        deliveryDate: undefined,
+        deliveryCesareanLabor: undefined,
+        isUPC: false,
+        upcChecklist: undefined,
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        clinicalEpisodeId: 'episode-r1',
+        patientName: 'Paciente vigente',
+        rut: '11.111.111-1',
+        admissionDate: '2026-02-17',
+        pathology: 'Diagnostico local nuevo',
+        diagnosisComments: 'Comentario local nuevo',
+        snomedCode: '456',
+        cie10Code: '',
+        cie10Description: '',
+        ginecobstetriciaType: 'Obstétrica',
+        deliveryRoute: 'Cesárea',
+        deliveryDate: '2026-02-18',
+        deliveryCesareanLabor: 'Con TdP',
+        isUPC: true,
+        upcChecklist: {
+          classification: 'UPC_UCI',
+          uciCriteria: ['uci_vmi'],
+          utiCriteria: [],
+          evaluatedAt: '2026-02-18T10:00:00.000Z',
+        },
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const result = resolveDailyRecordConflictWithTrace(remote, local, {
+      changedPaths: [
+        'beds.R1.pathology',
+        'beds.R1.diagnosisComments',
+        'beds.R1.snomedCode',
+        'beds.R1.cie10Code',
+        'beds.R1.cie10Description',
+        'beds.R1.ginecobstetriciaType',
+        'beds.R1.deliveryRoute',
+        'beds.R1.deliveryDate',
+        'beds.R1.deliveryCesareanLabor',
+        'beds.R1.isUPC',
+        'beds.R1.upcChecklist',
+      ],
+    });
+
+    expect(result.record.beds.R1.pathology).toBe('Diagnostico local nuevo');
+    expect(result.record.beds.R1.diagnosisComments).toBe('Comentario local nuevo');
+    expect(result.record.beds.R1.snomedCode).toBe('456');
+    expect(result.record.beds.R1.cie10Code).toBe('');
+    expect(result.record.beds.R1.cie10Description).toBe('');
+    expect(result.record.beds.R1.ginecobstetriciaType).toBe('Obstétrica');
+    expect(result.record.beds.R1.deliveryRoute).toBe('Cesárea');
+    expect(result.record.beds.R1.deliveryDate).toBe('2026-02-18');
+    expect(result.record.beds.R1.deliveryCesareanLabor).toBe('Con TdP');
+    expect(result.record.beds.R1.isUPC).toBe(true);
+    expect(result.record.beds.R1.upcChecklist).toMatchObject({
+      classification: 'UPC_UCI',
+      uciCriteria: ['uci_vmi'],
+    });
+    expect(result.trace.entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: 'beds.R1.pathology',
+          winner: 'local',
+          reason: 'explicit_local_census_patch_same_episode',
+        }),
+        expect.objectContaining({
+          path: 'beds.R1.upcChecklist',
+          winner: 'local',
+          reason: 'explicit_local_census_patch_same_episode',
+        }),
+      ])
+    );
+  });
+
   it('keeps explicit status edits when the remote snapshot already has a generated episode id', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
     remote.beds = {

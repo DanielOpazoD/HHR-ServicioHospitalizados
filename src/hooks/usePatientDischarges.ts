@@ -28,6 +28,7 @@ import { usePatientMovementUndoExecutor } from '@/hooks/usePatientMovementUndoEx
 import { usePatientMovementCurrentRecord } from '@/hooks/usePatientMovementCurrentRecord';
 import { usePatientMovementMutationExecutor } from '@/hooks/usePatientMovementMutationExecutor';
 import { usePatientMovementMutationByIdExecutor } from '@/hooks/usePatientMovementMutationByIdExecutor';
+import { patientMovementRuntimeLogger } from '@/hooks/controllers/hookControllerLoggers';
 import type {
   AddDischargeAction,
   ConvertDischargeToCmaAction,
@@ -36,6 +37,10 @@ import type {
   UndoDischargeAction,
   UpdateDischargeAction,
 } from '@/types/movements';
+
+const logDischargePersistenceFailure = (action: string, error: unknown): void => {
+  patientMovementRuntimeLogger.warn(`Discharge ${action} persistence failed`, error);
+};
 
 export const usePatientDischarges = (
   record: DailyRecord | null,
@@ -54,11 +59,15 @@ export const usePatientDischarges = (
   const executeMovementMutation = usePatientMovementMutationExecutor({
     recordRef,
     saveAndUpdate,
+    patchRecord,
+    movementKey: 'discharges',
   });
   const withCurrentRecord = usePatientMovementCurrentRecord({ recordRef });
   const executeMovementUndo = usePatientMovementUndoExecutor({
     createEmptyPatient,
     saveAndUpdate,
+    patchRecord,
+    movementKey: 'discharges',
     notifyUndoError,
   });
 
@@ -103,7 +112,9 @@ export const usePatientDischarges = (
           onSuccess: value => {
             logDischargeEntries(value.auditEntries, currentRecord.date);
           },
-        }).catch(() => undefined);
+        }).catch(error => {
+          logDischargePersistenceFailure('create', error);
+        });
       });
     },
     [executeMovementCreation, logDischargeEntries, withCurrentRecord]
@@ -111,7 +122,7 @@ export const usePatientDischarges = (
 
   const updateDischarge: UpdateDischargeAction = useCallback(
     (id, status, dischargeType, dischargeTypeOther, time, movementDate, ieehData) => {
-      executeDischargeMutation(
+      void executeDischargeMutation(
         (record, movementId) =>
           resolveUpdateDischargeMovement({
             record,
@@ -124,21 +135,25 @@ export const usePatientDischarges = (
             ieehData,
           }),
         id
-      );
+      ).catch(error => {
+        logDischargePersistenceFailure('update', error);
+      });
     },
     [executeDischargeMutation]
   );
 
   const deleteDischarge: DeleteDischargeAction = useCallback(
     id => {
-      executeDischargeMutation(
+      void executeDischargeMutation(
         (record, movementId) =>
           resolveDeleteDischargeMovement({
             record,
             id: movementId,
           }),
         id
-      );
+      ).catch(error => {
+        logDischargePersistenceFailure('delete', error);
+      });
     },
     [executeDischargeMutation]
   );
@@ -147,7 +162,7 @@ export const usePatientDischarges = (
     id => {
       withCurrentRecord(currentRecord => {
         const discharge = selectDischargeUndoMovement(currentRecord, id);
-        executeMovementUndo({
+        void executeMovementUndo({
           kind: 'discharge',
           movement: discharge,
           record: currentRecord,
@@ -170,6 +185,8 @@ export const usePatientDischarges = (
               bedId,
               updatedBed,
             }),
+        }).catch(error => {
+          logDischargePersistenceFailure('undo', error);
         });
       });
     },
@@ -185,14 +202,18 @@ export const usePatientDischarges = (
         if (updatedRecord === currentRecord) return;
 
         if (patchRecord) {
-          patchRecord({
+          void patchRecord({
             discharges: updatedRecord.discharges,
             cma: updatedRecord.cma,
+          }).catch(error => {
+            logDischargePersistenceFailure('convert_to_cma', error);
           });
           return;
         }
 
-        void saveAndUpdate(updatedRecord);
+        void saveAndUpdate(updatedRecord).catch(error => {
+          logDischargePersistenceFailure('convert_to_cma', error);
+        });
       });
     },
     [patchRecord, saveAndUpdate, withCurrentRecord]

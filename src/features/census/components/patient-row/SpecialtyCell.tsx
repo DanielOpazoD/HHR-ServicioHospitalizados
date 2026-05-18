@@ -26,6 +26,7 @@ import {
 } from '@/shared/census/ginecobstetriciaClassification';
 import type { GinecobstetriciaType } from '@/features/census/contracts/censusObstetricContracts';
 import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import { useClinicalFieldFreshnessPause } from './useClinicalFieldFreshnessPause';
 
 interface SpecialtyCellProps extends BaseCellProps {
   onChange: EventTextHandler;
@@ -37,9 +38,12 @@ export const SpecialtyCell: React.FC<SpecialtyCellProps> = ({
   isSubRow = false,
   isEmpty = false,
   readOnly = false,
+  readOnlyReason,
+  clinicalPause,
   onChange,
   onMultipleUpdate,
 }) => {
+  const freshnessPause = useClinicalFieldFreshnessPause(clinicalPause);
   const GINECOB_WIDTH = 240;
   const { state, primaryLabel } = useSpecialtyCellModel({ data });
   const { isPrimaryOther } = state;
@@ -145,13 +149,19 @@ export const SpecialtyCell: React.FC<SpecialtyCellProps> = ({
   }
 
   return (
-    <td className="py-0.5 px-1 border-r border-slate-200 w-28 relative group/spec bg-white/50">
+    <td
+      className="py-0.5 px-1 border-r border-slate-200 w-28 relative group/spec bg-white/50"
+      title={readOnlyReason}
+      onMouseDownCapture={freshnessPause.acknowledge}
+      onFocusCapture={freshnessPause.acknowledge}
+    >
       {/* Main Outer Box - Matches "encuadre" of other columns */}
       <div
         className={clsx(
           'flex items-center w-full px-1 h-7 border rounded transition-all duration-200 bg-white',
           'border-slate-200 group-hover/spec:border-medical-300',
-          'gap-0.5'
+          'gap-0.5',
+          freshnessPause.pauseClassName
         )}
       >
         {/* Primary Specialty Container */}
@@ -165,6 +175,7 @@ export const SpecialtyCell: React.FC<SpecialtyCellProps> = ({
                 onChange={handlePrimarySpecialtyTextChange}
                 placeholder="Esp"
                 disabled={readOnly}
+                title={readOnlyReason}
               />
             </div>
           ) : (
@@ -178,6 +189,7 @@ export const SpecialtyCell: React.FC<SpecialtyCellProps> = ({
                 value={data.specialty || ''}
                 onChange={handlePrimarySpecialtySelectChange}
                 disabled={readOnly}
+                title={readOnlyReason}
               >
                 <option value="" className="text-slate-700">
                   -- Esp --
@@ -276,6 +288,7 @@ export const SpecialtyCell: React.FC<SpecialtyCellProps> = ({
           </div>,
           document.body
         )}
+      {freshnessPause.hint}
     </td>
   );
 };

@@ -14,6 +14,7 @@ import {
   createPartialUpdateDailyRecordCommand,
   createSaveDailyRecordCommand,
 } from '@/services/repositories/contracts/dailyRecordCommands';
+import { buildDailyRecordSyncContract } from '@/services/storage/sync/syncTaskContractPolicy';
 import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordPersistencePreparation';
 import { preparePatchedRecordForPersistence } from '@/services/repositories/dailyRecordPatchPreparation';
@@ -345,6 +346,10 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
   }
   const patchedFields = Object.keys(mergedPatches).length;
   const semanticChangedPaths = Object.keys(command.patch);
+  const syncContract = buildDailyRecordSyncContract(validatedRecord, {
+    expectedVersion: current.lastUpdated,
+    changedPaths: semanticChangedPaths,
+  });
 
   const suspiciousShrinkages = await resolveBlockingFieldShrinkages(
     command.date,
@@ -385,7 +390,9 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
     changedPaths: semanticChangedPaths,
     remoteState,
     remoteWrite: () =>
-      updateRecordPartialToFirestore(command.date, mergedPatches, current.lastUpdated),
+      updateRecordPartialToFirestore(command.date, mergedPatches, current.lastUpdated, {
+        syncContract,
+      }),
     onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(`Firestore partial update failed for ${command.date}`, err);
     },

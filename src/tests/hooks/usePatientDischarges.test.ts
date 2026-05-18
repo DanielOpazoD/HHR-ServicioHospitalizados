@@ -158,6 +158,33 @@ describe('usePatientDischarges', () => {
     expect(mockSaveAndUpdate).toHaveBeenCalled();
   });
 
+  it('updates discharge through a movement patch when available', () => {
+    const recordWithDischarge = {
+      ...mockRecord,
+      discharges: [{ id: 'discharge-1', patientName: 'Test', status: 'Vivo', time: '' }],
+    } as unknown as DailyRecord;
+
+    const { result } = renderHook(() =>
+      usePatientDischarges(recordWithDischarge, mockSaveAndUpdate, undefined, mockPatchRecord)
+    );
+
+    act(() => {
+      result.current.updateDischarge('discharge-1', 'Fallecido');
+    });
+
+    expect(mockPatchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        discharges: [
+          expect.objectContaining({
+            id: 'discharge-1',
+            status: 'Fallecido',
+          }),
+        ],
+      })
+    );
+    expect(mockSaveAndUpdate).not.toHaveBeenCalled();
+  });
+
   it('should delete discharge', () => {
     const recordWithDischarge = {
       ...mockRecord,
@@ -173,6 +200,33 @@ describe('usePatientDischarges', () => {
     });
 
     expect(mockSaveAndUpdate).toHaveBeenCalled();
+  });
+
+  it('deletes discharge through a movement patch when available', () => {
+    const recordWithDischarge = {
+      ...mockRecord,
+      discharges: [{ id: 'discharge-1', patientName: 'Test' }],
+    } as unknown as DailyRecord;
+
+    const { result } = renderHook(() =>
+      usePatientDischarges(recordWithDischarge, mockSaveAndUpdate, undefined, mockPatchRecord)
+    );
+
+    act(() => {
+      result.current.deleteDischarge('discharge-1');
+    });
+
+    expect(mockPatchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        discharges: [
+          expect.objectContaining({
+            id: 'discharge-1',
+            deletedAt: expect.any(String),
+          }),
+        ],
+      })
+    );
+    expect(mockSaveAndUpdate).not.toHaveBeenCalled();
   });
 
   it('converts a home discharge into CMA in one movement patch', () => {
@@ -268,7 +322,7 @@ describe('usePatientDischarges', () => {
     expect(mockSaveAndUpdate).toHaveBeenCalled();
   });
 
-  it('should undo discharge and restore patient snapshot', () => {
+  it('should undo discharge and restore patient snapshot', async () => {
     const recordWithDischarge = {
       ...mockRecord,
       discharges: [
@@ -292,8 +346,9 @@ describe('usePatientDischarges', () => {
       usePatientDischarges(recordWithDischarge, mockSaveAndUpdate)
     );
 
-    act(() => {
+    await act(async () => {
       result.current.undoDischarge('d-1');
+      await Promise.resolve();
     });
 
     expect(mockSaveAndUpdate).toHaveBeenCalledTimes(1);

@@ -19,7 +19,6 @@ const ALLOWED_ORIGINAL_DATA_REFERENCES = [
   'src/features/census/controllers/patientMovementTransferMutationController.ts',
   'src/features/census/controllers/patientMovementSelectionController.ts',
   'src/features/census/controllers/patientMovementUndoController.ts',
-  'src/features/census/hooks/usePatientMovementUndoExecutor.ts',
   'src/features/census/controllers/censusCmaController.ts',
   'src/domain/CensusManager.ts',
   'src/services/admin/admissionDateBackfillPlanner.ts',

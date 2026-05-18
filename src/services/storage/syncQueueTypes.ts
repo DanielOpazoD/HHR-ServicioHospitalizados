@@ -34,4 +34,7 @@ export interface SyncTaskContract {
   recordRevision?: string;
   clinicalEpisodeKeys?: string[];
   changedPaths?: string[];
+  mutationId?: string;
+  clientId?: string;
+  tabId?: string;
 }

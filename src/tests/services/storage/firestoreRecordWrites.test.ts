@@ -253,7 +253,14 @@ describe('firestoreRecordWrites', () => {
   });
 
   it('updates partial records and falls back to setDoc when update target is missing', async () => {
-    await updateRecordPartial('2026-03-14', { status: 'ok' } as never);
+    await updateRecordPartial('2026-03-14', { status: 'ok' } as never, '2026-03-14T10:00:00.000Z');
+    expect(assertFirestoreConcurrency).toHaveBeenCalledWith(
+      { date: '2026-03-14' },
+      '2026-03-14T10:00:00.000Z',
+      'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
+      'partial update',
+      { toleranceMs: 0 }
+    );
     expect(updateDoc).toHaveBeenCalledTimes(1);
 
     vi.mocked(updateDoc).mockRejectedValueOnce({ code: 'not-found' });

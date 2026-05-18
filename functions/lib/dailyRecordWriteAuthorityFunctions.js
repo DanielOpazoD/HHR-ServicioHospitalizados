@@ -15,6 +15,28 @@ const ALLOWED_DAILY_RECORD_WRITE_ROLES = new Set([
   'editor',
 ]);
 
+const ALLOWED_DAILY_RECORD_PATCH_FIELDS = new Set([
+  'pathology',
+  'diagnosisComments',
+  'snomedCode',
+  'cie10Code',
+  'cie10Description',
+  'specialty',
+  'secondarySpecialty',
+  'status',
+  'ginecobstetriciaType',
+  'deliveryRoute',
+  'deliveryDate',
+  'deliveryCesareanLabor',
+  'isUPC',
+  'upcChecklist',
+  'surgicalComplication',
+]);
+
+const ALLOWED_DAILY_RECORD_BED_TYPE_OVERRIDE_VALUES = new Set(['UTI', 'UCI', 'MEDIA', null]);
+
+const FORBIDDEN_PATCH_PATH_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor']);
+
 const assertStringField = (value, fieldName) => {
   if (typeof value !== 'string' || !value.trim()) {
     throw new functions.https.HttpsError(
@@ -30,8 +52,187 @@ const isPlainObject = value => value !== null && typeof value === 'object' && !A
 
 const normalizeMode = value => (value === 'shadow' ? 'shadow' : 'enforced');
 
-const normalizeOrigin = value =>
-  typeof value === 'string' && value.trim() ? value.trim().slice(0, 80) : 'direct_save';
+const normalizeOrigin = (value, fallback = 'direct_save') =>
+  typeof value === 'string' && value.trim() ? value.trim().slice(0, 80) : fallback;
+
+const normalizeShortString = (value, maxLength = 120) =>
+  typeof value === 'string' && value.trim() ? value.trim().slice(0, maxLength) : undefined;
+
+const clonePlainValue = value => {
+  if (Array.isArray(value)) {
+    return value.map(clonePlainValue);
+  }
+
+  if (value instanceof Date || typeof value?.toDate === 'function') {
+    return value;
+  }
+
+  if (isPlainObject(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [key, clonePlainValue(nestedValue)])
+    );
+  }
+
+  return value;
+};
+
+const setValueAtPath = (target, path, value) => {
+  const parts = String(path)
+    .split('.')
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Daily record patch paths must be non-empty dot paths.'
+    );
+  }
+  if (parts.some(part => FORBIDDEN_PATCH_PATH_SEGMENTS.has(part))) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Daily record patch path contains a forbidden segment.'
+    );
+  }
+
+  let cursor = target;
+  for (const part of parts.slice(0, -1)) {
+    if (!isPlainObject(cursor[part])) {
+      cursor[part] = {};
+    }
+    cursor = cursor[part];
+  }
+
+  cursor[parts[parts.length - 1]] = value === undefined ? null : clonePlainValue(value);
+};
+
+const applyPatchToRecord = ({ date, remoteData, patch }) => {
+  const record = clonePlainValue(remoteData || {});
+  Object.entries(patch).forEach(([path, value]) => setValueAtPath(record, path, value));
+  record.date = date;
+  return record;
+};
+
+const parseAuthorizedPatchPath = path => {
+  const parts = String(path)
+    .split('.')
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  if (
+    parts.length === 3 &&
+    parts[0] === 'beds' &&
+    !parts.some(part => FORBIDDEN_PATCH_PATH_SEGMENTS.has(part)) &&
+    ALLOWED_DAILY_RECORD_PATCH_FIELDS.has(parts[2])
+  ) {
+    return {
+      kind: 'patientField',
+      bedId: parts[1],
+      field: parts[2],
+    };
+  }
+
+  if (
+    parts.length === 2 &&
+    parts[0] === 'bedTypeOverrides' &&
+    !parts.some(part => FORBIDDEN_PATCH_PATH_SEGMENTS.has(part))
+  ) {
+    return {
+      kind: 'bedTypeOverride',
+      bedId: parts[1],
+      field: 'bedTypeOverride',
+    };
+  }
+
+  throw new functions.https.HttpsError(
+    'invalid-argument',
+    `Daily record patch path is not allowed: ${String(path).slice(0, 120)}`
+  );
+};
+
+const assertAuthorizedPatchValue = ({ path, value, parsedPath, patchPaths }) => {
+  if (parsedPath.kind !== 'bedTypeOverride') {
+    return;
+  }
+
+  if (!ALLOWED_DAILY_RECORD_BED_TYPE_OVERRIDE_VALUES.has(value)) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      `Daily record bed type override value is not allowed: ${String(path).slice(0, 120)}`
+    );
+  }
+
+  if (
+    !patchPaths.has(`beds.${parsedPath.bedId}.upcChecklist`) &&
+    !patchPaths.has(`beds.${parsedPath.bedId}.isUPC`)
+  ) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      `Daily record bed type override must accompany a UPC patch: ${String(path).slice(0, 120)}`
+    );
+  }
+};
+
+const assertPatchTargetsCurrentClinicalEpisode = ({ remoteData, patch }) => {
+  const patchPaths = new Set(Object.keys(patch));
+  Object.entries(patch).forEach(([path, value]) => {
+    const parsedPath = parseAuthorizedPatchPath(path);
+    assertAuthorizedPatchValue({ path, value, parsedPath, patchPaths });
+    const { bedId } = parsedPath;
+    const patient = remoteData?.beds?.[bedId];
+    if (!isPlainObject(patient)) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        `Daily record patch target bed is not present: ${bedId}`
+      );
+    }
+    if (patient.isBlocked === true) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        `Daily record patch target bed is blocked: ${bedId}`
+      );
+    }
+    if (
+      !patient.clinicalEpisodeId &&
+      !patient.rut &&
+      !patient.patientName &&
+      !patient.admissionDate
+    ) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        `Daily record patch target bed has no active clinical episode identity: ${bedId}`
+      );
+    }
+  });
+};
+
+const collectChangedPaths = syncContract =>
+  Array.isArray(syncContract?.changedPaths)
+    ? syncContract.changedPaths
+        .filter(path => typeof path === 'string' && path.trim())
+        .map(path => path.trim())
+    : [];
+
+const resolveCurrentRevision = record => {
+  const revision = Number(record?.meta?.revision);
+  return Number.isFinite(revision) && revision >= 0 ? revision : 0;
+};
+
+const buildNextMeta = ({ remoteData, syncContract, now }) => {
+  const mutationId = normalizeShortString(syncContract?.mutationId);
+  const clientId = normalizeShortString(syncContract?.clientId);
+  const tabId = normalizeShortString(syncContract?.tabId);
+
+  return {
+    ...(isPlainObject(remoteData?.meta) ? clonePlainValue(remoteData.meta) : {}),
+    revision: resolveCurrentRevision(remoteData) + 1,
+    lastMutationId: mutationId || null,
+    lastWriterClientId: clientId || null,
+    lastWriterTabId: tabId || null,
+    lastChangedPaths: collectChangedPaths(syncContract),
+    updatedAt: now,
+  };
+};
 
 const toMillis = value => {
   if (!value) return 0;
@@ -94,18 +295,68 @@ const parsePayload = data => {
   };
 };
 
-const buildAuthorityResponse = ({ date, mode, authority, coverage }) => ({
-  success: authority.status === 'ok',
-  date,
-  mode,
-  authorityStatus: authority.status,
-  coverage,
-  violations: authority.violations.map(violation => ({
-    type: violation.type,
-    path: violation.path,
-    bedId: violation.bedId,
-  })),
-});
+const parsePatchPayload = data => {
+  const date = assertStringField(data?.date, 'date');
+  const patch = data?.patch;
+  const syncContract = isPlainObject(data?.syncContract) ? data.syncContract : undefined;
+  if (!isPlainObject(patch) || Object.keys(patch).length === 0) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Daily record patch payload must be a non-empty object.'
+    );
+  }
+
+  return {
+    date,
+    patch,
+    mode: normalizeMode(data?.mode),
+    origin: normalizeOrigin(data?.origin, 'direct_partial_update'),
+    dryRun: data?.dryRun === true,
+    syncContract,
+    expectedLastUpdated:
+      typeof data?.expectedLastUpdated === 'string'
+        ? data.expectedLastUpdated
+        : typeof syncContract?.expectedVersion === 'string'
+          ? syncContract.expectedVersion
+          : undefined,
+  };
+};
+
+const buildAuthorityResponse = ({ date, mode, authority, coverage, revision, mutationId }) => {
+  const response = {
+    success: authority.status === 'ok',
+    date,
+    mode,
+    authorityStatus: authority.status,
+    coverage,
+    violations: authority.violations.map(violation => ({
+      type: violation.type,
+      path: violation.path,
+      bedId: violation.bedId,
+    })),
+  };
+
+  if (Number.isFinite(revision)) {
+    response.revision = revision;
+  }
+  if (mutationId) {
+    response.mutationId = mutationId;
+  }
+
+  return response;
+};
+
+const emptyCoverage = {
+  activePatients: 0,
+  canonicalEpisodeIds: 0,
+  fallbackEpisodeKeys: 0,
+  degenerateFallbackEpisodeKeys: 0,
+};
+
+const emptyAuthority = {
+  status: 'blocked',
+  violations: [],
+};
 
 const recordAuthorityTelemetry = async ({
   admin,
@@ -117,12 +368,15 @@ const recordAuthorityTelemetry = async ({
   coverage,
   syncContract,
   status,
+  operation = 'saveDailyRecordWithClinicalAuthority',
   errorCode,
   errorMessage,
   startedAt,
 }) => {
   try {
-    const changedPaths = Array.isArray(syncContract?.changedPaths) ? syncContract.changedPaths : [];
+    const changedPaths = collectChangedPaths(syncContract);
+    const safeAuthority = authority || emptyAuthority;
+    const safeCoverage = coverage || emptyCoverage;
     await admin
       .firestore()
       .collection('hospitals')
@@ -130,7 +384,7 @@ const recordAuthorityTelemetry = async ({
       .collection('functionsTelemetry')
       .add({
         service: 'dailyRecordWriteAuthority',
-        operation: 'saveDailyRecordWithClinicalAuthority',
+        operation,
         hospitalId: HOSPITAL_ID,
         durationMs: Date.now() - startedAt,
         attempt: 1,
@@ -144,15 +398,16 @@ const recordAuthorityTelemetry = async ({
           mode,
           origin,
           dryRun,
-          authorityStatus: authority.status,
-          violationCount: authority.violations.length,
-          violationTypes: authority.violations.map(violation => violation.type).join(','),
+          authorityStatus: safeAuthority.status,
+          violationCount: safeAuthority.violations.length,
+          violationTypes: safeAuthority.violations.map(violation => violation.type).join(','),
           changedPathsCount: changedPaths.length,
           hasExpectedVersion: Boolean(syncContract?.expectedVersion),
-          activePatients: coverage.activePatients,
-          canonicalEpisodeIds: coverage.canonicalEpisodeIds,
-          fallbackEpisodeKeys: coverage.fallbackEpisodeKeys,
-          degenerateFallbackEpisodeKeys: coverage.degenerateFallbackEpisodeKeys,
+          mutationId: normalizeShortString(syncContract?.mutationId) || null,
+          activePatients: safeCoverage.activePatients,
+          canonicalEpisodeIds: safeCoverage.canonicalEpisodeIds,
+          fallbackEpisodeKeys: safeCoverage.fallbackEpisodeKeys,
+          degenerateFallbackEpisodeKeys: safeCoverage.degenerateFallbackEpisodeKeys,
         },
       });
   } catch (error) {
@@ -163,18 +418,24 @@ const recordAuthorityTelemetry = async ({
   }
 };
 
+const assertAuthorizedDailyRecordWriter = async ({ context, resolveRoleForEmail }) => {
+  const email = requireAuthenticatedEmail(context);
+  const resolvedRole = await resolveRoleForEmail(email);
+
+  if (!ALLOWED_DAILY_RECORD_WRITE_ROLES.has(resolvedRole)) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Only authorized clinical users can save daily records.'
+    );
+  }
+
+  return email;
+};
+
 const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }) => ({
   saveDailyRecordWithClinicalAuthority: functions.https.onCall(async (data, context) => {
     const startedAt = Date.now();
-    const email = requireAuthenticatedEmail(context);
-    const resolvedRole = await resolveRoleForEmail(email);
-
-    if (!ALLOWED_DAILY_RECORD_WRITE_ROLES.has(resolvedRole)) {
-      throw new functions.https.HttpsError(
-        'permission-denied',
-        'Only authorized clinical users can save daily records.'
-      );
-    }
+    const email = await assertAuthorizedDailyRecordWriter({ context, resolveRoleForEmail });
 
     const { date, record, expectedLastUpdated, mode, origin, dryRun, syncContract } =
       parsePayload(data);
@@ -269,6 +530,108 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
       throw new functions.https.HttpsError(
         'internal',
         'Failed to save daily record with clinical authority.'
+      );
+    }
+  }),
+
+  patchDailyRecordWithClinicalAuthority: functions.https.onCall(async (data, context) => {
+    const startedAt = Date.now();
+    const email = await assertAuthorizedDailyRecordWriter({ context, resolveRoleForEmail });
+    const { date, patch, mode, origin, dryRun, syncContract, expectedLastUpdated } =
+      parsePatchPayload(data);
+    const db = admin.firestore();
+    const docRef = db.collection('hospitals').doc(HOSPITAL_ID).collection('dailyRecords').doc(date);
+    let authority;
+    let coverage;
+    let revision;
+    const mutationId = normalizeShortString(syncContract?.mutationId);
+
+    try {
+      await db.runTransaction(async transaction => {
+        const snapshot = await transaction.get(docRef);
+        if (!snapshot.exists) {
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Daily record partial patch requires an existing record.'
+          );
+        }
+
+        const remoteData = snapshot.data() || {};
+        assertExpectedVersion({ snapshot, expectedLastUpdated });
+        assertPatchTargetsCurrentClinicalEpisode({ remoteData, patch });
+        const now = admin.firestore.Timestamp.now();
+        const patchedRecord = applyPatchToRecord({ date, remoteData, patch });
+        patchedRecord.meta = buildNextMeta({ remoteData, syncContract, now });
+
+        authority = assertClinicalAuthority(patchedRecord);
+        coverage = collectClinicalEpisodeCoverage(patchedRecord);
+        revision = patchedRecord.meta.revision;
+
+        if (authority.status !== 'ok') {
+          throw new functions.https.HttpsError(
+            'failed-precondition',
+            authority.violations.map(violation => violation.message).join(' ')
+          );
+        }
+
+        if (dryRun) {
+          return;
+        }
+
+        const historyRef = docRef.collection('history').doc(new Date().toISOString());
+        transaction.set(historyRef, {
+          ...remoteData,
+          snapshotTimestamp: now,
+        });
+
+        transaction.set(docRef, {
+          ...patchedRecord,
+          lastUpdated: now,
+        });
+      });
+
+      await recordAuthorityTelemetry({
+        admin,
+        date,
+        mode,
+        origin,
+        dryRun,
+        authority,
+        coverage,
+        syncContract,
+        operation: 'patchDailyRecordWithClinicalAuthority',
+        status: 'success',
+        startedAt,
+      });
+
+      return buildAuthorityResponse({ date, mode, authority, coverage, revision, mutationId });
+    } catch (error) {
+      if (error instanceof functions.https.HttpsError) {
+        await recordAuthorityTelemetry({
+          admin,
+          date,
+          mode,
+          origin,
+          dryRun,
+          authority,
+          coverage,
+          syncContract,
+          operation: 'patchDailyRecordWithClinicalAuthority',
+          status: 'failure',
+          errorCode: error.code,
+          errorMessage: error.message,
+          startedAt,
+        });
+        throw error;
+      }
+
+      console.error(
+        'Error patching daily record with clinical authority',
+        sanitizeLogValue({ email, date, error })
+      );
+      throw new functions.https.HttpsError(
+        'internal',
+        'Failed to patch daily record with clinical authority.'
       );
     }
   }),

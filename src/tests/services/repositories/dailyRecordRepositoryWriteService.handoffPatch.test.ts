@@ -93,7 +93,13 @@ describe('dailyRecordRepositoryWriteService specialist handoff patches', () => {
       expect.not.objectContaining({
         'beds.R1.fhir_resource': expect.anything(),
       }),
-      current.lastUpdated
+      current.lastUpdated,
+      expect.objectContaining({
+        syncContract: expect.objectContaining({
+          changedPaths: ['beds.R1.medicalHandoffNote', 'beds.R1.medicalHandoffEntries'],
+          expectedVersion: current.lastUpdated,
+        }),
+      })
     );
   });
 
@@ -120,7 +126,13 @@ describe('dailyRecordRepositoryWriteService specialist handoff patches', () => {
         'beds.R2': expect.anything(),
         'beds.NEO1': expect.anything(),
       }),
-      current.lastUpdated
+      current.lastUpdated,
+      expect.objectContaining({
+        syncContract: expect.objectContaining({
+          changedPaths: ['beds.R1.medicalHandoffNote', 'beds.R1.medicalHandoffEntries'],
+          expectedVersion: current.lastUpdated,
+        }),
+      })
     );
   });
 });

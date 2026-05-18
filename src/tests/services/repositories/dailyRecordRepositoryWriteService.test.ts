@@ -95,6 +95,15 @@ const buildPatient = (bedId: string, patientName: string): PatientData => ({
   isUPC: false,
 });
 
+const expectSyncContract = (expectedVersion: string, changedPaths: string[]) =>
+  expect.objectContaining({
+    syncContract: expect.objectContaining({
+      expectedVersion,
+      changedPaths,
+      recordRevision: expect.any(String),
+    }),
+  });
+
 describe('dailyRecordRepositoryWriteService outbox fallback', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -251,7 +260,8 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
       expect.objectContaining({
         'beds.R2.patientName': 'Paciente Nuevo',
       }),
-      '2026-02-18T09:00:00.000Z'
+      '2026-02-18T09:00:00.000Z',
+      expectSyncContract('2026-02-18T09:00:00.000Z', ['beds.R2.patientName'])
     );
   });
 
@@ -311,7 +321,13 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         'beds.R4.patientName': 'Paciente Nuevo',
         'beds.R4.rut': '22.222.222-2',
       }),
-      current.lastUpdated
+      current.lastUpdated,
+      expectSyncContract(current.lastUpdated, [
+        'beds.R4.patientName',
+        'beds.R4.rut',
+        'beds.R4.firstSeenDate',
+        'beds.R4.admissionDate',
+      ])
     );
   });
 
@@ -352,7 +368,8 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
           admissionDate: '',
         }),
       }),
-      current.lastUpdated
+      current.lastUpdated,
+      expectSyncContract(current.lastUpdated, ['beds.R2'])
     );
   });
 
@@ -382,7 +399,8 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     expect(updateRecordPartialToFirestore).toHaveBeenCalledWith(
       '2026-02-13',
       expect.any(Object),
-      '2026-02-13T08:00:00.000Z'
+      '2026-02-13T08:00:00.000Z',
+      expectSyncContract('2026-02-13T08:00:00.000Z', ['beds.R1.patientName'])
     );
   });
 
@@ -403,7 +421,8 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         medicalHandoffNovedades: 'Nota especialista',
         dateTimestamp: Date.parse('2026-02-11T00:00:00'),
       }),
-      current.lastUpdated
+      current.lastUpdated,
+      expectSyncContract(current.lastUpdated, ['medicalHandoffNovedades'])
     );
   });
 
@@ -424,7 +443,8 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         'beds.R1.patientName': 'Paciente actualizado',
         dateTimestamp: Date.parse('2026-02-10T00:00:00'),
       }),
-      current.lastUpdated
+      current.lastUpdated,
+      expectSyncContract(current.lastUpdated, ['beds.R1.patientName'])
     );
   });
 
@@ -449,7 +469,8 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         'beds.R1.clinicalCrib.patientName': 'Recien nacido actualizado',
         'beds.R1.clinicalCrib.fhir_resource': expect.any(Object),
       }),
-      current.lastUpdated
+      current.lastUpdated,
+      expectSyncContract(current.lastUpdated, ['beds.R1.clinicalCrib.patientName'])
     );
   });
 });

@@ -14,6 +14,11 @@ import { tombstoneMovementById } from '@/application/census/movementTombstonePol
 import { convertCmaToHomeDischargeRecord } from '@/application/census/movementTypeConversionPolicy';
 import { buildCmaEpisodeMovementFields } from '@/application/census/cmaEpisodeMovementFields';
 import { ensurePatientClinicalEpisodeId } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
+import { patientMovementRuntimeLogger } from '@/hooks/controllers/hookControllerLoggers';
+
+const logCmaPersistenceFailure = (action: string, error: unknown): void => {
+  patientMovementRuntimeLogger.warn(`CMA ${action} persistence failed`, error);
+};
 
 /**
  * Normalize CMA patient data fields
@@ -85,13 +90,17 @@ export const useCMA = (
         };
       }
 
-      patchRecord(
-        buildAtomicPatientMovementPatch({
-          updatedRecord,
-          movementKey: 'cma',
-          sourceBedIds: sourceBedId ? [sourceBedId] : [],
-        })
-      );
+      void Promise.resolve(
+        patchRecord(
+          buildAtomicPatientMovementPatch({
+            updatedRecord,
+            movementKey: 'cma',
+            sourceBedIds: sourceBedId ? [sourceBedId] : [],
+          })
+        )
+      ).catch(error => {
+        logCmaPersistenceFailure('create', error);
+      });
     },
     [patchRecord]
   );
@@ -101,8 +110,12 @@ export const useCMA = (
       const currentRecord = recordRef.current;
       if (!currentRecord) return;
       const currentList = currentRecord.cma || [];
-      patchRecord({
-        cma: tombstoneMovementById(currentList, id),
+      void Promise.resolve(
+        patchRecord({
+          cma: tombstoneMovementById(currentList, id),
+        })
+      ).catch(error => {
+        logCmaPersistenceFailure('delete', error);
       });
     },
     [patchRecord]
@@ -117,8 +130,12 @@ export const useCMA = (
       const normalizedUpdates = normalizePatientData(updates);
 
       const currentList = currentRecord.cma || [];
-      patchRecord({
-        cma: currentList.map(item => (item.id === id ? { ...item, ...normalizedUpdates } : item)),
+      void Promise.resolve(
+        patchRecord({
+          cma: currentList.map(item => (item.id === id ? { ...item, ...normalizedUpdates } : item)),
+        })
+      ).catch(error => {
+        logCmaPersistenceFailure('update', error);
       });
     },
     [patchRecord]
@@ -132,7 +149,9 @@ export const useCMA = (
       const patch = buildUndoCmaPatch(currentRecord, item);
       if (!patch) return;
 
-      patchRecord(patch as DailyRecordPatch);
+      void Promise.resolve(patchRecord(patch as DailyRecordPatch)).catch(error => {
+        logCmaPersistenceFailure('undo', error);
+      });
     },
     [patchRecord]
   );
@@ -147,9 +166,13 @@ export const useCMA = (
       );
       if (updatedRecord === currentRecord) return;
 
-      patchRecord({
-        cma: updatedRecord.cma,
-        discharges: updatedRecord.discharges,
+      void Promise.resolve(
+        patchRecord({
+          cma: updatedRecord.cma,
+          discharges: updatedRecord.discharges,
+        })
+      ).catch(error => {
+        logCmaPersistenceFailure('convert_to_discharge', error);
       });
     },
     [patchRecord]

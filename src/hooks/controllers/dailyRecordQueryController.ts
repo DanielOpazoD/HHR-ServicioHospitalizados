@@ -21,6 +21,8 @@ import {
 import { dailyRecordObservability } from '@/services/repositories/dailyRecordOperationalTelemetry';
 import type { SyncDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import { toRecordTimestamp } from '@/services/repositories/dailyRecordConsistencyPolicy';
+import { markDailyRecordRemoteConfirmed } from '@/hooks/controllers/dailyRecordFreshnessGateController';
+import { didDailyRecordFreshnessHydrateNewerRemote } from '@/hooks/controllers/dailyRecordFreshnessHydrationController';
 
 interface DailyRecordReader {
   getForDate: (date: string) => Promise<DailyRecord | null>;
@@ -279,12 +281,23 @@ export const createDailyRecordSubscription = (
     const previousResult = queryClient.getQueryData<DailyRecordQueryResult>(
       getDailyRecordQueryKey(date)
     );
-
     if (result.record) {
       if (shouldPreservePreviousRecord(previousResult, result)) {
         return;
       }
       applyResolvedRecord(result, previousResult);
+      if (
+        result.runtime.consistencyState !== 'unavailable' &&
+        result.runtime.conflictSummary?.kind !== 'remote_unavailable'
+      ) {
+        markDailyRecordRemoteConfirmed(date, {
+          source: 'subscription',
+          remoteLastUpdated: result.record.lastUpdated,
+          remoteHydratedNewerRecord: didDailyRecordFreshnessHydrateNewerRemote(result),
+          previousRecord: previousResult?.record,
+          confirmedRecord: result.record,
+        });
+      }
       return;
     }
 

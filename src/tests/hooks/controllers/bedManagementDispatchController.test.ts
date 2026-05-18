@@ -7,6 +7,7 @@ import type {
 import type { BedAction } from '@/hooks/contracts/bedManagementActionContracts';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+import { bedManagementDispatchLogger } from '@/hooks/controllers/hookControllerLoggers';
 
 const buildRecord = (): DailyRecord => ({
   date: '2026-03-06',
@@ -103,5 +104,40 @@ describe('bedManagementDispatchController', () => {
     expect(patchRecord).toHaveBeenCalledWith({
       'beds.R1.age': '21',
     });
+  });
+
+  it('captures asynchronous patch failures from fire-and-forget bed actions', async () => {
+    const patchError = new Error('freshness gate blocked');
+    const patchRecord = vi.fn<() => Promise<void>>().mockRejectedValueOnce(patchError);
+    const warnSpy = vi.spyOn(bedManagementDispatchLogger, 'warn').mockImplementation(() => {});
+    const action: BedAction = {
+      type: 'UPDATE_PATIENT',
+      bedId: 'R1',
+      field: 'age',
+      value: '21',
+    };
+    const validation: BedManagementValidationPort = {
+      processFieldValue: vi.fn().mockReturnValue({ valid: true, value: '21' }),
+    };
+    const bedAudit: BedManagementAuditPort = {
+      auditPatientChange: vi.fn(),
+      auditCudyrChange: vi.fn(),
+      auditCribCudyrChange: vi.fn(),
+      auditPatientCleared: vi.fn(),
+      auditPatientModified: vi.fn(),
+      auditPatientMovement: vi.fn(),
+    };
+
+    executeBedManagementAction({
+      currentRecord: buildRecord(),
+      action,
+      validation,
+      bedAudit,
+      patchRecord,
+    });
+    await Promise.resolve();
+
+    expect(warnSpy).toHaveBeenCalledWith('Bed management patch failed', patchError);
+    warnSpy.mockRestore();
   });
 });

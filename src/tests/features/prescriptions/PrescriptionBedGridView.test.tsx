@@ -373,12 +373,9 @@ describe('PrescriptionBedGridView', () => {
       fireEvent.click(screen.getByRole('button', { name: /receta siguiente/i }));
     });
 
-    await waitFor(() =>
-      expect(screen.getByRole('img', { name: /receta 2 de 2/i })).toHaveAttribute(
-        'src',
-        'https://stub/prescriptions/hhr/rx-second/full.jpg'
-      )
-    );
+    expect(
+      await screen.findByRole('img', { name: /receta 2 de 2/i }, { timeout: 4000 })
+    ).toHaveAttribute('src', 'https://stub/prescriptions/hhr/rx-second/full.jpg');
   });
 
   it('keeps the image viewer mounted while the next prescription image loads', async () => {
@@ -425,12 +422,9 @@ describe('PrescriptionBedGridView', () => {
       secondImage.resolve('https://stub/prescriptions/hhr/rx-second/full.jpg');
     });
 
-    await waitFor(() =>
-      expect(screen.getByRole('img', { name: /receta 2 de 2/i })).toHaveAttribute(
-        'src',
-        'https://stub/prescriptions/hhr/rx-second/full.jpg'
-      )
-    );
+    expect(
+      await screen.findByRole('img', { name: /receta 2 de 2/i }, { timeout: 4000 })
+    ).toHaveAttribute('src', 'https://stub/prescriptions/hhr/rx-second/full.jpg');
   });
 
   it('confirms and deletes the selected prescription from the image viewer', async () => {

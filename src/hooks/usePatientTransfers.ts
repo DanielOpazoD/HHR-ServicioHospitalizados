@@ -25,6 +25,7 @@ import { usePatientMovementUndoExecutor } from '@/hooks/usePatientMovementUndoEx
 import { usePatientMovementCurrentRecord } from '@/hooks/usePatientMovementCurrentRecord';
 import { usePatientMovementMutationExecutor } from '@/hooks/usePatientMovementMutationExecutor';
 import { usePatientMovementMutationByIdExecutor } from '@/hooks/usePatientMovementMutationByIdExecutor';
+import { patientMovementRuntimeLogger } from '@/hooks/controllers/hookControllerLoggers';
 import type {
   AddTransferAction,
   DeleteTransferAction,
@@ -32,6 +33,10 @@ import type {
   UndoTransferAction,
   UpdateTransferAction,
 } from '@/types/movements';
+
+const logTransferPersistenceFailure = (action: string, error: unknown): void => {
+  patientMovementRuntimeLogger.warn(`Transfer ${action} persistence failed`, error);
+};
 
 export const usePatientTransfers = (
   record: DailyRecord | null,
@@ -50,11 +55,15 @@ export const usePatientTransfers = (
   const executeMovementMutation = usePatientMovementMutationExecutor({
     recordRef,
     saveAndUpdate,
+    patchRecord,
+    movementKey: 'transfers',
   });
   const withCurrentRecord = usePatientMovementCurrentRecord({ recordRef });
   const executeMovementUndo = usePatientMovementUndoExecutor({
     createEmptyPatient,
     saveAndUpdate,
+    patchRecord,
+    movementKey: 'transfers',
     notifyUndoError,
   });
 
@@ -89,7 +98,9 @@ export const usePatientTransfers = (
           onSuccess: value => {
             logTransferEntry(value.auditEntry, currentRecord.date);
           },
-        }).catch(() => undefined);
+        }).catch(error => {
+          logTransferPersistenceFailure('create', error);
+        });
       });
     },
     [executeMovementCreation, logTransferEntry, withCurrentRecord]
@@ -97,7 +108,7 @@ export const usePatientTransfers = (
 
   const updateTransfer: UpdateTransferAction = useCallback(
     (id, updates) => {
-      executeTransferMutation(
+      void executeTransferMutation(
         (record, movementId) =>
           resolveUpdateTransferMovement({
             record,
@@ -105,21 +116,25 @@ export const usePatientTransfers = (
             updates,
           }),
         id
-      );
+      ).catch(error => {
+        logTransferPersistenceFailure('update', error);
+      });
     },
     [executeTransferMutation]
   );
 
   const deleteTransfer: DeleteTransferAction = useCallback(
     id => {
-      executeTransferMutation(
+      void executeTransferMutation(
         (record, movementId) =>
           resolveDeleteTransferMovement({
             record,
             id: movementId,
           }),
         id
-      );
+      ).catch(error => {
+        logTransferPersistenceFailure('delete', error);
+      });
     },
     [executeTransferMutation]
   );
@@ -128,7 +143,7 @@ export const usePatientTransfers = (
     id => {
       withCurrentRecord(currentRecord => {
         const transfer = selectTransferUndoMovement(currentRecord, id);
-        executeMovementUndo({
+        void executeMovementUndo({
           kind: 'transfer',
           movement: transfer,
           record: currentRecord,
@@ -139,6 +154,8 @@ export const usePatientTransfers = (
               bedId,
               updatedBed,
             }),
+        }).catch(error => {
+          logTransferPersistenceFailure('undo', error);
         });
       });
     },

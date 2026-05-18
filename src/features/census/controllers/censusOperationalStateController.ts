@@ -54,7 +54,7 @@ export const resolveCensusOperationalState = ({
         isSettled: true,
         shouldShowBanner: false,
         label: 'Dia vacio confirmado',
-        message: 'Firebase y la copia local ya confirmaron que no existe registro para esta fecha.',
+        message: 'Ya se confirmó que no existe registro para esta fecha.',
         severity: 'info',
       };
     }
@@ -65,7 +65,7 @@ export const resolveCensusOperationalState = ({
       shouldShowBanner: false,
       label: isAuthenticated ? 'Verificando censo' : 'Cargando censo',
       message:
-        'Aun no se debe interpretar este dia como vacio: la app esta verificando Firebase y la copia local.',
+        'Aun no se debe interpretar este dia como vacio: la app esta verificando los últimos datos.',
       severity: 'warning',
     };
   }
@@ -87,8 +87,7 @@ export const resolveCensusOperationalState = ({
       isSettled: false,
       shouldShowBanner: false,
       label: 'Mostrando copia local',
-      message:
-        'El censo visible proviene de la copia local. Firebase aun no esta disponible para confirmar cambios remotos.',
+      message: 'El censo visible se mantiene disponible mientras se confirman los últimos datos.',
       severity: 'warning',
     };
   }
@@ -98,9 +97,8 @@ export const resolveCensusOperationalState = ({
       phase: 'reconciling_remote',
       isSettled: false,
       shouldShowBanner: false,
-      label: 'Reconciliando Firebase',
-      message:
-        'El censo ya es visible, pero la app aun esta comparando la copia local con Firebase.',
+      label: 'Actualizando censo',
+      message: 'El censo ya es visible mientras se confirman los últimos datos.',
       severity: 'info',
     };
   }

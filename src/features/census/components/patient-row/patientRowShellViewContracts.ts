@@ -7,6 +7,7 @@ import type { UserRole } from '@/types/authRoleTypes';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import type { PatientActionMenuIndicators } from '@/features/census/components/patient-row/patientRowActionContracts';
 import type { RowMenuAlign } from '@/features/census/components/patient-row/patientRowUiContracts';
+import type { HydratedRemoteClinicalFieldLocks } from '@/hooks/controllers/dailyRecordHydratedRemotePatchRiskController';
 
 export interface PatientRowModalsProps {
   bedId: string;
@@ -38,6 +39,8 @@ export interface PatientRowProps {
   currentDateString: string;
   onAction: (action: PatientRowAction, bedId: string, patient: PatientData) => void;
   readOnly?: boolean;
+  clinicalEditingDisabled?: boolean;
+  clinicalFieldLocks?: HydratedRemoteClinicalFieldLocks;
   actionMenuAlign?: RowMenuAlign;
   diagnosisMode?: DiagnosisMode;
   isSubRow?: boolean;

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CensusTableHeader } from '@/features/census/components/CensusTableHeader';
 import { CensusTableBody } from '@/features/census/components/CensusTableBody';
 import { useCensusTableBindingsModel } from '@/features/census/hooks/useCensusTableBindingsModel';
@@ -15,6 +15,7 @@ import { useNotification } from '@/context/UIContext';
 import { isFeatureEnabled } from '@/services/utils/featureFlags';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
+import { useDailyRecordFreshnessUi } from '@/hooks/useDailyRecordFreshnessUi';
 
 const censusTableAdmitLogger = createScopedLogger('CensusTableAdmit');
 export type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
@@ -37,9 +38,14 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   accessProfile = 'default',
 }) => {
   const [activeEmptyBedId, setActiveEmptyBedId] = useState<string | null>(null);
+  const tableRootRef = useRef<HTMLDivElement>(null);
+  const freshnessUi = useDailyRecordFreshnessUi(currentDateString);
+  const clinicalEditingDisabled = freshnessUi.isClinicalEditingBlocked;
   const { isReady, bindings, clinicalDocumentInfoByBedId } = useCensusTableBindingsModel({
     currentDateString,
     readOnly,
+    clinicalEditingDisabled,
+    clinicalFieldLocksByBedId: freshnessUi.clinicalFieldLocksByBedId,
     accessProfile,
   });
 
@@ -57,6 +63,20 @@ export const CensusTable: React.FC<CensusTableProps> = ({
 
   const dragDrop = useCensusTableDragDrop(handleMoveToBed, beds ?? {});
 
+  useEffect(() => {
+    const hasHardContextReset = Object.values(freshnessUi.clinicalFieldLocksByBedId).some(
+      locks => locks.allClinical
+    );
+    const activeElement = document.activeElement;
+    if (
+      hasHardContextReset &&
+      activeElement instanceof HTMLElement &&
+      tableRootRef.current?.contains(activeElement)
+    ) {
+      activeElement.blur();
+    }
+  }, [freshnessUi.clinicalFieldLocksByBedId]);
+
   const emptyBedData = useMemo(
     () => (activeEmptyBedId ? createEmptyPatient(activeEmptyBedId) : null),
     [activeEmptyBedId]
@@ -66,9 +86,15 @@ export const CensusTable: React.FC<CensusTableProps> = ({
     setActiveEmptyBedId(null);
   }, []);
 
-  const openEmptyBedDemographics = useCallback((bedId: string) => {
-    setActiveEmptyBedId(bedId);
-  }, []);
+  const openEmptyBedDemographics = useCallback(
+    (bedId: string) => {
+      if (clinicalEditingDisabled) {
+        return;
+      }
+      setActiveEmptyBedId(bedId);
+    },
+    [clinicalEditingDisabled]
+  );
 
   const saveEmptyBedDemographics = useCallback(
     async (updatedFields: Partial<PatientData>) => {
@@ -137,8 +163,21 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   const { headerProps, bodyProps, tableStyle } = bindings;
 
   return (
-    <div className="card print:border-none print:shadow-none !overflow-visible">
+    <div ref={tableRootRef} className="card print:border-none print:shadow-none !overflow-visible">
       <div className="relative overflow-visible">
+        {freshnessUi.userMessage ? (
+          <div
+            className={`mb-2 rounded-md border px-3 py-2 text-sm ${
+              freshnessUi.messageLevel === 'warning'
+                ? 'border-amber-200 bg-amber-50 text-amber-800'
+                : 'border-sky-100 bg-sky-50 text-sky-700'
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            {freshnessUi.userMessage}
+          </div>
+        ) : null}
         <table
           data-testid="census-table"
           className="text-left border-collapse print:text-xs relative text-[12px] leading-tight table-fixed"
@@ -148,7 +187,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
           <CensusTableBody
             {...bodyProps}
             onActivateEmptyBed={openEmptyBedDemographics}
-            dragDrop={readOnly ? undefined : dragDrop}
+            dragDrop={readOnly || clinicalEditingDisabled ? undefined : dragDrop}
             clinicalDocumentInfoByBedId={clinicalDocumentInfoByBedId}
           />
         </table>

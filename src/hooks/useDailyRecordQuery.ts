@@ -18,46 +18,27 @@ import {
   setDailyRecordQueryData,
   shouldUseDailyRecordRealtimeSync,
 } from '@/hooks/controllers/dailyRecordQueryController';
+import {
+  getDailyRecordLastRemoteConfirmedAt,
+  markDailyRecordRemoteConfirmed,
+  markDailyRecordStaleBaseline,
+  markDailyRecordTabHidden,
+  markDailyRecordTabVisible,
+} from '@/hooks/controllers/dailyRecordFreshnessGateController';
 import { registerPendingDailyRecordPatch } from '@/hooks/controllers/dailyRecordPendingPatchController';
-import type {
-  SaveDailyRecordResult,
-  UpdatePartialDailyRecordResult,
-} from '@/services/repositories/contracts/dailyRecordResults';
 import { isDailyRecordWriteBlockedResult } from '@/services/repositories/contracts/dailyRecordResults';
 import type { DailyRecordQueryResult } from '@/services/repositories/contracts/dailyRecordQueries';
 import type { RemoteSyncRuntimeStatus } from '@/services/repositories/repositoryConfig';
-
-const saveDailyRecordWithCompatibility = async (
-  dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
-  record: DailyRecord
-): Promise<SaveDailyRecordResult | null> => {
-  if (typeof dailyRecord.saveDetailed === 'function') {
-    return dailyRecord.saveDetailed(record, record.lastUpdated);
-  }
-
-  await dailyRecord.save(record, record.lastUpdated);
-  return null;
-};
-
-const patchDailyRecordWithCompatibility = async (
-  dailyRecord: ReturnType<typeof useRepositories>['dailyRecord'],
-  date: string,
-  partial: DailyRecordPatch
-): Promise<UpdatePartialDailyRecordResult | null> => {
-  if (typeof dailyRecord.updatePartialDetailed === 'function') {
-    return dailyRecord.updatePartialDetailed(date, partial);
-  }
-
-  await dailyRecord.updatePartial(date, partial);
-  return null;
-};
-
-const PENDING_PATCH_RELEASE_FALLBACK_TTL_MS = 60000;
-
-const releasePendingPatchAfterFallbackTtl = (release: () => void): void => {
-  const timer = globalThis.setTimeout(release, PENDING_PATCH_RELEASE_FALLBACK_TTL_MS);
-  (timer as { unref?: () => void }).unref?.();
-};
+import {
+  assertHydratedRemotePatchCanProceed,
+  ensureFreshClinicalPatchMutation,
+  ensureFreshClinicalSaveMutation,
+  ensureFreshDailyRecordQuery,
+  patchDailyRecordWithCompatibility,
+  prefetchDailyRecordQuery,
+  releasePendingPatchAfterFallbackTtl,
+  saveDailyRecordWithCompatibility,
+} from '@/hooks/controllers/dailyRecordMutationFreshnessController';
 
 /**
  * Hook for fetching a daily record by date with React Query.
@@ -81,6 +62,7 @@ export const useDailyRecordQuery = (
     remoteSyncStatus
   );
   const previousShouldSyncFromRemoteRef = useRef(shouldSyncFromRemote);
+  const lastRemoteConfirmedRecordRef = useRef<{ date: string; record: DailyRecord } | null>(null);
 
   const queryKey = getDailyRecordQueryKey(date);
   const query = useQuery<DailyRecordQueryResult>({
@@ -88,6 +70,31 @@ export const useDailyRecordQuery = (
     queryFn: createDailyRecordQueryFn(dailyRecord, date, shouldSyncFromRemote),
     enabled: !!date,
   });
+
+  useEffect(() => {
+    if (!shouldSyncFromRemote || !query.data?.record) {
+      return;
+    }
+    if (
+      query.data.runtime.consistencyState === 'unavailable' ||
+      query.data.runtime.sourceOfTruth !== 'remote' ||
+      query.data.runtime.conflictSummary?.kind === 'remote_unavailable'
+    ) {
+      return;
+    }
+
+    const previousRecord =
+      lastRemoteConfirmedRecordRef.current?.date === date
+        ? lastRemoteConfirmedRecordRef.current.record
+        : null;
+    markDailyRecordRemoteConfirmed(date, {
+      source: 'query',
+      remoteLastUpdated: query.data.record.lastUpdated,
+      previousRecord,
+      confirmedRecord: query.data.record,
+    });
+    lastRemoteConfirmedRecordRef.current = { date, record: query.data.record };
+  }, [date, query.data, shouldSyncFromRemote]);
 
   useEffect(() => {
     const didRemoteSyncJustBecomeReady =
@@ -115,6 +122,46 @@ export const useDailyRecordQuery = (
     return () => unsubscribe();
   }, [date, queryClient, dailyRecord, shouldSyncFromRemote]);
 
+  useEffect(() => {
+    if (!shouldSyncFromRemote) return;
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+
+    const handleResume = () => {
+      const resumeState = markDailyRecordTabVisible();
+      if (!resumeState.stale) {
+        return;
+      }
+
+      markDailyRecordStaleBaseline(
+        date,
+        queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date))?.record ??
+          null
+      );
+      void ensureFreshDailyRecordQuery(date, { dailyRecord, queryClient }, 'resume');
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        markDailyRecordTabHidden();
+        return;
+      }
+
+      if (document.visibilityState === 'visible') {
+        handleResume();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleResume);
+    window.addEventListener('online', handleResume);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleResume);
+      window.removeEventListener('online', handleResume);
+    };
+  }, [dailyRecord, date, queryClient, shouldSyncFromRemote]);
+
   // Prefetch previous day for faster "copy from previous" functionality
   useEffect(() => {
     if (!shouldSyncFromRemote) return;
@@ -130,22 +177,21 @@ export const useDailyRecordQuery = (
   };
 };
 
-/**
- * Hook for saving/updating a daily record.
- * Provides optimistic updates and automatic cache invalidation.
- */
+/** Hook for saving/updating a daily record. */
 export const useSaveDailyRecordMutation = () => {
   const queryClient = useQueryClient();
   const { dailyRecord } = useRepositories();
 
   return useMutation({
     mutationFn: async (record: DailyRecord) => {
+      await ensureFreshClinicalSaveMutation(record, { dailyRecord, queryClient });
       const result = await saveDailyRecordWithCompatibility(dailyRecord, record);
       return { record, result };
     },
-    onMutate: newRecord => {
-      // Cancel any outgoing refetches (don't await to avoid race conditions in rapid updates)
-      queryClient.cancelQueries({
+    onMutate: async newRecord => {
+      await ensureFreshClinicalSaveMutation(newRecord, { dailyRecord, queryClient });
+
+      await queryClient.cancelQueries({
         queryKey: queryKeys.dailyRecord.byDate(newRecord.date),
       });
 
@@ -169,7 +215,13 @@ export const useSaveDailyRecordMutation = () => {
     onSuccess: (payload, _newRecord, context) => {
       if (isDailyRecordWriteBlockedResult(payload.result)) {
         setDailyRecordQueryData(queryClient, payload.record.date, context?.previousRecord ?? null);
+        return;
       }
+      markDailyRecordRemoteConfirmed(payload.record.date, {
+        source: 'write',
+        remoteLastUpdated: payload.record.lastUpdated,
+        confirmedRecord: payload.record,
+      });
     },
     onSettled: payload => {
       // Refetch to ensure we're in sync
@@ -180,31 +232,32 @@ export const useSaveDailyRecordMutation = () => {
   });
 };
 
-/**
- * Hook for partial updates (patches).
- * Provides granular optimistic updates for better performance.
- *
- * Flow for "Atomicity & Sync":
- * 1. onMutate: Cancels refetches, snapshots old data, and applies patches locally
- *    using dot-notation paths. This gives immediate UI feedback.
- * 2. mutationFn: Sends only the patch to the server (DailyRecordRepository.updatePartial).
- * 3. Firestore: Merges the patch server-side.
- * 4. Real-time Subscription: The query observer in useDailyRecordQuery receives the
- *    update from Firestore and updates the cache, ensuring the UI aligns with
- *    the final server state (eventual consistency).
- */
+/** Hook for granular partial updates with optimistic cache state. */
 export const usePatchDailyRecordMutation = (date: string) => {
   const queryClient = useQueryClient();
   const { dailyRecord } = useRepositories();
 
   return useMutation({
     mutationFn: async (partial: DailyRecordPatch) => {
+      await ensureFreshClinicalPatchMutation(date, { dailyRecord, queryClient });
       const result = await patchDailyRecordWithCompatibility(dailyRecord, date, partial);
       return { partial, result };
     },
-    onMutate: partial => {
-      // Don't await cancelQueries to ensure the optimistic update happens in the same tick
-      queryClient.cancelQueries({
+    onMutate: async partial => {
+      const previousRecordBeforeFreshness = queryClient.getQueryData<DailyRecordQueryResult>(
+        getDailyRecordQueryKey(date)
+      )?.record;
+      const remoteConfirmedAtBeforeMutation = getDailyRecordLastRemoteConfirmedAt(date);
+      const freshness = await ensureFreshClinicalPatchMutation(date, { dailyRecord, queryClient });
+      assertHydratedRemotePatchCanProceed({
+        date,
+        attemptedPatch: partial,
+        previousRecord: previousRecordBeforeFreshness,
+        freshness,
+        remoteConfirmedAtBeforeMutation,
+      });
+
+      await queryClient.cancelQueries({
         queryKey: queryKeys.dailyRecord.byDate(date),
       });
       const unregisterPendingPatch = registerPendingDailyRecordPatch(date, partial);
@@ -231,7 +284,19 @@ export const usePatchDailyRecordMutation = (date: string) => {
     onSuccess: (payload, _partial, context) => {
       if (isDailyRecordWriteBlockedResult(payload.result)) {
         setDailyRecordQueryData(queryClient, date, context?.previousRecord ?? null);
+        return;
       }
+      const current = queryClient.getQueryData<DailyRecordQueryResult>(
+        getDailyRecordQueryKey(date)
+      )?.record;
+      if (!current) {
+        return;
+      }
+      markDailyRecordRemoteConfirmed(date, {
+        source: 'write',
+        remoteLastUpdated: current.lastUpdated,
+        confirmedRecord: current,
+      });
     },
     // Note: We don't invalidate queries here because the Firestore subscription
     // will automatically update the cache when the write completes.
@@ -261,10 +326,19 @@ export const usePrefetchDailyRecord = () => {
   const { dailyRecord } = useRepositories();
 
   return async (date: string) => {
-    await queryClient.prefetchQuery({
-      queryKey: getDailyRecordQueryKey(date),
-      queryFn: createDailyRecordQueryFn(dailyRecord, date),
-    });
+    await prefetchDailyRecordQuery(queryClient, dailyRecord, date);
+    const result = queryClient.getQueryData<DailyRecordQueryResult>(getDailyRecordQueryKey(date));
+    if (
+      result?.record &&
+      result.runtime.sourceOfTruth === 'remote' &&
+      result.runtime.consistencyState !== 'unavailable' &&
+      result.runtime.conflictSummary?.kind !== 'remote_unavailable'
+    ) {
+      markDailyRecordRemoteConfirmed(date, {
+        source: 'manual_refresh',
+        remoteLastUpdated: result.record.lastUpdated,
+      });
+    }
   };
 };
 

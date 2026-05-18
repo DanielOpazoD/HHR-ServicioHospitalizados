@@ -6,7 +6,6 @@ import {
   type DocumentData,
   type UpdateData,
 } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 import type { DailyRecord, DailyRecordPatch } from '@/services/storage/storageDailyRecordContracts';
 import { withRetry } from '@/utils/networkUtils';
 import {
@@ -16,14 +15,8 @@ import {
 } from '@/services/storage/firestore/firestoreShared';
 import { isSpecialistScopedDailyRecordPatch } from '@/services/repositories/dailyRecordClinicalDomainService';
 import {
-  evaluateDailyRecordClinicalAuthority,
-  recordClinicalAuthorityTelemetry,
-  recordClinicalEpisodeIdCoverageTelemetry,
-} from '@/services/repositories/dailyRecordClinicalAuthorityPolicy';
-import {
   asFirestoreUpdatePayload,
   assertFirestoreConcurrency,
-  ConcurrencyError,
   createDeletedRecordRef,
   saveHistorySnapshot,
 } from '@/services/storage/firestore/firestoreWriteSupport';
@@ -31,14 +24,23 @@ import { firestoreWriteLogger } from '@/services/storage/storageLoggers';
 import { ensureUserRoleClaim } from '@/services/auth/authClaimSyncService';
 import { resolveFirebaseUserRole } from '@/services/auth/authAccessResolution';
 import { defaultAuthRuntime } from '@/services/firebase-runtime/authRuntime';
-import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
+import { resolveDailyRecordAuthorityMode } from '@/services/storage/firestore/dailyRecordAuthorityMode';
 import {
-  resolveDailyRecordAuthorityMode,
-  shouldShadowDailyRecordAuthorityCallable,
-  shouldUseDailyRecordAuthorityCallable,
-} from '@/services/storage/firestore/dailyRecordAuthorityMode';
-import { saveDailyRecordWithClinicalAuthorityCallable } from '@/services/storage/firestore/dailyRecordAuthorityCallableClient';
-import type { UserRole } from '@/types/authRoleTypes';
+  patchDailyRecordWithClinicalAuthorityCallable,
+  saveDailyRecordWithClinicalAuthorityCallable,
+} from '@/services/storage/firestore/dailyRecordAuthorityCallableClient';
+import {
+  assertDailyRecordClinicalAuthority,
+  extractClinicalAuthorityPatch,
+  shouldRouteClinicalAuthorityPatch,
+  shouldRouteDailyRecordSaveViaCallable,
+  shouldRouteSpecialistPatchViaCallable,
+  tryShadowDailyRecordPatchViaCallable,
+  tryShadowDailyRecordSaveViaCallable,
+  updateSpecialistMedicalHandoffViaCallable,
+  type DailyRecordPartialWriteOptions,
+} from '@/services/storage/firestore/firestoreDailyRecordAuthorityRouting';
+import type { SyncTaskContract } from '@/services/storage/syncQueueTypes';
 
 const logFirestoreWriteRetry = (
   operation: 'save' | 'partialUpdate' | 'delete',
@@ -73,91 +75,6 @@ const isPermissionDeniedError = (error: unknown): boolean => {
   );
 };
 
-interface SpecialistMedicalHandoffCallablePayload {
-  date: string;
-  patch: Record<string, unknown>;
-}
-
-const isDoctorSpecialistRole = (role: UserRole | null): role is 'doctor_specialist' =>
-  role === 'doctor_specialist';
-
-const shouldRouteSpecialistPatchViaCallable = async (): Promise<boolean> => {
-  try {
-    await defaultAuthRuntime.ready;
-    const firebaseUser = defaultAuthRuntime.getCurrentUser();
-    if (!firebaseUser || firebaseUser.isAnonymous) {
-      return false;
-    }
-
-    return isDoctorSpecialistRole(await resolveFirebaseUserRole(firebaseUser));
-  } catch (error) {
-    firestoreWriteLogger.warn('Specialist callable routing role check failed', { error });
-    return false;
-  }
-};
-
-const updateSpecialistMedicalHandoffViaCallable = async (
-  date: string,
-  patch: Record<string, unknown>
-): Promise<void> => {
-  const functions = await defaultFunctionsRuntime.getFunctions();
-  const callable = httpsCallable<
-    SpecialistMedicalHandoffCallablePayload,
-    { success: boolean; date: string; bedId: string }
-  >(functions, 'updateSpecialistMedicalHandoff');
-
-  await callable({
-    date,
-    patch,
-  });
-};
-
-const shouldRouteDailyRecordSaveViaCallable = async (): Promise<boolean> => {
-  if (!shouldUseDailyRecordAuthorityCallable()) {
-    return false;
-  }
-
-  try {
-    await defaultAuthRuntime.ready;
-    const firebaseUser = defaultAuthRuntime.getCurrentUser();
-    return Boolean(firebaseUser && !firebaseUser.isAnonymous);
-  } catch (error) {
-    firestoreWriteLogger.warn('Daily record authority callable routing check failed', { error });
-    return false;
-  }
-};
-
-const tryShadowDailyRecordSaveViaCallable = async (
-  record: DailyRecord,
-  expectedLastUpdated?: string
-): Promise<void> => {
-  if (!shouldShadowDailyRecordAuthorityCallable()) {
-    return;
-  }
-
-  try {
-    await defaultAuthRuntime.ready;
-    const firebaseUser = defaultAuthRuntime.getCurrentUser();
-    if (!firebaseUser || firebaseUser.isAnonymous) {
-      return;
-    }
-
-    await saveDailyRecordWithClinicalAuthorityCallable({
-      date: record.date,
-      record,
-      expectedLastUpdated,
-      mode: 'shadow',
-      origin: 'shadow_save',
-      dryRun: true,
-    });
-  } catch (error) {
-    firestoreWriteLogger.warn('Daily record authority shadow validation failed', {
-      date: record.date,
-      error,
-    });
-  }
-};
-
 const tryRefreshCurrentUserRoleClaim = async (date: string): Promise<boolean> => {
   try {
     await defaultAuthRuntime.ready;
@@ -189,23 +106,23 @@ const tryRefreshCurrentUserRoleClaim = async (date: string): Promise<boolean> =>
 
 export { ConcurrencyError } from '@/services/storage/firestore/firestoreWriteSupport';
 
-const assertDailyRecordClinicalAuthority = (record: DailyRecord): void => {
-  const authority = evaluateDailyRecordClinicalAuthority(record, {
-    date: record.date,
-    phase: 'persistence',
-  });
-  recordClinicalAuthorityTelemetry(authority);
-  recordClinicalEpisodeIdCoverageTelemetry(record, {
-    date: record.date,
-    phase: 'persistence',
-  });
-
-  if (authority.status === 'blocked') {
-    throw new ConcurrencyError(
-      `Daily record clinical authority blocked write for ${record.date}: ` +
-        authority.violations.map(violation => violation.message).join(' ')
-    );
+const buildAuthorityPatchSyncContract = (
+  syncContract: SyncTaskContract | undefined,
+  authorityPatch: Record<string, unknown>
+): SyncTaskContract | undefined => {
+  if (!syncContract) {
+    return undefined;
   }
+
+  const authorityPaths = Object.keys(authorityPatch);
+  const changedPaths = (syncContract.changedPaths ?? []).filter(path =>
+    authorityPaths.includes(path)
+  );
+
+  return {
+    ...syncContract,
+    changedPaths: changedPaths.length > 0 ? changedPaths : authorityPaths,
+  };
 };
 
 export const saveRecordToFirestore = async (
@@ -274,7 +191,8 @@ export const saveRecordToFirestore = async (
 export const updateRecordPartial = async (
   date: string,
   partialData: DailyRecordPatch,
-  expectedLastUpdated?: string
+  expectedLastUpdated?: string,
+  options: DailyRecordPartialWriteOptions = {}
 ): Promise<void> => {
   try {
     const docRef = getRecordDocRef(date);
@@ -282,10 +200,9 @@ export const updateRecordPartial = async (
       docRef,
       expectedLastUpdated,
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
-      'partial update'
+      'partial update',
+      { toleranceMs: 0 }
     );
-
-    await saveHistorySnapshot(date);
 
     // Specialist patches arrive in correct dot-notation (e.g. "beds.R1.medicalHandoffAudit").
     // flattenObject would recursively expand nested objects into sub-field paths
@@ -309,6 +226,36 @@ export const updateRecordPartial = async (
               logFirestoreWriteRetry('partialUpdate', date, attempt, err),
           });
         }
+
+        const isClinicalPatchForAuthority = shouldRouteClinicalAuthorityPatch(sanitizedPatch);
+        const authorityPatch = extractClinicalAuthorityPatch(sanitizedPatch);
+        if (isClinicalPatchForAuthority && (await shouldRouteDailyRecordSaveViaCallable())) {
+          return withRetry(
+            () =>
+              patchDailyRecordWithClinicalAuthorityCallable({
+                date,
+                patch: authorityPatch,
+                expectedLastUpdated,
+                mode: resolveDailyRecordAuthorityMode() === 'enforced' ? 'enforced' : 'shadow',
+                origin: 'direct_partial_update',
+                syncContract: buildAuthorityPatchSyncContract(options.syncContract, authorityPatch),
+              }),
+            {
+              onRetry: (err: unknown, attempt: number) =>
+                logFirestoreWriteRetry('partialUpdate', date, attempt, err),
+            }
+          );
+        }
+
+        if (isClinicalPatchForAuthority) {
+          await tryShadowDailyRecordPatchViaCallable(
+            date,
+            authorityPatch,
+            expectedLastUpdated,
+            buildAuthorityPatchSyncContract(options.syncContract, authorityPatch)
+          );
+        }
+        await saveHistorySnapshot(date);
 
         return withRetry(
           () =>
