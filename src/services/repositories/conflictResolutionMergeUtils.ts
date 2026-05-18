@@ -93,6 +93,18 @@ const isEmptyClinicalValue = (value: unknown): boolean =>
   value === undefined ||
   (Array.isArray(value) && value.length === 0);
 
+const shouldKeepExplicitLocalCensusValue = (
+  key: string,
+  remotePatient: PatientData | undefined,
+  localPatient: PatientData | undefined,
+  remoteValue: unknown,
+  localValue: unknown
+): boolean =>
+  EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS.has(key) &&
+  isSameEpisodeForExplicitCensusPatch(remotePatient, localPatient) &&
+  isEmptyClinicalValue(remoteValue) &&
+  !isEmptyClinicalValue(localValue);
+
 export const mergeArrayById = <T>(
   remote: T[] = [],
   local: T[] = [],
@@ -288,11 +300,7 @@ export const mergePatientData = (
     const localValue = localRecord[key];
 
     if (
-      preferLocal &&
-      EXPLICIT_LOCAL_CENSUS_PATCH_FIELDS.has(key) &&
-      isSameEpisodeForExplicitCensusPatch(remotePatient, localPatient) &&
-      isEmptyClinicalValue(remoteValue) &&
-      !isEmptyClinicalValue(localValue)
+      shouldKeepExplicitLocalCensusValue(key, remotePatient, localPatient, remoteValue, localValue)
     ) {
       merged[key] = localValue;
       traceContext?.add({

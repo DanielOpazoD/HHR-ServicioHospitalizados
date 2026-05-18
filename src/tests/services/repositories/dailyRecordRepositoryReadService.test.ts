@@ -158,6 +158,66 @@ describe('dailyRecordRepositoryReadService', () => {
     );
   });
 
+  it('keeps fast sequential diagnosis and specialty edits when Firebase only confirms status first', async () => {
+    const local = buildRecord('2026-03-19', '2026-03-19T12:00:05.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        clinicalEpisodeId: undefined,
+        patientName: 'PACIENTE NUEVO',
+        rut: '11.111.111-1',
+        admissionDate: '2026-03-19',
+        admissionTime: '08:00',
+        pathology: 'Neumonia adquirida en la comunidad',
+        specialty: Specialty.MEDICINA,
+        status: PatientStatus.DE_CUIDADO,
+      },
+    } as unknown as DailyRecord['beds'];
+    const remote = buildRecord('2026-03-19', '2026-03-19T12:00:08.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        clinicalEpisodeId: 'ep_r1_generated',
+        patientName: 'PACIENTE NUEVO',
+        rut: '11.111.111-1',
+        admissionDate: '2026-03-19',
+        admissionTime: '08:00',
+        pathology: '',
+        specialty: Specialty.EMPTY,
+        status: PatientStatus.DE_CUIDADO,
+      },
+    } as unknown as DailyRecord['beds'];
+
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(local);
+    vi.mocked(loadRemoteRecordWithFallback).mockResolvedValueOnce({
+      record: remote,
+      source: 'firestore',
+      compatibilityTier: 'current_firestore',
+      compatibilityIntensity: 'none',
+      migrationRulesApplied: [],
+      cachedLocally: false,
+    });
+
+    const result = await getForDateWithMeta('2026-03-19');
+
+    expect(result.record?.beds.R1.pathology).toBe('Neumonia adquirida en la comunidad');
+    expect(result.record?.beds.R1.specialty).toBe(Specialty.MEDICINA);
+    expect(result.record?.beds.R1.status).toBe(PatientStatus.DE_CUIDADO);
+    expect(result.record?.beds.R1.clinicalEpisodeId).toBe('ep_r1_generated');
+    expect(saveToIndexedDB).toHaveBeenCalledWith(
+      expect.objectContaining({
+        beds: expect.objectContaining({
+          R1: expect.objectContaining({
+            clinicalEpisodeId: 'ep_r1_generated',
+            pathology: 'Neumonia adquirida en la comunidad',
+            specialty: Specialty.MEDICINA,
+            status: PatientStatus.DE_CUIDADO,
+          }),
+        }),
+      })
+    );
+  });
+
   it('hydrates local cache when remote record is newer than local', async () => {
     const local = buildRecord('2026-03-19', '2026-03-19T08:00:00.000Z');
     const remote = buildRecord('2026-03-19', '2026-03-19T12:00:00.000Z');
