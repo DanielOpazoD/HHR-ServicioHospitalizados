@@ -56,6 +56,30 @@ describe('bedManagementReducer firstSeenDate anchoring', () => {
     });
   });
 
+  it('does not send a diagnosis clear when an empty bed receives its first patient identity', () => {
+    const record = DataFactory.createMockDailyRecord('2026-04-11');
+
+    const patch = bedManagementReducer(record, {
+      type: 'UPDATE_PATIENT_MULTIPLE',
+      bedId: 'R1',
+      fields: {
+        patientName: 'Paciente Demo',
+        rut: '11.111.111-1',
+        admissionDate: '2026-04-11',
+      },
+    });
+
+    expect(patch).toMatchObject({
+      'beds.R1.patientName': 'Paciente Demo',
+      'beds.R1.rut': '11.111.111-1',
+      'beds.R1.admissionDate': '2026-04-11',
+      'beds.R1.firstSeenDate': '2026-04-11',
+    });
+    expect(patch).not.toHaveProperty('beds.R1.pathology');
+    expect(patch).not.toHaveProperty('beds.R1.clinicalEvents');
+    expect(patch).not.toHaveProperty('beds.R1.handoffNoteDayShift');
+  });
+
   it('keeps an existing firstSeenDate when later edits update the identity', () => {
     const record = DataFactory.createMockDailyRecord('2026-04-12');
     record.beds.R1 = DataFactory.createMockPatient('R1', {

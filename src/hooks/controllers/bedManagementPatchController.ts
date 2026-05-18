@@ -74,6 +74,9 @@ const buildPatientFieldPatches = ({
 
   const nextPatientName = String(updates.patientName ?? currentPatient.patientName ?? '');
   const nextRut = String(updates.rut ?? currentPatient.rut ?? '');
+  const hadPatientIdentity = Boolean(
+    String(currentPatient.patientName || '').trim() || String(currentPatient.rut || '').trim()
+  );
   const resetsClinicalEpisodeOwnership = shouldResetClinicalEpisodeOwnership({
     currentClinicalEpisodeId: currentPatient.clinicalEpisodeId,
     currentPatientName: currentPatient.patientName,
@@ -82,7 +85,7 @@ const buildPatientFieldPatches = ({
     nextRut,
   });
 
-  if (hasIdentityChange) {
+  if (hasIdentityChange && hadPatientIdentity) {
     Object.assign(patches, getClearClinicalDataPatches(bedId));
   }
 
