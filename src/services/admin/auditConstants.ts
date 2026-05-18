@@ -25,7 +25,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   DAILY_RECORD_DELETED: 'Eliminación de Registro',
   DAILY_RECORD_CREATED: 'Creación de Registro',
   PRESCRIPTION_MANUAL_DELETED: 'Receta eliminada manualmente',
-  PRESCRIPTION_RETENTION_DELETED: 'Receta eliminada por retención',
+  PRESCRIPTION_RETENTION_DELETED: 'Receta eliminada por proceso automático histórico',
   VIEW_PATIENT: 'Visualización de Ficha',
   PATIENT_VIEWED: 'Visualización de Ficha (Legacy)',
   NURSE_HANDOFF_MODIFIED: 'Nota Enfermería (Entrega)',

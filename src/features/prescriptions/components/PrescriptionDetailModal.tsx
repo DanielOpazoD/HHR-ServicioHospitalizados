@@ -130,8 +130,9 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
   const handleDelete = async () => {
     const accepted = await confirm({
       title: 'Eliminar receta',
-      message: '¿Eliminar esta receta del respaldo? Esta acción no se puede deshacer.',
-      confirmText: 'Eliminar',
+      message:
+        'Confirme que el respaldo mensual ya fue realizado antes de eliminar esta receta. Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar respaldo',
       cancelText: 'Cancelar',
       variant: 'danger',
     });
@@ -308,7 +309,7 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
 
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                Expira
+                Respaldo sugerido
               </dt>
               <dd className="text-slate-700">{formatDateTime(record.expiresAt)}</dd>
             </div>

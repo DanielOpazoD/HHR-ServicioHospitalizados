@@ -31,6 +31,33 @@ const buildController = (): PrescriptionUploadControllerHandle => ({
 });
 
 describe('PrescriptionUploadForm', () => {
+  it('describes monthly manual backup instead of automatic deletion', () => {
+    render(<PrescriptionUploadForm controller={buildController()} />);
+
+    expect(screen.getByText(/respaldo mensual/i)).toBeInTheDocument();
+    expect(screen.getByText(/eliminación manual/i)).toBeInTheDocument();
+    expect(screen.queryByText(/eliminan a los 30 días/i)).toBeNull();
+  });
+
+  it('keeps the success state focused on admin backup before manual deletion', () => {
+    render(
+      <PrescriptionUploadForm
+        controller={{
+          ...buildController(),
+          phase: 'success',
+          lastResult: {
+            id: 'rx-1',
+            expiresAt: '2026-06-04T00:00:00.000Z',
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText(/respaldo mensual/i)).toBeInTheDocument();
+    expect(screen.getByText(/eliminarla manualmente/i)).toBeInTheDocument();
+    expect(screen.queryByText(/se eliminará automáticamente/i)).toBeNull();
+  });
+
   it('shows the pharmacy prescription names with type icons', () => {
     render(<PrescriptionUploadForm controller={buildController()} />);
 

@@ -1,8 +1,8 @@
 /**
  * Prescription Types
  *
- * Canonical types for the prescription-photo backup module — a transient
- * (30-day) registry of prescriptions emitted by the Hospitalizados service.
+ * Canonical types for the prescription-photo backup module — a monthly
+ * admin-reviewed registry of prescriptions emitted by the Hospitalizados service.
  * The original prescription stays at pharmacy; this is operational backup
  * for disputing missing/wrong dispenses, not a legal medical record.
  */
@@ -41,17 +41,14 @@ export const PRESCRIPTION_ASSIGNMENT_SCOPE_LABELS: Record<PrescriptionAssignment
 };
 
 /**
- * Default number of days a prescription record (image + Firestore
- * metadata) is retained before scheduled hard-delete. Used as the
- * fallback when no per-type override applies.
+ * Default number of days before a prescription photo should be included in
+ * the admin's monthly backup/delete review. This is not an automatic TTL.
  */
 export const PRESCRIPTION_RETENTION_DAYS = 30;
 
 /**
- * Per-type retention overrides. Phase 1: every type uses the global
- * default. The map exists so future iterations (admin-configurable
- * retention, longer hold per controlled-prescription type, etc.) can adjust values
- * without re-modeling the data layer or the cleanup function.
+ * Per-type monthly review overrides. The exported names stay stable for
+ * compatibility with existing records and consumers, but deletion is manual.
  */
 export const PRESCRIPTION_RETENTION_DAYS_BY_TYPE: Record<PrescriptionType, number> = {
   comun: PRESCRIPTION_RETENTION_DAYS,
@@ -59,14 +56,15 @@ export const PRESCRIPTION_RETENTION_DAYS_BY_TYPE: Record<PrescriptionType, numbe
   benzodiazepinas: PRESCRIPTION_RETENTION_DAYS,
 };
 
-/** Resolves the retention window (in days) for a given prescription type. */
+/** Resolves the monthly backup review window (in days) for a given prescription type. */
 export const resolvePrescriptionRetentionDays = (type: PrescriptionType): number =>
   PRESCRIPTION_RETENTION_DAYS_BY_TYPE[type] ?? PRESCRIPTION_RETENTION_DAYS;
 
 /**
- * Computes the ISO `expiresAt` timestamp for a record created at
- * `createdAtIso` and tagged with the given prescription type. The cleanup
- * Cloud Function deletes any record whose `expiresAt < now()`.
+ * Computes the legacy ISO `expiresAt` timestamp for a record created at
+ * `createdAtIso` and tagged with the given prescription type. Operationally,
+ * this is now the suggested monthly backup/delete review date; no scheduler
+ * deletes records from it.
  */
 export const computePrescriptionExpiresAt = (
   type: PrescriptionType,
@@ -138,7 +136,7 @@ export interface PrescriptionRecord {
   uploader: PrescriptionUploaderRef;
   /** ISO timestamp when the upload was persisted. */
   createdAt: string;
-  /** ISO timestamp at which the cleanup scheduler will hard-delete the record. */
+  /** Legacy ISO timestamp for the suggested monthly backup/delete review date. */
   expiresAt: string;
   /** ISO timestamp when patient assignment was last changed via the visor. */
   patientReassignedAt?: string;

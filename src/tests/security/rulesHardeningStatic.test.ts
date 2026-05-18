@@ -90,7 +90,7 @@ describe('Security hardening static guards', () => {
     }
   });
 
-  describe('prescriptions module (transient backup, 30-day retention)', () => {
+  describe('prescriptions module (monthly backup, manual deletion)', () => {
     it('forbids client direct creates in Firestore — uploads must go through the Cloud Function', () => {
       const rules = readProjectFile('firestore.rules');
       expect(rules).toMatch(

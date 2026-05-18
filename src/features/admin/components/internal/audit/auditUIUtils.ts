@@ -203,7 +203,7 @@ export const renderHumanDetails = (log: AuditLogEntry) => {
     case 'PRESCRIPTION_MANUAL_DELETED':
       return `Se eliminó manualmente el respaldo de receta ${details.prescriptionId || log.entityId}${details.patientName ? ` de ${details.patientName}` : ''}.`;
     case 'PRESCRIPTION_RETENTION_DELETED':
-      return `Se eliminó por retención programada el respaldo de receta ${details.prescriptionId || log.entityId}${details.patientName ? ` de ${details.patientName}` : ''}.`;
+      return `Se eliminó por un proceso automático histórico el respaldo de receta ${details.prescriptionId || log.entityId}${details.patientName ? ` de ${details.patientName}` : ''}.`;
     case 'WOUND_CARE_PHOTO_UPLOADED':
       return `Se subió foto clínica por QR para ${details.patientName || 'paciente'}${details.bodyLocation ? ` (${details.bodyLocation})` : ''}.`;
     default:
