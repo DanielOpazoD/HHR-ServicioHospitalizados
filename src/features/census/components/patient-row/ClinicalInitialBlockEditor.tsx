@@ -122,19 +122,17 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
 
       {isOpen && (
         <div className="absolute right-0 top-8 z-[1000] w-80 rounded-lg border border-slate-200 bg-white shadow-xl">
-          <div className="flex items-center justify-end border-b border-slate-100 px-3 py-2">
-            <button
-              type="button"
-              className="rounded p-0.5 text-slate-400 hover:text-slate-600"
-              title="Cerrar"
-              aria-label="Cerrar bloque clínico"
-              onClick={closeEditor}
-            >
-              <X size={13} />
-            </button>
-          </div>
+          <button
+            type="button"
+            className="absolute right-2 top-2 rounded p-0.5 text-slate-400 hover:text-slate-600"
+            title="Cerrar"
+            aria-label="Cerrar bloque clínico"
+            onClick={closeEditor}
+          >
+            <X size={13} />
+          </button>
 
-          <div className="space-y-2 p-3">
+          <div className="space-y-2 p-3 pt-4">
             <label className="block">
               <span className="mb-1 block text-[11px] font-semibold text-slate-600">
                 Diagnóstico

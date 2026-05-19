@@ -139,6 +139,11 @@ describe('PatientInputCells', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /editar diagnóstico/i }));
     expect(screen.queryByText('Bloque clínico')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Cerrar bloque clínico')).toHaveClass(
+      'absolute',
+      'right-2',
+      'top-2'
+    );
     fireEvent.change(screen.getByLabelText('Diagnóstico'), {
       target: { value: 'Neumonia' },
     });
@@ -202,7 +207,7 @@ describe('PatientInputCells', () => {
       'shadow-sm',
       'uppercase'
     );
-    expect(screen.getByText(PatientStatus.DE_CUIDADO)).toHaveClass('text-current');
+    expect(screen.getByText(PatientStatus.DE_CUIDADO)).toHaveClass('flex-1', 'text-current');
   });
 
   it('shows a specialty description input when Otro is selected in the clinical block panel', () => {

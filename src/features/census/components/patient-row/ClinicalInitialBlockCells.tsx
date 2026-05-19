@@ -75,7 +75,7 @@ const ClinicalInitialBlockCellButton: React.FC<ClinicalInitialBlockCellButtonPro
 
 const getClinicalStatusButtonClassName = (status?: string): string =>
   clsx(
-    'inline-flex h-7 w-full cursor-pointer items-center justify-between gap-1 rounded-md border px-2 text-left text-[10px] font-bold uppercase tracking-tight shadow-sm transition-all duration-200',
+    'inline-flex h-7 w-full cursor-pointer items-center justify-between gap-0.5 rounded-md border px-1.5 text-left text-[10px] font-bold uppercase tracking-tight shadow-sm transition-all duration-200',
     'hover:border-medical-300 focus:outline-none focus:ring-2',
     'disabled:cursor-default disabled:bg-slate-50 disabled:text-slate-500 disabled:hover:border-slate-200',
     status === 'Grave'
@@ -127,8 +127,8 @@ export const ClinicalInitialBlockCells: React.FC<ClinicalInitialBlockCellsProps>
             label="estado clínico"
             value={data.status || ''}
             placeholder="-- Est --"
-            contentClassName={data.status ? 'text-current' : 'text-slate-400 italic'}
-            contentSuffix={<ChevronDown size={14} className="shrink-0 text-current" />}
+            contentClassName={data.status ? 'min-w-0 flex-1 text-current' : 'text-slate-400 italic'}
+            contentSuffix={<ChevronDown size={12} className="shrink-0 text-current" />}
             triggerClassName={getClinicalStatusButtonClassName(data.status)}
             readOnly={readOnly}
             onChange={onChange}
