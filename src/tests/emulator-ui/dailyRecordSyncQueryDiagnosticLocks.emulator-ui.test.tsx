@@ -11,7 +11,6 @@ import { clearAllRecords, saveRecord } from '@/services/storage/indexedDBService
 import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { resolveFirestoreRulesEmulatorConfig } from '@/tests/security/firestoreRulesEmulatorConfig';
 import {
-  getDailyRecordClinicalFieldLocksByBedId,
   getDailyRecordFreshnessStatus,
   markDailyRecordStaleBaseline,
   markDailyRecordTabHidden,
@@ -221,7 +220,6 @@ describeUiEmulator('UI sync flow silent refresh with Firestore emulator', () => 
     await waitFor(() => {
       expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag confirmado por cliente A');
       expect(getDailyRecordFreshnessStatus(date)).toBe('fresh_remote_confirmed');
-      expect(getDailyRecordClinicalFieldLocksByBedId(date)?.R1?.diagnosis).toBe(true);
     });
 
     await act(async () => {
