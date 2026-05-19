@@ -50,6 +50,21 @@ export const ACTION_STACK_TOP = 68;
 export const ACTION_STACK_HORIZONTAL_SHIFT = 64;
 
 /**
+ * Minimum visible gap between the open action stack and the viewport edge.
+ * The launcher position uses this to reserve space for the whole menu, not
+ * just for the closed turtle trigger.
+ */
+export const ACTION_STACK_VIEWPORT_GUTTER = 24;
+
+/**
+ * The action stack is intentionally shifted left from the wrapper center. This
+ * value describes how far it can bleed outside the wrapper so runtime clamping
+ * can keep the full menu away from the screen edge.
+ */
+export const ACTION_STACK_LEFT_BLEED =
+  ACTION_STACK_HORIZONTAL_SHIFT - (OPEN_WRAPPER_WIDTH - ACTION_ROW_WIDTH) / 2;
+
+/**
  * Returns Tailwind class names that style the trigger button based on the
  * current launcher phase.
  *

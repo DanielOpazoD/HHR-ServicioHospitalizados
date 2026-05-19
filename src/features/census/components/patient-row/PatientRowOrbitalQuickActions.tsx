@@ -10,7 +10,9 @@ import {
 import {
   ACTION_ROW_HEIGHT,
   ACTION_STACK_GAP,
+  ACTION_STACK_LEFT_BLEED,
   ACTION_STACK_TOP,
+  ACTION_STACK_VIEWPORT_GUTTER,
   CLOSED_WRAPPER_SIZE,
   OPEN_WRAPPER_WIDTH,
   TRIGGER_CENTER_OFFSET,
@@ -91,6 +93,7 @@ export const PatientRowOrbitalQuickActions: React.FC<PatientRowOrbitalQuickActio
     hasQuickActions,
     isOpen,
     launcherOffset: TRIGGER_CENTER_OFFSET,
+    launcherViewportMinLeft: ACTION_STACK_LEFT_BLEED + ACTION_STACK_VIEWPORT_GUTTER,
     wrapperWidth: launcherWrapperWidth,
     wrapperHeight: launcherWrapperHeight,
     triggerCenterX,
