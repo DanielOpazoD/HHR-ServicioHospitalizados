@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 
-import { ACTION_STACK_HORIZONTAL_SHIFT } from '@/features/census/components/patient-row/patientRowOrbitalQuickActionLayout';
+import {
+  ACTION_ROW_WIDTH,
+  ACTION_STACK_HORIZONTAL_SHIFT,
+  resolveActionStackHorizontalShift,
+} from '@/features/census/components/patient-row/patientRowOrbitalQuickActionLayout';
 import {
   mockMatchMedia,
   renderSinglePatientRowOrbitalQuickActions,
@@ -115,7 +119,12 @@ describe('PatientRowOrbitalQuickActions behavior', () => {
     const stack = documentsButton.parentElement!.parentElement!;
     expect(stack.className).toContain('flex-col');
     expect(stack).toHaveStyle({
-      marginLeft: `-${ACTION_STACK_HORIZONTAL_SHIFT}px`,
+      marginLeft: `-${resolveActionStackHorizontalShift({
+        actionRowWidth: ACTION_ROW_WIDTH,
+        preferredShift: ACTION_STACK_HORIZONTAL_SHIFT,
+        wrapperLeft: 8,
+        wrapperWidth: 158,
+      })}px`,
     });
 
     const wrapperDivs = Array.from(stack.children);
@@ -128,6 +137,28 @@ describe('PatientRowOrbitalQuickActions behavior', () => {
       imagingButton,
       indicationsButton,
     ]);
+  });
+
+  it('keeps the open menu fully visible on narrow screens', () => {
+    const shift = resolveActionStackHorizontalShift({
+      actionRowWidth: ACTION_ROW_WIDTH,
+      preferredShift: ACTION_STACK_HORIZONTAL_SHIFT,
+      wrapperLeft: 8,
+      wrapperWidth: 158,
+    });
+
+    expect(shift).toBe(14);
+  });
+
+  it('uses the preferred left offset when the viewport has enough room', () => {
+    const shift = resolveActionStackHorizontalShift({
+      actionRowWidth: ACTION_ROW_WIDTH,
+      preferredShift: ACTION_STACK_HORIZONTAL_SHIFT,
+      wrapperLeft: 220,
+      wrapperWidth: 158,
+    });
+
+    expect(shift).toBe(ACTION_STACK_HORIZONTAL_SHIFT);
   });
 
   it('action buttons show cursor pointer across entire area', async () => {

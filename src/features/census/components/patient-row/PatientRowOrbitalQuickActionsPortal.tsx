@@ -40,6 +40,7 @@ import {
   ACTION_STACK_TOP,
   TRIGGER_HITBOX_SIZE,
   TRIGGER_VISUAL_SIZE,
+  resolveActionStackHorizontalShift,
   resolveTriggerButtonStateClassName,
 } from '@/features/census/components/patient-row/patientRowOrbitalQuickActionLayout';
 
@@ -99,6 +100,13 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
     return null;
   }
 
+  const actionStackHorizontalShift = resolveActionStackHorizontalShift({
+    actionRowWidth: ACTION_ROW_WIDTH,
+    preferredShift: ACTION_STACK_HORIZONTAL_SHIFT,
+    wrapperLeft: position.left,
+    wrapperWidth: launcherWrapperWidth,
+  });
+
   return createPortal(
     <>
       {/* Backdrop: transparent click-catcher that closes the action stack */}
@@ -124,7 +132,7 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
                 top: `${ACTION_STACK_TOP}px`,
                 width: `${ACTION_ROW_WIDTH}px`,
                 gap: `${ACTION_STACK_GAP}px`,
-                marginLeft: `-${ACTION_STACK_HORIZONTAL_SHIFT}px`,
+                marginLeft: `-${actionStackHorizontalShift}px`,
                 padding: '2px 0',
               }}
               onMouseEnter={handleLauncherMouseEnter}
