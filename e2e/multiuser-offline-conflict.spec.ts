@@ -4,6 +4,7 @@ import {
   buildCanonicalE2ERecord,
   ensureAuthenticated,
 } from './fixtures/auth';
+import { expectClinicalDiagnosis, updateClinicalDiagnosis } from './fixtures/clinicalBlockEditor';
 import { seedPersistedBedFields, waitForPersistedBedFields } from './fixtures/censusPersistence';
 
 const MULTIUSER_DATE = process.env.E2E_FIXED_DATE ?? new Date().toISOString().slice(0, 10);
@@ -152,18 +153,16 @@ test.describe('Multi-user offline conflict smoke', () => {
       await openSeededCensus(userBPage);
 
       const userARow = getRow(userAPage, 'R1');
-      const userADiagnosisInput = userARow.locator('input[placeholder*="Diagnóstico"]').first();
 
       await expect(userARow.locator('input[name="patientName"]').first()).toHaveValue(
         'MULTIUSER BASELINE'
       );
-      await expect(userADiagnosisInput).toHaveValue('BASE DX');
+      await expectClinicalDiagnosis(userARow, 'BASE DX');
 
       await userAContext.setOffline(true);
       await expect.poll(() => userAPage.evaluate(() => navigator.onLine)).toBe(false);
 
-      await userADiagnosisInput.fill('USER A OFFLINE DX');
-      await userADiagnosisInput.blur();
+      await updateClinicalDiagnosis(userAPage, userARow, 'R1', 'USER A OFFLINE DX');
       await seedPersistedBedFields({
         page: userAPage,
         date: MULTIUSER_DATE,
@@ -194,7 +193,7 @@ test.describe('Multi-user offline conflict smoke', () => {
       await expect(userARow.locator('input[name="patientName"]').first()).toHaveValue(
         'REMOTE USER B'
       );
-      await expect(userADiagnosisInput).toHaveValue('REMOTE USER B DX');
+      await expectClinicalDiagnosis(userARow, 'REMOTE USER B DX');
     } finally {
       await closeAll([userAContext, userBContext]);
     }
@@ -215,13 +214,11 @@ test.describe('Multi-user offline conflict smoke', () => {
       await openSeededCensus(userBPage);
 
       const userAR1 = getRow(userAPage, 'R1');
-      const userAR1DiagnosisInput = userAR1.locator('input[placeholder*="Diagnóstico"]').first();
 
       await userAContext.setOffline(true);
       await expect.poll(() => userAPage.evaluate(() => navigator.onLine)).toBe(false);
 
-      await userAR1DiagnosisInput.fill('USER A LOCAL DX');
-      await userAR1DiagnosisInput.blur();
+      await updateClinicalDiagnosis(userAPage, userAR1, 'R1', 'USER A LOCAL DX');
       await seedPersistedBedFields({
         page: userAPage,
         date: MULTIUSER_DATE,
@@ -278,15 +275,13 @@ test.describe('Multi-user offline conflict smoke', () => {
       await expect(userAR1.locator('input[name="patientName"]').first()).toHaveValue(
         'MULTIUSER BASELINE'
       );
-      await expect(userAR1DiagnosisInput).toHaveValue('BASE DX');
+      await expectClinicalDiagnosis(userAR1, 'BASE DX');
 
       const userAR2 = getRow(userAPage, 'R2');
       await expect(userAR2.locator('input[name="patientName"]').first()).toHaveValue(
         'USER B NEW PATIENT'
       );
-      await expect(userAR2.locator('input[placeholder*="Diagnóstico"]').first()).toHaveValue(
-        'USER B NON CONFLICT DX'
-      );
+      await expectClinicalDiagnosis(userAR2, 'USER B NON CONFLICT DX');
     } finally {
       await closeAll([userAContext, userBContext]);
     }

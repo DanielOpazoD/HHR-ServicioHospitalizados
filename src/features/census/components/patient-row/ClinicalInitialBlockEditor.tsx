@@ -121,7 +121,10 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-8 z-[1000] w-80 rounded-lg border border-slate-200 bg-white shadow-xl">
+        <div
+          className="absolute right-0 top-8 z-[1000] w-80 rounded-lg border border-slate-200 bg-white shadow-xl"
+          data-testid={`clinical-block-editor-${data.bedId}`}
+        >
           <button
             type="button"
             className="absolute right-2 top-2 rounded p-0.5 text-slate-400 hover:text-slate-600"
@@ -140,6 +143,7 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
               <input
                 id={`clinical-block-pathology-${data.bedId}`}
                 name={`clinical-block-pathology-${data.bedId}`}
+                data-testid={`clinical-block-pathology-${data.bedId}`}
                 className="h-8 w-full rounded border border-slate-200 px-2 text-[13px] focus:border-medical-500 focus:outline-none focus:ring-2 focus:ring-medical-500/20"
                 value={draft.pathology}
                 onChange={event =>
@@ -156,6 +160,7 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
                 <select
                   id={`clinical-block-specialty-${data.bedId}`}
                   name={`clinical-block-specialty-${data.bedId}`}
+                  data-testid={`clinical-block-specialty-${data.bedId}`}
                   className="h-8 w-full rounded border border-slate-200 px-2 text-[12px] focus:border-medical-500 focus:outline-none focus:ring-2 focus:ring-medical-500/20"
                   value={draft.specialtySelection}
                   onChange={event =>
@@ -180,6 +185,7 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
                 <select
                   id={`clinical-block-status-${data.bedId}`}
                   name={`clinical-block-status-${data.bedId}`}
+                  data-testid={`clinical-block-status-${data.bedId}`}
                   className="h-8 w-full rounded border border-slate-200 px-2 text-[12px] focus:border-medical-500 focus:outline-none focus:ring-2 focus:ring-medical-500/20"
                   value={draft.status}
                   onChange={event =>
@@ -204,6 +210,7 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
                 <input
                   id={`clinical-block-specialty-other-${data.bedId}`}
                   name={`clinical-block-specialty-other-${data.bedId}`}
+                  data-testid={`clinical-block-specialty-other-${data.bedId}`}
                   className="h-8 w-full rounded border border-slate-200 px-2 text-[13px] focus:border-medical-500 focus:outline-none focus:ring-2 focus:ring-medical-500/20"
                   value={draft.specialtyOther}
                   onChange={event =>
@@ -223,6 +230,7 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
               </button>
               <button
                 type="button"
+                data-testid={`clinical-block-save-${data.bedId}`}
                 className="inline-flex items-center gap-1 rounded border border-medical-600 bg-medical-600 px-2 py-1 text-[12px] font-semibold text-white hover:bg-medical-700"
                 onClick={saveDraft}
               >
