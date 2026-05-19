@@ -19,6 +19,7 @@ import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCensusActionCommands } from '@/features/census/context/censusActionContexts';
 import { CensusTable } from '@/features/census/components/CensusTable';
+import { QUICK_ACTION_MENU_GUTTER_WIDTH } from '@/features/census/components/patient-row/patientRowOrbitalQuickActionLayout';
 import { DataFactory } from '../../factories/DataFactory';
 
 vi.mock('@tanstack/react-virtual', () => ({
@@ -278,6 +279,15 @@ describe('CensusTable layout and actions', () => {
     expect(emptyRows).toHaveLength(REGULAR_BEDS.length + 1);
     expect(screen.getByText('E1')).toBeInTheDocument();
     expect(screen.queryByText('E2')).not.toBeInTheDocument();
+  });
+
+  it('reserves a left-side gutter for the quick action menu outside the table', () => {
+    render(<CensusTable currentDateString="2025-01-08" />);
+
+    const tableViewport = screen.getByTestId('census-table').parentElement;
+    expect(tableViewport).toHaveStyle({
+      paddingLeft: `${QUICK_ACTION_MENU_GUTTER_WIDTH}px`,
+    });
   });
 
   it('should handle "Clear All" with confirmation', async () => {

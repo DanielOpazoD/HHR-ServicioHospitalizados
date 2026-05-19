@@ -37,6 +37,9 @@ export const CLOSED_WRAPPER_SIZE = 72;
 /** Width of the wrapper when the launcher is open (px). Wider to contain the action stack. */
 export const OPEN_WRAPPER_WIDTH = 158;
 
+/** Screen-space gutter reserved to the left of the census table for the quick-action menu. */
+export const QUICK_ACTION_MENU_GUTTER_WIDTH = 96;
+
 /** Horizontal offset of the trigger center from the left edge of the wrapper (px). */
 export const TRIGGER_CENTER_OFFSET = 80;
 
@@ -47,7 +50,7 @@ export const TRIGGER_CENTER_Y_OPEN = 36;
 export const ACTION_STACK_TOP = 68;
 
 /** Small horizontal nudge that keeps action labels away from the census table content. */
-export const ACTION_STACK_HORIZONTAL_SHIFT = 44;
+export const ACTION_STACK_HORIZONTAL_SHIFT = 84;
 
 /**
  * Returns Tailwind class names that style the trigger button based on the
