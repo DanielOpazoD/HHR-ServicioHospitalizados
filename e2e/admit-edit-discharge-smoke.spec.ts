@@ -24,6 +24,7 @@ import {
   buildCanonicalE2ERecord,
   ensureAuthenticated,
 } from './fixtures/auth';
+import { expectClinicalDiagnosis, updateClinicalDiagnosis } from './fixtures/clinicalBlockEditor';
 import { waitForPersistedBedFields } from './fixtures/censusPersistence';
 
 const getTodayDate = () => new Date().toISOString().slice(0, 10);
@@ -78,14 +79,9 @@ test.describe('Admit → edit → discharge smoke', () => {
       /smoke patient/i
     );
 
-    // 1. Edit the diagnosis cell. The DiagnosisInput uses the
-    //    DebouncedInput component the multi-tab fix targets. We type,
-    //    blur, and let the patch dispatch settle.
-    const diagnosisInput = patientRow.getByPlaceholder('Diagnóstico (texto libre)').first();
-    await expect(diagnosisInput).toBeVisible({ timeout: 10000 });
-    await diagnosisInput.click();
-    await diagnosisInput.fill(UPDATED_DIAGNOSIS);
-    await diagnosisInput.blur();
+    // 1. Edit the clinical diagnosis through the canonical clinical-block
+    //    editor. This keeps the E2E aligned with the current census UX.
+    await updateClinicalDiagnosis(page, patientRow, SMOKE_BED, UPDATED_DIAGNOSIS);
     await waitForPersistedBedFields({
       page,
       date,
@@ -104,10 +100,8 @@ test.describe('Admit → edit → discharge smoke', () => {
 
     const reloadedDiagnosis = page
       .locator(`[data-testid="patient-row"][data-bed-id="${SMOKE_BED}"]`)
-      .first()
-      .getByPlaceholder('Diagnóstico (texto libre)')
       .first();
-    await expect(reloadedDiagnosis).toHaveValue(UPDATED_DIAGNOSIS, { timeout: 10000 });
+    await expectClinicalDiagnosis(reloadedDiagnosis, UPDATED_DIAGNOSIS);
 
     // 3. Open the action menu on the row and verify it surfaces the
     //    discharge entry. We do not actually complete the discharge

@@ -22,7 +22,7 @@ export const PatientMainRowActionCell: React.FC<PatientMainRowActionCellProps> =
   medicalIndicationsPatient,
   clinicalDocumentCount,
 }) => (
-  <td className="p-0 text-center border-r border-slate-200 relative w-10 overflow-visible print:hidden">
+  <td className="p-0 text-center border-r border-slate-200 relative z-[36] w-10 overflow-visible print:hidden">
     <PatientActionMenu
       isBlocked={isBlocked}
       onAction={onAction}

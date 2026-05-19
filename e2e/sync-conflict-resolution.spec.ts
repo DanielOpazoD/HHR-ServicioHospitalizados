@@ -4,6 +4,7 @@ import {
   buildCanonicalE2ERecord,
   ensureAuthenticated,
 } from './fixtures/auth';
+import { expectClinicalDiagnosis, expectClinicalStatus } from './fixtures/clinicalBlockEditor';
 import { seedPersistedBedFields, waitForPersistedBedFields } from './fixtures/censusPersistence';
 
 const CONFLICT_DATE = process.env.E2E_FIXED_DATE ?? new Date().toISOString().slice(0, 10);
@@ -41,10 +42,6 @@ test.describe('Sync conflict resolution', () => {
     const row = getRow(page, 'R1');
     const demographicsButton = row.getByRole('button', { name: /Datos del Paciente/i });
     const patientNameInput = row.locator('input[name="patientName"]').first();
-    const statusSelect = row
-      .locator('select')
-      .filter({ has: page.locator('option[value="Grave"]') });
-
     await demographicsButton.click();
     const demographicsDialog = page.getByRole('dialog', { name: 'Datos Demográficos' });
     await expect(demographicsDialog).toBeVisible();
@@ -121,8 +118,8 @@ test.describe('Sync conflict resolution', () => {
 
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
     await expect(patientNameInput).toHaveValue('REMOTE VERSION');
-    await expect(row.locator('input[placeholder*="Diagnóstico"]').first()).toHaveValue('REMOTE DX');
-    await expect(statusSelect).toHaveValue('Grave');
+    await expectClinicalDiagnosis(row, 'REMOTE DX');
+    await expectClinicalStatus(row, 'Grave');
   });
 
   test('accepts remote canonical census fields while preserving newer local narrative', async ({
@@ -250,9 +247,7 @@ test.describe('Sync conflict resolution', () => {
 
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
     await expect(patientNameInput).toHaveValue('REMOTE STALE USER');
-    await expect(row.locator('input[placeholder*="Diagnóstico"]').first()).toHaveValue(
-      'REMOTE STALE DX'
-    );
+    await expectClinicalDiagnosis(row, 'REMOTE STALE DX');
     await waitForPersistedBedFields({
       page,
       date: CONFLICT_DATE,

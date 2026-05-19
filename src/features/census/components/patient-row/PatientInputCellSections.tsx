@@ -9,6 +9,7 @@ import { AdmissionInput } from './AdmissionInput';
 import { DevicesCell } from './DevicesCell';
 import { CheckboxCell } from './CheckboxCell';
 import { UpcChecklistPopover } from './UpcChecklistPopover';
+import { ClinicalInitialBlockCells } from './ClinicalInitialBlockCells';
 import type {
   PatientInputClinicalSectionBindings,
   PatientInputFlagsSectionBindings,
@@ -97,6 +98,20 @@ export const PatientInputClinicalSection: React.FC<
   const specialtyLocked = isRemoteLocked(fieldLocks?.specialty);
   const statusLocked = isRemoteLocked(fieldLocks?.status);
   const baseClinicalReadOnly = shared.isLocked || shared.clinicalEditingDisabled;
+  const usesClinicalInitialBlockPanel =
+    !shared.isSubRow && !shared.isEmpty && !!shared.data.patientName;
+
+  if (usesClinicalInitialBlockPanel) {
+    return (
+      <ClinicalInitialBlockCells
+        data={shared.data}
+        readOnly={baseClinicalReadOnly}
+        accessProfile={accessProfile}
+        onChange={handleDebouncedText}
+        onMultipleUpdate={onChange.multiple}
+      />
+    );
+  }
 
   return (
     <>
