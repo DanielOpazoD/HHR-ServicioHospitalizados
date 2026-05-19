@@ -22,6 +22,7 @@ interface ClinicalInitialBlockCellButtonProps {
   label: string;
   value: string;
   placeholder: string;
+  triggerClassName?: string;
   readOnly?: boolean;
   onChange: DebouncedTextHandler;
   onMultipleUpdate?: PatientInputChangeHandlers['multiple'];
@@ -38,6 +39,7 @@ const ClinicalInitialBlockCellButton: React.FC<ClinicalInitialBlockCellButtonPro
   label,
   value,
   placeholder,
+  triggerClassName,
   readOnly = false,
   onChange,
   onMultipleUpdate,
@@ -47,7 +49,7 @@ const ClinicalInitialBlockCellButton: React.FC<ClinicalInitialBlockCellButtonPro
     disabled={readOnly}
     triggerAriaLabel={`Editar ${label}`}
     triggerTitle={`Editar ${label}`}
-    triggerClassName={clinicalBlockButtonClassName}
+    triggerClassName={triggerClassName || clinicalBlockButtonClassName}
     triggerContent={
       <span className={clsx('block truncate', value ? 'text-slate-800' : 'text-slate-400 italic')}>
         {value || placeholder}
@@ -57,6 +59,18 @@ const ClinicalInitialBlockCellButton: React.FC<ClinicalInitialBlockCellButtonPro
     onMultipleUpdate={onMultipleUpdate}
   />
 );
+
+const getClinicalStatusButtonClassName = (status?: string): string =>
+  clsx(
+    clinicalBlockButtonClassName,
+    status === 'Grave'
+      ? 'text-red-700 bg-red-50 border-red-200/80 font-bold'
+      : status === 'De cuidado'
+        ? 'text-amber-700 bg-amber-50 border-amber-200/80 font-bold'
+        : status
+          ? 'text-emerald-700 bg-emerald-50/60 border-emerald-200/80 font-semibold'
+          : 'text-slate-400'
+  );
 
 export const ClinicalInitialBlockCells: React.FC<ClinicalInitialBlockCellsProps> = ({
   data,
@@ -98,6 +112,7 @@ export const ClinicalInitialBlockCells: React.FC<ClinicalInitialBlockCellsProps>
             label="estado clínico"
             value={data.status || ''}
             placeholder="-- Est --"
+            triggerClassName={getClinicalStatusButtonClassName(data.status)}
             readOnly={readOnly}
             onChange={onChange}
             onMultipleUpdate={onMultipleUpdate}

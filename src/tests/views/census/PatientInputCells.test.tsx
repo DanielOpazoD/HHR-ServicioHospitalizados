@@ -157,6 +157,49 @@ describe('PatientInputCells', () => {
     expect(screen.queryByText(/Actualizado recién/i)).not.toBeInTheDocument();
   });
 
+  it('preserves colored clinical status labels in the primary clinical block cell', () => {
+    vi.mocked(useDailyRecordStability).mockReturnValue({
+      canEditField: () => true,
+    } as unknown as ReturnType<typeof useDailyRecordStability>);
+
+    const data = DataFactory.createMockPatient('R1');
+    data.status = PatientStatus.DE_CUIDADO;
+    const textHandler = vi.fn();
+    const onChange = {
+      text: vi.fn().mockReturnValue(textHandler),
+      check: vi.fn().mockReturnValue(vi.fn()),
+      devices: vi.fn(),
+      deviceDetails: vi.fn(),
+      deviceHistory: vi.fn(),
+      toggleDocType: vi.fn(),
+      deliveryRoute: vi.fn(),
+      multiple: vi.fn(),
+    };
+
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <PatientInputCells
+              data={data}
+              currentDateString="2026-02-15"
+              onChange={onChange}
+              onDemo={vi.fn()}
+              readOnly={false}
+              diagnosisMode="free"
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    expect(screen.getByRole('button', { name: /editar estado clínico/i })).toHaveClass(
+      'text-amber-700',
+      'bg-amber-50',
+      'border-amber-200/80'
+    );
+  });
+
   it('shows a specialty description input when Otro is selected in the clinical block panel', () => {
     vi.mocked(useDailyRecordStability).mockReturnValue({
       canEditField: () => true,
