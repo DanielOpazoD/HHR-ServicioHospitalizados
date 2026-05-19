@@ -122,10 +122,7 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
 
       {isOpen && (
         <div className="absolute right-0 top-8 z-[1000] w-80 rounded-lg border border-slate-200 bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
-              Bloque clínico
-            </p>
+          <div className="flex items-center justify-end border-b border-slate-100 px-3 py-2">
             <button
               type="button"
               className="rounded p-0.5 text-slate-400 hover:text-slate-600"

@@ -138,6 +138,7 @@ describe('PatientInputCells', () => {
     expect(screen.queryByDisplayValue(PatientStatus.ESTABLE)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /editar diagnóstico/i }));
+    expect(screen.queryByText('Bloque clínico')).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Diagnóstico'), {
       target: { value: 'Neumonia' },
     });
@@ -198,6 +199,7 @@ describe('PatientInputCells', () => {
       'bg-amber-50',
       'border-amber-200/80'
     );
+    expect(screen.getByText(PatientStatus.DE_CUIDADO)).toHaveClass('text-current');
   });
 
   it('shows a specialty description input when Otro is selected in the clinical block panel', () => {

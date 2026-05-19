@@ -22,6 +22,7 @@ interface ClinicalInitialBlockCellButtonProps {
   label: string;
   value: string;
   placeholder: string;
+  contentClassName?: string;
   triggerClassName?: string;
   readOnly?: boolean;
   onChange: DebouncedTextHandler;
@@ -39,6 +40,7 @@ const ClinicalInitialBlockCellButton: React.FC<ClinicalInitialBlockCellButtonPro
   label,
   value,
   placeholder,
+  contentClassName,
   triggerClassName,
   readOnly = false,
   onChange,
@@ -51,7 +53,12 @@ const ClinicalInitialBlockCellButton: React.FC<ClinicalInitialBlockCellButtonPro
     triggerTitle={`Editar ${label}`}
     triggerClassName={triggerClassName || clinicalBlockButtonClassName}
     triggerContent={
-      <span className={clsx('block truncate', value ? 'text-slate-800' : 'text-slate-400 italic')}>
+      <span
+        className={clsx(
+          'block truncate',
+          contentClassName || (value ? 'text-slate-800' : 'text-slate-400 italic')
+        )}
+      >
         {value || placeholder}
       </span>
     }
@@ -112,6 +119,7 @@ export const ClinicalInitialBlockCells: React.FC<ClinicalInitialBlockCellsProps>
             label="estado clínico"
             value={data.status || ''}
             placeholder="-- Est --"
+            contentClassName={data.status ? 'text-current' : 'text-slate-400 italic'}
             triggerClassName={getClinicalStatusButtonClassName(data.status)}
             readOnly={readOnly}
             onChange={onChange}
