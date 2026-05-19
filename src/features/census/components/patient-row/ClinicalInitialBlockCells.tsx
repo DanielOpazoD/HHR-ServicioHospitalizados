@@ -121,7 +121,7 @@ export const ClinicalInitialBlockCells: React.FC<ClinicalInitialBlockCellsProps>
         />
       </td>
       {showStatus && (
-        <td className="py-0.5 px-1 border-r border-slate-200 w-24 relative">
+        <td className="py-0.5 px-1 border-r border-slate-200 w-28 relative">
           <ClinicalInitialBlockCellButton
             data={data}
             label="estado clínico"

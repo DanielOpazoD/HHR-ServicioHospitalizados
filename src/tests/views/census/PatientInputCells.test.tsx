@@ -208,6 +208,72 @@ describe('PatientInputCells', () => {
       'uppercase'
     );
     expect(screen.getByText(PatientStatus.DE_CUIDADO)).toHaveClass('flex-1', 'text-current');
+    expect(
+      screen.getByRole('button', { name: /editar estado clínico/i }).closest('td')
+    ).toHaveClass('w-28');
+  });
+
+  it('saves the initial clinical block for a newly created patient in one patch', () => {
+    vi.mocked(useDailyRecordStability).mockReturnValue({
+      canEditField: () => true,
+    } as unknown as ReturnType<typeof useDailyRecordStability>);
+
+    const data = DataFactory.createMockPatient('R1', {
+      patientName: 'Paciente Nuevo',
+      pathology: '',
+      specialty: '',
+      status: undefined,
+    });
+    const textHandler = vi.fn();
+    const onChange = {
+      text: vi.fn().mockReturnValue(textHandler),
+      check: vi.fn().mockReturnValue(vi.fn()),
+      devices: vi.fn(),
+      deviceDetails: vi.fn(),
+      deviceHistory: vi.fn(),
+      toggleDocType: vi.fn(),
+      deliveryRoute: vi.fn(),
+      multiple: vi.fn(),
+    };
+
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <PatientInputCells
+              data={data}
+              currentDateString="2026-02-15"
+              onChange={onChange}
+              onDemo={vi.fn()}
+              readOnly={false}
+              diagnosisMode="free"
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /editar diagnóstico/i }));
+    fireEvent.change(screen.getByLabelText('Diagnóstico'), {
+      target: { value: 'Infeccion urinaria' },
+    });
+    fireEvent.change(screen.getByLabelText('Especialidad'), {
+      target: { value: Specialty.MEDICINA },
+    });
+    fireEvent.change(screen.getByLabelText('Estado'), {
+      target: { value: PatientStatus.DE_CUIDADO },
+    });
+    fireEvent.click(screen.getByText('Guardar'));
+
+    expect(onChange.multiple).toHaveBeenCalledTimes(1);
+    expect(onChange.multiple).toHaveBeenCalledWith({
+      pathology: 'Infeccion urinaria',
+      specialty: Specialty.MEDICINA,
+      status: PatientStatus.DE_CUIDADO,
+    });
+    expect(onChange.text).not.toHaveBeenCalledWith('pathology');
+    expect(onChange.text).not.toHaveBeenCalledWith('specialty');
+    expect(onChange.text).not.toHaveBeenCalledWith('status');
   });
 
   it('shows a specialty description input when Otro is selected in the clinical block panel', () => {
