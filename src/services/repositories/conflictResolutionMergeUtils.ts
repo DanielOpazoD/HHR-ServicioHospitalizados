@@ -21,6 +21,10 @@ import {
   ConflictResolutionTraceContext,
   traceFromScalarDecision,
 } from '@/services/repositories/conflictResolutionTrace';
+import {
+  filterDeviceDetailsToActiveOrRetired,
+  shouldKeepExplicitLocalCensusValue,
+} from '@/services/repositories/conflictResolutionPatientMergeGuards';
 
 export const ID_BASED_ARRAY_FIELDS = new Set(['discharges', 'transfers', 'cma']);
 export const UNIQUE_ARRAY_FIELDS = new Set(['activeExtraBeds']);
@@ -60,27 +64,6 @@ const resolveObjectMergeReason = (path: string): string => {
     return 'handoff_merge_object_fields';
   }
   return 'merge_object_fields';
-};
-
-const filterDeviceDetailsToActiveOrRetired = (patient: Record<string, unknown>): void => {
-  const devices = Array.isArray(patient.devices) ? patient.devices.map(String) : [];
-  const deviceDetails = isPlainObject(patient.deviceDetails)
-    ? (patient.deviceDetails as Record<string, unknown>)
-    : null;
-
-  if (!deviceDetails) {
-    return;
-  }
-
-  const activeDevices = new Set(devices);
-  patient.deviceDetails = Object.fromEntries(
-    Object.entries(deviceDetails).filter(([device, details]) => {
-      const removalDate = isPlainObject(details)
-        ? String((details as Record<string, unknown>).removalDate || '').trim()
-        : '';
-      return activeDevices.has(device) || Boolean(removalDate);
-    })
-  );
 };
 
 export const mergeArrayById = <T>(
@@ -276,6 +259,19 @@ export const mergePatientData = (
   keys.forEach(key => {
     const remoteValue = remoteRecord[key];
     const localValue = localRecord[key];
+
+    if (
+      shouldKeepExplicitLocalCensusValue(key, remotePatient, localPatient, remoteValue, localValue)
+    ) {
+      merged[key] = localValue;
+      traceContext?.add({
+        path: `${pathPrefix}.${key}`,
+        strategy: 'copy_local_value',
+        winner: 'local',
+        reason: 'explicit_local_census_patch_same_episode',
+      });
+      return;
+    }
 
     if (isClinicalCensusRemotePriorityField(key)) {
       const decision = decideScalarByPolicy(

@@ -22,8 +22,29 @@ const isNavigationContextReset = (error: unknown) => {
   );
 };
 
+const isStorageAccessDenied = (error: unknown) => {
+  const message = String((error as Error)?.message || error);
+  return (
+    message.includes('SecurityError') ||
+    (message.includes('localStorage') && message.includes('Access is denied'))
+  );
+};
+
 const waitForDocumentAfterNavigation = async (page: Page) => {
   await page.waitForLoadState('domcontentloaded').catch(() => undefined);
+};
+
+const isPageOffline = async (page: Page): Promise<boolean> =>
+  page.evaluate(() => !navigator.onLine).catch(() => false);
+
+const seedFromAppOrigin = async (page: Page, seed: () => Promise<unknown>) => {
+  const shouldRestoreOffline = await isPageOffline(page);
+  await page.context().setOffline(false);
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await seed();
+  if (shouldRestoreOffline) {
+    await page.context().setOffline(true);
+  }
 };
 
 export const waitForPersistedBedFields = async ({
@@ -138,6 +159,11 @@ export const seedPersistedBedFields = async ({
       await seedInCurrentDocument();
       return;
     } catch (error) {
+      if (isStorageAccessDenied(error)) {
+        await seedFromAppOrigin(page, seedInCurrentDocument);
+        return;
+      }
+
       if (!isNavigationContextReset(error) || attempt === maxAttempts) {
         throw error;
       }
