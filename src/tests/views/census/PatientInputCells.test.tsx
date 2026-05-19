@@ -197,7 +197,10 @@ describe('PatientInputCells', () => {
     expect(screen.getByRole('button', { name: /editar estado clínico/i })).toHaveClass(
       'text-amber-700',
       'bg-amber-50',
-      'border-amber-200/80'
+      'border-amber-200/80',
+      'rounded-md',
+      'shadow-sm',
+      'uppercase'
     );
     expect(screen.getByText(PatientStatus.DE_CUIDADO)).toHaveClass('text-current');
   });
