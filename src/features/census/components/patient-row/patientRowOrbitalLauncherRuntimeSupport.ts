@@ -20,7 +20,6 @@ export interface UsePatientRowOrbitalLauncherRuntimeParams {
   hasQuickActions: boolean;
   isOpen: boolean;
   launcherOffset: number;
-  launcherViewportMinLeft?: number;
   wrapperWidth: number;
   wrapperHeight: number;
   triggerCenterX: number;
@@ -220,8 +219,7 @@ export const resolveLauncherPosition = (
   _wrapperWidth: number,
   _wrapperHeight: number,
   triggerCenterX: number,
-  triggerCenterY: number,
-  viewportMinLeft = 8
+  triggerCenterY: number
 ): LauncherPosition | null => {
   if (!row) {
     return null;
@@ -230,10 +228,7 @@ export const resolveLauncherPosition = (
   const rect = row.getBoundingClientRect();
   const rawLeft = rect.left - launcherOffset - triggerCenterX;
   const triggerShellWidth = triggerCenterX * 2;
-  const clampedLeft = Math.max(
-    viewportMinLeft,
-    Math.min(rawLeft, window.innerWidth - triggerShellWidth - 8)
-  );
+  const clampedLeft = Math.max(8, Math.min(rawLeft, window.innerWidth - triggerShellWidth - 8));
 
   return {
     left: clampedLeft,

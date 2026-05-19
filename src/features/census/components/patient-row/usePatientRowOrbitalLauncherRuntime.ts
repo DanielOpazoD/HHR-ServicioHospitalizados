@@ -28,7 +28,6 @@ export const usePatientRowOrbitalLauncherRuntime = ({
   hasQuickActions,
   isOpen,
   launcherOffset,
-  launcherViewportMinLeft,
   wrapperWidth,
   wrapperHeight,
   triggerCenterX,
@@ -203,8 +202,7 @@ export const usePatientRowOrbitalLauncherRuntime = ({
           wrapperWidth,
           wrapperHeight,
           triggerCenterX,
-          triggerCenterY,
-          launcherViewportMinLeft
+          triggerCenterY
         )
       );
     };
@@ -299,7 +297,6 @@ export const usePatientRowOrbitalLauncherRuntime = ({
     armHoverGrace,
     clearHoverExitTimer,
     launcherOffset,
-    launcherViewportMinLeft,
     triggerCenterX,
     triggerCenterY,
     wrapperHeight,

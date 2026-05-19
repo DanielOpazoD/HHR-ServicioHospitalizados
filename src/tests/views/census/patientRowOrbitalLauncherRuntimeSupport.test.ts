@@ -192,11 +192,11 @@ describe('resolveLauncherPosition', () => {
     return row as HTMLTableRowElement;
   };
 
-  it('reserves a minimum left gutter for the full open quick-action menu', () => {
+  it('keeps the launcher anchored outside the table when lateral room is tight', () => {
     const row = createRow(220);
 
-    expect(resolveLauncherPosition(row, 80, 158, 206, 80, 36, 74)).toEqual({
-      left: 74,
+    expect(resolveLauncherPosition(row, 80, 158, 206, 80, 36)).toEqual({
+      left: 60,
       top: 106,
     });
   });
@@ -204,7 +204,7 @@ describe('resolveLauncherPosition', () => {
   it('keeps the natural launcher position when there is enough lateral room', () => {
     const row = createRow(360);
 
-    expect(resolveLauncherPosition(row, 80, 158, 206, 80, 36, 74)).toEqual({
+    expect(resolveLauncherPosition(row, 80, 158, 206, 80, 36)).toEqual({
       left: 200,
       top: 106,
     });

@@ -23,7 +23,7 @@ export const TRIGGER_VISUAL_SIZE = 28;
 export const ACTION_ICON_SIZE = 36;
 
 /** Total width of a single action row including icon + label (px). */
-export const ACTION_ROW_WIDTH = 130;
+export const ACTION_ROW_WIDTH = 122;
 
 /** Minimum height of a single action row (px). */
 export const ACTION_ROW_HEIGHT = 44;
@@ -47,22 +47,7 @@ export const TRIGGER_CENTER_Y_OPEN = 36;
 export const ACTION_STACK_TOP = 68;
 
 /** Small horizontal nudge that keeps action labels away from the census table content. */
-export const ACTION_STACK_HORIZONTAL_SHIFT = 64;
-
-/**
- * Minimum visible gap between the open action stack and the viewport edge.
- * The launcher position uses this to reserve space for the whole menu, not
- * just for the closed turtle trigger.
- */
-export const ACTION_STACK_VIEWPORT_GUTTER = 24;
-
-/**
- * The action stack is intentionally shifted left from the wrapper center. This
- * value describes how far it can bleed outside the wrapper so runtime clamping
- * can keep the full menu away from the screen edge.
- */
-export const ACTION_STACK_LEFT_BLEED =
-  ACTION_STACK_HORIZONTAL_SHIFT - (OPEN_WRAPPER_WIDTH - ACTION_ROW_WIDTH) / 2;
+export const ACTION_STACK_HORIZONTAL_SHIFT = 14;
 
 /**
  * Returns Tailwind class names that style the trigger button based on the
