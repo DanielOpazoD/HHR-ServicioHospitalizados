@@ -10,7 +10,8 @@ import type { DebouncedTextHandler } from '@/features/census/components/patient-
 
 interface ClinicalInitialBlockDraft {
   pathology: string;
-  specialty: string;
+  specialtySelection: string;
+  specialtyOther: string;
   status: string;
 }
 
@@ -18,21 +19,36 @@ interface ClinicalInitialBlockEditorProps {
   data: PatientData;
   disabled?: boolean;
   alignRightClassName?: string;
+  triggerAriaLabel?: string;
+  triggerClassName?: string;
+  triggerContent?: React.ReactNode;
+  triggerTitle?: string;
   onChange: DebouncedTextHandler;
   onMultipleUpdate?: (fields: PatientRowPatientPatch) => void;
 }
 
-const buildClinicalInitialBlockDraft = (data: PatientData): ClinicalInitialBlockDraft => ({
-  pathology: data.pathology || '',
-  specialty: data.specialty || '',
-  status: data.status || '',
-});
+const isKnownSpecialtyOption = (specialty: string): boolean =>
+  specialty === '' || SPECIALTY_OPTIONS.includes(specialty as (typeof SPECIALTY_OPTIONS)[number]);
+
+const buildClinicalInitialBlockDraft = (data: PatientData): ClinicalInitialBlockDraft => {
+  const specialty = data.specialty || '';
+  const isKnownSpecialty = isKnownSpecialtyOption(specialty);
+
+  return {
+    pathology: data.pathology || '',
+    specialtySelection: isKnownSpecialty ? specialty : 'Otro',
+    specialtyOther: isKnownSpecialty ? '' : specialty,
+    status: data.status || '',
+  };
+};
 
 const buildClinicalInitialBlockPatch = (
   draft: ClinicalInitialBlockDraft
 ): PatientRowPatientPatch => ({
   pathology: draft.pathology,
-  specialty: draft.specialty as PatientData['specialty'],
+  specialty: (draft.specialtySelection === 'Otro'
+    ? draft.specialtyOther.trim() || 'Otro'
+    : draft.specialtySelection) as PatientData['specialty'],
   status: draft.status as PatientData['status'],
 });
 
@@ -40,6 +56,10 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
   data,
   disabled = false,
   alignRightClassName = 'right-1',
+  triggerAriaLabel = 'Editar bloque clínico',
+  triggerClassName,
+  triggerContent,
+  triggerTitle = 'Editar bloque clínico',
   onChange,
   onMultipleUpdate,
 }) => {
@@ -62,8 +82,12 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
     if (onMultipleUpdate) {
       onMultipleUpdate(patch);
     } else {
+      const fallbackSpecialty =
+        draft.specialtySelection === 'Otro'
+          ? draft.specialtyOther.trim() || 'Otro'
+          : draft.specialtySelection;
       onChange('pathology')(draft.pathology);
-      onChange('specialty')(draft.specialty);
+      onChange('specialty')(fallbackSpecialty);
       onChange('status')(draft.status);
     }
     setIsOpen(false);
@@ -73,14 +97,17 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
     <>
       <button
         type="button"
-        className={clsx(
-          'absolute top-1/2 -translate-y-1/2 rounded-md border border-slate-200 bg-white p-1 text-slate-500 shadow-sm transition-colors',
-          'hover:border-medical-300 hover:text-medical-700 focus:outline-none focus:ring-2 focus:ring-medical-500/20',
-          disabled && 'cursor-not-allowed opacity-50',
-          alignRightClassName
-        )}
-        title="Editar bloque clínico"
-        aria-label="Editar bloque clínico"
+        className={
+          triggerClassName ||
+          clsx(
+            'absolute top-1/2 -translate-y-1/2 rounded-md border border-slate-200 bg-white p-1 text-slate-500 shadow-sm transition-colors',
+            'hover:border-medical-300 hover:text-medical-700 focus:outline-none focus:ring-2 focus:ring-medical-500/20',
+            disabled && 'cursor-not-allowed opacity-50',
+            alignRightClassName
+          )
+        }
+        title={triggerTitle}
+        aria-label={triggerAriaLabel}
         onClick={event => {
           event.preventDefault();
           event.stopPropagation();
@@ -90,7 +117,7 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
         }}
         disabled={disabled}
       >
-        <SquarePen size={12} />
+        {triggerContent || <SquarePen size={12} />}
       </button>
 
       {isOpen && (
@@ -135,9 +162,13 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
                   id={`clinical-block-specialty-${data.bedId}`}
                   name={`clinical-block-specialty-${data.bedId}`}
                   className="h-8 w-full rounded border border-slate-200 px-2 text-[12px] focus:border-medical-500 focus:outline-none focus:ring-2 focus:ring-medical-500/20"
-                  value={draft.specialty}
+                  value={draft.specialtySelection}
                   onChange={event =>
-                    setDraft(current => ({ ...current, specialty: event.target.value }))
+                    setDraft(current => ({
+                      ...current,
+                      specialtySelection: event.target.value,
+                      specialtyOther: event.target.value === 'Otro' ? current.specialtyOther : '',
+                    }))
                   }
                 >
                   <option value="">-- Esp --</option>
@@ -169,6 +200,23 @@ export const ClinicalInitialBlockEditor: React.FC<ClinicalInitialBlockEditorProp
                 </select>
               </label>
             </div>
+
+            {draft.specialtySelection === 'Otro' && (
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-semibold text-slate-600">
+                  Describir especialidad
+                </span>
+                <input
+                  id={`clinical-block-specialty-other-${data.bedId}`}
+                  name={`clinical-block-specialty-other-${data.bedId}`}
+                  className="h-8 w-full rounded border border-slate-200 px-2 text-[13px] focus:border-medical-500 focus:outline-none focus:ring-2 focus:ring-medical-500/20"
+                  value={draft.specialtyOther}
+                  onChange={event =>
+                    setDraft(current => ({ ...current, specialtyOther: event.target.value }))
+                  }
+                />
+              </label>
+            )}
 
             <div className="flex justify-end gap-2 pt-1">
               <button

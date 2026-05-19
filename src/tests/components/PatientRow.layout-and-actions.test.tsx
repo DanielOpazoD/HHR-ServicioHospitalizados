@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { PatientRow } from '@/features/census/components/PatientRow';
@@ -60,6 +60,10 @@ describe('PatientRow layout and actions', () => {
         removeEventListener: vi.fn(),
       })),
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   const mockPatient = DataFactory.createMockPatient('R1', {
@@ -176,7 +180,8 @@ describe('PatientRow layout and actions', () => {
     expect(screen.queryByRole('button', { name: /upc/i })).not.toBeInTheDocument();
   });
 
-  it('calls updatePatient when status changes', () => {
+  it('updates status through the clinical block editor', () => {
+    vi.useFakeTimers();
     const { mockContext } = render(
       <table>
         <tbody>
@@ -191,11 +196,19 @@ describe('PatientRow layout and actions', () => {
       </table>
     );
 
-    fireEvent.change(screen.getByDisplayValue(/Estable/), {
-      target: { value: PatientStatus.GRAVE },
+    fireEvent.click(screen.getByRole('button', { name: /editar estado clínico/i }));
+    fireEvent.change(screen.getByLabelText('Estado'), { target: { value: PatientStatus.GRAVE } });
+    fireEvent.click(screen.getByText('Guardar'));
+
+    act(() => {
+      vi.advanceTimersByTime(450);
     });
 
-    expect(mockContext.updatePatient).toHaveBeenCalledWith('R1', 'status', PatientStatus.GRAVE);
+    expect(mockContext.updatePatientMultiple).toHaveBeenCalledWith('R1', {
+      pathology: 'Neumonía',
+      specialty: Specialty.MEDICINA,
+      status: PatientStatus.GRAVE,
+    });
   });
 
   it('renders blocked message and reason instead of inputs', () => {
