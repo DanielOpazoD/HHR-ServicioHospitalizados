@@ -16,7 +16,6 @@ import { isFeatureEnabled } from '@/services/utils/featureFlags';
 import { createScopedLogger } from '@/services/utils/loggerScope';
 import type { PatientData } from '@/features/census/components/patient-row/patientRowContracts';
 import { useDailyRecordFreshnessUi } from '@/hooks/useDailyRecordFreshnessUi';
-import { QUICK_ACTION_MENU_GUTTER_WIDTH } from '@/features/census/components/patient-row/patientRowOrbitalQuickActionLayout';
 
 const censusTableAdmitLogger = createScopedLogger('CensusTableAdmit');
 export type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
@@ -179,24 +178,19 @@ export const CensusTable: React.FC<CensusTableProps> = ({
             {freshnessUi.userMessage}
           </div>
         ) : null}
-        <div
-          className="relative overflow-visible print:pl-0"
-          style={{ paddingLeft: `${QUICK_ACTION_MENU_GUTTER_WIDTH}px` }}
+        <table
+          data-testid="census-table"
+          className="text-left border-collapse print:text-xs relative text-[12px] leading-tight table-fixed"
+          style={tableStyle}
         >
-          <table
-            data-testid="census-table"
-            className="text-left border-collapse print:text-xs relative text-[12px] leading-tight table-fixed"
-            style={tableStyle}
-          >
-            <CensusTableHeader {...headerProps} />
-            <CensusTableBody
-              {...bodyProps}
-              onActivateEmptyBed={openEmptyBedDemographics}
-              dragDrop={readOnly || clinicalEditingDisabled ? undefined : dragDrop}
-              clinicalDocumentInfoByBedId={clinicalDocumentInfoByBedId}
-            />
-          </table>
-        </div>
+          <CensusTableHeader {...headerProps} />
+          <CensusTableBody
+            {...bodyProps}
+            onActivateEmptyBed={openEmptyBedDemographics}
+            dragDrop={readOnly || clinicalEditingDisabled ? undefined : dragDrop}
+            clinicalDocumentInfoByBedId={clinicalDocumentInfoByBedId}
+          />
+        </table>
       </div>
 
       {dragDrop.state.pendingMove && (

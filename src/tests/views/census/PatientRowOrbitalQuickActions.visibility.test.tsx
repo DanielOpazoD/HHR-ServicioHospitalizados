@@ -94,9 +94,9 @@ describe('PatientRowOrbitalQuickActions visibility', () => {
     const documentsButton = screen.getByRole('button', { name: /documentos clínicos/i });
     const wrapper = trigger.closest('.fixed');
     const actionStack = documentsButton.closest('[data-state="open"]');
-    const backdrop = document.querySelector('.fixed.inset-0.z-\\[34\\]');
+    const backdrop = document.querySelector('.fixed.inset-0.z-\\[38\\]');
 
-    expect(wrapper).toHaveClass('z-[35]');
+    expect(wrapper).toHaveClass('z-[39]');
     expect(actionStack).toHaveClass('z-10');
     expect(backdrop).toBeInTheDocument();
   });
