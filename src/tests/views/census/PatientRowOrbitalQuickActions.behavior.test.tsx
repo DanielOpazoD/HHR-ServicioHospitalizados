@@ -81,7 +81,7 @@ describe('PatientRowOrbitalQuickActions behavior', () => {
     fireEvent.click(await screen.findByRole('button', { name: /acciones clínicas rápidas/i }));
     expect(await screen.findByRole('button', { name: /documentos clínicos/i })).toBeInTheDocument();
 
-    const backdrop = document.querySelector('.fixed.inset-0.z-\\[60\\]');
+    const backdrop = document.querySelector('.fixed.inset-0.z-\\[34\\]');
     if (!backdrop) {
       throw new Error('Backdrop not found');
     }
@@ -154,7 +154,7 @@ describe('PatientRowOrbitalQuickActions behavior', () => {
     fireEvent.click(await screen.findByRole('button', { name: /acciones clínicas rápidas/i }));
     await screen.findByRole('button', { name: /documentos clínicos/i });
 
-    const outerWrapper = document.querySelector('.pointer-events-none.fixed.z-\\[70\\]');
+    const outerWrapper = document.querySelector('.pointer-events-none.fixed.z-\\[35\\]');
     expect(outerWrapper).toBeTruthy();
     expect(outerWrapper!.className).toContain('pointer-events-none');
 

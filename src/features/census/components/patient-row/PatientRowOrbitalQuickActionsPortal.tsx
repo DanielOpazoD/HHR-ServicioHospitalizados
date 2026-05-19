@@ -6,7 +6,7 @@
  * the floating UI never interferes with normal table interactions:
  *
  * **Pointer-events strategy:**
- *   - Outer wrapper div (`fixed z-[70]`) -- `pointer-events-none`.
+ *   - Outer wrapper div (`fixed z-[35]`) -- `pointer-events-none`.
  *     Covers the launcher's bounding box but is transparent to the mouse,
  *     so clicks pass through to the table underneath.
  *   - Inner relative div -- also `pointer-events-none`. Pure layout shell.
@@ -17,9 +17,9 @@
  *     `pointer-events-none` when hidden, so it does not block row hover.
  *
  * **Z-index layering:**
- *   - `z-[60]` -- Transparent backdrop overlay (click-to-close).
- *   - `z-[70]` -- Launcher wrapper (pointer-events-none shell).
- *   - `z-[80]` -- Action stack (above the wrapper so items are clickable).
+ *   - `z-[34]` -- Transparent backdrop overlay (click-to-close), below sticky app bars.
+ *   - `z-[35]` -- Launcher wrapper (pointer-events-none shell), above table headers.
+ *   - `z-10`   -- Action stack (above the wrapper content so items are clickable).
  *   - `z-10`   -- Trigger button (within the wrapper's stacking context).
  */
 
@@ -102,12 +102,12 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
   return createPortal(
     <>
       {/* Backdrop: transparent click-catcher that closes the action stack */}
-      {isOpen ? <div className="fixed inset-0 z-[60]" aria-hidden="true" onClick={close} /> : null}
+      {isOpen ? <div className="fixed inset-0 z-[34]" aria-hidden="true" onClick={close} /> : null}
 
       {/* Launcher wrapper: pointer-events-none shell positioned over the row */}
       <div
         ref={menuRef}
-        className="pointer-events-none fixed z-[70] print:hidden"
+        className="pointer-events-none fixed z-[35] print:hidden"
         style={{
           left: `${position.left}px`,
           top: `${position.top}px`,
@@ -119,7 +119,7 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
           {/* Action stack: pointer-events-auto so items receive clicks */}
           {isOpen ? (
             <div
-              className="pointer-events-auto absolute left-1/2 top-0 z-[80] flex -translate-x-1/2 flex-col"
+              className="pointer-events-auto absolute left-1/2 top-0 z-10 flex -translate-x-1/2 flex-col"
               style={{
                 top: `${ACTION_STACK_TOP}px`,
                 width: `${ACTION_ROW_WIDTH}px`,

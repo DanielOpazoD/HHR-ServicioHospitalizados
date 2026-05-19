@@ -105,7 +105,7 @@ describe('PatientRow layout and actions', () => {
     expect(screen.getByText('R1')).toBeInTheDocument();
   });
 
-  it('keeps the main row action cell above the orbital quick-action hitbox', () => {
+  it('keeps the main row action cell above the table but below sticky app bars', () => {
     render(
       <table>
         <tbody>
@@ -120,7 +120,7 @@ describe('PatientRow layout and actions', () => {
       </table>
     );
 
-    expect(screen.getByTitle('Acciones').closest('td')).toHaveClass('z-[75]');
+    expect(screen.getByTitle('Acciones').closest('td')).toHaveClass('z-[36]');
   });
 
   it('does not render the orbital quick actions launcher for a row without name and rut', () => {
