@@ -47,7 +47,7 @@ export const TRIGGER_CENTER_Y_OPEN = 36;
 export const ACTION_STACK_TOP = 68;
 
 /** Small horizontal nudge that keeps action labels away from the census table content. */
-export const ACTION_STACK_HORIZONTAL_SHIFT = 40;
+export const ACTION_STACK_HORIZONTAL_SHIFT = 64;
 
 /**
  * Returns Tailwind class names that style the trigger button based on the
