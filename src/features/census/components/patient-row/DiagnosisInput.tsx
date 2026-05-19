@@ -22,6 +22,7 @@ import type { DiagnosisMode } from '@/features/census/types/censusTableTypes';
 import { BaseCellProps, DebouncedTextHandler } from './inputCellTypes';
 import { PatientEmptyCell } from './PatientEmptyCell';
 import { useClinicalFieldFreshnessPause } from './useClinicalFieldFreshnessPause';
+import { ClinicalInitialBlockEditor } from './ClinicalInitialBlockEditor';
 
 interface DiagnosisInputProps extends BaseCellProps {
   diagnosisMode: DiagnosisMode;
@@ -50,6 +51,8 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
   const isGinecobstetricia = isGinecobstetriciaSpecialty(data.specialty);
   const canShowDeliveryRoute =
     isGinecobstetricia && isObstetricGinecobstetricia(data.ginecobstetriciaType);
+  const canShowClinicalInitialBlockEditor =
+    !readOnly && !isSubRow && !isEmpty && Boolean(data.patientName);
   const hasPathologyError =
     !PatientInputSchema.pick({ pathology: true }).safeParse({ pathology: data.pathology })
       .success && !!data.pathology;
@@ -105,6 +108,15 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
             title={readOnlyReason}
           />
 
+          {canShowClinicalInitialBlockEditor && (
+            <ClinicalInitialBlockEditor
+              data={data}
+              alignRightClassName={data.cie10Code ? 'right-14' : 'right-1'}
+              onChange={onChange}
+              onMultipleUpdate={onMultipleUpdate}
+            />
+          )}
+
           {data.cie10Code && (
             <span
               className="absolute right-1 top-1 inline-flex items-center gap-1 text-[9px] font-mono text-slate-600 bg-slate-50 px-1 py-0.5 rounded border border-slate-200"
@@ -159,7 +171,7 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
               ? 'border-red-400 focus:ring-red-200 focus:border-red-500'
               : 'border-slate-200 focus:ring-medical-500/20 focus:border-medical-500',
             isSubRow && 'text-xs h-6',
-            canShowDeliveryRoute && 'pr-8',
+            (canShowDeliveryRoute || canShowClinicalInitialBlockEditor) && 'pr-16',
             freshnessPause.pauseClassName
           )}
           placeholder="Diagnóstico (texto libre)"
@@ -168,6 +180,15 @@ export const DiagnosisInput: React.FC<DiagnosisInputProps> = ({
           disabled={readOnly}
           title={readOnlyReason}
         />
+
+        {canShowClinicalInitialBlockEditor && (
+          <ClinicalInitialBlockEditor
+            data={data}
+            alignRightClassName={canShowDeliveryRoute ? 'right-7' : 'right-1'}
+            onChange={onChange}
+            onMultipleUpdate={onMultipleUpdate}
+          />
+        )}
 
         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
           {canShowDeliveryRoute && onDeliveryRouteChange && (

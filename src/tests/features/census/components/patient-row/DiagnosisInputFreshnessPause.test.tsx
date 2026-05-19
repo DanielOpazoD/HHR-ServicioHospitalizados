@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { DiagnosisInput } from '@/features/census/components/patient-row/DiagnosisInput';
 import { DataFactory } from '@/tests/factories/DataFactory';
+import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 
 const PausedDiagnosisInput = ({ onChange }: { onChange: (value: string) => void }) => {
   const [paused, setPaused] = useState(true);
@@ -43,5 +44,48 @@ describe('DiagnosisInput freshness pause', () => {
     fireEvent.blur(input);
 
     expect(onChange).toHaveBeenCalledWith('Nuevo diagnóstico');
+  });
+});
+
+describe('DiagnosisInput clinical initial block editor', () => {
+  it('saves diagnosis, specialty and status as one patch', () => {
+    const onMultipleUpdate = vi.fn();
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <DiagnosisInput
+              data={DataFactory.createMockPatient('R1', {
+                patientName: 'Paciente Test',
+                pathology: '',
+                specialty: Specialty.EMPTY,
+                status: PatientStatus.EMPTY,
+              })}
+              diagnosisMode="free"
+              onChange={() => vi.fn()}
+              onMultipleUpdate={onMultipleUpdate}
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    fireEvent.click(screen.getByLabelText('Editar bloque clínico'));
+    fireEvent.change(screen.getByLabelText('Diagnóstico'), {
+      target: { value: 'Neumonia' },
+    });
+    fireEvent.change(screen.getByLabelText('Especialidad'), {
+      target: { value: 'Med Interna' },
+    });
+    fireEvent.change(screen.getByLabelText('Estado'), {
+      target: { value: 'Estable' },
+    });
+    fireEvent.click(screen.getByText('Guardar'));
+
+    expect(onMultipleUpdate).toHaveBeenCalledWith({
+      pathology: 'Neumonia',
+      specialty: 'Med Interna',
+      status: 'Estable',
+    });
   });
 });
