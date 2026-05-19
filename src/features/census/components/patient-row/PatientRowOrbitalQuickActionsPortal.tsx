@@ -145,7 +145,7 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
                     }}
                     className={clsx(
                       'flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-2.5 transition-colors duration-100',
-                      'bg-white/70 hover:bg-white hover:shadow-sm',
+                      'bg-white shadow-sm ring-1 ring-slate-100 hover:bg-white hover:shadow-md',
                       'focus-visible:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300',
                       'active:scale-[0.97]'
                     )}

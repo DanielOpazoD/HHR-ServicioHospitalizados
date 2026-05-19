@@ -23,7 +23,7 @@ export const TRIGGER_VISUAL_SIZE = 28;
 export const ACTION_ICON_SIZE = 36;
 
 /** Total width of a single action row including icon + label (px). */
-export const ACTION_ROW_WIDTH = 122;
+export const ACTION_ROW_WIDTH = 130;
 
 /** Minimum height of a single action row (px). */
 export const ACTION_ROW_HEIGHT = 44;
@@ -47,7 +47,7 @@ export const TRIGGER_CENTER_Y_OPEN = 36;
 export const ACTION_STACK_TOP = 68;
 
 /** Small horizontal nudge that keeps action labels away from the census table content. */
-export const ACTION_STACK_HORIZONTAL_SHIFT = 14;
+export const ACTION_STACK_HORIZONTAL_SHIFT = 44;
 
 /**
  * Returns Tailwind class names that style the trigger button based on the
