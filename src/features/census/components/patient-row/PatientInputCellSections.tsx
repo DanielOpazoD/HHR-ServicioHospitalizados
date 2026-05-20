@@ -109,6 +109,7 @@ export const PatientInputClinicalSection: React.FC<
         accessProfile={accessProfile}
         onChange={handleDebouncedText}
         onMultipleUpdate={onChange.multiple}
+        onDeliveryRouteChange={onChange.deliveryRoute}
       />
     );
   }

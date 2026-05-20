@@ -58,6 +58,42 @@ const parseCompositeEpisodeKey = (
 const buildPatientHistoryCacheKey = (patient: MasterPatient): string =>
   `${patient.rut}::${patient.updatedAt ?? 0}`;
 
+const shiftIsoDate = (isoDate: string, deltaDays: number): string | null => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return null;
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setUTCDate(date.getUTCDate() + deltaDays);
+  return date.toISOString().slice(0, 10);
+};
+
+const buildClinicalDocumentEpisodeKeyCandidates = ({
+  rut,
+  admissionDate,
+  admissionTime,
+}: {
+  rut: string;
+  admissionDate: string;
+  admissionTime?: string;
+}): string[] => {
+  const rutWithoutDots = rut.replace(/\./g, '');
+  const admissionDates = [
+    admissionDate,
+    shiftIsoDate(admissionDate, 1),
+    shiftIsoDate(admissionDate, -1),
+  ].filter((date): date is string => Boolean(date));
+
+  return [
+    ...new Set(
+      admissionDates.flatMap(date => [
+        buildClinicalEpisodeKey(rut, date, admissionTime),
+        buildClinicalEpisodeKey(rutWithoutDots, date, admissionTime),
+        buildClinicalEpisodeKey(rut, date),
+        buildClinicalEpisodeKey(rutWithoutDots, date),
+      ])
+    ),
+  ];
+};
+
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -162,16 +198,7 @@ export function usePatientSelection(): UsePatientSelectionReturn {
 
     try {
       const docMod = await loadClinicalDocRepo();
-
-      const rutWithoutDots = parsed.rut.replace(/\./g, '');
-      const candidateKeys = [
-        ...new Set([
-          buildClinicalEpisodeKey(parsed.rut, parsed.admissionDate, parsed.admissionTime),
-          buildClinicalEpisodeKey(rutWithoutDots, parsed.admissionDate, parsed.admissionTime),
-          buildClinicalEpisodeKey(parsed.rut, parsed.admissionDate),
-          buildClinicalEpisodeKey(rutWithoutDots, parsed.admissionDate),
-        ]),
-      ];
+      const candidateKeys = buildClinicalDocumentEpisodeKeyCandidates(parsed);
 
       let foundDocs: ClinicalDocSummary[] = [];
       for (const candidateKey of candidateKeys) {
@@ -179,6 +206,7 @@ export function usePatientSelection(): UsePatientSelectionReturn {
         if (docs.length > 0) {
           foundDocs = docs.map(d => ({
             id: d.id || '',
+            episodeKey: d.episodeKey || candidateKey,
             documentType: d.documentType || '',
             status: d.status || '',
             createdAt: d.audit?.createdAt || '',

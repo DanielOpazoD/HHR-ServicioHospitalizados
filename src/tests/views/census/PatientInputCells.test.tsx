@@ -331,4 +331,60 @@ describe('PatientInputCells', () => {
       status: PatientStatus.DE_CUIDADO,
     });
   });
+
+  it('preserves ginecobstetric subtype and delivery route controls in the clinical block cells', () => {
+    vi.mocked(useDailyRecordStability).mockReturnValue({
+      canEditField: () => true,
+    } as unknown as ReturnType<typeof useDailyRecordStability>);
+
+    const data = DataFactory.createMockPatient('R1');
+    data.patientName = 'Paciente GO';
+    data.pathology = 'Puerperio';
+    data.specialty = Specialty.GINECOBSTETRICIA;
+    data.ginecobstetriciaType = 'Obstétrica';
+    data.deliveryRoute = 'Cesárea';
+    data.deliveryDate = '2026-02-15';
+    data.deliveryCesareanLabor = 'Con TdP';
+    const textHandler = vi.fn();
+    const onChange = {
+      text: vi.fn().mockReturnValue(textHandler),
+      check: vi.fn().mockReturnValue(vi.fn()),
+      devices: vi.fn(),
+      deviceDetails: vi.fn(),
+      deviceHistory: vi.fn(),
+      toggleDocType: vi.fn(),
+      deliveryRoute: vi.fn(),
+      multiple: vi.fn(),
+    };
+
+    render(
+      <table>
+        <tbody>
+          <tr>
+            <PatientInputCells
+              data={data}
+              currentDateString="2026-02-15"
+              onChange={onChange}
+              onDemo={vi.fn()}
+              readOnly={false}
+              diagnosisMode="free"
+            />
+          </tr>
+        </tbody>
+      </table>
+    );
+
+    fireEvent.click(screen.getByTitle('Definir tipo de atención'));
+    fireEvent.click(screen.getByRole('button', { name: 'Ginecológica' }));
+
+    expect(onChange.multiple).toHaveBeenCalledWith({
+      ginecobstetriciaType: 'Ginecológica',
+      deliveryRoute: undefined,
+      deliveryDate: undefined,
+      deliveryCesareanLabor: undefined,
+    });
+
+    fireEvent.click(screen.getByTitle(/Cesárea \(Con TdP\)/i));
+    expect(screen.getByText('Vía del Parto')).toBeInTheDocument();
+  });
 });
