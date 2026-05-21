@@ -1,6 +1,7 @@
 import {
   deleteObject,
   getDownloadURL,
+  listAll,
   ref,
   uploadBytes,
   type FirebaseStorage,
@@ -17,6 +18,7 @@ export interface ClinicalAttachmentStorageRuntime {
   uploadBytes: typeof uploadBytes;
   getDownloadURL: typeof getDownloadURL;
   deleteObject: typeof deleteObject;
+  listAll: typeof listAll;
 }
 
 export const createClinicalAttachmentStorageRuntime = (
@@ -27,6 +29,7 @@ export const createClinicalAttachmentStorageRuntime = (
   uploadBytes,
   getDownloadURL,
   deleteObject,
+  listAll,
 });
 
 export const defaultClinicalAttachmentStorageRuntime = createClinicalAttachmentStorageRuntime();

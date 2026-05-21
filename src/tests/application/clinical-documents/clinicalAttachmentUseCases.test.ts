@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  executeAuditClinicalAttachmentPatientStorage,
   executeDeleteClinicalAttachment,
   executeListClinicalAttachmentsByEpisode,
   executeListClinicalAttachmentsByPatient,
@@ -18,6 +19,7 @@ const buildRepository = () => ({
   upload: vi.fn(),
   listByEpisode: vi.fn(),
   listByPatient: vi.fn(),
+  listStoragePathsByPatient: vi.fn(),
   delete: vi.fn(),
 });
 
@@ -169,5 +171,43 @@ describe('clinicalAttachmentUseCases', () => {
         { repository, getNow: () => '2026-05-21T11:00:00.000Z' }
       )
     ).resolves.toMatchObject({ status: 'success' });
+  });
+
+  it('audits mismatches between active metadata and Storage objects for a patient', async () => {
+    const repository = buildRepository();
+    repository.listByPatient.mockResolvedValue([
+      {
+        id: 'att_active',
+        storagePath: 'clinical-attachments/hhr/rut/episode/att_active/a.pdf',
+      },
+      {
+        id: 'att_missing',
+        storagePath: 'clinical-attachments/hhr/rut/episode/att_missing/missing.pdf',
+      },
+    ]);
+    repository.listStoragePathsByPatient.mockResolvedValue([
+      'clinical-attachments/hhr/rut/episode/att_active/a.pdf',
+      'clinical-attachments/hhr/rut/episode/orphan/orphan.pdf',
+    ]);
+
+    const outcome = await executeAuditClinicalAttachmentPatientStorage(
+      { patientRut: '13.545.665-9', hospitalId: 'hhr' },
+      { repository }
+    );
+
+    expect(outcome).toMatchObject({
+      status: 'success',
+      data: {
+        activeMetadataCount: 2,
+        storageObjectCount: 2,
+        orphanStoragePaths: ['clinical-attachments/hhr/rut/episode/orphan/orphan.pdf'],
+        missingStorageRecords: [
+          {
+            id: 'att_missing',
+            storagePath: 'clinical-attachments/hhr/rut/episode/att_missing/missing.pdf',
+          },
+        ],
+      },
+    });
   });
 });
