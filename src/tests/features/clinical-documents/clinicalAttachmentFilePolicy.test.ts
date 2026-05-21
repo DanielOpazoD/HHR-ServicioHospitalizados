@@ -34,6 +34,15 @@ describe('resolveClinicalAttachmentFilePolicy', () => {
     });
   });
 
+  it('routes small picker images to Storage instead of embedding them inline', () => {
+    const file = buildFile(64 * 1024, 'image/png', 'adjunto.png');
+
+    expect(resolveClinicalAttachmentFilePolicy(file, { source: 'file-picker' })).toMatchObject({
+      action: 'storage_image',
+      fileKind: 'image',
+    });
+  });
+
   it('routes large images to compression before Storage upload', () => {
     const file = buildFile(
       CLINICAL_ATTACHMENT_DIRECT_IMAGE_MAX_BYTES + 1,

@@ -23,6 +23,7 @@ export const ClinicalDocumentPlanSection: React.FC<ClinicalDocumentSpecialSectio
   onPatchSection,
   onEditorActivate,
   onEditorDeactivate,
+  onUploadPastedImage,
   onImagePasteRejected,
 }) => {
   const sectionLayout = resolveClinicalDocumentPlanSectionLayout(section);
@@ -42,6 +43,7 @@ export const ClinicalDocumentPlanSection: React.FC<ClinicalDocumentSpecialSectio
           }
           onActivate={onEditorActivate}
           onDeactivate={onEditorDeactivate}
+          onUploadPastedImage={onUploadPastedImage}
           onImagePasteRejected={onImagePasteRejected}
           disabled={!canEdit || document.isLocked}
         />
@@ -80,6 +82,7 @@ export const ClinicalDocumentPlanSection: React.FC<ClinicalDocumentSpecialSectio
                 onEditorActivate(activeSectionId, editorApi);
               }}
               onDeactivate={onEditorDeactivate}
+              onUploadPastedImage={onUploadPastedImage}
               onImagePasteRejected={onImagePasteRejected}
               disabled={!canEdit || document.isLocked}
             />

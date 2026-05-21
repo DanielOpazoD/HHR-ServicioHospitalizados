@@ -4,6 +4,7 @@ import type { ClipboardEvent, KeyboardEvent, MutableRefObject } from 'react';
 import type { ClinicalDocumentFormattingCommand } from '@/features/clinical-documents/components/clinicalDocumentSheetShared';
 import {
   buildPastedImageHtml,
+  buildPastedStorageImageHtml,
   classifyPasteContent,
   readFileAsDataUrl,
 } from '@/features/clinical-documents/controllers/clinicalDocumentPasteController';
@@ -34,6 +35,12 @@ export interface ClinicalDocumentRichTextEditorActivationApi {
   insertHtml: (html: string) => void;
 }
 
+export interface UploadedClinicalDocumentPastedImage {
+  attachmentId: string;
+  imageUrl: string;
+  storagePath: string;
+}
+
 interface UseClinicalDocumentRichTextEditorControllerParams {
   sectionId: string;
   value: string;
@@ -42,6 +49,7 @@ interface UseClinicalDocumentRichTextEditorControllerParams {
   onChange: (value: string) => void;
   onActivate?: (sectionId: string, editor: ClinicalDocumentRichTextEditorActivationApi) => void;
   onDeactivate?: (sectionId: string) => void;
+  onUploadPastedImage?: (file: File) => Promise<UploadedClinicalDocumentPastedImage | null>;
   onImagePasteRejected?: (message: string) => void;
   /** Called when `/lab` command is detected. Should return formatted lab text. */
   onSlashLab?: () => Promise<string | null>;
@@ -55,6 +63,7 @@ export const useClinicalDocumentRichTextEditorController = ({
   onChange,
   onActivate,
   onDeactivate,
+  onUploadPastedImage,
   onImagePasteRejected,
   onSlashLab,
 }: UseClinicalDocumentRichTextEditorControllerParams) => {
@@ -368,6 +377,20 @@ export const useClinicalDocumentRichTextEditorController = ({
       if (descriptor.kind === 'empty') return;
 
       if (descriptor.kind === 'image-file') {
+        if (descriptor.requiresStorage) {
+          if (!onUploadPastedImage) {
+            onImagePasteRejected?.('No se pudo subir la imagen como adjunto clinico.');
+            return;
+          }
+          void onUploadPastedImage(descriptor.file).then(uploadedImage => {
+            if (!uploadedImage) {
+              onImagePasteRejected?.('No se pudo subir la imagen como adjunto clinico.');
+              return;
+            }
+            insertHtml(buildPastedStorageImageHtml(uploadedImage));
+          });
+          return;
+        }
         void readFileAsDataUrl(descriptor.file).then(dataUrl => {
           insertHtml(buildPastedImageHtml(dataUrl));
         });
@@ -385,7 +408,7 @@ export const useClinicalDocumentRichTextEditorController = ({
         insertPlainText(descriptor.text);
       }
     },
-    [editorRef, insertHtml, insertPlainText, onImagePasteRejected]
+    [editorRef, insertHtml, insertPlainText, onImagePasteRejected, onUploadPastedImage]
   );
 
   return {

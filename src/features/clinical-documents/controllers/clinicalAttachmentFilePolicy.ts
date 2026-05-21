@@ -40,7 +40,7 @@ const resolveFileKind = (file: File): ClinicalAttachmentFileKind | null => {
 
 export const resolveClinicalAttachmentFilePolicy = (
   file: File,
-  _options: ClinicalAttachmentFilePolicyOptions
+  options: ClinicalAttachmentFilePolicyOptions
 ): ClinicalAttachmentFilePolicyResult => {
   const fileKind = resolveFileKind(file);
 
@@ -53,7 +53,10 @@ export const resolveClinicalAttachmentFilePolicy = (
   }
 
   if (fileKind === 'image') {
-    if (file.size <= CLINICAL_ATTACHMENT_INLINE_IMAGE_MAX_BYTES) {
+    if (
+      options.source === 'pasted-image' &&
+      file.size <= CLINICAL_ATTACHMENT_INLINE_IMAGE_MAX_BYTES
+    ) {
       return { action: 'inline_image', fileKind, code: 'accepted' };
     }
     if (file.size <= CLINICAL_ATTACHMENT_DIRECT_IMAGE_MAX_BYTES) {

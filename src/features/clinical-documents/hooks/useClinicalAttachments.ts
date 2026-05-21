@@ -118,6 +118,48 @@ export const useClinicalAttachments = ({
     [canEdit, hospitalId, notify, role, selectedDocument, user]
   );
 
+  const uploadPastedImage = useCallback(
+    async (
+      file: File
+    ): Promise<{ attachmentId: string; imageUrl: string; storagePath: string } | null> => {
+      if (!selectedDocument || !canEdit) return null;
+
+      setIsUploadingAttachment(true);
+      try {
+        const outcome = await executeUploadClinicalAttachment({
+          hospitalId,
+          patientRut: selectedDocument.patientRut,
+          patientName: selectedDocument.patientName,
+          episodeKey: selectedDocument.episodeKey,
+          admissionDate: selectedDocument.admissionDate,
+          sourceDailyRecordDate: selectedDocument.sourceDailyRecordDate,
+          bedId: selectedDocument.sourceBedId,
+          documentId: selectedDocument.id,
+          documentType: selectedDocument.documentType,
+          file,
+          displayName: file.name || 'Imagen pegada',
+          actor: buildClinicalDocumentActor(user, role),
+          image: { compressed: false },
+        });
+
+        if (outcome.status === 'failed' || !outcome.data?.downloadUrl) {
+          notify.error('No se pudo subir la imagen', outcome.userSafeMessage);
+          return null;
+        }
+
+        setAttachments(current => [outcome.data!, ...current]);
+        return {
+          attachmentId: outcome.data.id,
+          imageUrl: outcome.data.downloadUrl,
+          storagePath: outcome.data.storagePath,
+        };
+      } finally {
+        setIsUploadingAttachment(false);
+      }
+    },
+    [canEdit, hospitalId, notify, role, selectedDocument, user]
+  );
+
   const deleteAttachment = useCallback(
     async (attachment: ClinicalAttachmentRecord) => {
       if (!canEdit) return;
@@ -145,6 +187,7 @@ export const useClinicalAttachments = ({
     isUploadingAttachment,
     loadAttachments,
     uploadAttachment,
+    uploadPastedImage,
     deleteAttachment,
   };
 };

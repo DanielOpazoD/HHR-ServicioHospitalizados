@@ -4,11 +4,15 @@ import type {
   ClinicalDocumentType,
 } from '@/features/clinical-documents/internal';
 import {
+  compressClinicalAttachmentImage,
+  resolveClinicalAttachmentFilePolicy,
+  type ClinicalAttachmentImageCompressionResult,
+} from '@/features/clinical-documents/internal';
+import {
   createApplicationFailed,
   createApplicationSuccess,
 } from '@/shared/contracts/applicationOutcomeFactories';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
-import { resolveClinicalAttachmentFilePolicy } from '@/features/clinical-documents/controllers/clinicalAttachmentFilePolicy';
 import {
   ClinicalAttachmentRepository,
   type createClinicalAttachmentRepository,
@@ -20,6 +24,7 @@ interface ClinicalAttachmentUseCaseDependencies {
   repository?: ClinicalAttachmentRepositoryPort;
   createId?: () => string;
   getNow?: () => string;
+  compressImage?: (file: File) => Promise<ClinicalAttachmentImageCompressionResult>;
 }
 
 export interface UploadClinicalAttachmentUseCaseInput {
@@ -87,10 +92,44 @@ export const executeUploadClinicalAttachment = async (
   const repository = dependencies.repository || ClinicalAttachmentRepository;
   const createId = dependencies.createId || defaultCreateId;
   const getNow = dependencies.getNow || defaultGetNow;
+  const compressImage = dependencies.compressImage || compressClinicalAttachmentImage;
 
   try {
+    let uploadFile = input.file;
+    let imageMeta = input.image;
+
+    if (policy.action === 'compress_image') {
+      const compression = await compressImage(input.file);
+      if (compression.status === 'failed') {
+        return createApplicationFailed(
+          null,
+          [
+            {
+              kind: 'validation',
+              message: compression.reason,
+              userSafeMessage: compression.reason,
+            },
+          ],
+          {
+            userSafeMessage: compression.reason,
+          }
+        );
+      }
+      uploadFile = compression.file;
+      if (compression.status === 'compressed') {
+        imageMeta = {
+          ...input.image,
+          compressed: true,
+          originalSizeBytes: compression.originalSizeBytes,
+          compressionQuality: compression.quality,
+        };
+      }
+    }
+
     const record = await repository.upload({
       ...input,
+      file: uploadFile,
+      image: imageMeta,
       id: createId(),
       now: getNow(),
     });

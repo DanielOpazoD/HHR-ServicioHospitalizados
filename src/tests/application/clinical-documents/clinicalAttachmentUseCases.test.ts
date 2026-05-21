@@ -66,6 +66,80 @@ describe('clinicalAttachmentUseCases', () => {
     expect(outcome.userSafeMessage).toContain('No se pudo subir');
   });
 
+  it('compresses large images before uploading them to Storage', async () => {
+    const repository = buildRepository();
+    repository.upload.mockResolvedValue({ id: 'att_1', status: 'active' });
+    const originalFile = new File([new Uint8Array(3 * 1024 * 1024)], 'foto.jpg', {
+      type: 'image/jpeg',
+    });
+    const compressedFile = new File([new Uint8Array(1024)], 'foto.jpg', { type: 'image/jpeg' });
+    const compressImage = vi.fn(async () => ({
+      status: 'compressed' as const,
+      file: compressedFile,
+      originalSizeBytes: originalFile.size,
+      compressedSizeBytes: compressedFile.size,
+      quality: 0.82,
+    }));
+
+    const outcome = await executeUploadClinicalAttachment(
+      {
+        hospitalId: 'hhr',
+        patientRut: '13.545.665-9',
+        episodeKey: 'episode-1',
+        file: originalFile,
+        actor,
+        image: { compressed: false },
+      },
+      {
+        repository,
+        createId: () => 'att_1',
+        getNow: () => '2026-05-21T10:00:00.000Z',
+        compressImage,
+      }
+    );
+
+    expect(outcome.status).toBe('success');
+    expect(compressImage).toHaveBeenCalledWith(originalFile);
+    expect(repository.upload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        file: compressedFile,
+        image: expect.objectContaining({
+          compressed: true,
+          originalSizeBytes: originalFile.size,
+          compressionQuality: 0.82,
+        }),
+      })
+    );
+  });
+
+  it('returns a validation failure when large image compression fails', async () => {
+    const repository = buildRepository();
+    const originalFile = new File([new Uint8Array(3 * 1024 * 1024)], 'foto.jpg', {
+      type: 'image/jpeg',
+    });
+
+    const outcome = await executeUploadClinicalAttachment(
+      {
+        hospitalId: 'hhr',
+        patientRut: '13.545.665-9',
+        episodeKey: 'episode-1',
+        file: originalFile,
+        actor,
+      },
+      {
+        repository,
+        compressImage: vi.fn(async () => ({
+          status: 'failed' as const,
+          reason: 'No se pudo comprimir la imagen a un tamano seguro.',
+        })),
+      }
+    );
+
+    expect(outcome.status).toBe('failed');
+    expect(repository.upload).not.toHaveBeenCalled();
+    expect(outcome.userSafeMessage).toContain('comprimir');
+  });
+
   it('wraps list and delete repository operations in outcomes', async () => {
     const repository = buildRepository();
     repository.listByEpisode.mockResolvedValue([{ id: 'att_1' }]);

@@ -35,6 +35,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   isUploadingAttachment,
   onUploadAttachment,
   onDeleteAttachment,
+  onUploadPastedImage,
   dragHandlers,
   patchDocumentTitle,
   patchPatientInfoTitle,
@@ -182,6 +183,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           onAddSection={addSection}
           onEditorActivate={onEditorActivate}
           onEditorDeactivate={onEditorDeactivate}
+          onUploadPastedImage={onUploadPastedImage}
           onImagePasteRejected={onImagePasteRejected}
           onSetActivePlanSubsectionId={onSetActivePlanSubsectionId}
           onSetActiveIndicationsSpecialtyId={onSetActiveIndicationsSpecialtyId}
@@ -234,6 +236,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
             onClear={clearAnnexContent}
             onEditorActivate={onEditorActivate}
             onEditorDeactivate={onEditorDeactivate}
+            onUploadPastedImage={onUploadPastedImage}
             onImagePasteRejected={onImagePasteRejected}
           />
         )}

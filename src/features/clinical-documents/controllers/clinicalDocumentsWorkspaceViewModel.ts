@@ -76,6 +76,7 @@ interface BuildSheetPropsParams {
   isUploadingAttachment: boolean;
   uploadAttachment: ClinicalDocumentsWorkspaceSheetModelProps['onUploadAttachment'];
   deleteAttachment: ClinicalDocumentsWorkspaceSheetModelProps['onDeleteAttachment'];
+  uploadPastedImage: ClinicalDocumentsWorkspaceSheetModelProps['onUploadPastedImage'];
   handlePrint: () => Promise<void>;
   handleUploadPdf: () => Promise<void>;
   draft: ClinicalDocumentsWorkspaceSheetModelProps['selectedDocument'];
@@ -209,6 +210,7 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   isUploadingAttachment,
   uploadAttachment,
   deleteAttachment,
+  uploadPastedImage,
   handlePrint,
   handleUploadPdf,
   draft,
@@ -266,6 +268,7 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   isUploadingAttachment,
   onUploadAttachment: uploadAttachment,
   onDeleteAttachment: deleteAttachment,
+  onUploadPastedImage: uploadPastedImage,
   onPrint: handlePrint,
   onUploadPdf: () => void handleUploadPdf(),
   onRestoreTemplate: () =>

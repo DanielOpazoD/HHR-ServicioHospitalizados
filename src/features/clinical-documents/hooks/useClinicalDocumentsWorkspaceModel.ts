@@ -126,6 +126,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
     isLoadingAttachments,
     isUploadingAttachment,
     uploadAttachment,
+    uploadPastedImage,
     deleteAttachment,
   } = useClinicalAttachments({
     selectedDocument,
@@ -284,6 +285,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
       isUploadingAttachment,
       uploadAttachment,
       deleteAttachment,
+      uploadPastedImage,
       handlePrint,
       handleUploadPdf,
       draft,

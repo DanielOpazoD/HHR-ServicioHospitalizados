@@ -129,4 +129,50 @@ describe('useClinicalAttachments', () => {
       })
     );
   });
+
+  it('uploads pasted images and returns Storage image insertion metadata', async () => {
+    const notify = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+    vi.mocked(executeUploadClinicalAttachment).mockResolvedValue({
+      status: 'success',
+      data: {
+        id: 'att_img',
+        displayName: 'captura.png',
+        downloadUrl: 'https://storage.test/captura.png',
+        storagePath: 'clinical-attachments/hhr/rut/episode/att_img/captura.png',
+      } as never,
+      issues: [],
+    });
+
+    const { result } = renderHook(() =>
+      useClinicalAttachments({
+        selectedDocument: document,
+        hospitalId: 'hhr',
+        canEdit: true,
+        user,
+        role: 'doctor_urgency',
+        notify,
+      })
+    );
+
+    const pastedImage = new File([new Uint8Array(700 * 1024)], 'captura.png', {
+      type: 'image/png',
+    });
+    let uploadResult: Awaited<ReturnType<typeof result.current.uploadPastedImage>> = null;
+    await act(async () => {
+      uploadResult = await result.current.uploadPastedImage(pastedImage);
+    });
+
+    expect(executeUploadClinicalAttachment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        file: pastedImage,
+        displayName: 'captura.png',
+        image: { compressed: false },
+      })
+    );
+    expect(uploadResult).toEqual({
+      attachmentId: 'att_img',
+      imageUrl: 'https://storage.test/captura.png',
+      storagePath: 'clinical-attachments/hhr/rut/episode/att_img/captura.png',
+    });
+  });
 });

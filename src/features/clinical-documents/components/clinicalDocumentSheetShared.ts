@@ -54,6 +54,11 @@ export interface ClinicalDocumentSheetProps {
   isUploadingAttachment: boolean;
   onUploadAttachment: (file: File) => Promise<void> | void;
   onDeleteAttachment: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
+  onUploadPastedImage: (file: File) => Promise<{
+    attachmentId: string;
+    imageUrl: string;
+    storagePath: string;
+  } | null>;
   dragHandlers: {
     onDragStart: (event: DragEvent<HTMLButtonElement>, sectionId: string) => void;
     onDragOver: (event: DragEvent<HTMLElement>, sectionId: string, canInteract: boolean) => void;
@@ -123,6 +128,7 @@ export interface ClinicalDocumentSpecialSectionRendererProps {
   onPatchSection: (sectionId: string, content: string) => void;
   onEditorActivate: (activeSectionId: string, editorApi: ClinicalDocumentSheetEditorApi) => void;
   onEditorDeactivate: (sectionId: string) => void;
+  onUploadPastedImage: ClinicalDocumentSheetProps['onUploadPastedImage'];
   onImagePasteRejected: (message: string) => void;
   indicationsCatalog: ClinicalDocumentIndicationsCatalog;
   isSavingCustomIndication: boolean;

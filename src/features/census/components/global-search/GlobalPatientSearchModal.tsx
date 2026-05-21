@@ -13,7 +13,7 @@ import { PatientSearchResultItem } from '@/features/census/components/global-sea
 import { PatientEpisodeTimeline } from '@/features/census/components/global-search/PatientEpisodeTimeline';
 import { SearchResultsSkeleton } from '@/features/census/components/global-search/SearchResultsSkeleton';
 import type { ClinicalDocSummary } from '@/features/census/components/global-search/globalSearchContracts';
-import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
+import type { PatientData } from '@/features/clinical-documents/internal';
 
 const LazyClinicalDocumentsModal = lazy(() =>
   import('@/features/clinical-documents').then(module => ({

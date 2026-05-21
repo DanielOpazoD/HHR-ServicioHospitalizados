@@ -1,16 +1,14 @@
 import { getActiveHospitalId } from '@/constants/firestorePaths';
-import type {
-  ClinicalAttachmentFileKind,
-  ClinicalAttachmentRecord,
-  ClinicalDocumentAuditActor,
-  ClinicalDocumentType,
-} from '@/features/clinical-documents/domain/entities';
-import { parseClinicalAttachmentRecord } from '@/features/clinical-documents/contracts/clinicalAttachmentRuntimeContracts';
-import { resolveClinicalAttachmentFilePolicy } from '@/features/clinical-documents/controllers/clinicalAttachmentFilePolicy';
 import {
   buildClinicalAttachmentStoragePath,
+  parseClinicalAttachmentRecord,
   normalizeClinicalAttachmentRutKey,
-} from '@/features/clinical-documents/controllers/clinicalAttachmentPathController';
+  resolveClinicalAttachmentFilePolicy,
+  type ClinicalAttachmentFileKind,
+  type ClinicalAttachmentRecord,
+  type ClinicalDocumentAuditActor,
+  type ClinicalDocumentType,
+} from '@/features/clinical-documents/internal';
 import { firestoreDb, type IDatabaseProvider } from '@/services/storage/firestore';
 import {
   defaultClinicalAttachmentStorageRuntime,
