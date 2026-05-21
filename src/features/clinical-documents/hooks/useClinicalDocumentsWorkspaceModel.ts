@@ -123,8 +123,11 @@ export const useClinicalDocumentsWorkspaceModel = ({
   const selectedDocument = draft;
   const {
     attachments,
+    patientAttachments,
     isLoadingAttachments,
+    isLoadingPatientAttachments,
     isUploadingAttachment,
+    uploadStatusMessage,
     uploadAttachment,
     uploadPastedImage,
     deleteAttachment,
@@ -281,8 +284,11 @@ export const useClinicalDocumentsWorkspaceModel = ({
       isUploadingPdf,
       validationIssues,
       attachments,
+      patientAttachments,
       isLoadingAttachments,
+      isLoadingPatientAttachments,
       isUploadingAttachment,
+      uploadStatusMessage,
       uploadAttachment,
       deleteAttachment,
       uploadPastedImage,

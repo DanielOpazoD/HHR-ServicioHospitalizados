@@ -7,8 +7,11 @@ import { formatClinicalDocumentDateTime } from '@/features/clinical-documents/co
 interface ClinicalAttachmentsPanelProps {
   canEdit: boolean;
   attachments: ClinicalAttachmentRecord[];
+  patientAttachments: ClinicalAttachmentRecord[];
   isLoading: boolean;
+  isLoadingPatientAttachments: boolean;
   isUploading: boolean;
+  uploadStatusMessage: string | null;
   onUploadAttachment: (file: File) => Promise<void> | void;
   onDeleteAttachment: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
 }
@@ -27,15 +30,55 @@ const resolveAttachmentIcon = (attachment: ClinicalAttachmentRecord) => {
   return <File size={14} />;
 };
 
+const AttachmentRow: React.FC<{
+  attachment: ClinicalAttachmentRecord;
+  canEdit: boolean;
+  onDeleteAttachment: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
+}> = ({ attachment, canEdit, onDeleteAttachment }) => (
+  <li className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5">
+    <span className="text-slate-500">{resolveAttachmentIcon(attachment)}</span>
+    <a
+      href={attachment.downloadUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="min-w-0 flex-1 text-xs font-semibold text-slate-700 hover:text-medical-700"
+    >
+      <span className="block truncate">{attachment.displayName}</span>
+      <span className="block text-[10px] font-normal text-slate-400">
+        {formatAttachmentSize(attachment.sizeBytes)} ·{' '}
+        {formatClinicalDocumentDateTime(attachment.createdAt)}
+      </span>
+    </a>
+    {canEdit && (
+      <button
+        type="button"
+        onClick={() => void onDeleteAttachment(attachment)}
+        aria-label={`Eliminar ${attachment.displayName}`}
+        title="Eliminar adjunto"
+        className="inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+      >
+        <Trash2 size={13} />
+      </button>
+    )}
+  </li>
+);
+
 export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> = ({
   canEdit,
   attachments,
+  patientAttachments,
   isLoading,
+  isLoadingPatientAttachments,
   isUploading,
+  uploadStatusMessage,
   onUploadAttachment,
   onDeleteAttachment,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const currentEpisodeKeys = new Set(attachments.map(attachment => attachment.episodeKey));
+  const otherEpisodeAttachments = patientAttachments.filter(
+    attachment => !currentEpisodeKeys.has(attachment.episodeKey)
+  );
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -76,7 +119,11 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
         )}
       </div>
 
-      {isUploading && <p className="mt-2 text-xs text-medical-700">Subiendo adjunto...</p>}
+      {isUploading && (
+        <p className="mt-2 text-xs text-medical-700">
+          {uploadStatusMessage || 'Subiendo adjunto...'}
+        </p>
+      )}
       {isLoading && <p className="mt-2 text-xs text-slate-500">Cargando adjuntos...</p>}
 
       {!isLoading && attachments.length === 0 && (
@@ -88,37 +135,37 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
       {attachments.length > 0 && (
         <ul className="mt-2 space-y-1.5">
           {attachments.map(attachment => (
-            <li
+            <AttachmentRow
               key={attachment.id}
-              className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5"
-            >
-              <span className="text-slate-500">{resolveAttachmentIcon(attachment)}</span>
-              <a
-                href={attachment.downloadUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="min-w-0 flex-1 text-xs font-semibold text-slate-700 hover:text-medical-700"
-              >
-                <span className="block truncate">{attachment.displayName}</span>
-                <span className="block text-[10px] font-normal text-slate-400">
-                  {formatAttachmentSize(attachment.sizeBytes)} ·{' '}
-                  {formatClinicalDocumentDateTime(attachment.createdAt)}
-                </span>
-              </a>
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => void onDeleteAttachment(attachment)}
-                  aria-label={`Eliminar ${attachment.displayName}`}
-                  title="Eliminar adjunto"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                >
-                  <Trash2 size={13} />
-                </button>
-              )}
-            </li>
+              attachment={attachment}
+              canEdit={canEdit}
+              onDeleteAttachment={onDeleteAttachment}
+            />
           ))}
         </ul>
+      )}
+
+      {(isLoadingPatientAttachments || otherEpisodeAttachments.length > 0) && (
+        <div className="mt-3 border-t border-slate-200 pt-2">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+            Visión paciente
+          </h3>
+          {isLoadingPatientAttachments && (
+            <p className="mt-1 text-xs text-slate-500">Cargando anexos del paciente...</p>
+          )}
+          {!isLoadingPatientAttachments && otherEpisodeAttachments.length > 0 && (
+            <ul className="mt-2 space-y-1.5">
+              {otherEpisodeAttachments.map(attachment => (
+                <AttachmentRow
+                  key={attachment.id}
+                  attachment={attachment}
+                  canEdit={canEdit}
+                  onDeleteAttachment={onDeleteAttachment}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </section>
   );

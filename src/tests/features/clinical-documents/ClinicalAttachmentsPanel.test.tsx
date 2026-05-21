@@ -53,8 +53,11 @@ describe('ClinicalAttachmentsPanel', () => {
             sizeBytes: 700 * 1024,
           }),
         ]}
+        patientAttachments={[]}
         isLoading={false}
+        isLoadingPatientAttachments={false}
         isUploading={false}
+        uploadStatusMessage={null}
         onUploadAttachment={onUploadAttachment}
         onDeleteAttachment={onDeleteAttachment}
       />
@@ -81,14 +84,44 @@ describe('ClinicalAttachmentsPanel', () => {
       <ClinicalAttachmentsPanel
         canEdit={true}
         attachments={[]}
+        patientAttachments={[]}
         isLoading={false}
+        isLoadingPatientAttachments={false}
         isUploading={true}
+        uploadStatusMessage="Comprimiendo imagen antes de subir..."
         onUploadAttachment={vi.fn()}
         onDeleteAttachment={vi.fn()}
       />
     );
 
     expect(screen.getByText(/sin adjuntos clinicos/i)).toBeInTheDocument();
-    expect(screen.getByText(/subiendo adjunto/i)).toBeInTheDocument();
+    expect(screen.getByText(/comprimiendo imagen/i)).toBeInTheDocument();
+  });
+
+  it('shows patient-wide attachments from other hospitalizations', () => {
+    render(
+      <ClinicalAttachmentsPanel
+        canEdit={true}
+        attachments={[buildAttachment()]}
+        patientAttachments={[
+          buildAttachment(),
+          buildAttachment({
+            id: 'att_other',
+            displayName: 'Informe hospitalización previa.pdf',
+            episodeKey: 'episode-previous',
+            createdAt: '2026-04-10T10:00:00.000Z',
+          }),
+        ]}
+        isLoading={false}
+        isLoadingPatientAttachments={false}
+        isUploading={false}
+        uploadStatusMessage={null}
+        onUploadAttachment={vi.fn()}
+        onDeleteAttachment={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/visión paciente/i)).toBeInTheDocument();
+    expect(screen.getByText('Informe hospitalización previa.pdf')).toBeInTheDocument();
   });
 });

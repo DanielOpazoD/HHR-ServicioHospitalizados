@@ -31,8 +31,11 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   onEditorDeactivate,
   onImagePasteRejected,
   attachments,
+  patientAttachments,
   isLoadingAttachments,
+  isLoadingPatientAttachments,
   isUploadingAttachment,
+  uploadStatusMessage,
   onUploadAttachment,
   onDeleteAttachment,
   onUploadPastedImage,
@@ -214,8 +217,11 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
         <ClinicalAttachmentsPanel
           canEdit={canEdit && !selectedDocument.isLocked}
           attachments={attachments}
+          patientAttachments={patientAttachments}
           isLoading={isLoadingAttachments}
+          isLoadingPatientAttachments={isLoadingPatientAttachments}
           isUploading={isUploadingAttachment}
+          uploadStatusMessage={uploadStatusMessage}
           onUploadAttachment={onUploadAttachment}
           onDeleteAttachment={onDeleteAttachment}
         />

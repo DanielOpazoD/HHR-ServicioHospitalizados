@@ -3,8 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   executeDeleteClinicalAttachment,
   executeListClinicalAttachmentsByEpisode,
+  executeListClinicalAttachmentsByPatient,
   executeUploadClinicalAttachment,
 } from '@/application/clinical-documents/clinicalAttachmentUseCases';
+import {
+  resolveClinicalAttachmentFilePolicy,
+  type ClinicalAttachmentFilePolicyAction,
+} from '@/features/clinical-documents/controllers/clinicalAttachmentFilePolicy';
 import { buildClinicalDocumentActor } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import type {
   ClinicalAttachmentRecord,
@@ -35,8 +40,27 @@ export const useClinicalAttachments = ({
   notify,
 }: UseClinicalAttachmentsParams) => {
   const [attachments, setAttachments] = useState<ClinicalAttachmentRecord[]>([]);
+  const [patientAttachments, setPatientAttachments] = useState<ClinicalAttachmentRecord[]>([]);
   const [isLoadingAttachments, setIsLoadingAttachments] = useState(false);
+  const [isLoadingPatientAttachments, setIsLoadingPatientAttachments] = useState(false);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const [uploadStatusMessage, setUploadStatusMessage] = useState<string | null>(null);
+
+  const otherEpisodeAttachments = patientAttachments.filter(
+    attachment => attachment.episodeKey !== selectedDocument?.episodeKey
+  );
+
+  const resolveUploadStatusMessage = (file: File): string => {
+    const policy = resolveClinicalAttachmentFilePolicy(file, { source: 'file-picker' });
+    const actionLabels: Record<ClinicalAttachmentFilePolicyAction, string> = {
+      inline_image: 'Preparando imagen...',
+      storage_image: 'Subiendo imagen a anexos...',
+      compress_image: 'Comprimiendo imagen antes de subir...',
+      storage_file: 'Subiendo archivo a anexos...',
+      rejected: 'Validando archivo...',
+    };
+    return actionLabels[policy.action];
+  };
 
   const loadAttachments = useCallback(async () => {
     if (!selectedDocument) {
@@ -45,18 +69,31 @@ export const useClinicalAttachments = ({
     }
 
     setIsLoadingAttachments(true);
-    const outcome = await executeListClinicalAttachmentsByEpisode({
-      episodeKey: selectedDocument.episodeKey,
-      hospitalId,
-    });
+    setIsLoadingPatientAttachments(true);
+    const [outcome, patientOutcome] = await Promise.all([
+      executeListClinicalAttachmentsByEpisode({
+        episodeKey: selectedDocument.episodeKey,
+        hospitalId,
+      }),
+      executeListClinicalAttachmentsByPatient({
+        patientRut: selectedDocument.patientRut,
+        hospitalId,
+      }),
+    ]);
     setIsLoadingAttachments(false);
+    setIsLoadingPatientAttachments(false);
 
     if (outcome.status === 'failed') {
       notify.error('No se pudieron cargar adjuntos', outcome.userSafeMessage);
       return;
     }
+    if (patientOutcome.status === 'failed') {
+      notify.error('No se pudieron cargar adjuntos del paciente', patientOutcome.userSafeMessage);
+      return;
+    }
 
     setAttachments(outcome.data);
+    setPatientAttachments(patientOutcome.data);
   }, [hospitalId, notify, selectedDocument]);
 
   useEffect(() => {
@@ -65,20 +102,34 @@ export const useClinicalAttachments = ({
     const run = async () => {
       if (!selectedDocument) {
         setAttachments([]);
+        setPatientAttachments([]);
         return;
       }
       setIsLoadingAttachments(true);
-      const outcome = await executeListClinicalAttachmentsByEpisode({
-        episodeKey: selectedDocument.episodeKey,
-        hospitalId,
-      });
+      setIsLoadingPatientAttachments(true);
+      const [outcome, patientOutcome] = await Promise.all([
+        executeListClinicalAttachmentsByEpisode({
+          episodeKey: selectedDocument.episodeKey,
+          hospitalId,
+        }),
+        executeListClinicalAttachmentsByPatient({
+          patientRut: selectedDocument.patientRut,
+          hospitalId,
+        }),
+      ]);
       if (cancelled) return;
       setIsLoadingAttachments(false);
+      setIsLoadingPatientAttachments(false);
       if (outcome.status === 'failed') {
         notify.error('No se pudieron cargar adjuntos', outcome.userSafeMessage);
         return;
       }
+      if (patientOutcome.status === 'failed') {
+        notify.error('No se pudieron cargar adjuntos del paciente', patientOutcome.userSafeMessage);
+        return;
+      }
       setAttachments(outcome.data);
+      setPatientAttachments(patientOutcome.data);
     };
 
     void run();
@@ -92,28 +143,34 @@ export const useClinicalAttachments = ({
     async (file: File) => {
       if (!selectedDocument || !canEdit) return;
       setIsUploadingAttachment(true);
-      const outcome = await executeUploadClinicalAttachment({
-        hospitalId,
-        patientRut: selectedDocument.patientRut,
-        patientName: selectedDocument.patientName,
-        episodeKey: selectedDocument.episodeKey,
-        admissionDate: selectedDocument.admissionDate,
-        sourceDailyRecordDate: selectedDocument.sourceDailyRecordDate,
-        bedId: selectedDocument.sourceBedId,
-        documentId: selectedDocument.id,
-        documentType: selectedDocument.documentType,
-        file,
-        actor: buildClinicalDocumentActor(user, role),
-      });
-      setIsUploadingAttachment(false);
+      setUploadStatusMessage(resolveUploadStatusMessage(file));
+      try {
+        const outcome = await executeUploadClinicalAttachment({
+          hospitalId,
+          patientRut: selectedDocument.patientRut,
+          patientName: selectedDocument.patientName,
+          episodeKey: selectedDocument.episodeKey,
+          admissionDate: selectedDocument.admissionDate,
+          sourceDailyRecordDate: selectedDocument.sourceDailyRecordDate,
+          bedId: selectedDocument.sourceBedId,
+          documentId: selectedDocument.id,
+          documentType: selectedDocument.documentType,
+          file,
+          actor: buildClinicalDocumentActor(user, role),
+        });
 
-      if (outcome.status === 'failed' || !outcome.data) {
-        notify.error('No se pudo subir el adjunto', outcome.userSafeMessage);
-        return;
+        if (outcome.status === 'failed' || !outcome.data) {
+          notify.error('No se pudo subir el adjunto', outcome.userSafeMessage);
+          return;
+        }
+
+        setAttachments(current => [outcome.data!, ...current]);
+        setPatientAttachments(current => [outcome.data!, ...current]);
+        notify.success('Adjunto guardado', 'El archivo quedó asociado a esta hospitalización.');
+      } finally {
+        setIsUploadingAttachment(false);
+        setUploadStatusMessage(null);
       }
-
-      setAttachments(current => [outcome.data!, ...current]);
-      notify.success('Adjunto guardado', 'El archivo quedó asociado a esta hospitalización.');
     },
     [canEdit, hospitalId, notify, role, selectedDocument, user]
   );
@@ -125,6 +182,7 @@ export const useClinicalAttachments = ({
       if (!selectedDocument || !canEdit) return null;
 
       setIsUploadingAttachment(true);
+      setUploadStatusMessage(resolveUploadStatusMessage(file));
       try {
         const outcome = await executeUploadClinicalAttachment({
           hospitalId,
@@ -148,6 +206,7 @@ export const useClinicalAttachments = ({
         }
 
         setAttachments(current => [outcome.data!, ...current]);
+        setPatientAttachments(current => [outcome.data!, ...current]);
         return {
           attachmentId: outcome.data.id,
           imageUrl: outcome.data.downloadUrl,
@@ -155,6 +214,7 @@ export const useClinicalAttachments = ({
         };
       } finally {
         setIsUploadingAttachment(false);
+        setUploadStatusMessage(null);
       }
     },
     [canEdit, hospitalId, notify, role, selectedDocument, user]
@@ -176,6 +236,7 @@ export const useClinicalAttachments = ({
       }
 
       setAttachments(current => current.filter(item => item.id !== attachment.id));
+      setPatientAttachments(current => current.filter(item => item.id !== attachment.id));
       notify.info('Adjunto eliminado', 'El archivo ya no se muestra en esta hospitalización.');
     },
     [canEdit, notify, role, user]
@@ -183,8 +244,12 @@ export const useClinicalAttachments = ({
 
   return {
     attachments,
+    patientAttachments,
+    otherEpisodeAttachments,
     isLoadingAttachments,
+    isLoadingPatientAttachments,
     isUploadingAttachment,
+    uploadStatusMessage,
     loadAttachments,
     uploadAttachment,
     uploadPastedImage,

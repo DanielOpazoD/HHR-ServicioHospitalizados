@@ -6,6 +6,7 @@ import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domai
 
 vi.mock('@/application/clinical-documents/clinicalAttachmentUseCases', () => ({
   executeListClinicalAttachmentsByEpisode: vi.fn(),
+  executeListClinicalAttachmentsByPatient: vi.fn(),
   executeUploadClinicalAttachment: vi.fn(),
   executeDeleteClinicalAttachment: vi.fn(),
 }));
@@ -13,6 +14,7 @@ vi.mock('@/application/clinical-documents/clinicalAttachmentUseCases', () => ({
 import {
   executeDeleteClinicalAttachment,
   executeListClinicalAttachmentsByEpisode,
+  executeListClinicalAttachmentsByPatient,
   executeUploadClinicalAttachment,
 } from '@/application/clinical-documents/clinicalAttachmentUseCases';
 
@@ -42,6 +44,11 @@ describe('useClinicalAttachments', () => {
       data: [],
       issues: [],
     });
+    vi.mocked(executeListClinicalAttachmentsByPatient).mockResolvedValue({
+      status: 'success',
+      data: [],
+      issues: [],
+    });
   });
 
   it('loads attachments for the selected document episode', async () => {
@@ -67,6 +74,37 @@ describe('useClinicalAttachments', () => {
       episodeKey: 'episode-1',
       hospitalId: 'hhr',
     });
+    expect(executeListClinicalAttachmentsByPatient).toHaveBeenCalledWith({
+      patientRut: '13.545.665-9',
+      hospitalId: 'hhr',
+    });
+  });
+
+  it('loads patient-wide attachments and exposes other episode attachments separately', async () => {
+    vi.mocked(executeListClinicalAttachmentsByPatient).mockResolvedValue({
+      status: 'success',
+      data: [
+        { id: 'att_current', episodeKey: 'episode-1' },
+        { id: 'att_previous', episodeKey: 'episode-previous' },
+      ] as never,
+      issues: [],
+    });
+
+    const { result } = renderHook(() =>
+      useClinicalAttachments({
+        selectedDocument: document,
+        hospitalId: 'hhr',
+        canEdit: true,
+        user,
+        role: 'doctor_urgency',
+        notify: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+      })
+    );
+
+    await waitFor(() => expect(result.current.patientAttachments).toHaveLength(2));
+    expect(result.current.otherEpisodeAttachments).toEqual([
+      { id: 'att_previous', episodeKey: 'episode-previous' },
+    ]);
   });
 
   it('uploads and deletes attachments with selected document context', async () => {
@@ -112,6 +150,7 @@ describe('useClinicalAttachments', () => {
       'Adjunto guardado',
       'El archivo quedó asociado a esta hospitalización.'
     );
+    expect(result.current.uploadStatusMessage).toBeNull();
 
     await act(async () => {
       await result.current.deleteAttachment({
@@ -174,5 +213,48 @@ describe('useClinicalAttachments', () => {
       imageUrl: 'https://storage.test/captura.png',
       storagePath: 'clinical-attachments/hhr/rut/episode/att_img/captura.png',
     });
+  });
+
+  it('announces compression before uploading large images', async () => {
+    const notify = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+    let resolveUpload: (
+      value: Awaited<ReturnType<typeof executeUploadClinicalAttachment>>
+    ) => void = () => undefined;
+    vi.mocked(executeUploadClinicalAttachment).mockReturnValue(
+      new Promise(resolve => {
+        resolveUpload = resolve;
+      }) as ReturnType<typeof executeUploadClinicalAttachment>
+    );
+
+    const { result } = renderHook(() =>
+      useClinicalAttachments({
+        selectedDocument: document,
+        hospitalId: 'hhr',
+        canEdit: true,
+        user,
+        role: 'doctor_urgency',
+        notify,
+      })
+    );
+
+    const largeImage = new File([new Uint8Array(3 * 1024 * 1024)], 'grande.jpg', {
+      type: 'image/jpeg',
+    });
+
+    await act(async () => {
+      void result.current.uploadAttachment(largeImage);
+    });
+
+    expect(result.current.uploadStatusMessage).toMatch(/comprimiendo imagen/i);
+
+    await act(async () => {
+      resolveUpload({
+        status: 'success',
+        data: { id: 'att_large', displayName: 'grande.jpg' } as never,
+        issues: [],
+      });
+    });
+
+    await waitFor(() => expect(result.current.uploadStatusMessage).toBeNull());
   });
 });
