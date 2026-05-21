@@ -39,6 +39,35 @@ describe('compressClinicalAttachmentImage', () => {
     }
   });
 
+  it('retries with lower quality when the first compressed image is still too large', async () => {
+    const original = new File([new Uint8Array(4096)], 'large.jpg', { type: 'image/jpeg' });
+    const blobs = [
+      new Blob([new Uint8Array(3072)], { type: 'image/jpeg' }),
+      new Blob([new Uint8Array(1536)], { type: 'image/jpeg' }),
+    ];
+    const toBlob = vi.fn((callback: BlobCallback) => callback(blobs.shift() ?? null));
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ({ drawImage: vi.fn() })),
+      toBlob,
+    } as unknown as HTMLCanvasElement;
+
+    const result = await compressClinicalAttachmentImage(original, {
+      targetBytes: 2048,
+      quality: 0.86,
+      createImageBitmap: vi.fn(async () => ({ width: 3000, height: 1500 }) as ImageBitmap),
+      createCanvas: () => canvas,
+    });
+
+    expect(toBlob).toHaveBeenCalledTimes(2);
+    expect(result).toMatchObject({
+      status: 'compressed',
+      compressedSizeBytes: 1536,
+      quality: 0.74,
+    });
+  });
+
   it('returns a failed result when the browser cannot decode the image', async () => {
     const original = new File([new Uint8Array(4096)], 'large.jpg', { type: 'image/jpeg' });
 

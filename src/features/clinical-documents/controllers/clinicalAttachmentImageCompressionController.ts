@@ -34,6 +34,11 @@ const canvasToBlob = (
     canvas.toBlob(resolve, contentType || 'image/jpeg', quality);
   });
 
+const buildQualityAttempts = (initialQuality: number): number[] => {
+  const attempts = [initialQuality, initialQuality - 0.12, initialQuality - 0.24, 0.5];
+  return [...new Set(attempts.map(quality => Math.max(0.5, Number(quality.toFixed(2)))))];
+};
+
 export const compressClinicalAttachmentImage = async (
   file: File,
   options: ClinicalAttachmentImageCompressionOptions = {}
@@ -64,24 +69,27 @@ export const compressClinicalAttachmentImage = async (
 
     context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close?.();
-    const quality = options.quality ?? 0.82;
-    const blob = await canvasToBlob(canvas, file.type || 'image/jpeg', quality);
-    if (!blob) {
-      return { status: 'failed', reason: 'No se pudo generar una imagen comprimida.' };
+    const qualityAttempts = buildQualityAttempts(options.quality ?? 0.82);
+
+    for (const quality of qualityAttempts) {
+      const blob = await canvasToBlob(canvas, file.type || 'image/jpeg', quality);
+      if (!blob) {
+        return { status: 'failed', reason: 'No se pudo generar una imagen comprimida.' };
+      }
+
+      const compressedFile = createCompressedFile(blob, file);
+      if (compressedFile.size <= targetBytes && compressedFile.size < file.size) {
+        return {
+          status: 'compressed',
+          file: compressedFile,
+          originalSizeBytes: file.size,
+          compressedSizeBytes: compressedFile.size,
+          quality,
+        };
+      }
     }
 
-    const compressedFile = createCompressedFile(blob, file);
-    if (compressedFile.size > targetBytes || compressedFile.size >= file.size) {
-      return { status: 'failed', reason: 'No se pudo comprimir la imagen a un tamano seguro.' };
-    }
-
-    return {
-      status: 'compressed',
-      file: compressedFile,
-      originalSizeBytes: file.size,
-      compressedSizeBytes: compressedFile.size,
-      quality,
-    };
+    return { status: 'failed', reason: 'No se pudo comprimir la imagen a un tamano seguro.' };
   } catch {
     return { status: 'failed', reason: 'No se pudo leer la imagen para comprimirla.' };
   }
