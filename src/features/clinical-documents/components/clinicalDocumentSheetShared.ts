@@ -1,4 +1,5 @@
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
+import type { ClinicalAttachmentRecord } from '@/features/clinical-documents/domain/entities';
 import type { ClinicalDocumentSignatureProfile } from '@/features/clinical-documents/services/clinicalDocumentSignatureProfileService';
 import type { ClinicalDocumentIndicationSpecialtyId } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
 import type { ClinicalDocumentPlanSubsectionId } from '@/features/clinical-documents/controllers/clinicalDocumentPlanSectionController';
@@ -48,6 +49,11 @@ export interface ClinicalDocumentSheetProps {
   onEditorActivate: (activeSectionId: string, editorApi: ClinicalDocumentSheetEditorApi) => void;
   onEditorDeactivate: (sectionId: string) => void;
   onImagePasteRejected: (message: string) => void;
+  attachments: ClinicalAttachmentRecord[];
+  isLoadingAttachments: boolean;
+  isUploadingAttachment: boolean;
+  onUploadAttachment: (file: File) => Promise<void> | void;
+  onDeleteAttachment: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
   dragHandlers: {
     onDragStart: (event: DragEvent<HTMLButtonElement>, sectionId: string) => void;
     onDragOver: (event: DragEvent<HTMLElement>, sectionId: string, canInteract: boolean) => void;

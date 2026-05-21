@@ -9,6 +9,7 @@ import { ClinicalDocumentPatientInfoSection } from '@/features/clinical-document
 import { ClinicalDocumentSectionList } from '@/features/clinical-documents/components/ClinicalDocumentSectionList';
 import { ClinicalDocumentSheetHeader } from '@/features/clinical-documents/components/ClinicalDocumentSheetHeader';
 import { ClinicalDocumentAnnexPage } from '@/features/clinical-documents/components/ClinicalDocumentAnnexPage';
+import { ClinicalAttachmentsPanel } from '@/features/clinical-documents/components/ClinicalAttachmentsPanel';
 import type { ClinicalDocumentSheetProps } from '@/features/clinical-documents/components/clinicalDocumentSheetShared';
 
 export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
@@ -29,6 +30,11 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   onEditorActivate,
   onEditorDeactivate,
   onImagePasteRejected,
+  attachments,
+  isLoadingAttachments,
+  isUploadingAttachment,
+  onUploadAttachment,
+  onDeleteAttachment,
   dragHandlers,
   patchDocumentTitle,
   patchPatientInfoTitle,
@@ -201,6 +207,15 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           onSaveSignatureProfile={onSaveSignatureProfile}
           onApplySignatureProfile={onApplySignatureProfile}
           onClearActiveTitleTarget={() => onSetActiveTitleTarget(null)}
+        />
+
+        <ClinicalAttachmentsPanel
+          canEdit={canEdit && !selectedDocument.isLocked}
+          attachments={attachments}
+          isLoading={isLoadingAttachments}
+          isUploading={isUploadingAttachment}
+          onUploadAttachment={onUploadAttachment}
+          onDeleteAttachment={onDeleteAttachment}
         />
 
         {/* Annex page (printed as next page via CSS page-break) */}

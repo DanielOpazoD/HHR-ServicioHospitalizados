@@ -71,6 +71,11 @@ interface BuildSheetPropsParams {
   flushPendingAutosave: ClinicalDocumentsWorkspaceSheetModelProps['flushPendingAutosave'];
   isUploadingPdf: boolean;
   validationIssues: ClinicalDocumentsWorkspaceSheetModelProps['validationIssues'];
+  attachments: ClinicalDocumentsWorkspaceSheetModelProps['attachments'];
+  isLoadingAttachments: boolean;
+  isUploadingAttachment: boolean;
+  uploadAttachment: ClinicalDocumentsWorkspaceSheetModelProps['onUploadAttachment'];
+  deleteAttachment: ClinicalDocumentsWorkspaceSheetModelProps['onDeleteAttachment'];
   handlePrint: () => Promise<void>;
   handleUploadPdf: () => Promise<void>;
   draft: ClinicalDocumentsWorkspaceSheetModelProps['selectedDocument'];
@@ -199,6 +204,11 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   flushPendingAutosave,
   isUploadingPdf,
   validationIssues,
+  attachments,
+  isLoadingAttachments,
+  isUploadingAttachment,
+  uploadAttachment,
+  deleteAttachment,
   handlePrint,
   handleUploadPdf,
   draft,
@@ -251,6 +261,11 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   flushPendingAutosave,
   isUploadingPdf,
   validationIssues,
+  attachments,
+  isLoadingAttachments,
+  isUploadingAttachment,
+  onUploadAttachment: uploadAttachment,
+  onDeleteAttachment: deleteAttachment,
   onPrint: handlePrint,
   onUploadPdf: () => void handleUploadPdf(),
   onRestoreTemplate: () =>

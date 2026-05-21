@@ -11,6 +11,7 @@ import {
   type ClinicalDocumentsWorkspaceSheetModelProps,
 } from '@/features/clinical-documents/controllers/clinicalDocumentsWorkspaceViewModel';
 import { useClinicalDocumentIndicationsCatalog } from '@/features/clinical-documents/hooks/useClinicalDocumentIndicationsCatalog';
+import { useClinicalAttachments } from '@/features/clinical-documents/hooks/useClinicalAttachments';
 import { useClinicalDocumentWorkspaceBootstrap } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceBootstrap';
 import { useClinicalDocumentWorkspaceDraft } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDraft';
 import { useClinicalDocumentWorkspaceDocumentActions } from '@/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDocumentActions';
@@ -120,6 +121,20 @@ export const useClinicalDocumentsWorkspaceModel = ({
   });
 
   const selectedDocument = draft;
+  const {
+    attachments,
+    isLoadingAttachments,
+    isUploadingAttachment,
+    uploadAttachment,
+    deleteAttachment,
+  } = useClinicalAttachments({
+    selectedDocument,
+    hospitalId,
+    canEdit,
+    user,
+    role,
+    notify: notifyPort,
+  });
   const sidebarDocuments = useMemo(
     () => mergeDraftIntoClinicalDocumentsSidebar(documents, draft),
     [documents, draft]
@@ -264,6 +279,11 @@ export const useClinicalDocumentsWorkspaceModel = ({
       flushPendingAutosave,
       isUploadingPdf,
       validationIssues,
+      attachments,
+      isLoadingAttachments,
+      isUploadingAttachment,
+      uploadAttachment,
+      deleteAttachment,
       handlePrint,
       handleUploadPdf,
       draft,
