@@ -38,6 +38,8 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   uploadStatusMessage,
   onUploadAttachment,
   onDeleteAttachment,
+  onRenameAttachment,
+  onSuggestAttachmentName,
   onUploadPastedImage,
   dragHandlers,
   patchDocumentTitle,
@@ -224,6 +226,8 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           uploadStatusMessage={uploadStatusMessage}
           onUploadAttachment={onUploadAttachment}
           onDeleteAttachment={onDeleteAttachment}
+          onRenameAttachment={onRenameAttachment}
+          onSuggestAttachmentName={onSuggestAttachmentName}
         />
 
         {/* Annex page (printed as next page via CSS page-break) */}

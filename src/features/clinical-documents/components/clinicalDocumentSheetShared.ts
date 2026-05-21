@@ -57,6 +57,11 @@ export interface ClinicalDocumentSheetProps {
   uploadStatusMessage: string | null;
   onUploadAttachment: (file: File) => Promise<void> | void;
   onDeleteAttachment: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
+  onRenameAttachment: (
+    attachment: ClinicalAttachmentRecord,
+    displayName: string
+  ) => Promise<void> | void;
+  onSuggestAttachmentName: (attachment: ClinicalAttachmentRecord) => Promise<string | null>;
   onUploadPastedImage: (file: File) => Promise<{
     attachmentId: string;
     imageUrl: string;

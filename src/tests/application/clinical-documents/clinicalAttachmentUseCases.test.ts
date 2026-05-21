@@ -5,6 +5,7 @@ import {
   executeDeleteClinicalAttachment,
   executeListClinicalAttachmentsByEpisode,
   executeListClinicalAttachmentsByPatient,
+  executeRenameClinicalAttachment,
   executeUploadClinicalAttachment,
 } from '@/application/clinical-documents/clinicalAttachmentUseCases';
 
@@ -20,6 +21,7 @@ const buildRepository = () => ({
   listByEpisode: vi.fn(),
   listByPatient: vi.fn(),
   listStoragePathsByPatient: vi.fn(),
+  rename: vi.fn(),
   delete: vi.fn(),
 });
 
@@ -171,6 +173,57 @@ describe('clinicalAttachmentUseCases', () => {
         { repository, getNow: () => '2026-05-21T11:00:00.000Z' }
       )
     ).resolves.toMatchObject({ status: 'success' });
+  });
+
+  it('renames attachment metadata with audit actor and normalized display name', async () => {
+    const repository = buildRepository();
+    repository.rename.mockResolvedValue({
+      id: 'att_1',
+      displayName: 'Informe cardiologia.pdf',
+    });
+
+    const outcome = await executeRenameClinicalAttachment(
+      {
+        attachmentId: 'att_1',
+        hospitalId: 'hhr',
+        displayName: '  Informe cardiologia.pdf  ',
+        actor,
+      },
+      { repository, getNow: () => '2026-05-21T11:30:00.000Z' }
+    );
+
+    expect(outcome).toMatchObject({
+      status: 'success',
+      data: {
+        id: 'att_1',
+        displayName: 'Informe cardiologia.pdf',
+      },
+    });
+    expect(repository.rename).toHaveBeenCalledWith({
+      attachmentId: 'att_1',
+      hospitalId: 'hhr',
+      displayName: 'Informe cardiologia.pdf',
+      actor,
+      now: '2026-05-21T11:30:00.000Z',
+    });
+  });
+
+  it('rejects empty attachment display names before persisting', async () => {
+    const repository = buildRepository();
+
+    const outcome = await executeRenameClinicalAttachment(
+      {
+        attachmentId: 'att_1',
+        hospitalId: 'hhr',
+        displayName: '   ',
+        actor,
+      },
+      { repository }
+    );
+
+    expect(outcome.status).toBe('failed');
+    expect(outcome.userSafeMessage).toContain('nombre');
+    expect(repository.rename).not.toHaveBeenCalled();
   });
 
   it('audits mismatches between active metadata and Storage objects for a patient', async () => {

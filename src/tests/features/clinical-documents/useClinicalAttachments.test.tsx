@@ -9,12 +9,16 @@ vi.mock('@/application/clinical-documents/clinicalAttachmentUseCases', () => ({
   executeListClinicalAttachmentsByPatient: vi.fn(),
   executeUploadClinicalAttachment: vi.fn(),
   executeDeleteClinicalAttachment: vi.fn(),
+  executeRenameClinicalAttachment: vi.fn(),
+  executeSuggestClinicalAttachmentDisplayName: vi.fn(),
 }));
 
 import {
   executeDeleteClinicalAttachment,
   executeListClinicalAttachmentsByEpisode,
   executeListClinicalAttachmentsByPatient,
+  executeRenameClinicalAttachment,
+  executeSuggestClinicalAttachmentDisplayName,
   executeUploadClinicalAttachment,
 } from '@/application/clinical-documents/clinicalAttachmentUseCases';
 
@@ -191,6 +195,92 @@ describe('useClinicalAttachments', () => {
         attachmentId: 'att_1',
         hospitalId: 'hhr',
         storagePath: 'clinical-attachments/hhr/rut/episode/att_1/nuevo.pdf',
+      })
+    );
+  });
+
+  it('renames attachments and updates both episode and patient lists', async () => {
+    const notify = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+    vi.mocked(executeRenameClinicalAttachment).mockResolvedValue({
+      status: 'success',
+      data: { id: 'att_1', displayName: 'Informe cardiologia.pdf' } as never,
+      issues: [],
+    });
+
+    const { result } = renderHook(() =>
+      useClinicalAttachments({
+        selectedDocument: document,
+        hospitalId: 'hhr',
+        canEdit: true,
+        user,
+        role: 'doctor_urgency',
+        notify,
+      })
+    );
+
+    await act(async () => {
+      await result.current.renameAttachment(
+        {
+          id: 'att_1',
+          hospitalId: 'hhr',
+          displayName: 'Informe externo.pdf',
+        } as never,
+        'Informe cardiologia.pdf'
+      );
+    });
+
+    expect(executeRenameClinicalAttachment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachmentId: 'att_1',
+        hospitalId: 'hhr',
+        displayName: 'Informe cardiologia.pdf',
+        actor: expect.objectContaining({ uid: 'u1', role: 'doctor_urgency' }),
+      })
+    );
+    expect(notify.success).toHaveBeenCalledWith(
+      'Adjunto renombrado',
+      'El nombre visible del archivo fue actualizado.'
+    );
+  });
+
+  it('requests an AI display-name suggestion with document and attachment context', async () => {
+    const notify = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+    vi.mocked(executeSuggestClinicalAttachmentDisplayName).mockResolvedValue({
+      status: 'success',
+      data: 'Eco abdomen ingreso.pdf',
+      issues: [],
+    });
+
+    const { result } = renderHook(() =>
+      useClinicalAttachments({
+        selectedDocument: document,
+        hospitalId: 'hhr',
+        canEdit: true,
+        user,
+        role: 'doctor_urgency',
+        notify,
+      })
+    );
+
+    let suggestion: string | null = null;
+    await act(async () => {
+      suggestion = await result.current.suggestAttachmentName({
+        id: 'att_1',
+        hospitalId: 'hhr',
+        originalFileName: 'IMG_4421.jpg',
+        displayName: 'IMG_4421.jpg',
+        fileKind: 'image',
+        contentType: 'image/jpeg',
+        documentType: 'epicrisis',
+        admissionDate: '2026-04-15',
+      } as never);
+    });
+
+    expect(suggestion).toBe('Eco abdomen ingreso.pdf');
+    expect(executeSuggestClinicalAttachmentDisplayName).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachment: expect.objectContaining({ originalFileName: 'IMG_4421.jpg' }),
+        document: expect.objectContaining({ id: 'doc_1', documentType: 'epicrisis' }),
       })
     );
   });

@@ -17,6 +17,11 @@ export const CLINICAL_AI_ACTIONS = [
     label: 'Búsqueda CIE-10/FONASA',
     description: 'Apoya codificación diagnóstica y búsqueda terminológica bajo demanda.',
   },
+  {
+    id: 'clinical_attachment_name_suggestion',
+    label: 'Nombre de adjuntos clínicos',
+    description: 'Sugiere nombres breves y seguros para archivos anexos de una hospitalización.',
+  },
 ] as const;
 
 export type ClinicalAIActionId = (typeof CLINICAL_AI_ACTIONS)[number]['id'];
@@ -83,7 +88,7 @@ export const createDefaultClinicalAIProviderRoutingDocument =
         action.id,
         {
           enabled: true,
-          provider: null,
+          provider: action.id === 'clinical_attachment_name_suggestion' ? 'deepseek' : null,
           model: null,
         },
       ])

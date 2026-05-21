@@ -131,6 +131,8 @@ export const useClinicalDocumentsWorkspaceModel = ({
     uploadAttachment,
     uploadPastedImage,
     deleteAttachment,
+    renameAttachment,
+    suggestAttachmentName,
   } = useClinicalAttachments({
     selectedDocument,
     hospitalId,
@@ -291,6 +293,8 @@ export const useClinicalDocumentsWorkspaceModel = ({
       uploadStatusMessage,
       uploadAttachment,
       deleteAttachment,
+      renameAttachment,
+      suggestAttachmentName,
       uploadPastedImage,
       handlePrint,
       handleUploadPdf,

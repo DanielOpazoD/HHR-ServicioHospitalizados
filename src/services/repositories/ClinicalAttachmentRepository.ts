@@ -76,6 +76,14 @@ export interface DeleteClinicalAttachmentInput {
   now: string;
 }
 
+export interface RenameClinicalAttachmentInput {
+  attachmentId: string;
+  hospitalId?: string;
+  displayName: string;
+  actor: ClinicalDocumentAuditActor;
+  now: string;
+}
+
 interface ClinicalAttachmentRepositoryDependencies {
   db?: IDatabaseProvider;
   storageRuntime?: ClinicalAttachmentStorageRuntime;
@@ -198,6 +206,15 @@ export const createClinicalAttachmentRepository = ({
       `clinical-attachments/${hospitalId}/${normalizeClinicalAttachmentRutKey(patientRut)}`
     );
     return collectStorageObjectPaths(storageRuntime, patientRootRef);
+  },
+
+  async rename(input: RenameClinicalAttachmentInput): Promise<void> {
+    const hospitalId = input.hospitalId || getActiveHospitalId();
+    await db.updateDoc(getClinicalAttachmentsCollectionPath(hospitalId), input.attachmentId, {
+      displayName: input.displayName,
+      updatedAt: input.now,
+      updatedBy: input.actor,
+    });
   },
 
   async delete(input: DeleteClinicalAttachmentInput): Promise<void> {

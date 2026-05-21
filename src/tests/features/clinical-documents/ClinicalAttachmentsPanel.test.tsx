@@ -39,6 +39,8 @@ describe('ClinicalAttachmentsPanel', () => {
   it('renders episode attachments with upload and delete actions', async () => {
     const onUploadAttachment = vi.fn(async () => undefined);
     const onDeleteAttachment = vi.fn(async () => undefined);
+    const onRenameAttachment = vi.fn(async () => undefined);
+    const onSuggestAttachmentName = vi.fn(async () => null);
 
     render(
       <ClinicalAttachmentsPanel
@@ -60,6 +62,8 @@ describe('ClinicalAttachmentsPanel', () => {
         uploadStatusMessage={null}
         onUploadAttachment={onUploadAttachment}
         onDeleteAttachment={onDeleteAttachment}
+        onRenameAttachment={onRenameAttachment}
+        onSuggestAttachmentName={onSuggestAttachmentName}
       />
     );
 
@@ -79,6 +83,47 @@ describe('ClinicalAttachmentsPanel', () => {
     expect(onDeleteAttachment).toHaveBeenCalledWith(buildAttachment());
   });
 
+  it('allows manual renaming and AI name suggestion for an attachment', async () => {
+    const onRenameAttachment = vi.fn(async () => undefined);
+    const onSuggestAttachmentName = vi.fn(async () => 'Eco abdominal ingreso.pdf');
+
+    render(
+      <ClinicalAttachmentsPanel
+        canEdit={true}
+        attachments={[buildAttachment()]}
+        patientAttachments={[]}
+        isLoading={false}
+        isLoadingPatientAttachments={false}
+        isUploading={false}
+        uploadStatusMessage={null}
+        onUploadAttachment={vi.fn()}
+        onDeleteAttachment={vi.fn()}
+        onRenameAttachment={onRenameAttachment}
+        onSuggestAttachmentName={onSuggestAttachmentName}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /renombrar informe externo.pdf/i }));
+    fireEvent.change(screen.getByLabelText(/nombre visible del adjunto/i), {
+      target: { value: 'Informe cardiologia.pdf' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /guardar nombre/i }));
+
+    await waitFor(() =>
+      expect(onRenameAttachment).toHaveBeenCalledWith(buildAttachment(), 'Informe cardiologia.pdf')
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /renombrar informe externo.pdf/i }));
+    fireEvent.click(screen.getByRole('button', { name: /sugerir nombre con ia/i }));
+
+    await waitFor(() => expect(onSuggestAttachmentName).toHaveBeenCalledWith(buildAttachment()));
+    await waitFor(() =>
+      expect(screen.getByLabelText(/nombre visible del adjunto/i)).toHaveValue(
+        'Eco abdominal ingreso.pdf'
+      )
+    );
+  });
+
   it('shows empty and uploading states', () => {
     render(
       <ClinicalAttachmentsPanel
@@ -91,6 +136,8 @@ describe('ClinicalAttachmentsPanel', () => {
         uploadStatusMessage="Comprimiendo imagen antes de subir..."
         onUploadAttachment={vi.fn()}
         onDeleteAttachment={vi.fn()}
+        onRenameAttachment={vi.fn()}
+        onSuggestAttachmentName={vi.fn()}
       />
     );
 
@@ -118,6 +165,8 @@ describe('ClinicalAttachmentsPanel', () => {
         uploadStatusMessage={null}
         onUploadAttachment={vi.fn()}
         onDeleteAttachment={vi.fn()}
+        onRenameAttachment={vi.fn()}
+        onSuggestAttachmentName={vi.fn()}
       />
     );
 

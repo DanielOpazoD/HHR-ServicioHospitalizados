@@ -4,6 +4,8 @@ import {
   executeDeleteClinicalAttachment,
   executeListClinicalAttachmentsByEpisode,
   executeListClinicalAttachmentsByPatient,
+  executeRenameClinicalAttachment,
+  executeSuggestClinicalAttachmentDisplayName,
   executeUploadClinicalAttachment,
 } from '@/application/clinical-documents/clinicalAttachmentUseCases';
 import {
@@ -261,6 +263,52 @@ export const useClinicalAttachments = ({
     [canEdit, role, user]
   );
 
+  const renameAttachment = useCallback(
+    async (attachment: ClinicalAttachmentRecord, displayName: string) => {
+      if (!canEdit) return;
+      const outcome = await executeRenameClinicalAttachment({
+        attachmentId: attachment.id,
+        hospitalId: attachment.hospitalId,
+        displayName,
+        actor: buildClinicalDocumentActor(user, role),
+      });
+
+      if (outcome.status === 'failed' || !outcome.data) {
+        notifyRef.current.error('No se pudo renombrar el adjunto', outcome.userSafeMessage);
+        return;
+      }
+
+      const updateDisplayName = (item: ClinicalAttachmentRecord): ClinicalAttachmentRecord =>
+        item.id === attachment.id ? { ...item, displayName: outcome.data!.displayName } : item;
+
+      setAttachments(current => current.map(updateDisplayName));
+      setPatientAttachments(current => current.map(updateDisplayName));
+      notifyRef.current.success(
+        'Adjunto renombrado',
+        'El nombre visible del archivo fue actualizado.'
+      );
+    },
+    [canEdit, role, user]
+  );
+
+  const suggestAttachmentName = useCallback(
+    async (attachment: ClinicalAttachmentRecord): Promise<string | null> => {
+      if (!selectedDocument) return null;
+      const outcome = await executeSuggestClinicalAttachmentDisplayName({
+        attachment,
+        document: selectedDocument,
+      });
+
+      if (outcome.status === 'failed' || !outcome.data) {
+        notifyRef.current.error('No se pudo sugerir un nombre', outcome.userSafeMessage);
+        return null;
+      }
+
+      return outcome.data;
+    },
+    [selectedDocument]
+  );
+
   return {
     attachments,
     patientAttachments,
@@ -273,5 +321,7 @@ export const useClinicalAttachments = ({
     uploadAttachment,
     uploadPastedImage,
     deleteAttachment,
+    renameAttachment,
+    suggestAttachmentName,
   };
 };

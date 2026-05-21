@@ -110,6 +110,8 @@ export const defaultHandlers = {
   uploadStatusMessage: null,
   onUploadAttachment: vi.fn(async () => undefined),
   onDeleteAttachment: vi.fn(async () => undefined),
+  onRenameAttachment: vi.fn(async () => undefined),
+  onSuggestAttachmentName: vi.fn(async () => null),
   onUploadPastedImage: vi.fn(async () => null),
   dragHandlers: {
     onDragStart: vi.fn(),

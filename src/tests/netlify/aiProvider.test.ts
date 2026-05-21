@@ -83,6 +83,22 @@ describe('ai-provider', () => {
     });
   });
 
+  it('prefers DeepSeek for clinical attachment name suggestions by default', () => {
+    const config = resolveClinicalAIProviderConfig({
+      env: {
+        DEEPSEEK_API_KEY: 'deepseek-key',
+        GEMINI_API_KEY: 'gemini-key',
+      } as NodeJS.ProcessEnv,
+      action: 'clinical_attachment_name_suggestion',
+    });
+
+    expect(config).toMatchObject({
+      provider: 'deepseek',
+      apiKey: 'deepseek-key',
+      model: 'deepseek-chat',
+    });
+  });
+
   it('does not silently fallback when an action selects a provider without a configured key', () => {
     const config = resolveClinicalAIProviderConfig({
       env: {

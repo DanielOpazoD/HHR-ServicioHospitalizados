@@ -1,6 +1,7 @@
 import type {
   ClinicalAttachmentRecord,
   ClinicalDocumentAuditActor,
+  ClinicalDocumentRecord,
   ClinicalDocumentType,
 } from '@/features/clinical-documents/internal';
 import {
@@ -17,6 +18,7 @@ import {
   ClinicalAttachmentRepository,
   type createClinicalAttachmentRepository,
 } from '@/services/repositories/ClinicalAttachmentRepository';
+import { suggestClinicalAttachmentDisplayName } from './clinicalAttachmentNameSuggestionService';
 
 type ClinicalAttachmentRepositoryPort = ReturnType<typeof createClinicalAttachmentRepository>;
 
@@ -73,12 +75,39 @@ export interface DeleteClinicalAttachmentUseCaseInput {
   actor: ClinicalDocumentAuditActor;
 }
 
+export interface RenameClinicalAttachmentUseCaseInput {
+  attachmentId: string;
+  hospitalId: string;
+  displayName: string;
+  actor: ClinicalDocumentAuditActor;
+}
+
+export interface SuggestClinicalAttachmentDisplayNameInput {
+  attachment: Pick<
+    ClinicalAttachmentRecord,
+    | 'originalFileName'
+    | 'displayName'
+    | 'fileKind'
+    | 'contentType'
+    | 'documentType'
+    | 'admissionDate'
+    | 'sourceDailyRecordDate'
+  >;
+  document?: Pick<
+    ClinicalDocumentRecord,
+    'id' | 'documentType' | 'admissionDate' | 'sourceDailyRecordDate'
+  > | null;
+}
+
 const defaultCreateId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `att_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
 const defaultGetNow = (): string => new Date().toISOString();
+
+const normalizeAttachmentDisplayName = (displayName: string): string =>
+  displayName.replace(/\s+/g, ' ').trim();
 
 export const executeUploadClinicalAttachment = async (
   input: UploadClinicalAttachmentUseCaseInput,
@@ -272,4 +301,54 @@ export const executeDeleteClinicalAttachment = async (
       },
     ]);
   }
+};
+
+export const executeRenameClinicalAttachment = async (
+  input: RenameClinicalAttachmentUseCaseInput,
+  dependencies: ClinicalAttachmentUseCaseDependencies = {}
+): Promise<ApplicationOutcome<{ id: string; displayName: string } | null>> => {
+  const repository = dependencies.repository || ClinicalAttachmentRepository;
+  const getNow = dependencies.getNow || defaultGetNow;
+  const displayName = normalizeAttachmentDisplayName(input.displayName);
+
+  if (!displayName) {
+    return createApplicationFailed(
+      null,
+      [
+        {
+          kind: 'validation',
+          message: 'El nombre del adjunto no puede quedar vacio.',
+          userSafeMessage: 'El nombre del adjunto no puede quedar vacio.',
+        },
+      ],
+      { userSafeMessage: 'El nombre del adjunto no puede quedar vacio.' }
+    );
+  }
+
+  try {
+    await repository.rename({
+      ...input,
+      displayName,
+      now: getNow(),
+    });
+    return createApplicationSuccess({ id: input.attachmentId, displayName });
+  } catch (error) {
+    return createApplicationFailed(
+      null,
+      [
+        {
+          kind: 'unknown',
+          message: error instanceof Error ? error.message : 'No se pudo renombrar el adjunto.',
+          userSafeMessage: 'No se pudo renombrar el adjunto clinico.',
+        },
+      ],
+      { userSafeMessage: 'No se pudo renombrar el adjunto clinico.' }
+    );
+  }
+};
+
+export const executeSuggestClinicalAttachmentDisplayName = async (
+  input: SuggestClinicalAttachmentDisplayNameInput
+): Promise<ApplicationOutcome<string | null>> => {
+  return suggestClinicalAttachmentDisplayName(input);
 };

@@ -169,6 +169,28 @@ describe('ClinicalAttachmentRepository', () => {
     });
   });
 
+  it('updates only attachment display metadata when renaming', async () => {
+    const db = buildDb();
+    const runtime = buildRuntime();
+    const repository = createClinicalAttachmentRepository({ db, storageRuntime: runtime });
+
+    await repository.rename({
+      attachmentId: 'att_1',
+      hospitalId: 'hhr',
+      displayName: 'Eco abdomen ingreso.pdf',
+      actor,
+      now: '2026-05-21T11:30:00.000Z',
+    });
+
+    expect(db.updateDoc).toHaveBeenCalledWith('hospitals/hhr/clinicalAttachments', 'att_1', {
+      displayName: 'Eco abdomen ingreso.pdf',
+      updatedAt: '2026-05-21T11:30:00.000Z',
+      updatedBy: actor,
+    });
+    expect(runtime.uploadBytes).not.toHaveBeenCalled();
+    expect(runtime.deleteObject).not.toHaveBeenCalled();
+  });
+
   it('lists Storage object paths by patient rut recursively for integrity audits', async () => {
     const db = buildDb();
     const runtime = buildRuntime();
