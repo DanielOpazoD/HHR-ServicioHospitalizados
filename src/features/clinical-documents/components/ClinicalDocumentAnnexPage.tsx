@@ -10,7 +10,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { Paperclip, Printer, Trash2, X } from 'lucide-react';
+import { FileText, Printer, Trash2, X } from 'lucide-react';
 import { ClinicalDocumentRichTextEditor } from '@/features/clinical-documents/components/ClinicalDocumentRichTextEditor';
 import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
 import { formatDateForDisplay } from '@/utils/dateDisplayUtils';
@@ -103,9 +103,9 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
           title={canEdit && !isLocked ? 'Doble clic para opciones' : undefined}
         >
           <div className="clinical-document-annex-title-row">
-            <Paperclip size={16} className="text-slate-500 print:hidden" />
+            <FileText size={16} className="text-slate-500 print:hidden" />
             <h2 className="clinical-document-annex-title">Anexo del documento</h2>
-            <span className="clinical-document-annex-badge">Contenido del documento</span>
+            <span className="clinical-document-annex-badge">Pertenece solo a este documento</span>
           </div>
           <div className="clinical-document-annex-meta">
             <span className="clinical-document-annex-meta-item">

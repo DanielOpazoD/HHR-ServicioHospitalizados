@@ -3,10 +3,10 @@ import {
   ChevronDown,
   Copy,
   Download,
+  FileText,
   FilePlus2,
   FlaskConical,
   MoreHorizontal,
-  Paperclip,
   PenLine,
   Sparkles,
   Trash2,
@@ -180,8 +180,8 @@ export const ClinicalDocumentsSidebar: React.FC<ClinicalDocumentsSidebarProps> =
                       : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                   )}
                 >
-                  <Paperclip size={10} className="inline mr-1" />
-                  Anexo
+                  <FileText size={10} className="inline mr-1" />
+                  Documento complementario
                 </button>
               )}
             </div>

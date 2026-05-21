@@ -167,6 +167,35 @@ describe('ClinicalDocumentsSidebar', () => {
     expect(onOpenMMRADDialog).toHaveBeenCalledTimes(1);
   });
 
+  it('labels the annex shortcut as a complementary document action', () => {
+    const document = buildDocument();
+    const onToggleAnnex = vi.fn();
+
+    render(
+      <ClinicalDocumentsSidebar
+        canEdit={true}
+        canDelete={false}
+        readOnlyMessage={null}
+        patientName="Paciente Test"
+        templates={[{ id: 'epicrisis', name: 'Epicrisis' }]}
+        selectedTemplateId="epicrisis"
+        onSelectTemplate={() => {}}
+        onCreateDocument={() => {}}
+        documents={[document]}
+        selectedDocumentId={document.id}
+        onSelectDocument={() => {}}
+        onDuplicateDocument={() => {}}
+        onDeleteDocument={() => {}}
+        onToggleAnnex={onToggleAnnex}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /^anexo$/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /documento complementario/i }));
+
+    expect(onToggleAnnex).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps json import/export in an advanced tools group', () => {
     const document = buildDocument();
     const onExportJson = vi.fn();

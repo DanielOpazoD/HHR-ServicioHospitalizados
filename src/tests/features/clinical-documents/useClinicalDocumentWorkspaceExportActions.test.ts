@@ -310,7 +310,7 @@ describe('useClinicalDocumentWorkspaceExportActions', () => {
     expect(printOpenUseCase.executeOpenClinicalDocumentPrint).toHaveBeenCalledWith(
       expect.objectContaining({
         id: document.id,
-        title: expect.stringContaining('Anexo clínico'),
+        title: expect.stringContaining('Anexo del documento'),
       }),
       { annexMode: 'annex_only' }
     );

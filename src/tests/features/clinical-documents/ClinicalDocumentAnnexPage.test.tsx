@@ -82,6 +82,7 @@ describe('ClinicalDocumentAnnexPage', () => {
     render(<ClinicalDocumentAnnexPage {...baseProps} onClear={onClear} />);
 
     expect(screen.getByText('Anexo del documento')).toBeInTheDocument();
+    expect(screen.getByText('Pertenece solo a este documento')).toBeInTheDocument();
 
     const title = screen.getByText('Anexo del documento').closest('div[title]') as HTMLElement;
     fireEvent.doubleClick(title);

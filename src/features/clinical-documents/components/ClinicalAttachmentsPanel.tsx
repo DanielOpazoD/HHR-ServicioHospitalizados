@@ -3,9 +3,9 @@ import {
   Check,
   File,
   FileText,
+  FolderOpen,
   Image,
   Loader2,
-  Paperclip,
   Pencil,
   Sparkles,
   Trash2,
@@ -212,7 +212,7 @@ const ClinicalAttachmentSection: React.FC<{
   emptyMessage?: string;
   attachments: ClinicalAttachmentRecord[];
   canEdit: boolean;
-  scopeLabel: string;
+  scopeLabel: string | ((attachment: ClinicalAttachmentRecord) => string);
   onDeleteAttachment: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
   onRenameAttachment: (
     attachment: ClinicalAttachmentRecord,
@@ -242,7 +242,7 @@ const ClinicalAttachmentSection: React.FC<{
             key={attachment.id}
             attachment={attachment}
             canEdit={canEdit}
-            scopeLabel={scopeLabel}
+            scopeLabel={typeof scopeLabel === 'function' ? scopeLabel(attachment) : scopeLabel}
             onDeleteAttachment={onDeleteAttachment}
             onRenameAttachment={onRenameAttachment}
             onSuggestAttachmentName={onSuggestAttachmentName}
@@ -271,15 +271,13 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const currentEpisodeKeys = new Set(attachments.map(attachment => attachment.episodeKey));
-  const currentDocumentAttachments = currentDocumentId
-    ? attachments.filter(attachment => attachment.documentId === currentDocumentId)
-    : attachments;
-  const episodeArchiveAttachments = currentDocumentId
-    ? attachments.filter(attachment => attachment.documentId !== currentDocumentId)
-    : [];
   const otherEpisodeAttachments = patientAttachments.filter(
     attachment => !currentEpisodeKeys.has(attachment.episodeKey)
   );
+  const resolveEpisodeScopeLabel = (attachment: ClinicalAttachmentRecord): string =>
+    currentDocumentId && attachment.documentId === currentDocumentId
+      ? 'Vinculado al documento'
+      : 'Archivo del episodio';
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -292,9 +290,9 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
     <section className="clinical-document-attachments-panel rounded-lg border border-slate-200 bg-slate-50/80 p-3 print:hidden">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Paperclip size={15} className="text-slate-500" />
+          <FolderOpen size={15} className="text-slate-500" />
           <h2 className="text-xs font-black uppercase tracking-[0.16em] text-slate-600">
-            Archivo clínico
+            Archivos del episodio
           </h2>
         </div>
         {canEdit && (
@@ -303,7 +301,7 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
               ref={fileInputRef}
               type="file"
               className="hidden"
-              aria-label="Adjuntar archivo al documento"
+              aria-label="Adjuntar archivo al episodio"
               accept="image/*,.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={handleFileChange}
             />
@@ -325,45 +323,35 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
           {uploadStatusMessage || 'Subiendo adjunto...'}
         </p>
       )}
-      {isLoading && <p className="mt-2 text-xs text-slate-500">Cargando archivo clínico...</p>}
+      <p className="mt-2 text-[11px] leading-snug text-slate-500">
+        Disponible para todo el episodio clínico.
+      </p>
+      {isLoading && (
+        <p className="mt-2 text-xs text-slate-500">Cargando archivos del episodio...</p>
+      )}
 
       {!isLoading && (
         <ClinicalAttachmentSection
-          title="Adjuntos de este documento"
-          description="Respaldan solo el documento abierto y se gestionan desde este editor."
-          emptyMessage="Sin adjuntos de este documento."
-          attachments={currentDocumentAttachments}
+          title="Archivos disponibles"
+          description="Imágenes, PDF, DOCX u otros respaldos clínicos guardados en Storage."
+          emptyMessage="Sin archivos del episodio."
+          attachments={attachments}
           canEdit={canEdit}
-          scopeLabel="Este documento"
+          scopeLabel={resolveEpisodeScopeLabel}
           onDeleteAttachment={onDeleteAttachment}
           onRenameAttachment={onRenameAttachment}
           onSuggestAttachmentName={onSuggestAttachmentName}
         />
       )}
 
-      {!isLoading && episodeArchiveAttachments.length > 0 && (
-        <div className="mt-3 border-t border-slate-200 pt-2">
-          <ClinicalAttachmentSection
-            title="Archivo clínico del episodio"
-            description="Archivos de esta hospitalización; no necesariamente pertenecen al documento abierto."
-            attachments={episodeArchiveAttachments}
-            canEdit={canEdit}
-            scopeLabel="Episodio"
-            onDeleteAttachment={onDeleteAttachment}
-            onRenameAttachment={onRenameAttachment}
-            onSuggestAttachmentName={onSuggestAttachmentName}
-          />
-        </div>
-      )}
-
       {(isLoadingPatientAttachments || otherEpisodeAttachments.length > 0) && (
         <div className="mt-3 border-t border-slate-200 pt-2">
           {isLoadingPatientAttachments && (
-            <p className="mt-1 text-xs text-slate-500">Cargando archivo clínico del paciente...</p>
+            <p className="mt-1 text-xs text-slate-500">Cargando otros episodios del paciente...</p>
           )}
           {!isLoadingPatientAttachments && otherEpisodeAttachments.length > 0 && (
             <ClinicalAttachmentSection
-              title="Archivo clínico del paciente"
+              title="Otros episodios del paciente"
               description="Archivos de otras hospitalizaciones del mismo RUT."
               attachments={otherEpisodeAttachments}
               canEdit={canEdit}

@@ -36,7 +36,7 @@ const buildAttachment = (
 });
 
 describe('ClinicalAttachmentsPanel', () => {
-  it('separates current-document attachments from the episode clinical archive', async () => {
+  it('presents storage files as episode files with contextual scope', async () => {
     const onUploadAttachment = vi.fn(async () => undefined);
     const onDeleteAttachment = vi.fn(async () => undefined);
     const onRenameAttachment = vi.fn(async () => undefined);
@@ -69,22 +69,17 @@ describe('ClinicalAttachmentsPanel', () => {
       />
     );
 
-    expect(
-      screen.getByRole('heading', { name: /adjuntos de este documento/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /archivo clínico del episodio/i })
-    ).toBeInTheDocument();
-    expect(screen.getByText(/respaldan solo el documento abierto/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/no necesariamente pertenecen al documento abierto/i)
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /archivos del episodio/i })).toBeInTheDocument();
+    expect(screen.getByText(/disponible para todo el episodio clínico/i)).toBeInTheDocument();
+    expect(screen.queryByText(/adjuntos de este documento/i)).not.toBeInTheDocument();
     expect(screen.getByText('Informe externo.pdf')).toBeInTheDocument();
     expect(screen.getByText('Foto clínica.jpg')).toBeInTheDocument();
+    expect(screen.getByText(/vinculado al documento/i)).toBeInTheDocument();
+    expect(screen.getByText(/archivo del episodio/i)).toBeInTheDocument();
     expect(screen.getByText(/700 KB/i)).toBeInTheDocument();
 
     const file = new File([new Uint8Array(16)], 'nuevo.pdf', { type: 'application/pdf' });
-    fireEvent.change(screen.getByLabelText(/adjuntar archivo al documento/i), {
+    fireEvent.change(screen.getByLabelText(/adjuntar archivo al episodio/i), {
       target: { files: [file] },
     });
 
@@ -161,7 +156,7 @@ describe('ClinicalAttachmentsPanel', () => {
       />
     );
 
-    expect(screen.getByText(/sin adjuntos de este documento/i)).toBeInTheDocument();
+    expect(screen.getByText(/sin archivos del episodio/i)).toBeInTheDocument();
     expect(screen.getByText(/comprimiendo imagen/i)).toBeInTheDocument();
   });
 
@@ -191,7 +186,7 @@ describe('ClinicalAttachmentsPanel', () => {
       />
     );
 
-    expect(screen.getByText(/archivo clínico del paciente/i)).toBeInTheDocument();
+    expect(screen.getByText(/otros episodios del paciente/i)).toBeInTheDocument();
     expect(screen.getByText('Informe hospitalización previa.pdf')).toBeInTheDocument();
   });
 });

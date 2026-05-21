@@ -62,9 +62,9 @@ export const useClinicalAttachments = ({
     const policy = resolveClinicalAttachmentFilePolicy(file, { source: 'file-picker' });
     const actionLabels: Record<ClinicalAttachmentFilePolicyAction, string> = {
       inline_image: 'Preparando imagen...',
-      storage_image: 'Subiendo imagen a adjuntos del documento...',
+      storage_image: 'Subiendo imagen a archivos del episodio...',
       compress_image: 'Comprimiendo imagen antes de subir...',
-      storage_file: 'Subiendo archivo a adjuntos del documento...',
+      storage_file: 'Subiendo archivo a archivos del episodio...',
       rejected: 'Validando archivo...',
     };
     return actionLabels[policy.action];
@@ -182,8 +182,8 @@ export const useClinicalAttachments = ({
         setAttachments(current => [outcome.data!, ...current]);
         setPatientAttachments(current => [outcome.data!, ...current]);
         notifyRef.current.success(
-          'Adjunto guardado',
-          'El archivo quedó asociado al documento abierto.'
+          'Archivo guardado',
+          'El archivo quedó disponible para todo el episodio clínico.'
         );
       } finally {
         setIsUploadingAttachment(false);
