@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ClipboardEvent, KeyboardEvent, MutableRefObject } from 'react';
 
-import type { ClinicalDocumentFormattingCommand } from '@/features/clinical-documents/components/clinicalDocumentSheetShared';
 import {
   buildPastedImageHtml,
   buildPastedStorageImageHtml,
@@ -21,25 +20,11 @@ import {
   detectSlashCommand,
   removeSlashCommandFromHtml,
 } from '@/features/clinical-documents/controllers/clinicalDocumentSlashCommandController';
-
-export type ClinicalDocumentRichTextEditorCommand =
-  | ClinicalDocumentFormattingCommand
-  | 'foreColor'
-  | 'hiliteColor';
-
-export interface ClinicalDocumentRichTextEditorActivationApi {
-  element: HTMLDivElement | null;
-  canUndo: boolean;
-  canRedo: boolean;
-  applyCommand: (command: ClinicalDocumentRichTextEditorCommand, value?: string) => void;
-  insertHtml: (html: string) => void;
-}
-
-export interface UploadedClinicalDocumentPastedImage {
-  attachmentId: string;
-  imageUrl: string;
-  storagePath: string;
-}
+import type {
+  ClinicalDocumentRichTextEditorActivationApi,
+  ClinicalDocumentRichTextEditorCommand,
+  UploadedClinicalDocumentPastedImage,
+} from '@/features/clinical-documents/hooks/clinicalDocumentRichTextEditorTypes';
 
 interface UseClinicalDocumentRichTextEditorControllerParams {
   sectionId: string;
@@ -51,7 +36,6 @@ interface UseClinicalDocumentRichTextEditorControllerParams {
   onDeactivate?: (sectionId: string) => void;
   onUploadPastedImage?: (file: File) => Promise<UploadedClinicalDocumentPastedImage | null>;
   onImagePasteRejected?: (message: string) => void;
-  /** Called when `/lab` command is detected. Should return formatted lab text. */
   onSlashLab?: () => Promise<string | null>;
 }
 
@@ -158,11 +142,6 @@ export const useClinicalDocumentRichTextEditorController = ({
     }
   }, [pushHistorySnapshot]);
 
-  /**
-   * Schedules a history snapshot after a typing pause.
-   * Consecutive keystrokes reset the timer so the user's typing
-   * is grouped into a single undoable action.
-   */
   const debouncedPushHistorySnapshot = useCallback(
     (html: string) => {
       pendingHistoryHtmlRef.current = html;
@@ -359,13 +338,6 @@ export const useClinicalDocumentRichTextEditorController = ({
     [applyEditorCommand, disabled, editorRef]
   );
 
-  /**
-   * Intercepts paste to strip inline styles, colors, and backgrounds
-   * while preserving images, tables, and structural formatting.
-   *
-   * Uses {@link classifyPasteContent} to determine content kind, then
-   * performs the appropriate DOM insertion.
-   */
   const handlePaste = useCallback(
     (event: ClipboardEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -379,12 +351,12 @@ export const useClinicalDocumentRichTextEditorController = ({
       if (descriptor.kind === 'image-file') {
         if (descriptor.requiresStorage) {
           if (!onUploadPastedImage) {
-            onImagePasteRejected?.('No se pudo subir la imagen como adjunto clinico.');
+            onImagePasteRejected?.('No se pudo subir la imagen como archivo del episodio.');
             return;
           }
           void onUploadPastedImage(descriptor.file).then(uploadedImage => {
             if (!uploadedImage) {
-              onImagePasteRejected?.('No se pudo subir la imagen como adjunto clinico.');
+              onImagePasteRejected?.('No se pudo subir la imagen como archivo del episodio.');
               return;
             }
             insertHtml(buildPastedStorageImageHtml(uploadedImage));

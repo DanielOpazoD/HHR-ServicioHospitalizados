@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import clsx from 'clsx';
 
-import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
+import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/clinicalDocumentRichTextEditorTypes';
 import { useClinicalDocumentRichTextEditorController } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
 import { ClinicalDocumentImageEditor } from '@/features/clinical-documents/components/ClinicalDocumentImageEditor';
 import type { ClinicalDocumentMandatoryListType } from '@/features/clinical-documents/controllers/clinicalDocumentEmptySectionTemplateController';

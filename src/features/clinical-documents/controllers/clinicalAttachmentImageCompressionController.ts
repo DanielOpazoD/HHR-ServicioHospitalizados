@@ -19,8 +19,14 @@ export interface ClinicalAttachmentImageCompressionOptions {
   createCanvas?: () => HTMLCanvasElement;
 }
 
+const withImageExtension = (fileName: string, contentType: string): string => {
+  if (contentType !== 'image/jpeg') return fileName;
+  const baseName = fileName.includes('.') ? fileName.replace(/\.[^.]+$/, '') : fileName;
+  return `${baseName}.jpg`;
+};
+
 const createCompressedFile = (blob: Blob, originalFile: File): File =>
-  new File([blob], originalFile.name, {
+  new File([blob], withImageExtension(originalFile.name, blob.type || originalFile.type), {
     type: blob.type || originalFile.type || 'image/jpeg',
     lastModified: Date.now(),
   });
@@ -37,6 +43,12 @@ const canvasToBlob = (
 const buildQualityAttempts = (initialQuality: number): number[] => {
   const attempts = [initialQuality, initialQuality - 0.12, initialQuality - 0.24, 0.5];
   return [...new Set(attempts.map(quality => Math.max(0.5, Number(quality.toFixed(2)))))];
+};
+
+const buildContentTypeAttempts = (fileType: string): string[] => {
+  const preferredType = fileType || 'image/jpeg';
+  if (preferredType === 'image/jpeg') return ['image/jpeg'];
+  return [preferredType, 'image/jpeg'];
 };
 
 export const compressClinicalAttachmentImage = async (
@@ -71,21 +83,25 @@ export const compressClinicalAttachmentImage = async (
     bitmap.close?.();
     const qualityAttempts = buildQualityAttempts(options.quality ?? 0.82);
 
-    for (const quality of qualityAttempts) {
-      const blob = await canvasToBlob(canvas, file.type || 'image/jpeg', quality);
-      if (!blob) {
-        return { status: 'failed', reason: 'No se pudo generar una imagen comprimida.' };
-      }
+    const contentTypeAttempts = buildContentTypeAttempts(file.type);
 
-      const compressedFile = createCompressedFile(blob, file);
-      if (compressedFile.size <= targetBytes && compressedFile.size < file.size) {
-        return {
-          status: 'compressed',
-          file: compressedFile,
-          originalSizeBytes: file.size,
-          compressedSizeBytes: compressedFile.size,
-          quality,
-        };
+    for (const quality of qualityAttempts) {
+      for (const contentType of contentTypeAttempts) {
+        const blob = await canvasToBlob(canvas, contentType, quality);
+        if (!blob) {
+          return { status: 'failed', reason: 'No se pudo generar una imagen comprimida.' };
+        }
+
+        const compressedFile = createCompressedFile(blob, file);
+        if (compressedFile.size <= targetBytes && compressedFile.size < file.size) {
+          return {
+            status: 'compressed',
+            file: compressedFile,
+            originalSizeBytes: file.size,
+            compressedSizeBytes: compressedFile.size,
+            quality,
+          };
+        }
       }
     }
 

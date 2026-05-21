@@ -120,12 +120,12 @@ export const executeUploadClinicalAttachment = async (
       [
         {
           kind: 'validation',
-          message: policy.message || 'Archivo de adjunto clinico no permitido.',
-          userSafeMessage: policy.message || 'Archivo de adjunto clinico no permitido.',
+          message: policy.message || 'Archivo del episodio no permitido.',
+          userSafeMessage: policy.message || 'Archivo del episodio no permitido.',
         },
       ],
       {
-        userSafeMessage: policy.message || 'Archivo de adjunto clinico no permitido.',
+        userSafeMessage: policy.message || 'Archivo del episodio no permitido.',
       }
     );
   }
@@ -176,19 +176,19 @@ export const executeUploadClinicalAttachment = async (
     });
     return createApplicationSuccess(record);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'No se pudo subir el adjunto clinico.';
+    const message = error instanceof Error ? error.message : 'No se pudo subir el archivo.';
     return createApplicationFailed(
       null,
       [
         {
           kind: 'unknown',
           message,
-          userSafeMessage: 'No se pudo subir el adjunto clinico. El documento no fue modificado.',
+          userSafeMessage: 'No se pudo subir el archivo. El documento no fue modificado.',
           retryable: true,
         },
       ],
       {
-        userSafeMessage: 'No se pudo subir el adjunto clinico. El documento no fue modificado.',
+        userSafeMessage: 'No se pudo subir el archivo. El documento no fue modificado.',
         retryable: true,
       }
     );
@@ -210,8 +210,8 @@ export const executeListClinicalAttachmentsByEpisode = async (
       [
         {
           kind: 'unknown',
-          message: error instanceof Error ? error.message : 'No se pudieron cargar los adjuntos.',
-          userSafeMessage: 'No se pudieron cargar los adjuntos clinicos.',
+          message: error instanceof Error ? error.message : 'No se pudieron cargar los archivos.',
+          userSafeMessage: 'No se pudieron cargar los archivos del episodio.',
         },
       ]
     );
@@ -233,8 +233,8 @@ export const executeListClinicalAttachmentsByPatient = async (
       [
         {
           kind: 'unknown',
-          message: error instanceof Error ? error.message : 'No se pudieron cargar los adjuntos.',
-          userSafeMessage: 'No se pudieron cargar los adjuntos clinicos del paciente.',
+          message: error instanceof Error ? error.message : 'No se pudieron cargar los archivos.',
+          userSafeMessage: 'No se pudieron cargar los archivos del paciente.',
         },
       ]
     );
@@ -271,11 +271,11 @@ export const executeAuditClinicalAttachmentPatientStorage = async (
           message:
             error instanceof Error
               ? error.message
-              : 'No se pudo auditar la integridad de adjuntos.',
-          userSafeMessage: 'No se pudo auditar la integridad de adjuntos clinicos.',
+              : 'No se pudo auditar la integridad de archivos.',
+          userSafeMessage: 'No se pudo auditar la integridad de archivos del episodio.',
         },
       ],
-      { userSafeMessage: 'No se pudo auditar la integridad de adjuntos clinicos.' }
+      { userSafeMessage: 'No se pudo auditar la integridad de archivos del episodio.' }
     );
   }
 };
@@ -296,8 +296,8 @@ export const executeDeleteClinicalAttachment = async (
     return createApplicationFailed(undefined, [
       {
         kind: 'unknown',
-        message: error instanceof Error ? error.message : 'No se pudo eliminar el adjunto.',
-        userSafeMessage: 'No se pudo eliminar el adjunto clinico.',
+        message: error instanceof Error ? error.message : 'No se pudo eliminar el archivo.',
+        userSafeMessage: 'No se pudo eliminar el archivo.',
       },
     ]);
   }
@@ -317,11 +317,11 @@ export const executeRenameClinicalAttachment = async (
       [
         {
           kind: 'validation',
-          message: 'El nombre del adjunto no puede quedar vacio.',
-          userSafeMessage: 'El nombre del adjunto no puede quedar vacio.',
+          message: 'El nombre del archivo no puede quedar vacio.',
+          userSafeMessage: 'El nombre del archivo no puede quedar vacio.',
         },
       ],
-      { userSafeMessage: 'El nombre del adjunto no puede quedar vacio.' }
+      { userSafeMessage: 'El nombre del archivo no puede quedar vacio.' }
     );
   }
 
@@ -338,11 +338,11 @@ export const executeRenameClinicalAttachment = async (
       [
         {
           kind: 'unknown',
-          message: error instanceof Error ? error.message : 'No se pudo renombrar el adjunto.',
-          userSafeMessage: 'No se pudo renombrar el adjunto clinico.',
+          message: error instanceof Error ? error.message : 'No se pudo renombrar el archivo.',
+          userSafeMessage: 'No se pudo renombrar el archivo.',
         },
       ],
-      { userSafeMessage: 'No se pudo renombrar el adjunto clinico.' }
+      { userSafeMessage: 'No se pudo renombrar el archivo.' }
     );
   }
 };

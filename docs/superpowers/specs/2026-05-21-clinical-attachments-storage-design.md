@@ -1,4 +1,4 @@
-# Diseno: Adjuntos clinicos en Firebase Storage por paciente y hospitalizacion
+# Diseno: Archivos del episodio en Firebase Storage por paciente y hospitalizacion
 
 ## Estado
 
@@ -6,7 +6,7 @@ Propuesto para implementacion por fases. Este documento define la arquitectura o
 
 ## Objetivo
 
-Crear un sistema ordenado de adjuntos clinicos asociado a un paciente identificado por RUT y a sus hospitalizaciones, usando Firebase Storage para archivos y Firestore para metadata indexable.
+Crear un sistema ordenado de archivos del episodio asociado a un paciente identificado por RUT y a sus hospitalizaciones, usando Firebase Storage para archivos y Firestore para metadata indexable.
 
 El objetivo no es solo permitir imagenes mas grandes. La meta clinica es que documentos clinicos y archivos anexos puedan revisarse juntos, por paciente y por episodio de hospitalizacion, sin inflar el JSON del documento clinico ni arriesgar fallas silenciosas por limites de Firestore.
 
@@ -25,44 +25,44 @@ El fusible actual bloquea imagenes sobre `300 KB`. Ese limite fue intencionalmen
 
 ## Decision principal
 
-Implementar un modulo de `Adjuntos clinicos` dentro del flujo existente de documentos clinicos:
+Implementar un modulo de `Archivos del episodio` dentro del flujo existente de documentos clinicos:
 
 - Archivos binarios van a Firebase Storage.
 - Metadata y relaciones van a Firestore.
 - El documento clinico conserva HTML liviano.
 - Si se inserta una imagen en el texto, el HTML guarda una URL/referencia a Storage, no base64 pesado.
-- PDF, DOCX y otros archivos se manejan como adjuntos listables, no como contenido inline.
+- PDF, DOCX y otros archivos se manejan como archivos listables, no como contenido inline.
 - La vista principal se organiza por RUT, con agrupacion secundaria por hospitalizacion.
 
 ## Alcance funcional
 
 ### Incluido
 
-- Subir imagenes, PDF y DOCX como adjuntos clinicos.
-- Asociar cada adjunto a:
+- Subir imagenes, PDF y DOCX como archivos del episodio.
+- Asociar cada archivo a:
   - `hospitalId`
   - `patientRut`
   - `episodeKey`
   - `documentId` opcional
   - `sectionId` opcional
-  - `source` del adjunto
-- Listar adjuntos por RUT y por episodio.
-- Mostrar, en un mismo visor, documentos clinicos y adjuntos Storage agrupados por hospitalizacion.
+  - `source` del archivo
+- Listar archivos por RUT y por episodio.
+- Mostrar, en un mismo visor, documentos clinicos y archivos Storage agrupados por hospitalizacion.
 - Insertar imagenes subidas a Storage dentro del editor como `<img src="...">`.
-- Mantener PDF/DOCX como archivos adjuntos descargables/visualizables, no inline.
+- Mantener PDF/DOCX como archivos archivos descargables/visualizables, no inline.
 - Comprimir imagenes grandes en cliente antes de subirlas.
-- Informar al usuario cuando una imagen fue comprimida, rechazada o subida como adjunto.
+- Informar al usuario cuando una imagen fue comprimida, rechazada o subida como archivo del episodio.
 - Subir el limite inline actual desde `300 KB` a `500 KB`.
 
 ### Excluido de la primera implementacion
 
 - OCR de PDF o imagenes.
-- Versionado binario completo del archivo adjunto.
+- Versionado binario completo del archivo.
 - Edicion avanzada de PDF/DOCX en navegador.
 - Migracion automatica masiva de imagenes base64 ya guardadas en documentos antiguos.
-- Firma digital o auditoria legal ampliada sobre cada adjunto.
+- Firma digital o auditoria legal ampliada sobre cada archivo.
 
-Estas exclusiones son deliberadas para evitar una reescritura del modulo. El sistema debe partir como adjuntos clinicos confiables y navegables.
+Estas exclusiones son deliberadas para evitar una reescritura del modulo. El sistema debe partir como archivos del episodio confiables y navegables.
 
 ## Modelo conceptual
 
@@ -70,15 +70,15 @@ Hay tres entidades relacionadas:
 
 1. Paciente por RUT.
 2. Hospitalizacion por `episodeKey`.
-3. Adjuntos clinicos vinculados a una hospitalizacion y, opcionalmente, a un documento clinico.
+3. Archivos del episodio vinculados a una hospitalizacion y, opcionalmente, a un documento clinico.
 
-Un paciente puede tener muchas hospitalizaciones. Cada hospitalizacion puede tener documentos clinicos y adjuntos. Un adjunto puede pertenecer al episodio completo o estar asociado a un documento/seccion concreta.
+Un paciente puede tener muchas hospitalizaciones. Cada hospitalizacion puede tener documentos clinicos y archivos. Un archivo puede pertenecer al episodio completo o estar asociado a un documento/seccion concreta.
 
 ```mermaid
 flowchart TD
   Patient["Paciente (patientRut)"] --> Episode["Hospitalizacion (episodeKey)"]
   Episode --> ClinicalDocument["Documento clinico"]
-  Episode --> Attachment["Adjunto Storage"]
+  Episode --> Attachment["Archivo Storage"]
   ClinicalDocument --> Attachment
   Attachment --> StorageObject["Archivo en Firebase Storage"]
   Attachment --> Metadata["Metadata en Firestore"]
@@ -108,7 +108,7 @@ clinical-attachments/hhr/13545665-9/13545665-9__2026-04-15/att_01hv.../ecografia
 
 Esta ruta permite:
 
-- borrar un adjunto sin adivinar nombres;
+- borrar un archivo sin adivinar nombres;
 - auditar por paciente y episodio;
 - evitar carpetas planas incontrolables;
 - limitar reglas de Storage al prefijo clinico correcto;
@@ -174,8 +174,8 @@ No conviene listar Storage para construir la UI. Storage no es una base document
 - agrupar por episodio;
 - filtrar por tipo;
 - mostrar fecha, usuario, nombre clinico y peso;
-- ocultar adjuntos borrados;
-- relacionar adjuntos con documentos clinicos.
+- ocultar archivos borrados;
+- relacionar archivos con documentos clinicos.
 
 ## Relaciones con documentos clinicos
 
@@ -255,7 +255,7 @@ Los limites deben vivir en un contrato central, por ejemplo `clinicalAttachmentL
 2. El sistema la sube a Storage.
 3. Crea `ClinicalAttachmentRecord`.
 4. Inserta `<img src="downloadUrl"...>` en el editor.
-5. Muestra aviso: "Imagen guardada como adjunto clinico".
+5. Muestra aviso: "Imagen guardada como archivo del episodio".
 
 ### Pegado de imagen grande
 
@@ -264,9 +264,9 @@ Los limites deben vivir en un contrato central, por ejemplo `clinicalAttachmentL
 3. Muestra peso original y peso estimado final.
 4. Si comprime bien, sube a Storage.
 5. Crea metadata.
-6. Inserta imagen referenciada o la deja como adjunto, segun accion del usuario.
+6. Inserta imagen referenciada o la deja como archivo del episodio, segun accion del usuario.
 
-### Subir archivo como adjunto
+### Subir archivo al episodio
 
 1. Usuario pulsa `Adjuntar`.
 2. Selecciona PDF, imagen o DOCX.
@@ -274,7 +274,7 @@ Los limites deben vivir en un contrato central, por ejemplo `clinicalAttachmentL
 4. Si imagen grande, ofrece compresion.
 5. Sube a Storage.
 6. Crea metadata.
-7. El adjunto aparece en el visor del episodio y en la vista global por paciente.
+7. El archivo aparece en el visor del episodio y en la vista global por paciente.
 
 ## Visores
 
@@ -286,7 +286,7 @@ Dentro del contexto actual de censo/documentos clinicos:
   - Epicrisis
   - Informes
   - Evoluciones
-- Seccion "Adjuntos":
+- Seccion "Archivos del episodio":
   - Imagenes
   - PDF
   - DOCX
@@ -311,7 +311,7 @@ Desde busqueda global o ficha del paciente:
   - rango de fechas;
   - cama/servicio si existe;
   - documentos clinicos;
-  - adjuntos Storage;
+  - archivos Storage;
   - acciones de abrir/descargar.
 
 Este visor responde a la necesidad principal: al revisar un RUT, no mirar solo el episodio actual ni solo documentos clinicos. Debe existir una vision global del material clinico asociado al paciente, subordinada luego por hospitalizacion.
@@ -323,7 +323,7 @@ Este visor responde a la necesidad principal: al revisar un RUT, no mirar solo e
 Agregar una pestana o bloque compacto:
 
 ```text
-Anexos y archivos
+Archivos del episodio
   [Adjuntar] [Pegar imagen] [Comprimir imagen]
 
   Hospitalizacion actual
@@ -336,16 +336,16 @@ En el editor:
 
 - Pegar imagen pequena: inline.
 - Pegar imagen mediana/grande: Storage + referencia.
-- Adjuntar PDF/DOCX: queda en panel de adjuntos, no se inserta en texto salvo enlace opcional.
+- Adjuntar PDF/DOCX: queda en panel de archivos del episodio, no se inserta en texto salvo enlace opcional.
 
 ### En busqueda global/censo diario
 
 El boton "Documentos clinicos" debe evolucionar a algo parecido a:
 
 ```text
-Documentos y adjuntos
+Documentos clínicos y archivos
   Documentos clinicos (3)
-  Adjuntos (5)
+  Archivos del episodio (5)
 ```
 
 Al abrir:
@@ -353,7 +353,7 @@ Al abrir:
 - primero episodios del paciente;
 - luego contenido por episodio;
 - click en documento abre visor de documentos clinicos;
-- click en adjunto abre preview/descarga segun tipo.
+- click en archivo abre preview/descarga segun tipo.
 
 ## Seguridad
 
@@ -506,7 +506,7 @@ Se agregan dos opciones:
 
 2. Exportar paquete clinico futuro:
    - documento clinico;
-   - metadata de adjuntos;
+   - metadata de archivos;
    - manifiesto de archivos;
    - eventualmente descarga ZIP.
 
@@ -519,7 +519,7 @@ Documentos con imagenes base64 antiguas deben seguir abriendo. No se debe romper
 No hacer migracion masiva automatica en la primera fase. Como mejora posterior:
 
 - detectar documentos con base64 grandes;
-- ofrecer "migrar imagenes a adjuntos";
+- ofrecer "migrar imagenes a archivos del episodio";
 - subir cada imagen a Storage;
 - reemplazar `src=data:image...` por `src=downloadUrl`;
 - registrar version.
@@ -539,9 +539,9 @@ Eventos sugeridos:
 
 Mensajes al usuario deben ser clinicamente claros:
 
-- "No se pudo subir el adjunto. El documento no fue modificado."
+- "No se pudo subir el archivo. El documento no fue modificado."
 - "La imagen fue comprimida antes de guardarse."
-- "El archivo supera el limite permitido para adjuntos clinicos."
+- "El archivo supera el limite permitido para archivos del episodio."
 
 Nunca debe quedar una imagen insertada en el editor si el upload/metadata fallo antes.
 
@@ -583,8 +583,8 @@ Mitigacion:
 
 Mitigacion:
 
-- separar "documentos clinicos" de "adjuntos";
-- mostrar ambos bajo "Documentos y adjuntos";
+- separar "documentos clinicos" de "archivos del episodio";
+- mostrar ambos bajo "Documentos clínicos y archivos";
 - agrupar por hospitalizacion;
 - estado visible para upload/compresion.
 
@@ -599,14 +599,14 @@ Mitigacion:
 - Agregar reglas Storage para `clinical-attachments`.
 - Tests de path, policy, contracts y rules.
 
-Salida: se pueden subir/listar adjuntos desde use cases, aunque aun no exista UI completa.
+Salida: se pueden subir/listar archivos del episodio desde use cases, aunque aun no exista UI completa.
 
-### Fase 2: Panel de adjuntos por episodio
+### Fase 2: Panel de archivos del episodio
 
 - Agregar `ClinicalAttachmentsPanel` al workspace de documentos clinicos.
 - Permitir adjuntar imagen/PDF/DOCX.
 - Mostrar lista por episodio actual.
-- Abrir/descargar adjuntos.
+- Abrir/descargar archivos.
 - Borrado logico.
 
 Salida: usuarios pueden manejar archivos anexos sin inflar documentos clinicos.
@@ -624,7 +624,7 @@ Salida: pegar imagen grande deja de ser peligroso; Storage se usa automaticament
 
 - Crear query por RUT.
 - Agrupar por hospitalizacion.
-- Unificar documentos clinicos y adjuntos en vista "Documentos y adjuntos".
+- Unificar documentos clinicos y archivos en vista "Documentos clinicos y archivos".
 - Integrar desde busqueda global/censo diario.
 
 Salida: al buscar un paciente, se ve historia documental completa por hospitalizacion.
@@ -659,11 +659,11 @@ Salida: deuda historica reducible sin automatismos riesgosos.
 
 ### UI
 
-- Panel muestra adjuntos por episodio.
+- Panel muestra archivos del episodio por episodio.
 - Upload PDF/DOCX/imagen.
 - Imagen grande muestra compresion.
 - Error por archivo demasiado grande.
-- Visor global agrupa documentos clinicos y adjuntos por hospitalizacion.
+- Visor global agrupa documentos clinicos y archivos por hospitalizacion.
 
 ### Seguridad/gobernanza
 
@@ -676,10 +676,10 @@ Salida: deuda historica reducible sin automatismos riesgosos.
 ## Criterios de aceptacion
 
 1. Un documento clinico con imagen grande no guarda base64 pesado en Firestore.
-2. Un adjunto queda asociado a RUT y hospitalizacion.
+2. Un archivo queda asociado a RUT y hospitalizacion.
 3. PDF, DOCX e imagenes pueden subirse y listarse.
 4. Imagenes grandes se comprimen o se rechazan con mensaje claro.
-5. El visor por paciente muestra documentos clinicos y adjuntos agrupados por hospitalizacion.
+5. El visor por paciente muestra documentos clinicos y archivos agrupados por hospitalizacion.
 6. El sistema sigue abriendo documentos antiguos con imagenes inline.
 7. `npm run test:clinical-documents`, `npm run typecheck`, lint y checks de reglas pasan antes de merge.
 

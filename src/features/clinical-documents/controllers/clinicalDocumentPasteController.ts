@@ -77,7 +77,7 @@ export const buildInlineImageTooLargeMessage = (
 ): string =>
   `La imagen pesa ${formatImageSize(actualBytes)} y supera el limite seguro de ${formatImageSize(
     maxBytes
-  )} para procesarla como adjunto clinico. Reduzca la imagen o use un archivo mas liviano.`;
+  )} para procesarla como archivo del episodio. Reduzca la imagen o use un archivo mas liviano.`;
 
 export const resolveInlineImagePasteRejection = (file: File): PasteContentImageTooLarge | null => {
   if (file.size <= CLINICAL_ATTACHMENT_COMPRESSIBLE_IMAGE_MAX_BYTES) {

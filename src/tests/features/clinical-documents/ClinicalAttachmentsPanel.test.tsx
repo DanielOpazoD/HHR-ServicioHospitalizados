@@ -46,6 +46,7 @@ describe('ClinicalAttachmentsPanel', () => {
       <ClinicalAttachmentsPanel
         canEdit={true}
         currentDocumentId="doc-current"
+        currentEpisodeKey="episode-1"
         attachments={[
           buildAttachment({ documentId: 'doc-current' }),
           buildAttachment({
@@ -97,6 +98,7 @@ describe('ClinicalAttachmentsPanel', () => {
       <ClinicalAttachmentsPanel
         canEdit={true}
         currentDocumentId="doc-current"
+        currentEpisodeKey="episode-1"
         attachments={[buildAttachment({ documentId: 'doc-current' })]}
         patientAttachments={[]}
         isLoading={false}
@@ -111,7 +113,7 @@ describe('ClinicalAttachmentsPanel', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /renombrar informe externo.pdf/i }));
-    fireEvent.change(screen.getByLabelText(/nombre visible del adjunto/i), {
+    fireEvent.change(screen.getByLabelText(/nombre visible del archivo/i), {
       target: { value: 'Informe cardiologia.pdf' },
     });
     fireEvent.click(screen.getByRole('button', { name: /guardar nombre/i }));
@@ -132,7 +134,7 @@ describe('ClinicalAttachmentsPanel', () => {
       )
     );
     await waitFor(() =>
-      expect(screen.getByLabelText(/nombre visible del adjunto/i)).toHaveValue(
+      expect(screen.getByLabelText(/nombre visible del archivo/i)).toHaveValue(
         'Eco abdominal ingreso.pdf'
       )
     );
@@ -143,6 +145,7 @@ describe('ClinicalAttachmentsPanel', () => {
       <ClinicalAttachmentsPanel
         canEdit={true}
         currentDocumentId="doc-current"
+        currentEpisodeKey="episode-1"
         attachments={[]}
         patientAttachments={[]}
         isLoading={false}
@@ -165,6 +168,7 @@ describe('ClinicalAttachmentsPanel', () => {
       <ClinicalAttachmentsPanel
         canEdit={true}
         currentDocumentId="doc-current"
+        currentEpisodeKey="episode-1"
         attachments={[buildAttachment({ documentId: 'doc-current' })]}
         patientAttachments={[
           buildAttachment({ documentId: 'doc-current' }),
@@ -188,5 +192,70 @@ describe('ClinicalAttachmentsPanel', () => {
 
     expect(screen.getByText(/otros episodios del paciente/i)).toBeInTheDocument();
     expect(screen.getByText('Informe hospitalización previa.pdf')).toBeInTheDocument();
+  });
+
+  it('classifies patient-wide attachments by the selected episode key even when the episode list is empty', () => {
+    render(
+      <ClinicalAttachmentsPanel
+        canEdit={true}
+        currentDocumentId="doc-current"
+        currentEpisodeKey="episode-1"
+        attachments={[]}
+        patientAttachments={[
+          buildAttachment({
+            id: 'att_same_episode',
+            displayName: 'Informe mismo episodio.pdf',
+            episodeKey: 'episode-1',
+          }),
+          buildAttachment({
+            id: 'att_other',
+            displayName: 'Informe hospitalización previa.pdf',
+            episodeKey: 'episode-previous',
+          }),
+        ]}
+        isLoading={false}
+        isLoadingPatientAttachments={false}
+        isUploading={false}
+        uploadStatusMessage={null}
+        onUploadAttachment={vi.fn()}
+        onDeleteAttachment={vi.fn()}
+        onRenameAttachment={vi.fn()}
+        onSuggestAttachmentName={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText('Informe mismo episodio.pdf')).not.toBeInTheDocument();
+    expect(screen.getByText('Informe hospitalización previa.pdf')).toBeInTheDocument();
+  });
+
+  it('renders unavailable files without opening a broken link', () => {
+    render(
+      <ClinicalAttachmentsPanel
+        canEdit={true}
+        currentDocumentId="doc-current"
+        currentEpisodeKey="episode-1"
+        attachments={[
+          buildAttachment({
+            downloadUrl: undefined,
+            displayName: 'Archivo migrado sin URL.pdf',
+          }),
+        ]}
+        patientAttachments={[]}
+        isLoading={false}
+        isLoadingPatientAttachments={false}
+        isUploading={false}
+        uploadStatusMessage={null}
+        onUploadAttachment={vi.fn()}
+        onDeleteAttachment={vi.fn()}
+        onRenameAttachment={vi.fn()}
+        onSuggestAttachmentName={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.queryByRole('link', { name: /archivo migrado sin url/i })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Archivo migrado sin URL.pdf')).toBeInTheDocument();
+    expect(screen.getByText(/archivo no disponible/i)).toBeInTheDocument();
   });
 });

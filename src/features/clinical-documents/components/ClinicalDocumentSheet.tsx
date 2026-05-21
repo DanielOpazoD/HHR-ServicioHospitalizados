@@ -219,6 +219,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
         <ClinicalAttachmentsPanel
           canEdit={canEdit && !selectedDocument.isLocked}
           currentDocumentId={selectedDocument.id}
+          currentEpisodeKey={selectedDocument.episodeKey}
           attachments={attachments}
           patientAttachments={patientAttachments}
           isLoading={isLoadingAttachments}

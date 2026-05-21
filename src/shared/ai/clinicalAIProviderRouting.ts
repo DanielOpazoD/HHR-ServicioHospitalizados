@@ -19,7 +19,7 @@ export const CLINICAL_AI_ACTIONS = [
   },
   {
     id: 'clinical_attachment_name_suggestion',
-    label: 'Nombre de adjuntos clínicos',
+    label: 'Nombre de archivos del episodio',
     description: 'Sugiere nombres breves y seguros para archivos anexos de una hospitalización.',
   },
 ] as const;

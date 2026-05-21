@@ -119,7 +119,7 @@
 
 - [ ] **Step 2: Implement hook and panel.**
 
-  Panel shows a compact "Anexos y archivos" section for the current episode with `Adjuntar`, type icons, file name, size, created date, and open/delete actions.
+  Panel shows a compact "Archivos del episodio" section for the current episode with `Adjuntar`, type icons, file name, size, created date, open/delete actions, and explicit scope labels.
 
 - [ ] **Step 3: Wire panel into `ClinicalDocumentSheet`.**
 

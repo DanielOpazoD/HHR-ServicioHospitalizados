@@ -93,12 +93,15 @@ export const useClinicalAttachments = ({
     setIsLoadingPatientAttachments(false);
 
     if (outcome.status === 'failed') {
-      notifyRef.current.error('No se pudieron cargar adjuntos', outcome.userSafeMessage);
+      notifyRef.current.error(
+        'No se pudieron cargar archivos del episodio',
+        outcome.userSafeMessage
+      );
       return;
     }
     if (patientOutcome.status === 'failed') {
       notifyRef.current.error(
-        'No se pudieron cargar adjuntos del paciente',
+        'No se pudieron cargar archivos del paciente',
         patientOutcome.userSafeMessage
       );
       return;
@@ -133,12 +136,15 @@ export const useClinicalAttachments = ({
       setIsLoadingAttachments(false);
       setIsLoadingPatientAttachments(false);
       if (outcome.status === 'failed') {
-        notifyRef.current.error('No se pudieron cargar adjuntos', outcome.userSafeMessage);
+        notifyRef.current.error(
+          'No se pudieron cargar archivos del episodio',
+          outcome.userSafeMessage
+        );
         return;
       }
       if (patientOutcome.status === 'failed') {
         notifyRef.current.error(
-          'No se pudieron cargar adjuntos del paciente',
+          'No se pudieron cargar archivos del paciente',
           patientOutcome.userSafeMessage
         );
         return;
@@ -175,7 +181,7 @@ export const useClinicalAttachments = ({
         });
 
         if (outcome.status === 'failed' || !outcome.data) {
-          notifyRef.current.error('No se pudo subir el adjunto', outcome.userSafeMessage);
+          notifyRef.current.error('No se pudo subir el archivo', outcome.userSafeMessage);
           return;
         }
 
@@ -249,15 +255,15 @@ export const useClinicalAttachments = ({
       });
 
       if (outcome.status === 'failed') {
-        notifyRef.current.error('No se pudo eliminar el adjunto', outcome.userSafeMessage);
+        notifyRef.current.error('No se pudo eliminar el archivo', outcome.userSafeMessage);
         return;
       }
 
       setAttachments(current => current.filter(item => item.id !== attachment.id));
       setPatientAttachments(current => current.filter(item => item.id !== attachment.id));
       notifyRef.current.info(
-        'Adjunto eliminado',
-        'El archivo ya no se muestra en el archivo clínico.'
+        'Archivo eliminado',
+        'El archivo ya no se muestra en los archivos del episodio.'
       );
     },
     [canEdit, role, user]
@@ -274,7 +280,7 @@ export const useClinicalAttachments = ({
       });
 
       if (outcome.status === 'failed' || !outcome.data) {
-        notifyRef.current.error('No se pudo renombrar el adjunto', outcome.userSafeMessage);
+        notifyRef.current.error('No se pudo renombrar el archivo', outcome.userSafeMessage);
         return;
       }
 
@@ -284,7 +290,7 @@ export const useClinicalAttachments = ({
       setAttachments(current => current.map(updateDisplayName));
       setPatientAttachments(current => current.map(updateDisplayName));
       notifyRef.current.success(
-        'Adjunto renombrado',
+        'Archivo renombrado',
         'El nombre visible del archivo fue actualizado.'
       );
     },

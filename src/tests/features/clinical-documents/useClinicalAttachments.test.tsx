@@ -177,8 +177,8 @@ describe('useClinicalAttachments', () => {
       })
     );
     expect(notify.success).toHaveBeenCalledWith(
-      'Adjunto guardado',
-      'El archivo quedó asociado a esta hospitalización.'
+      'Archivo guardado',
+      'El archivo quedó disponible para todo el episodio clínico.'
     );
     expect(result.current.uploadStatusMessage).toBeNull();
 
@@ -238,7 +238,7 @@ describe('useClinicalAttachments', () => {
       })
     );
     expect(notify.success).toHaveBeenCalledWith(
-      'Adjunto renombrado',
+      'Archivo renombrado',
       'El nombre visible del archivo fue actualizado.'
     );
   });
