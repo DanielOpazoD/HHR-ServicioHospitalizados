@@ -88,6 +88,37 @@ describeStorageRules('Storage Security Rules - clinical attachments', () => {
     );
   });
 
+  it('allows specialist doctors to upload and read clinical attachments only in attachment storage', async () => {
+    const specialistStorage = testEnv
+      .authenticatedContext('user_specialist', { role: 'doctor_specialist' })
+      .storage();
+
+    await assertSucceeds(
+      uploadClinicalAttachment(
+        specialistStorage,
+        storagePath.replace('att_1/informe.pdf', 'att_specialist/informe.pdf'),
+        new Uint8Array(1024),
+        'application/pdf'
+      )
+    );
+    await assertSucceeds(
+      getBytes(
+        ref(
+          specialistStorage,
+          storagePath.replace('att_1/informe.pdf', 'att_specialist/informe.pdf')
+        )
+      )
+    );
+    await assertFails(
+      uploadClinicalAttachment(
+        specialistStorage,
+        'censo-diario/hhr/export.pdf',
+        new Uint8Array(1024),
+        'application/pdf'
+      )
+    );
+  });
+
   it('blocks read-only roles from uploading clinical attachments', async () => {
     const viewerStorage = testEnv.authenticatedContext('user_viewer', { role: 'viewer' }).storage();
 

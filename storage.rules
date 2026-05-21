@@ -46,6 +46,17 @@ service firebase.storage {
       return hasClinicalReadRole();
     }
 
+    function canReadClinicalAttachments() {
+      return hasNormalizedRole([
+        'admin',
+        'nurse_hospital',
+        'doctor_urgency',
+        'doctor_specialist',
+        'viewer',
+        'editor'
+      ]);
+    }
+
     function canWriteClinicalAttachments() {
       return hasNormalizedRole([
         'admin',
@@ -86,7 +97,7 @@ service firebase.storage {
     }
 
     match /clinical-attachments/{hospitalId}/{patientRutKey}/{episodeKey}/{attachmentId}/{fileName} {
-      allow read: if canReadClinicalStorage();
+      allow read: if canReadClinicalAttachments();
       allow write: if canWriteClinicalAttachments()
                       && request.resource.size < 15 * 1024 * 1024
                       && request.resource.contentType.matches('image/.*|application/pdf|application/vnd.openxmlformats-officedocument.wordprocessingml.document');

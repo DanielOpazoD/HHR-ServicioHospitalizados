@@ -170,6 +170,106 @@ export function registerFirestoreRulesDomainGroups({
     });
   });
 
+  describe('Clinical Attachments Collection', () => {
+    const clinicalAttachmentPath = 'hospitals/H1/clinicalAttachments/att-1';
+    const clinicalAttachmentPayload = {
+      id: 'att-1',
+      hospitalId: 'H1',
+      patientRut: '15.789.482-4',
+      patientRutKey: '15789482-4',
+      patientName: 'Paciente Test',
+      episodeKey: '157894824__2026-03-04',
+      documentId: 'doc-1',
+      documentType: 'epicrisis',
+      storagePath: 'clinical-attachments/H1/15789482-4/157894824__2026-03-04/att-1/informe.pdf',
+      downloadUrl: 'https://example.test/informe.pdf',
+      originalFileName: 'informe.pdf',
+      displayName: 'informe.pdf',
+      contentType: 'application/pdf',
+      fileKind: 'pdf',
+      sizeBytes: 1024,
+      status: 'active',
+      createdAt: new Date(NOW_MS).toISOString(),
+      createdBy: {
+        uid: 'user_doctor',
+        email: 'doctor@example.com',
+        displayName: 'Doctor Test',
+        role: 'doctor_urgency',
+      },
+      updatedAt: new Date(NOW_MS).toISOString(),
+      updatedBy: {
+        uid: 'user_doctor',
+        email: 'doctor@example.com',
+        displayName: 'Doctor Test',
+        role: 'doctor_urgency',
+      },
+    };
+
+    it('allows clinical write roles to create attachment metadata', async () => {
+      await assertSucceeds(doctor().doc(clinicalAttachmentPath).set(clinicalAttachmentPayload));
+      await assertSucceeds(
+        specialist()
+          .doc('hospitals/H1/clinicalAttachments/att-specialist')
+          .set({
+            ...clinicalAttachmentPayload,
+            id: 'att-specialist',
+          })
+      );
+      await assertSucceeds(
+        nurse()
+          .doc('hospitals/H1/clinicalAttachments/att-nurse')
+          .set({
+            ...clinicalAttachmentPayload,
+            id: 'att-nurse',
+          })
+      );
+      await assertSucceeds(
+        editor()
+          .doc('hospitals/H1/clinicalAttachments/att-editor')
+          .set({
+            ...clinicalAttachmentPayload,
+            id: 'att-editor',
+          })
+      );
+    });
+
+    it('allows clinical write roles to mark attachment metadata as deleted', async () => {
+      await setupDoc(admin(), clinicalAttachmentPath, clinicalAttachmentPayload);
+
+      await assertSucceeds(
+        doctor()
+          .doc(clinicalAttachmentPath)
+          .update({
+            status: 'deleted',
+            deletedAt: new Date(NOW_MS + 1).toISOString(),
+            updatedAt: new Date(NOW_MS + 1).toISOString(),
+          })
+      );
+    });
+
+    it('keeps viewers read-only for attachment metadata', async () => {
+      await setupDoc(admin(), clinicalAttachmentPath, clinicalAttachmentPayload);
+
+      await assertSucceeds(authed().doc(clinicalAttachmentPath).get());
+      await assertFails(
+        authed()
+          .doc('hospitals/H1/clinicalAttachments/att-viewer')
+          .set({
+            ...clinicalAttachmentPayload,
+            id: 'att-viewer',
+          })
+      );
+      await assertFails(
+        authed()
+          .doc(clinicalAttachmentPath)
+          .update({
+            status: 'deleted',
+            updatedAt: new Date(NOW_MS + 1).toISOString(),
+          })
+      );
+    });
+  });
+
   describe('Export Passwords', () => {
     const exportPath = 'hospitals/H1/exportPasswords/2025-01-01';
 

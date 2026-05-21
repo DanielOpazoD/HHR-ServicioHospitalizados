@@ -19,4 +19,14 @@
       return canWriteClinicalDocument() || isNurse() || isEditorRole();
     }
 
+    function canWriteClinicalAttachment() {
+      return hasAnyEffectiveRole([
+               'admin',
+               'nurse_hospital',
+               'doctor_urgency',
+               'doctor_specialist',
+               'editor'
+             ]);
+    }
+
     //
