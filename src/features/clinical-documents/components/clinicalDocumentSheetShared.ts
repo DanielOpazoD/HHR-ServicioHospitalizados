@@ -47,6 +47,7 @@ export interface ClinicalDocumentSheetProps {
   onToggleIndicationsPanel: () => void;
   onEditorActivate: (activeSectionId: string, editorApi: ClinicalDocumentSheetEditorApi) => void;
   onEditorDeactivate: (sectionId: string) => void;
+  onImagePasteRejected: (message: string) => void;
   dragHandlers: {
     onDragStart: (event: DragEvent<HTMLButtonElement>, sectionId: string) => void;
     onDragOver: (event: DragEvent<HTMLElement>, sectionId: string, canInteract: boolean) => void;
@@ -116,6 +117,7 @@ export interface ClinicalDocumentSpecialSectionRendererProps {
   onPatchSection: (sectionId: string, content: string) => void;
   onEditorActivate: (activeSectionId: string, editorApi: ClinicalDocumentSheetEditorApi) => void;
   onEditorDeactivate: (sectionId: string) => void;
+  onImagePasteRejected: (message: string) => void;
   indicationsCatalog: ClinicalDocumentIndicationsCatalog;
   isSavingCustomIndication: boolean;
   customIndicationError: string | null;

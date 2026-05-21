@@ -4,8 +4,9 @@
  * Pure logic for classifying and processing clipboard content pasted
  * into the clinical document rich-text editor.
  *
- * Paste content is classified into three categories:
+ * Paste content is classified into these categories:
  *  - `image-file`: a bitmap image (screenshot, copied image)
+ *  - `image-too-large`: an image that should not be embedded inline
  *  - `html`: rich HTML content (tables, formatted text, inline images)
  *  - `plain-text`: unformatted text fallback
  *
@@ -18,11 +19,21 @@ import { sanitizePastedHtml } from '@/features/clinical-documents/controllers/cl
 // Types
 // ---------------------------------------------------------------------------
 
-export type PasteContentKind = 'image-file' | 'html' | 'plain-text' | 'empty';
+export const CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES = 300 * 1024;
+
+export type PasteContentKind = 'image-file' | 'image-too-large' | 'html' | 'plain-text' | 'empty';
 
 export interface PasteContentImageFile {
   kind: 'image-file';
   file: File;
+}
+
+export interface PasteContentImageTooLarge {
+  kind: 'image-too-large';
+  file: File;
+  actualBytes: number;
+  maxBytes: number;
+  message: string;
 }
 
 export interface PasteContentHtml {
@@ -41,9 +52,39 @@ export interface PasteContentEmpty {
 
 export type PasteContentDescriptor =
   | PasteContentImageFile
+  | PasteContentImageTooLarge
   | PasteContentHtml
   | PasteContentPlainText
   | PasteContentEmpty;
+
+const formatImageSize = (bytes: number): string => {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  return `${Math.ceil(bytes / 1024)} KB`;
+};
+
+export const buildInlineImageTooLargeMessage = (
+  actualBytes: number,
+  maxBytes = CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES
+): string =>
+  `La imagen pesa ${formatImageSize(actualBytes)} y supera el limite seguro de ${formatImageSize(
+    maxBytes
+  )} para guardarla dentro del documento. Reduzca la imagen o use un archivo mas liviano.`;
+
+export const resolveInlineImagePasteRejection = (file: File): PasteContentImageTooLarge | null => {
+  if (file.size <= CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES) {
+    return null;
+  }
+
+  return {
+    kind: 'image-too-large',
+    file,
+    actualBytes: file.size,
+    maxBytes: CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES,
+    message: buildInlineImageTooLargeMessage(file.size),
+  };
+};
 
 const normalizeClipboardHtml = (html: string): string =>
   html
@@ -130,6 +171,10 @@ export const classifyPasteContent = (clipboardData: DataTransfer): PasteContentD
   // 1. Image files
   const imageFile = Array.from(clipboardData.files).find(f => f.type.startsWith('image/'));
   if (imageFile) {
+    const rejectedImage = resolveInlineImagePasteRejection(imageFile);
+    if (rejectedImage) {
+      return rejectedImage;
+    }
     return { kind: 'image-file', file: imageFile };
   }
 

@@ -28,6 +28,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   onToggleIndicationsPanel,
   onEditorActivate,
   onEditorDeactivate,
+  onImagePasteRejected,
   dragHandlers,
   patchDocumentTitle,
   patchPatientInfoTitle,
@@ -175,6 +176,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           onAddSection={addSection}
           onEditorActivate={onEditorActivate}
           onEditorDeactivate={onEditorDeactivate}
+          onImagePasteRejected={onImagePasteRejected}
           onSetActivePlanSubsectionId={onSetActivePlanSubsectionId}
           onSetActiveIndicationsSpecialtyId={onSetActiveIndicationsSpecialtyId}
           onToggleIndicationsPanel={onToggleIndicationsPanel}
@@ -217,6 +219,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
             onClear={clearAnnexContent}
             onEditorActivate={onEditorActivate}
             onEditorDeactivate={onEditorDeactivate}
+            onImagePasteRejected={onImagePasteRejected}
           />
         )}
       </div>

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildPastedImageHtml,
   classifyPasteContent,
+  CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES,
   readFileAsDataUrl,
 } from '@/features/clinical-documents/controllers/clinicalDocumentPasteController';
 
@@ -53,6 +54,26 @@ describe('classifyPasteContent', () => {
     });
 
     expect(classifyPasteContent(dt).kind).toBe('image-file');
+  });
+
+  it('rejects oversized image files before they can be embedded inline', () => {
+    const oversizedPayload = new Uint8Array(CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES + 1);
+    const file = new File([oversizedPayload], 'large.png', { type: 'image/png' });
+    const dt = buildMockDataTransfer({
+      files: [file],
+      htmlData: '<b>fallback</b>',
+      textData: 'fallback',
+    });
+
+    const result = classifyPasteContent(dt);
+
+    expect(result.kind).toBe('image-too-large');
+    if (result.kind === 'image-too-large') {
+      expect(result.file).toBe(file);
+      expect(result.actualBytes).toBe(CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES + 1);
+      expect(result.maxBytes).toBe(CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES);
+      expect(result.message).toContain('supera el limite seguro');
+    }
   });
 
   it('returns html with sanitised content when HTML is present', () => {

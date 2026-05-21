@@ -1,9 +1,10 @@
 import { act, renderHook } from '@testing-library/react';
 import { createRef } from 'react';
-import type { KeyboardEvent, MutableRefObject } from 'react';
+import type { ClipboardEvent, KeyboardEvent, MutableRefObject } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useClinicalDocumentRichTextEditorController } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
+import { CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES } from '@/features/clinical-documents/controllers/clinicalDocumentPasteController';
 
 const applyEditorCommandMock = vi.fn();
 const normalizeContentMock = vi.fn((value: string) => value.trim());
@@ -260,5 +261,46 @@ describe('useClinicalDocumentRichTextEditorController', () => {
 
     expect(normalizeContentMock).toHaveBeenCalledWith('  <img src="x"> Actualizado ');
     expect(onChange).toHaveBeenLastCalledWith('<img src="x"> Actualizado');
+  });
+
+  it('notifies and skips insertion when a pasted image exceeds the inline limit', () => {
+    const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+    const editor = document.createElement('div');
+    editor.innerHTML = 'Inicial';
+    editorRef.current = editor;
+    const onChange = vi.fn();
+    const onImagePasteRejected = vi.fn();
+    const preventDefault = vi.fn();
+    const file = new File(
+      [new Uint8Array(CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES + 1)],
+      'large.png',
+      { type: 'image/png' }
+    );
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentRichTextEditorController({
+        sectionId: 'section-1',
+        value: 'Inicial',
+        disabled: false,
+        editorRef,
+        onChange,
+        onImagePasteRejected,
+      })
+    );
+
+    act(() => {
+      result.current.handlePaste({
+        preventDefault,
+        clipboardData: {
+          files: [file],
+          getData: () => '',
+        },
+      } as unknown as ClipboardEvent<HTMLDivElement>);
+    });
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(onImagePasteRejected).toHaveBeenCalledWith(expect.stringContaining('supera el limite'));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(editor.innerHTML).toBe('Inicial');
   });
 });

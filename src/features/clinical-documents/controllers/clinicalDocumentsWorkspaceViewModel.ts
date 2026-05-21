@@ -261,6 +261,7 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
       restoreTemplateContent,
       info: notifications.info,
     }),
+  onImagePasteRejected: message => notifications.info('Imagen no insertada', message),
   patchDocumentTitle,
   patchPatientInfoTitle,
   patchPatientField,

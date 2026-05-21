@@ -101,6 +101,7 @@ export const defaultHandlers = {
   onToggleIndicationsPanel: vi.fn(),
   onEditorActivate: vi.fn(),
   onEditorDeactivate: vi.fn(),
+  onImagePasteRejected: vi.fn(),
   dragHandlers: {
     onDragStart: vi.fn(),
     onDragOver: vi.fn(),

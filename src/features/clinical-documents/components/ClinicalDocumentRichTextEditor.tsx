@@ -30,6 +30,7 @@ interface ClinicalDocumentRichTextEditorProps {
   onChange: (value: string) => void;
   onActivate?: (sectionId: string, editor: ClinicalDocumentRichTextEditorActivationApi) => void;
   onDeactivate?: (sectionId: string) => void;
+  onImagePasteRejected?: (message: string) => void;
   /** Called when user types `/lab` — should return formatted lab text or null. */
   onSlashLab?: () => Promise<string | null>;
 }
@@ -92,6 +93,7 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
   onChange,
   onActivate,
   onDeactivate,
+  onImagePasteRejected,
   onSlashLab,
 }) => {
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -115,6 +117,7 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
     onChange,
     onActivate,
     onDeactivate,
+    onImagePasteRejected,
     onSlashLab,
   });
 

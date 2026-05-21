@@ -32,6 +32,7 @@ interface ClinicalDocumentAnnexPageProps {
     editor: ClinicalDocumentRichTextEditorActivationApi
   ) => void;
   onEditorDeactivate?: (sectionId: string) => void;
+  onImagePasteRejected?: (message: string) => void;
 }
 
 export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps> = ({
@@ -48,6 +49,7 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
   onClear,
   onEditorActivate,
   onEditorDeactivate,
+  onImagePasteRejected,
 }) => {
   const [showDelete, setShowDelete] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -187,6 +189,7 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
           onChange={onChange}
           onActivate={onEditorActivate}
           onDeactivate={onEditorDeactivate}
+          onImagePasteRejected={onImagePasteRejected}
         />
       </div>
     </div>

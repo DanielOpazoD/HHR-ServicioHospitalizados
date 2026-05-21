@@ -42,6 +42,7 @@ interface UseClinicalDocumentRichTextEditorControllerParams {
   onChange: (value: string) => void;
   onActivate?: (sectionId: string, editor: ClinicalDocumentRichTextEditorActivationApi) => void;
   onDeactivate?: (sectionId: string) => void;
+  onImagePasteRejected?: (message: string) => void;
   /** Called when `/lab` command is detected. Should return formatted lab text. */
   onSlashLab?: () => Promise<string | null>;
 }
@@ -54,6 +55,7 @@ export const useClinicalDocumentRichTextEditorController = ({
   onChange,
   onActivate,
   onDeactivate,
+  onImagePasteRejected,
   onSlashLab,
 }: UseClinicalDocumentRichTextEditorControllerParams) => {
   const historyRef = useRef<string[]>([]);
@@ -372,13 +374,18 @@ export const useClinicalDocumentRichTextEditorController = ({
         return;
       }
 
+      if (descriptor.kind === 'image-too-large') {
+        onImagePasteRejected?.(descriptor.message);
+        return;
+      }
+
       if (descriptor.kind === 'html') {
         insertHtml(descriptor.sanitizedHtml);
       } else {
         insertPlainText(descriptor.text);
       }
     },
-    [editorRef, insertHtml, insertPlainText]
+    [editorRef, insertHtml, insertPlainText, onImagePasteRejected]
   );
 
   return {
