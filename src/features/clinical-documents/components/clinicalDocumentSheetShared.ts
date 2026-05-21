@@ -50,6 +50,7 @@ export interface ClinicalDocumentSheetProps {
   onEditorDeactivate: (sectionId: string) => void;
   onImagePasteRejected: (message: string) => void;
   attachments: ClinicalAttachmentRecord[];
+  currentDocumentId?: string | null;
   patientAttachments: ClinicalAttachmentRecord[];
   isLoadingAttachments: boolean;
   isLoadingPatientAttachments: boolean;

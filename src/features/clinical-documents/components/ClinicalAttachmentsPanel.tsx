@@ -18,6 +18,7 @@ import { formatClinicalDocumentDateTime } from '@/features/clinical-documents/co
 
 interface ClinicalAttachmentsPanelProps {
   canEdit: boolean;
+  currentDocumentId?: string | null;
   attachments: ClinicalAttachmentRecord[];
   patientAttachments: ClinicalAttachmentRecord[];
   isLoading: boolean;
@@ -50,13 +51,21 @@ const resolveAttachmentIcon = (attachment: ClinicalAttachmentRecord) => {
 const AttachmentRow: React.FC<{
   attachment: ClinicalAttachmentRecord;
   canEdit: boolean;
+  scopeLabel?: string;
   onDeleteAttachment: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
   onRenameAttachment: (
     attachment: ClinicalAttachmentRecord,
     displayName: string
   ) => Promise<void> | void;
   onSuggestAttachmentName: (attachment: ClinicalAttachmentRecord) => Promise<string | null>;
-}> = ({ attachment, canEdit, onDeleteAttachment, onRenameAttachment, onSuggestAttachmentName }) => {
+}> = ({
+  attachment,
+  canEdit,
+  scopeLabel,
+  onDeleteAttachment,
+  onRenameAttachment,
+  onSuggestAttachmentName,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(attachment.displayName);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -112,6 +121,7 @@ const AttachmentRow: React.FC<{
             className="h-7 w-full rounded-md border border-medical-200 px-2 text-xs font-semibold text-slate-700 outline-none focus:border-medical-500"
           />
           <span className="mt-0.5 block text-[10px] text-slate-400">
+            {scopeLabel ? `${scopeLabel} · ` : ''}
             {formatAttachmentSize(attachment.sizeBytes)} ·{' '}
             {formatClinicalDocumentDateTime(attachment.createdAt)}
           </span>
@@ -125,6 +135,7 @@ const AttachmentRow: React.FC<{
         >
           <span className="block truncate">{attachment.displayName}</span>
           <span className="block text-[10px] font-normal text-slate-400">
+            {scopeLabel ? `${scopeLabel} · ` : ''}
             {formatAttachmentSize(attachment.sizeBytes)} ·{' '}
             {formatClinicalDocumentDateTime(attachment.createdAt)}
           </span>
@@ -195,8 +206,58 @@ const AttachmentRow: React.FC<{
   );
 };
 
+const ClinicalAttachmentSection: React.FC<{
+  title: string;
+  description: string;
+  emptyMessage?: string;
+  attachments: ClinicalAttachmentRecord[];
+  canEdit: boolean;
+  scopeLabel: string;
+  onDeleteAttachment: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
+  onRenameAttachment: (
+    attachment: ClinicalAttachmentRecord,
+    displayName: string
+  ) => Promise<void> | void;
+  onSuggestAttachmentName: (attachment: ClinicalAttachmentRecord) => Promise<string | null>;
+}> = ({
+  title,
+  description,
+  emptyMessage,
+  attachments,
+  canEdit,
+  scopeLabel,
+  onDeleteAttachment,
+  onRenameAttachment,
+  onSuggestAttachmentName,
+}) => (
+  <div className="mt-3 first:mt-2">
+    <div>
+      <h3 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-600">{title}</h3>
+      <p className="mt-0.5 text-[11px] leading-snug text-slate-500">{description}</p>
+    </div>
+    {attachments.length > 0 ? (
+      <ul className="mt-2 space-y-1.5">
+        {attachments.map(attachment => (
+          <AttachmentRow
+            key={attachment.id}
+            attachment={attachment}
+            canEdit={canEdit}
+            scopeLabel={scopeLabel}
+            onDeleteAttachment={onDeleteAttachment}
+            onRenameAttachment={onRenameAttachment}
+            onSuggestAttachmentName={onSuggestAttachmentName}
+          />
+        ))}
+      </ul>
+    ) : emptyMessage ? (
+      <p className="mt-2 text-xs text-slate-500">{emptyMessage}</p>
+    ) : null}
+  </div>
+);
+
 export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> = ({
   canEdit,
+  currentDocumentId,
   attachments,
   patientAttachments,
   isLoading,
@@ -210,6 +271,12 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const currentEpisodeKeys = new Set(attachments.map(attachment => attachment.episodeKey));
+  const currentDocumentAttachments = currentDocumentId
+    ? attachments.filter(attachment => attachment.documentId === currentDocumentId)
+    : attachments;
+  const episodeArchiveAttachments = currentDocumentId
+    ? attachments.filter(attachment => attachment.documentId !== currentDocumentId)
+    : [];
   const otherEpisodeAttachments = patientAttachments.filter(
     attachment => !currentEpisodeKeys.has(attachment.episodeKey)
   );
@@ -227,7 +294,7 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
         <div className="flex items-center gap-2">
           <Paperclip size={15} className="text-slate-500" />
           <h2 className="text-xs font-black uppercase tracking-[0.16em] text-slate-600">
-            Anexos y archivos
+            Archivo clínico
           </h2>
         </div>
         {canEdit && (
@@ -236,7 +303,7 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
               ref={fileInputRef}
               type="file"
               className="hidden"
-              aria-label="Adjuntar archivo clinico"
+              aria-label="Adjuntar archivo al documento"
               accept="image/*,.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={handleFileChange}
             />
@@ -258,50 +325,53 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
           {uploadStatusMessage || 'Subiendo adjunto...'}
         </p>
       )}
-      {isLoading && <p className="mt-2 text-xs text-slate-500">Cargando adjuntos...</p>}
+      {isLoading && <p className="mt-2 text-xs text-slate-500">Cargando archivo clínico...</p>}
 
-      {!isLoading && attachments.length === 0 && (
-        <p className="mt-2 text-xs text-slate-500">
-          Sin adjuntos clinicos en esta hospitalizacion.
-        </p>
+      {!isLoading && (
+        <ClinicalAttachmentSection
+          title="Adjuntos de este documento"
+          description="Respaldan solo el documento abierto y se gestionan desde este editor."
+          emptyMessage="Sin adjuntos de este documento."
+          attachments={currentDocumentAttachments}
+          canEdit={canEdit}
+          scopeLabel="Este documento"
+          onDeleteAttachment={onDeleteAttachment}
+          onRenameAttachment={onRenameAttachment}
+          onSuggestAttachmentName={onSuggestAttachmentName}
+        />
       )}
 
-      {attachments.length > 0 && (
-        <ul className="mt-2 space-y-1.5">
-          {attachments.map(attachment => (
-            <AttachmentRow
-              key={attachment.id}
-              attachment={attachment}
-              canEdit={canEdit}
-              onDeleteAttachment={onDeleteAttachment}
-              onRenameAttachment={onRenameAttachment}
-              onSuggestAttachmentName={onSuggestAttachmentName}
-            />
-          ))}
-        </ul>
+      {!isLoading && episodeArchiveAttachments.length > 0 && (
+        <div className="mt-3 border-t border-slate-200 pt-2">
+          <ClinicalAttachmentSection
+            title="Archivo clínico del episodio"
+            description="Archivos de esta hospitalización; no necesariamente pertenecen al documento abierto."
+            attachments={episodeArchiveAttachments}
+            canEdit={canEdit}
+            scopeLabel="Episodio"
+            onDeleteAttachment={onDeleteAttachment}
+            onRenameAttachment={onRenameAttachment}
+            onSuggestAttachmentName={onSuggestAttachmentName}
+          />
+        </div>
       )}
 
       {(isLoadingPatientAttachments || otherEpisodeAttachments.length > 0) && (
         <div className="mt-3 border-t border-slate-200 pt-2">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
-            Visión paciente
-          </h3>
           {isLoadingPatientAttachments && (
-            <p className="mt-1 text-xs text-slate-500">Cargando anexos del paciente...</p>
+            <p className="mt-1 text-xs text-slate-500">Cargando archivo clínico del paciente...</p>
           )}
           {!isLoadingPatientAttachments && otherEpisodeAttachments.length > 0 && (
-            <ul className="mt-2 space-y-1.5">
-              {otherEpisodeAttachments.map(attachment => (
-                <AttachmentRow
-                  key={attachment.id}
-                  attachment={attachment}
-                  canEdit={canEdit}
-                  onDeleteAttachment={onDeleteAttachment}
-                  onRenameAttachment={onRenameAttachment}
-                  onSuggestAttachmentName={onSuggestAttachmentName}
-                />
-              ))}
-            </ul>
+            <ClinicalAttachmentSection
+              title="Archivo clínico del paciente"
+              description="Archivos de otras hospitalizaciones del mismo RUT."
+              attachments={otherEpisodeAttachments}
+              canEdit={canEdit}
+              scopeLabel="Otro episodio"
+              onDeleteAttachment={onDeleteAttachment}
+              onRenameAttachment={onRenameAttachment}
+              onSuggestAttachmentName={onSuggestAttachmentName}
+            />
           )}
         </div>
       )}

@@ -104,8 +104,8 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
         >
           <div className="clinical-document-annex-title-row">
             <Paperclip size={16} className="text-slate-500 print:hidden" />
-            <h2 className="clinical-document-annex-title">Anexos clínicos</h2>
-            <span className="clinical-document-annex-badge">Adjunto</span>
+            <h2 className="clinical-document-annex-title">Anexo del documento</h2>
+            <span className="clinical-document-annex-badge">Contenido del documento</span>
           </div>
           <div className="clinical-document-annex-meta">
             <span className="clinical-document-annex-meta-item">
@@ -149,7 +149,7 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
                   type="button"
                   onClick={handleDeleteClick}
                   className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors"
-                  title="Eliminar sección de anexos"
+                  title="Eliminar anexo del documento"
                 >
                   <Trash2 size={12} />
                   Eliminar
@@ -165,7 +165,7 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
               </>
             ) : (
               <div className="flex items-center gap-1.5 rounded-md border border-red-300 bg-red-50 px-2 py-1">
-                <span className="text-xs text-red-700">¿Eliminar anexos?</span>
+                <span className="text-xs text-red-700">¿Eliminar anexo del documento?</span>
                 <button
                   type="button"
                   onClick={handleConfirmDelete}
@@ -189,7 +189,7 @@ export const ClinicalDocumentAnnexPage: React.FC<ClinicalDocumentAnnexPageProps>
       <div className="clinical-document-annex-editor-shell">
         <ClinicalDocumentRichTextEditor
           sectionId="annexes"
-          sectionTitle="Anexos"
+          sectionTitle="Anexo del documento"
           value={content}
           disabled={!canEdit || isLocked}
           onChange={onChange}

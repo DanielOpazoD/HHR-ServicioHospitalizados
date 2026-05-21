@@ -36,7 +36,7 @@ const buildAttachment = (
 });
 
 describe('ClinicalAttachmentsPanel', () => {
-  it('renders episode attachments with upload and delete actions', async () => {
+  it('separates current-document attachments from the episode clinical archive', async () => {
     const onUploadAttachment = vi.fn(async () => undefined);
     const onDeleteAttachment = vi.fn(async () => undefined);
     const onRenameAttachment = vi.fn(async () => undefined);
@@ -45,14 +45,16 @@ describe('ClinicalAttachmentsPanel', () => {
     render(
       <ClinicalAttachmentsPanel
         canEdit={true}
+        currentDocumentId="doc-current"
         attachments={[
-          buildAttachment(),
+          buildAttachment({ documentId: 'doc-current' }),
           buildAttachment({
             id: 'att_2',
             displayName: 'Foto clínica.jpg',
             fileKind: 'image',
             contentType: 'image/jpeg',
             sizeBytes: 700 * 1024,
+            documentId: 'doc-other',
           }),
         ]}
         patientAttachments={[]}
@@ -67,20 +69,29 @@ describe('ClinicalAttachmentsPanel', () => {
       />
     );
 
-    expect(screen.getByRole('heading', { name: /anexos y archivos/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /adjuntos de este documento/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /archivo clínico del episodio/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/respaldan solo el documento abierto/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/no necesariamente pertenecen al documento abierto/i)
+    ).toBeInTheDocument();
     expect(screen.getByText('Informe externo.pdf')).toBeInTheDocument();
     expect(screen.getByText('Foto clínica.jpg')).toBeInTheDocument();
     expect(screen.getByText(/700 KB/i)).toBeInTheDocument();
 
     const file = new File([new Uint8Array(16)], 'nuevo.pdf', { type: 'application/pdf' });
-    fireEvent.change(screen.getByLabelText(/adjuntar archivo clinico/i), {
+    fireEvent.change(screen.getByLabelText(/adjuntar archivo al documento/i), {
       target: { files: [file] },
     });
 
     await waitFor(() => expect(onUploadAttachment).toHaveBeenCalledWith(file));
 
     fireEvent.click(screen.getByRole('button', { name: /eliminar informe externo.pdf/i }));
-    expect(onDeleteAttachment).toHaveBeenCalledWith(buildAttachment());
+    expect(onDeleteAttachment).toHaveBeenCalledWith(buildAttachment({ documentId: 'doc-current' }));
   });
 
   it('allows manual renaming and AI name suggestion for an attachment', async () => {
@@ -90,7 +101,8 @@ describe('ClinicalAttachmentsPanel', () => {
     render(
       <ClinicalAttachmentsPanel
         canEdit={true}
-        attachments={[buildAttachment()]}
+        currentDocumentId="doc-current"
+        attachments={[buildAttachment({ documentId: 'doc-current' })]}
         patientAttachments={[]}
         isLoading={false}
         isLoadingPatientAttachments={false}
@@ -110,13 +122,20 @@ describe('ClinicalAttachmentsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /guardar nombre/i }));
 
     await waitFor(() =>
-      expect(onRenameAttachment).toHaveBeenCalledWith(buildAttachment(), 'Informe cardiologia.pdf')
+      expect(onRenameAttachment).toHaveBeenCalledWith(
+        buildAttachment({ documentId: 'doc-current' }),
+        'Informe cardiologia.pdf'
+      )
     );
 
     fireEvent.click(screen.getByRole('button', { name: /renombrar informe externo.pdf/i }));
     fireEvent.click(screen.getByRole('button', { name: /sugerir nombre con ia/i }));
 
-    await waitFor(() => expect(onSuggestAttachmentName).toHaveBeenCalledWith(buildAttachment()));
+    await waitFor(() =>
+      expect(onSuggestAttachmentName).toHaveBeenCalledWith(
+        buildAttachment({ documentId: 'doc-current' })
+      )
+    );
     await waitFor(() =>
       expect(screen.getByLabelText(/nombre visible del adjunto/i)).toHaveValue(
         'Eco abdominal ingreso.pdf'
@@ -128,6 +147,7 @@ describe('ClinicalAttachmentsPanel', () => {
     render(
       <ClinicalAttachmentsPanel
         canEdit={true}
+        currentDocumentId="doc-current"
         attachments={[]}
         patientAttachments={[]}
         isLoading={false}
@@ -141,7 +161,7 @@ describe('ClinicalAttachmentsPanel', () => {
       />
     );
 
-    expect(screen.getByText(/sin adjuntos clinicos/i)).toBeInTheDocument();
+    expect(screen.getByText(/sin adjuntos de este documento/i)).toBeInTheDocument();
     expect(screen.getByText(/comprimiendo imagen/i)).toBeInTheDocument();
   });
 
@@ -149,9 +169,10 @@ describe('ClinicalAttachmentsPanel', () => {
     render(
       <ClinicalAttachmentsPanel
         canEdit={true}
-        attachments={[buildAttachment()]}
+        currentDocumentId="doc-current"
+        attachments={[buildAttachment({ documentId: 'doc-current' })]}
         patientAttachments={[
-          buildAttachment(),
+          buildAttachment({ documentId: 'doc-current' }),
           buildAttachment({
             id: 'att_other',
             displayName: 'Informe hospitalización previa.pdf',
@@ -170,7 +191,7 @@ describe('ClinicalAttachmentsPanel', () => {
       />
     );
 
-    expect(screen.getByText(/visión paciente/i)).toBeInTheDocument();
+    expect(screen.getByText(/archivo clínico del paciente/i)).toBeInTheDocument();
     expect(screen.getByText('Informe hospitalización previa.pdf')).toBeInTheDocument();
   });
 });

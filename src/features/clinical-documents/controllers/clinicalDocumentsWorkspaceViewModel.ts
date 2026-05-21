@@ -274,6 +274,7 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   isUploadingPdf,
   validationIssues,
   attachments,
+  currentDocumentId: selectedDocument?.id ?? null,
   patientAttachments,
   isLoadingAttachments,
   isLoadingPatientAttachments,
