@@ -70,13 +70,29 @@ describeStorageRules('Storage Security Rules - clinical attachments', () => {
     await assertSucceeds(getBytes(ref(doctorStorage, storagePath)));
   });
 
-  it('blocks non-writer roles from uploading clinical attachments', async () => {
+  it('allows doctors to upload clinical attachments without opening other storage surfaces', async () => {
     const doctorStorage = testEnv
       .authenticatedContext('user_doctor', { role: 'doctor_urgency' })
       .storage();
 
-    await assertFails(
+    await assertSucceeds(
       uploadClinicalAttachment(doctorStorage, storagePath, new Uint8Array(1024), 'application/pdf')
+    );
+    await assertFails(
+      uploadClinicalAttachment(
+        doctorStorage,
+        'censo-diario/hhr/export.pdf',
+        new Uint8Array(1024),
+        'application/pdf'
+      )
+    );
+  });
+
+  it('blocks read-only roles from uploading clinical attachments', async () => {
+    const viewerStorage = testEnv.authenticatedContext('user_viewer', { role: 'viewer' }).storage();
+
+    await assertFails(
+      uploadClinicalAttachment(viewerStorage, storagePath, new Uint8Array(1024), 'application/pdf')
     );
   });
 

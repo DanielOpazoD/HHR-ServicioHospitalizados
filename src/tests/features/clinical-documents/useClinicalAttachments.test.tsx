@@ -107,6 +107,32 @@ describe('useClinicalAttachments', () => {
     ]);
   });
 
+  it('does not reload attachments when only the notification port identity changes', async () => {
+    const { rerender } = renderHook(
+      ({ notify }) =>
+        useClinicalAttachments({
+          selectedDocument: document,
+          hospitalId: 'hhr',
+          canEdit: true,
+          user,
+          role: 'doctor_urgency',
+          notify,
+        }),
+      {
+        initialProps: {
+          notify: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+        },
+      }
+    );
+
+    await waitFor(() => expect(executeListClinicalAttachmentsByEpisode).toHaveBeenCalledTimes(1));
+
+    rerender({ notify: { success: vi.fn(), error: vi.fn(), info: vi.fn() } });
+
+    expect(executeListClinicalAttachmentsByEpisode).toHaveBeenCalledTimes(1);
+    expect(executeListClinicalAttachmentsByPatient).toHaveBeenCalledTimes(1);
+  });
+
   it('uploads and deletes attachments with selected document context', async () => {
     const notify = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
     vi.mocked(executeUploadClinicalAttachment).mockResolvedValue({
