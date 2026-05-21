@@ -1,11 +1,13 @@
 // Internal collaboration surface for application/shared modules that need
 // feature-owned clinical document contracts without re-entering the UI barrel.
 export type {
+  ClinicalAttachmentRecord,
   ClinicalDocumentAuditActor,
   ClinicalDocumentPdfMeta,
   ClinicalDocumentRecord,
   ClinicalDocumentStatus,
   ClinicalDocumentTemplate,
+  ClinicalDocumentType,
 } from './domain/entities';
 export type { ClinicalDocumentDraftBaseState } from './hooks/clinicalDocumentDraftReducer';
 export {

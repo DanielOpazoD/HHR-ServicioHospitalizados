@@ -1,0 +1,185 @@
+import type {
+  ClinicalAttachmentRecord,
+  ClinicalDocumentAuditActor,
+  ClinicalDocumentType,
+} from '@/features/clinical-documents/internal';
+import {
+  createApplicationFailed,
+  createApplicationSuccess,
+} from '@/shared/contracts/applicationOutcomeFactories';
+import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
+import { resolveClinicalAttachmentFilePolicy } from '@/features/clinical-documents/controllers/clinicalAttachmentFilePolicy';
+import {
+  ClinicalAttachmentRepository,
+  type createClinicalAttachmentRepository,
+} from '@/services/repositories/ClinicalAttachmentRepository';
+
+type ClinicalAttachmentRepositoryPort = ReturnType<typeof createClinicalAttachmentRepository>;
+
+interface ClinicalAttachmentUseCaseDependencies {
+  repository?: ClinicalAttachmentRepositoryPort;
+  createId?: () => string;
+  getNow?: () => string;
+}
+
+export interface UploadClinicalAttachmentUseCaseInput {
+  hospitalId: string;
+  patientRut: string;
+  patientName?: string;
+  episodeKey: string;
+  admissionDate?: string;
+  sourceDailyRecordDate?: string;
+  bedId?: string;
+  documentId?: string;
+  documentType?: ClinicalDocumentType;
+  sectionId?: string;
+  file: File;
+  displayName?: string;
+  actor: ClinicalDocumentAuditActor;
+  image?: ClinicalAttachmentRecord['image'];
+}
+
+export interface ListClinicalAttachmentsByEpisodeInput {
+  episodeKey: string;
+  hospitalId: string;
+}
+
+export interface ListClinicalAttachmentsByPatientInput {
+  patientRut: string;
+  hospitalId: string;
+}
+
+export interface DeleteClinicalAttachmentUseCaseInput {
+  attachmentId: string;
+  hospitalId: string;
+  storagePath: string;
+  actor: ClinicalDocumentAuditActor;
+}
+
+const defaultCreateId = (): string =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `att_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+const defaultGetNow = (): string => new Date().toISOString();
+
+export const executeUploadClinicalAttachment = async (
+  input: UploadClinicalAttachmentUseCaseInput,
+  dependencies: ClinicalAttachmentUseCaseDependencies = {}
+): Promise<ApplicationOutcome<ClinicalAttachmentRecord | null>> => {
+  const policy = resolveClinicalAttachmentFilePolicy(input.file, { source: 'file-picker' });
+  if (policy.action === 'rejected') {
+    return createApplicationFailed(
+      null,
+      [
+        {
+          kind: 'validation',
+          message: policy.message || 'Archivo de adjunto clinico no permitido.',
+          userSafeMessage: policy.message || 'Archivo de adjunto clinico no permitido.',
+        },
+      ],
+      {
+        userSafeMessage: policy.message || 'Archivo de adjunto clinico no permitido.',
+      }
+    );
+  }
+
+  const repository = dependencies.repository || ClinicalAttachmentRepository;
+  const createId = dependencies.createId || defaultCreateId;
+  const getNow = dependencies.getNow || defaultGetNow;
+
+  try {
+    const record = await repository.upload({
+      ...input,
+      id: createId(),
+      now: getNow(),
+    });
+    return createApplicationSuccess(record);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'No se pudo subir el adjunto clinico.';
+    return createApplicationFailed(
+      null,
+      [
+        {
+          kind: 'unknown',
+          message,
+          userSafeMessage: 'No se pudo subir el adjunto clinico. El documento no fue modificado.',
+          retryable: true,
+        },
+      ],
+      {
+        userSafeMessage: 'No se pudo subir el adjunto clinico. El documento no fue modificado.',
+        retryable: true,
+      }
+    );
+  }
+};
+
+export const executeListClinicalAttachmentsByEpisode = async (
+  input: ListClinicalAttachmentsByEpisodeInput,
+  dependencies: ClinicalAttachmentUseCaseDependencies = {}
+): Promise<ApplicationOutcome<ClinicalAttachmentRecord[]>> => {
+  const repository = dependencies.repository || ClinicalAttachmentRepository;
+  try {
+    return createApplicationSuccess(
+      await repository.listByEpisode(input.episodeKey, input.hospitalId)
+    );
+  } catch (error) {
+    return createApplicationFailed(
+      [],
+      [
+        {
+          kind: 'unknown',
+          message: error instanceof Error ? error.message : 'No se pudieron cargar los adjuntos.',
+          userSafeMessage: 'No se pudieron cargar los adjuntos clinicos.',
+        },
+      ]
+    );
+  }
+};
+
+export const executeListClinicalAttachmentsByPatient = async (
+  input: ListClinicalAttachmentsByPatientInput,
+  dependencies: ClinicalAttachmentUseCaseDependencies = {}
+): Promise<ApplicationOutcome<ClinicalAttachmentRecord[]>> => {
+  const repository = dependencies.repository || ClinicalAttachmentRepository;
+  try {
+    return createApplicationSuccess(
+      await repository.listByPatient(input.patientRut, input.hospitalId)
+    );
+  } catch (error) {
+    return createApplicationFailed(
+      [],
+      [
+        {
+          kind: 'unknown',
+          message: error instanceof Error ? error.message : 'No se pudieron cargar los adjuntos.',
+          userSafeMessage: 'No se pudieron cargar los adjuntos clinicos del paciente.',
+        },
+      ]
+    );
+  }
+};
+
+export const executeDeleteClinicalAttachment = async (
+  input: DeleteClinicalAttachmentUseCaseInput,
+  dependencies: ClinicalAttachmentUseCaseDependencies = {}
+): Promise<ApplicationOutcome<void>> => {
+  const repository = dependencies.repository || ClinicalAttachmentRepository;
+  const getNow = dependencies.getNow || defaultGetNow;
+  try {
+    await repository.delete({
+      ...input,
+      now: getNow(),
+    });
+    return createApplicationSuccess(undefined);
+  } catch (error) {
+    return createApplicationFailed(undefined, [
+      {
+        kind: 'unknown',
+        message: error instanceof Error ? error.message : 'No se pudo eliminar el adjunto.',
+        userSafeMessage: 'No se pudo eliminar el adjunto clinico.',
+      },
+    ]);
+  }
+};
