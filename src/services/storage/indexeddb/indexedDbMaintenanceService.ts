@@ -4,6 +4,8 @@ import { recordOperationalErrorTelemetry } from '@/services/observability/operat
 const canUseWindow = (): boolean => typeof window !== 'undefined';
 const APP_STORAGE_PREFIXES = ['hhr_', 'hanga_roa_', 'indexeddb_'];
 const APP_STORAGE_KEYS = new Set(['offlineQueue']);
+const KNOWN_INDEXEDDB_DATABASES_TO_RESET = ['HangaRoaDB', 'firebaseLocalStorageDb'];
+const INDEXEDDB_DELETE_TIMEOUT_MS = 1500;
 
 interface ClearBrowserStorageOptions {
   preserveFirebaseAuth?: boolean;
@@ -12,9 +14,30 @@ interface ClearBrowserStorageOptions {
 
 const deleteIndexedDatabase = (databaseName: string): Promise<void> =>
   new Promise(resolve => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      resolve();
+    };
+    const timeout = window.setTimeout(() => {
+      recordOperationalErrorTelemetry(
+        'indexeddb',
+        'indexeddb_delete_database_timeout',
+        new Error(`IndexedDB delete timed out for ${databaseName}`),
+        {
+          code: 'indexeddb_delete_database_timeout',
+          message: `La limpieza de la base local ${databaseName} no respondió a tiempo.`,
+          severity: 'warning',
+          userSafeMessage: 'La limpieza de una base local tardó demasiado.',
+        }
+      );
+      finish();
+    }, INDEXEDDB_DELETE_TIMEOUT_MS);
     const request = window.indexedDB.deleteDatabase(databaseName);
 
-    request.onsuccess = () => resolve();
+    request.onsuccess = () => finish();
     request.onerror = () => {
       recordOperationalErrorTelemetry(
         'indexeddb',
@@ -27,7 +50,7 @@ const deleteIndexedDatabase = (databaseName: string): Promise<void> =>
           userSafeMessage: 'No fue posible limpiar una base local del navegador.',
         }
       );
-      resolve();
+      finish();
     };
     request.onblocked = () => {
       recordOperationalErrorTelemetry(
@@ -41,18 +64,35 @@ const deleteIndexedDatabase = (databaseName: string): Promise<void> =>
           userSafeMessage: 'La limpieza de una base local fue bloqueada por el navegador.',
         }
       );
-      resolve();
+      finish();
     };
   });
 
 const clearIndexedDatabases = async (): Promise<void> => {
   if (!canUseWindow()) return;
 
+  let databaseNames = KNOWN_INDEXEDDB_DATABASES_TO_RESET;
+
   try {
-    const dbs = await window.indexedDB.databases();
-    await Promise.all(
-      dbs.map(dbInfo => (dbInfo.name ? deleteIndexedDatabase(dbInfo.name) : Promise.resolve()))
+    const dbs =
+      typeof window.indexedDB.databases === 'function' ? await window.indexedDB.databases() : [];
+    const enumeratedDatabaseNames = dbs
+      .map(dbInfo => dbInfo.name)
+      .filter((name): name is string => Boolean(name));
+    databaseNames = Array.from(
+      new Set([...enumeratedDatabaseNames, ...KNOWN_INDEXEDDB_DATABASES_TO_RESET])
     );
+  } catch (error) {
+    recordOperationalErrorTelemetry('indexeddb', 'indexeddb_clear_databases_enumeration', error, {
+      code: 'indexeddb_clear_databases_enumeration_failed',
+      message: 'No fue posible enumerar las bases locales IndexedDB; se limpiarán las conocidas.',
+      severity: 'warning',
+      userSafeMessage: 'No fue posible enumerar todas las bases locales del navegador.',
+    });
+  }
+
+  try {
+    await Promise.all(databaseNames.map(databaseName => deleteIndexedDatabase(databaseName)));
   } catch (error) {
     recordOperationalErrorTelemetry('indexeddb', 'indexeddb_clear_databases', error, {
       code: 'indexeddb_clear_databases_failed',
@@ -117,6 +157,22 @@ const unregisterServiceWorkers = async (): Promise<void> => {
   }
 };
 
+const clearCacheStorage = async (): Promise<void> => {
+  if (!canUseWindow() || !('caches' in window)) return;
+
+  try {
+    const cacheNames = await window.caches.keys();
+    await Promise.all(cacheNames.map(cacheName => window.caches.delete(cacheName)));
+  } catch (error) {
+    recordOperationalErrorTelemetry('indexeddb', 'indexeddb_clear_cache_storage', error, {
+      code: 'indexeddb_clear_cache_storage_failed',
+      message: 'No fue posible limpiar caches locales del navegador.',
+      severity: 'warning',
+      userSafeMessage: 'No fue posible limpiar algunos caches locales del navegador.',
+    });
+  }
+};
+
 export const resetLocalDatabase = async (): Promise<void> => {
   await clearIndexedDatabases();
   clearBrowserStorage({ preserveFirebaseAuth: true });
@@ -125,14 +181,16 @@ export const resetLocalDatabase = async (): Promise<void> => {
 
 export const performClientHardReset = async (): Promise<void> => {
   await unregisterServiceWorkers();
-  await clearIndexedDatabases();
+  await clearCacheStorage();
   clearBrowserStorage({ preserveFirebaseAuth: true });
+  await clearIndexedDatabases();
   defaultBrowserWindowRuntime.reload();
 };
 
 export const resetLocalAppStorage = async (): Promise<void> => {
   await unregisterServiceWorkers();
-  await clearIndexedDatabases();
+  await clearCacheStorage();
   clearBrowserStorage({ clearAll: true });
+  await clearIndexedDatabases();
   defaultBrowserWindowRuntime.reload();
 };

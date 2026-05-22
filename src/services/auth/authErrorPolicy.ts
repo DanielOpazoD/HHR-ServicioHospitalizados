@@ -26,6 +26,10 @@ const inferCodeFromMessage = (message: string): string | null => {
     return 'auth/cancelled-popup-request';
   }
 
+  if (message.includes('popup-closed-by-user')) {
+    return 'auth/popup-closed-by-user';
+  }
+
   if (message.includes('network-request-failed') || message.includes('cookies')) {
     return 'auth/network-request-failed';
   }
