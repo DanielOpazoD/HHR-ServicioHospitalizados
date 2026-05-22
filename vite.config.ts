@@ -208,7 +208,6 @@ export default defineConfig(({ mode }) => {
         'react/jsx-runtime',
         'react/jsx-dev-runtime',
         'motion/react',
-        'react-use',
         'firebase/app',
         'firebase/auth',
         'firebase/firestore',
