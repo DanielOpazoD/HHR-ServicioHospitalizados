@@ -206,7 +206,6 @@
     "react-dom": "^19.2.1",
     "react-error-boundary": "^6.0.0",
     "react-is": "^19.2.3",
-    "react-use": "^17.6.0",
     "recharts": "^3.5.1",
     "sharp": "^0.34.5",
     "xlsx-populate": "^1.21.0",
