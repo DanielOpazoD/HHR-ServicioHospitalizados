@@ -115,6 +115,14 @@ export const useClinicalDocumentsWorkspaceModel = ({
     persistReason,
     user,
   });
+  const guardedSetSelectedDocumentId = useCallback(
+    (nextDocumentId: string | null) => {
+      flushPendingAutosave();
+      setSelectedDocumentId(nextDocumentId);
+    },
+    [flushPendingAutosave, setSelectedDocumentId]
+  );
+
   const { signatureProfile, saveSignatureProfile } = useClinicalDocumentSignatureProfile({
     user,
     isActive: isActive && canRead,
@@ -183,7 +191,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
     canEdit,
     canDelete,
     notify: notifyPort,
-    setSelectedDocumentId,
+    setSelectedDocumentId: guardedSetSelectedDocumentId,
     setDraft,
     lastPersistedSnapshotRef,
     signatureProfile,
@@ -263,7 +271,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
       documents: sidebarDocuments,
       draft,
       setSelectedTemplateId,
-      setSelectedDocumentId,
+      setSelectedDocumentId: guardedSetSelectedDocumentId,
       createDocument,
       handleDuplicateDocument,
       handleDeleteDocument,
