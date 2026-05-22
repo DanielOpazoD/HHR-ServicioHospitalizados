@@ -52,6 +52,17 @@ describe('authErrorPolicy', () => {
     expect(isPopupRecoverableAuthError(err)).toBe(false);
   });
 
+  it('infers a user-closed popup from Firebase popup-closed messages', () => {
+    const err = toGoogleAuthError({
+      message: 'Firebase: Error (auth/popup-closed-by-user).',
+    }) as Error & { code: string };
+
+    expect(err.code).toBe('auth/popup-closed-by-user');
+    expect(err.message).toContain('cancelado');
+    expect(isPopupCancellationAuthError(err)).toBe(true);
+    expect(isPopupRecoverableAuthError(err)).toBe(false);
+  });
+
   it('downgrades recoverable popup errors to warning log level', () => {
     expect(
       shouldDowngradeGoogleAuthLogLevel({

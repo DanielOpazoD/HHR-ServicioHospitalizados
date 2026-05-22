@@ -348,6 +348,16 @@ describe('indexedDBService', () => {
       const registrations = [{ unregister }] as unknown as ServiceWorkerRegistration[];
       const getRegistrations = vi.fn().mockResolvedValue(registrations);
       const originalServiceWorker = Object.getOwnPropertyDescriptor(navigator, 'serviceWorker');
+      const originalCaches = Object.getOwnPropertyDescriptor(window, 'caches');
+      const deleteCache = vi.fn().mockResolvedValue(true);
+      const cacheKeys = vi.fn().mockResolvedValue(['hhr-runtime-cache', 'workbox-precache-v1']);
+      Object.defineProperty(window, 'caches', {
+        configurable: true,
+        value: {
+          keys: cacheKeys,
+          delete: deleteCache,
+        },
+      });
       Object.defineProperty(navigator, 'serviceWorker', {
         configurable: true,
         value: { getRegistrations },
@@ -368,6 +378,9 @@ describe('indexedDBService', () => {
 
       expect(getRegistrations).toHaveBeenCalled();
       expect(unregister).toHaveBeenCalled();
+      expect(cacheKeys).toHaveBeenCalled();
+      expect(deleteCache).toHaveBeenCalledWith('hhr-runtime-cache');
+      expect(deleteCache).toHaveBeenCalledWith('workbox-precache-v1');
       expect(window.indexedDB.deleteDatabase).toHaveBeenCalledWith('HangaRoaDB');
       expect(localStorage.getItem('firebase:authUser:test:[DEFAULT]')).toBeNull();
       expect(localStorage.getItem('firebase:redirectUser:test:[DEFAULT]')).toBeNull();
@@ -387,6 +400,12 @@ describe('indexedDBService', () => {
       } else {
         // @ts-expect-error - cleanup test-only property
         delete navigator.serviceWorker;
+      }
+      if (originalCaches) {
+        Object.defineProperty(window, 'caches', originalCaches);
+      } else {
+        // @ts-expect-error - cleanup test-only property
+        delete window.caches;
       }
     });
 
@@ -419,6 +438,42 @@ describe('indexedDBService', () => {
 
       expect(window.location.reload).toHaveBeenCalled();
 
+      Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
+      window.indexedDB.databases = originalDatabases;
+      window.indexedDB.deleteDatabase = originalDelete;
+    });
+
+    it('clears browser storage even if IndexedDB deletion remains pending during full local reset', async () => {
+      vi.useFakeTimers();
+      const originalLocation = setMockLocationWithReload();
+
+      const originalDatabases = window.indexedDB.databases;
+      window.indexedDB.databases = vi.fn().mockResolvedValue([{ name: 'firebaseLocalStorageDb' }]);
+      const originalDelete = window.indexedDB.deleteDatabase;
+      const deleteRequest = {
+        onsuccess: null as null | (() => void),
+        onerror: null as null | (() => void),
+        onblocked: null as null | (() => void),
+      };
+      window.indexedDB.deleteDatabase = vi.fn(() => deleteRequest as unknown as IDBOpenDBRequest);
+      localStorage.setItem('unrelated_local_key', 'remove-me');
+      sessionStorage.setItem('unrelated_session_key', 'remove-me');
+
+      const resetPromise = idbService.resetLocalAppStorage();
+      await vi.waitFor(() => {
+        expect(window.indexedDB.deleteDatabase).toHaveBeenCalledWith('firebaseLocalStorageDb');
+      });
+
+      expect(localStorage.getItem('unrelated_local_key')).toBeNull();
+      expect(sessionStorage.getItem('unrelated_session_key')).toBeNull();
+      expect(window.location.reload).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1600);
+      await resetPromise;
+
+      expect(window.location.reload).toHaveBeenCalled();
+
+      vi.useRealTimers();
       Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
       window.indexedDB.databases = originalDatabases;
       window.indexedDB.deleteDatabase = originalDelete;

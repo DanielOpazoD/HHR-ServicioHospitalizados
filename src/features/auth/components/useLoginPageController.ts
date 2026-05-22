@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
-import { isPopupRecoverableAuthError, resolveAuthErrorCode } from '@/services/auth/authErrorPolicy';
+import {
+  isPopupCancellationAuthError,
+  isPopupRecoverableAuthError,
+  resolveAuthErrorCode,
+} from '@/services/auth/authErrorPolicy';
 import { AUTH_UI_COPY } from '@/services/auth/authUiCopy';
 import { executeGoogleSignIn } from '@/application/auth/authSessionUseCases';
 import {
@@ -21,6 +25,7 @@ import {
 } from '@/shared/ui/loginBackgroundModeController';
 const POPUP_RECOVERY_GRACE_MS = 1800;
 const POPUP_RECOVERY_POLL_MS = 100;
+const POPUP_CANCELLATION_SETTLE_MS = 500;
 const loginPageLogger = createScopedLogger('LoginPage');
 
 const warmDefaultPostLoginRoute = () => {
@@ -45,6 +50,10 @@ const waitForRecoverablePopupResolution = async (): Promise<boolean> => {
   }
 
   return false;
+};
+
+const waitForPopupCancellationSettlement = async (): Promise<void> => {
+  await new Promise(resolve => setTimeout(resolve, POPUP_CANCELLATION_SETTLE_MS));
 };
 
 export interface LoginPageControllerState {
@@ -123,9 +132,15 @@ export const useLoginPageController = (
           'Error al iniciar sesión con Google',
       };
       const isPopupIssue = isPopupRecoverableAuthError(errorLike);
+      const isPopupCancellation = isPopupCancellationAuthError(errorLike);
       const resolvedErrorCode = resolveAuthErrorCode(errorLike);
 
-      if (isPopupIssue) {
+      if (isPopupCancellation) {
+        clearGoogleLoginAttemptHint();
+        setErrorCode(null);
+        setError(null);
+        await waitForPopupCancellationSettlement();
+      } else if (isPopupIssue) {
         if (await waitForRecoverablePopupResolution()) {
           return;
         }
@@ -142,9 +157,15 @@ export const useLoginPageController = (
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       const isPopupIssue = isPopupRecoverableAuthError(err);
+      const isPopupCancellation = isPopupCancellationAuthError(err);
       const resolvedErrorCode = resolveAuthErrorCode(err);
 
-      if (isPopupIssue) {
+      if (isPopupCancellation) {
+        clearGoogleLoginAttemptHint();
+        setErrorCode(null);
+        setError(null);
+        await waitForPopupCancellationSettlement();
+      } else if (isPopupIssue) {
         if (await waitForRecoverablePopupResolution()) {
           return;
         }
