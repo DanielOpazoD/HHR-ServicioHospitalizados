@@ -4,6 +4,7 @@ import {
   executeDeleteClinicalAttachment,
   executeListClinicalAttachmentsByEpisode,
   executeListClinicalAttachmentsByPatient,
+  executeRegenerateClinicalAttachmentAccess,
   executeRenameClinicalAttachment,
   executeSuggestClinicalAttachmentDisplayName,
   executeUploadClinicalAttachment,
@@ -297,6 +298,31 @@ export const useClinicalAttachments = ({
     [canEdit, role, user]
   );
 
+  const regenerateAttachmentAccess = useCallback(
+    async (attachment: ClinicalAttachmentRecord) => {
+      if (!canEdit) return;
+      const outcome = await executeRegenerateClinicalAttachmentAccess({
+        attachmentId: attachment.id,
+        hospitalId: attachment.hospitalId,
+        storagePath: attachment.storagePath,
+        actor: buildClinicalDocumentActor(user, role),
+      });
+
+      if (outcome.status === 'failed' || !outcome.data) {
+        notifyRef.current.error('No se pudo regenerar el acceso', outcome.userSafeMessage);
+        return;
+      }
+
+      const updateDownloadUrl = (item: ClinicalAttachmentRecord): ClinicalAttachmentRecord =>
+        item.id === attachment.id ? { ...item, downloadUrl: outcome.data!.downloadUrl } : item;
+
+      setAttachments(current => current.map(updateDownloadUrl));
+      setPatientAttachments(current => current.map(updateDownloadUrl));
+      notifyRef.current.success('Acceso regenerado', 'El archivo vuelve a estar disponible.');
+    },
+    [canEdit, role, user]
+  );
+
   const suggestAttachmentName = useCallback(
     async (attachment: ClinicalAttachmentRecord): Promise<string | null> => {
       if (!selectedDocument) return null;
@@ -328,6 +354,7 @@ export const useClinicalAttachments = ({
     uploadPastedImage,
     deleteAttachment,
     renameAttachment,
+    regenerateAttachmentAccess,
     suggestAttachmentName,
   };
 };

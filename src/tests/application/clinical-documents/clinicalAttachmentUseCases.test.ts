@@ -5,6 +5,7 @@ import {
   executeDeleteClinicalAttachment,
   executeListClinicalAttachmentsByEpisode,
   executeListClinicalAttachmentsByPatient,
+  executeRegenerateClinicalAttachmentAccess,
   executeRenameClinicalAttachment,
   executeUploadClinicalAttachment,
 } from '@/application/clinical-documents/clinicalAttachmentUseCases';
@@ -22,6 +23,7 @@ const buildRepository = () => ({
   listByPatient: vi.fn(),
   listStoragePathsByPatient: vi.fn(),
   rename: vi.fn(),
+  regenerateAccess: vi.fn(),
   delete: vi.fn(),
 });
 
@@ -224,6 +226,36 @@ describe('clinicalAttachmentUseCases', () => {
     expect(outcome.status).toBe('failed');
     expect(outcome.userSafeMessage).toContain('nombre');
     expect(repository.rename).not.toHaveBeenCalled();
+  });
+
+  it('regenerates missing attachment access with audit metadata', async () => {
+    const repository = buildRepository();
+    repository.regenerateAccess.mockResolvedValue('https://storage.test/informe.pdf');
+
+    const outcome = await executeRegenerateClinicalAttachmentAccess(
+      {
+        attachmentId: 'att_1',
+        hospitalId: 'hhr',
+        storagePath: 'clinical-attachments/hhr/rut/episode/att_1/informe.pdf',
+        actor,
+      },
+      { repository, getNow: () => '2026-05-21T12:00:00.000Z' }
+    );
+
+    expect(outcome).toMatchObject({
+      status: 'success',
+      data: {
+        id: 'att_1',
+        downloadUrl: 'https://storage.test/informe.pdf',
+      },
+    });
+    expect(repository.regenerateAccess).toHaveBeenCalledWith({
+      attachmentId: 'att_1',
+      hospitalId: 'hhr',
+      storagePath: 'clinical-attachments/hhr/rut/episode/att_1/informe.pdf',
+      actor,
+      now: '2026-05-21T12:00:00.000Z',
+    });
   });
 
   it('audits mismatches between active metadata and Storage objects for a patient', async () => {

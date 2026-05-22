@@ -40,6 +40,7 @@ describe('ClinicalAttachmentsPanel', () => {
     const onUploadAttachment = vi.fn(async () => undefined);
     const onDeleteAttachment = vi.fn(async () => undefined);
     const onRenameAttachment = vi.fn(async () => undefined);
+    const onRegenerateAttachmentAccess = vi.fn(async () => undefined);
     const onSuggestAttachmentName = vi.fn(async () => null);
 
     render(
@@ -66,6 +67,7 @@ describe('ClinicalAttachmentsPanel', () => {
         onUploadAttachment={onUploadAttachment}
         onDeleteAttachment={onDeleteAttachment}
         onRenameAttachment={onRenameAttachment}
+        onRegenerateAttachmentAccess={onRegenerateAttachmentAccess}
         onSuggestAttachmentName={onSuggestAttachmentName}
       />
     );
@@ -108,6 +110,7 @@ describe('ClinicalAttachmentsPanel', () => {
         onUploadAttachment={vi.fn()}
         onDeleteAttachment={vi.fn()}
         onRenameAttachment={onRenameAttachment}
+        onRegenerateAttachmentAccess={vi.fn()}
         onSuggestAttachmentName={onSuggestAttachmentName}
       />
     );
@@ -155,6 +158,7 @@ describe('ClinicalAttachmentsPanel', () => {
         onUploadAttachment={vi.fn()}
         onDeleteAttachment={vi.fn()}
         onRenameAttachment={vi.fn()}
+        onRegenerateAttachmentAccess={vi.fn()}
         onSuggestAttachmentName={vi.fn()}
       />
     );
@@ -186,6 +190,7 @@ describe('ClinicalAttachmentsPanel', () => {
         onUploadAttachment={vi.fn()}
         onDeleteAttachment={vi.fn()}
         onRenameAttachment={vi.fn()}
+        onRegenerateAttachmentAccess={vi.fn()}
         onSuggestAttachmentName={vi.fn()}
       />
     );
@@ -220,6 +225,7 @@ describe('ClinicalAttachmentsPanel', () => {
         onUploadAttachment={vi.fn()}
         onDeleteAttachment={vi.fn()}
         onRenameAttachment={vi.fn()}
+        onRegenerateAttachmentAccess={vi.fn()}
         onSuggestAttachmentName={vi.fn()}
       />
     );
@@ -228,18 +234,19 @@ describe('ClinicalAttachmentsPanel', () => {
     expect(screen.getByText('Informe hospitalización previa.pdf')).toBeInTheDocument();
   });
 
-  it('renders unavailable files without opening a broken link', () => {
+  it('renders unavailable files without opening a broken link and allows regenerating access', async () => {
+    const onRegenerateAttachmentAccess = vi.fn(async () => undefined);
+    const unavailableAttachment = buildAttachment({
+      downloadUrl: undefined,
+      displayName: 'Archivo migrado sin URL.pdf',
+    });
+
     render(
       <ClinicalAttachmentsPanel
         canEdit={true}
         currentDocumentId="doc-current"
         currentEpisodeKey="episode-1"
-        attachments={[
-          buildAttachment({
-            downloadUrl: undefined,
-            displayName: 'Archivo migrado sin URL.pdf',
-          }),
-        ]}
+        attachments={[unavailableAttachment]}
         patientAttachments={[]}
         isLoading={false}
         isLoadingPatientAttachments={false}
@@ -248,6 +255,7 @@ describe('ClinicalAttachmentsPanel', () => {
         onUploadAttachment={vi.fn()}
         onDeleteAttachment={vi.fn()}
         onRenameAttachment={vi.fn()}
+        onRegenerateAttachmentAccess={onRegenerateAttachmentAccess}
         onSuggestAttachmentName={vi.fn()}
       />
     );
@@ -257,5 +265,11 @@ describe('ClinicalAttachmentsPanel', () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText('Archivo migrado sin URL.pdf')).toBeInTheDocument();
     expect(screen.getByText(/archivo no disponible/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /regenerar acceso de archivo migrado/i }));
+
+    await waitFor(() =>
+      expect(onRegenerateAttachmentAccess).toHaveBeenCalledWith(unavailableAttachment)
+    );
   });
 });

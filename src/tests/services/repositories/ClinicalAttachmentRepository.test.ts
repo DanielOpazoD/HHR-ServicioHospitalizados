@@ -191,6 +191,34 @@ describe('ClinicalAttachmentRepository', () => {
     expect(runtime.deleteObject).not.toHaveBeenCalled();
   });
 
+  it('regenerates a download URL from Storage and persists access metadata', async () => {
+    const db = buildDb();
+    const runtime = buildRuntime();
+    const repository = createClinicalAttachmentRepository({ db, storageRuntime: runtime });
+
+    const downloadUrl = await repository.regenerateAccess({
+      attachmentId: 'att_1',
+      hospitalId: 'hhr',
+      storagePath: 'clinical-attachments/hhr/rut/episode/att_1/informe.pdf',
+      actor,
+      now: '2026-05-21T12:00:00.000Z',
+    });
+
+    expect(downloadUrl).toBe(
+      'https://storage.test/clinical-attachments/hhr/rut/episode/att_1/informe.pdf'
+    );
+    expect(runtime.getDownloadURL).toHaveBeenCalledWith({
+      path: 'clinical-attachments/hhr/rut/episode/att_1/informe.pdf',
+    });
+    expect(db.updateDoc).toHaveBeenCalledWith('hospitals/hhr/clinicalAttachments', 'att_1', {
+      downloadUrl,
+      updatedAt: '2026-05-21T12:00:00.000Z',
+      updatedBy: actor,
+    });
+    expect(runtime.uploadBytes).not.toHaveBeenCalled();
+    expect(runtime.deleteObject).not.toHaveBeenCalled();
+  });
+
   it('lists Storage object paths by patient rut recursively for integrity audits', async () => {
     const db = buildDb();
     const runtime = buildRuntime();

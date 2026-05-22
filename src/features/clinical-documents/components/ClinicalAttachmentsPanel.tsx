@@ -1,20 +1,8 @@
-import React, { useRef, useState } from 'react';
-import {
-  Check,
-  File,
-  FileText,
-  FolderOpen,
-  Image,
-  Loader2,
-  Pencil,
-  Sparkles,
-  Trash2,
-  Upload,
-  X,
-} from 'lucide-react';
+import React, { useRef } from 'react';
+import { FolderOpen, Upload } from 'lucide-react';
 
 import type { ClinicalAttachmentRecord } from '@/features/clinical-documents/domain/entities';
-import { formatClinicalDocumentDateTime } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
+import { ClinicalAttachmentRow } from '@/features/clinical-documents/components/ClinicalAttachmentRow';
 
 interface ClinicalAttachmentsPanelProps {
   canEdit: boolean;
@@ -32,190 +20,9 @@ interface ClinicalAttachmentsPanelProps {
     attachment: ClinicalAttachmentRecord,
     displayName: string
   ) => Promise<void> | void;
+  onRegenerateAttachmentAccess: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
   onSuggestAttachmentName: (attachment: ClinicalAttachmentRecord) => Promise<string | null>;
 }
-
-const formatAttachmentSize = (sizeBytes: number): string => {
-  if (sizeBytes >= 1024 * 1024) {
-    return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-  return `${Math.ceil(sizeBytes / 1024)} KB`;
-};
-
-const resolveAttachmentIcon = (attachment: ClinicalAttachmentRecord) => {
-  if (attachment.fileKind === 'image') return <Image size={14} />;
-  if (attachment.fileKind === 'pdf' || attachment.fileKind === 'docx')
-    return <FileText size={14} />;
-  return <File size={14} />;
-};
-
-const AttachmentRow: React.FC<{
-  attachment: ClinicalAttachmentRecord;
-  canEdit: boolean;
-  scopeLabel?: string;
-  onDeleteAttachment: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
-  onRenameAttachment: (
-    attachment: ClinicalAttachmentRecord,
-    displayName: string
-  ) => Promise<void> | void;
-  onSuggestAttachmentName: (attachment: ClinicalAttachmentRecord) => Promise<string | null>;
-}> = ({
-  attachment,
-  canEdit,
-  scopeLabel,
-  onDeleteAttachment,
-  onRenameAttachment,
-  onSuggestAttachmentName,
-}) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [draftName, setDraftName] = useState(attachment.displayName);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [isSuggesting, setIsSuggesting] = useState(false);
-
-  const handleStartEditing = () => {
-    setDraftName(attachment.displayName);
-    setIsEditing(true);
-  };
-
-  const handleCancelEditing = () => {
-    setDraftName(attachment.displayName);
-    setIsEditing(false);
-  };
-
-  const handleSaveName = async () => {
-    const nextName = draftName.trim();
-    if (!nextName || nextName === attachment.displayName) {
-      setIsEditing(false);
-      return;
-    }
-    setIsRenaming(true);
-    try {
-      await onRenameAttachment(attachment, nextName);
-      setIsEditing(false);
-    } finally {
-      setIsRenaming(false);
-    }
-  };
-
-  const handleSuggestName = async () => {
-    setIsSuggesting(true);
-    try {
-      const suggestedName = await onSuggestAttachmentName(attachment);
-      if (suggestedName) {
-        setDraftName(suggestedName);
-      }
-    } finally {
-      setIsSuggesting(false);
-    }
-  };
-
-  const metadataLabel = (
-    <>
-      {scopeLabel ? `${scopeLabel} · ` : ''}
-      {formatAttachmentSize(attachment.sizeBytes)} ·{' '}
-      {formatClinicalDocumentDateTime(attachment.createdAt)}
-    </>
-  );
-
-  const displayNameBlock = attachment.downloadUrl ? (
-    <a
-      href={attachment.downloadUrl}
-      target="_blank"
-      rel="noreferrer"
-      className="min-w-0 flex-1 text-xs font-semibold text-slate-700 hover:text-medical-700"
-    >
-      <span className="block truncate">{attachment.displayName}</span>
-      <span className="block text-[10px] font-normal text-slate-400">{metadataLabel}</span>
-    </a>
-  ) : (
-    <div className="min-w-0 flex-1 text-xs font-semibold text-slate-500">
-      <span className="block truncate">{attachment.displayName}</span>
-      <span className="block text-[10px] font-normal text-amber-600">Archivo no disponible</span>
-      <span className="block text-[10px] font-normal text-slate-400">{metadataLabel}</span>
-    </div>
-  );
-
-  return (
-    <li className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5">
-      <span className="text-slate-500">{resolveAttachmentIcon(attachment)}</span>
-      {isEditing ? (
-        <div className="min-w-0 flex-1">
-          <input
-            type="text"
-            aria-label="Nombre visible del archivo"
-            value={draftName}
-            onChange={event => setDraftName(event.target.value)}
-            className="h-7 w-full rounded-md border border-medical-200 px-2 text-xs font-semibold text-slate-700 outline-none focus:border-medical-500"
-          />
-          <span className="mt-0.5 block text-[10px] text-slate-400">{metadataLabel}</span>
-        </div>
-      ) : (
-        displayNameBlock
-      )}
-      {canEdit && (
-        <div className="flex items-center gap-1">
-          {isEditing ? (
-            <>
-              <button
-                type="button"
-                onClick={() => void handleSuggestName()}
-                disabled={isSuggesting || isRenaming}
-                aria-label="Sugerir nombre con IA"
-                title="Sugerir nombre con IA"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md text-violet-500 transition-colors hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSuggesting ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <Sparkles size={13} />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleSaveName()}
-                disabled={isRenaming || !draftName.trim()}
-                aria-label="Guardar nombre"
-                title="Guardar nombre"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md text-emerald-600 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isRenaming ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelEditing}
-                disabled={isRenaming}
-                aria-label="Cancelar renombrar"
-                title="Cancelar"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <X size={13} />
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={handleStartEditing}
-              aria-label={`Renombrar ${attachment.displayName}`}
-              title="Renombrar archivo"
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-medical-50 hover:text-medical-700"
-            >
-              <Pencil size={13} />
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => void onDeleteAttachment(attachment)}
-            aria-label={`Eliminar ${attachment.displayName}`}
-            title="Eliminar archivo"
-            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-          >
-            <Trash2 size={13} />
-          </button>
-        </div>
-      )}
-    </li>
-  );
-};
 
 const ClinicalAttachmentSection: React.FC<{
   title: string;
@@ -229,6 +36,7 @@ const ClinicalAttachmentSection: React.FC<{
     attachment: ClinicalAttachmentRecord,
     displayName: string
   ) => Promise<void> | void;
+  onRegenerateAttachmentAccess: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
   onSuggestAttachmentName: (attachment: ClinicalAttachmentRecord) => Promise<string | null>;
 }> = ({
   title,
@@ -239,6 +47,7 @@ const ClinicalAttachmentSection: React.FC<{
   scopeLabel,
   onDeleteAttachment,
   onRenameAttachment,
+  onRegenerateAttachmentAccess,
   onSuggestAttachmentName,
 }) => (
   <div className="mt-3 first:mt-2">
@@ -249,13 +58,14 @@ const ClinicalAttachmentSection: React.FC<{
     {attachments.length > 0 ? (
       <ul className="mt-2 space-y-1.5">
         {attachments.map(attachment => (
-          <AttachmentRow
+          <ClinicalAttachmentRow
             key={attachment.id}
             attachment={attachment}
             canEdit={canEdit}
             scopeLabel={typeof scopeLabel === 'function' ? scopeLabel(attachment) : scopeLabel}
             onDeleteAttachment={onDeleteAttachment}
             onRenameAttachment={onRenameAttachment}
+            onRegenerateAttachmentAccess={onRegenerateAttachmentAccess}
             onSuggestAttachmentName={onSuggestAttachmentName}
           />
         ))}
@@ -279,6 +89,7 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
   onUploadAttachment,
   onDeleteAttachment,
   onRenameAttachment,
+  onRegenerateAttachmentAccess,
   onSuggestAttachmentName,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -351,6 +162,7 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
           scopeLabel={resolveEpisodeScopeLabel}
           onDeleteAttachment={onDeleteAttachment}
           onRenameAttachment={onRenameAttachment}
+          onRegenerateAttachmentAccess={onRegenerateAttachmentAccess}
           onSuggestAttachmentName={onSuggestAttachmentName}
         />
       )}
@@ -369,6 +181,7 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
               scopeLabel="Otro episodio"
               onDeleteAttachment={onDeleteAttachment}
               onRenameAttachment={onRenameAttachment}
+              onRegenerateAttachmentAccess={onRegenerateAttachmentAccess}
               onSuggestAttachmentName={onSuggestAttachmentName}
             />
           )}

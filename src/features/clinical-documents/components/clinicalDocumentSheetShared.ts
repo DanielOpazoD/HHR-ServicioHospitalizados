@@ -63,6 +63,7 @@ export interface ClinicalDocumentSheetProps {
     attachment: ClinicalAttachmentRecord,
     displayName: string
   ) => Promise<void> | void;
+  onRegenerateAttachmentAccess: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
   onSuggestAttachmentName: (attachment: ClinicalAttachmentRecord) => Promise<string | null>;
   onUploadPastedImage: (file: File) => Promise<{
     attachmentId: string;

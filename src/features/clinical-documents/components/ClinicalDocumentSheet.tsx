@@ -39,6 +39,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
   onUploadAttachment,
   onDeleteAttachment,
   onRenameAttachment,
+  onRegenerateAttachmentAccess,
   onSuggestAttachmentName,
   onUploadPastedImage,
   dragHandlers,
@@ -229,6 +230,7 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           onUploadAttachment={onUploadAttachment}
           onDeleteAttachment={onDeleteAttachment}
           onRenameAttachment={onRenameAttachment}
+          onRegenerateAttachmentAccess={onRegenerateAttachmentAccess}
           onSuggestAttachmentName={onSuggestAttachmentName}
         />
 

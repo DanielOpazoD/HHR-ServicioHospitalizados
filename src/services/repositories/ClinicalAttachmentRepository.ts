@@ -86,6 +86,14 @@ export interface RenameClinicalAttachmentInput {
   now: string;
 }
 
+export interface RegenerateClinicalAttachmentAccessInput {
+  attachmentId: string;
+  hospitalId?: string;
+  storagePath: string;
+  actor: ClinicalDocumentAuditActor;
+  now: string;
+}
+
 interface ClinicalAttachmentRepositoryDependencies {
   db?: IDatabaseProvider;
   storageRuntime?: ClinicalAttachmentStorageRuntime;
@@ -99,7 +107,7 @@ export const createClinicalAttachmentRepository = ({
     const hospitalId = input.hospitalId || getActiveHospitalId();
     const filePolicy = resolveClinicalAttachmentFilePolicy(input.file, { source: 'file-picker' });
     if (!filePolicy.fileKind || filePolicy.action === 'rejected') {
-      throw new Error(filePolicy.message || 'Archivo de adjunto clinico no permitido.');
+      throw new Error(filePolicy.message || 'Archivo del episodio no permitido.');
     }
 
     const storagePath = buildClinicalAttachmentStoragePath({
@@ -217,6 +225,21 @@ export const createClinicalAttachmentRepository = ({
       updatedAt: input.now,
       updatedBy: input.actor,
     });
+  },
+
+  async regenerateAccess(input: RegenerateClinicalAttachmentAccessInput): Promise<string> {
+    const hospitalId = input.hospitalId || getActiveHospitalId();
+    const storage = await storageRuntime.getStorage();
+    const storageRef = storageRuntime.ref(storage, input.storagePath);
+    const downloadUrl = await storageRuntime.getDownloadURL(storageRef);
+
+    await db.updateDoc(getClinicalAttachmentsCollectionPath(hospitalId), input.attachmentId, {
+      downloadUrl,
+      updatedAt: input.now,
+      updatedBy: input.actor,
+    });
+
+    return downloadUrl;
   },
 
   async delete(input: DeleteClinicalAttachmentInput): Promise<void> {

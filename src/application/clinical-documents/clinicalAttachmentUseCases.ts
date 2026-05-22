@@ -82,6 +82,13 @@ export interface RenameClinicalAttachmentUseCaseInput {
   actor: ClinicalDocumentAuditActor;
 }
 
+export interface RegenerateClinicalAttachmentAccessUseCaseInput {
+  attachmentId: string;
+  hospitalId: string;
+  storagePath: string;
+  actor: ClinicalDocumentAuditActor;
+}
+
 export interface SuggestClinicalAttachmentDisplayNameInput {
   attachment: Pick<
     ClinicalAttachmentRecord,
@@ -343,6 +350,36 @@ export const executeRenameClinicalAttachment = async (
         },
       ],
       { userSafeMessage: 'No se pudo renombrar el archivo.' }
+    );
+  }
+};
+
+export const executeRegenerateClinicalAttachmentAccess = async (
+  input: RegenerateClinicalAttachmentAccessUseCaseInput,
+  dependencies: ClinicalAttachmentUseCaseDependencies = {}
+): Promise<ApplicationOutcome<{ id: string; downloadUrl: string } | null>> => {
+  const repository = dependencies.repository || ClinicalAttachmentRepository;
+  const getNow = dependencies.getNow || defaultGetNow;
+
+  try {
+    const downloadUrl = await repository.regenerateAccess({
+      ...input,
+      now: getNow(),
+    });
+    return createApplicationSuccess({ id: input.attachmentId, downloadUrl });
+  } catch (error) {
+    return createApplicationFailed(
+      null,
+      [
+        {
+          kind: 'unknown',
+          message:
+            error instanceof Error ? error.message : 'No se pudo regenerar el acceso al archivo.',
+          userSafeMessage: 'No se pudo regenerar el acceso al archivo.',
+          retryable: true,
+        },
+      ],
+      { userSafeMessage: 'No se pudo regenerar el acceso al archivo.', retryable: true }
     );
   }
 };

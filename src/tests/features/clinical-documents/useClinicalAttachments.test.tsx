@@ -10,6 +10,7 @@ vi.mock('@/application/clinical-documents/clinicalAttachmentUseCases', () => ({
   executeUploadClinicalAttachment: vi.fn(),
   executeDeleteClinicalAttachment: vi.fn(),
   executeRenameClinicalAttachment: vi.fn(),
+  executeRegenerateClinicalAttachmentAccess: vi.fn(),
   executeSuggestClinicalAttachmentDisplayName: vi.fn(),
 }));
 
@@ -17,6 +18,7 @@ import {
   executeDeleteClinicalAttachment,
   executeListClinicalAttachmentsByEpisode,
   executeListClinicalAttachmentsByPatient,
+  executeRegenerateClinicalAttachmentAccess,
   executeRenameClinicalAttachment,
   executeSuggestClinicalAttachmentDisplayName,
   executeUploadClinicalAttachment,
@@ -240,6 +242,76 @@ describe('useClinicalAttachments', () => {
     expect(notify.success).toHaveBeenCalledWith(
       'Archivo renombrado',
       'El nombre visible del archivo fue actualizado.'
+    );
+  });
+
+  it('regenerates attachment access and updates both episode and patient lists', async () => {
+    const notify = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+    vi.mocked(executeListClinicalAttachmentsByEpisode).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          id: 'att_1',
+          hospitalId: 'hhr',
+          storagePath: 'clinical-attachments/hhr/rut/episode/att_1/informe.pdf',
+          displayName: 'Informe migrado.pdf',
+          downloadUrl: undefined,
+        },
+      ] as never,
+      issues: [],
+    });
+    vi.mocked(executeListClinicalAttachmentsByPatient).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          id: 'att_1',
+          hospitalId: 'hhr',
+          storagePath: 'clinical-attachments/hhr/rut/episode/att_1/informe.pdf',
+          displayName: 'Informe migrado.pdf',
+          downloadUrl: undefined,
+        },
+      ] as never,
+      issues: [],
+    });
+    vi.mocked(executeRegenerateClinicalAttachmentAccess).mockResolvedValue({
+      status: 'success',
+      data: { id: 'att_1', downloadUrl: 'https://storage.test/informe.pdf' },
+      issues: [],
+    });
+
+    const { result } = renderHook(() =>
+      useClinicalAttachments({
+        selectedDocument: document,
+        hospitalId: 'hhr',
+        canEdit: true,
+        user,
+        role: 'doctor_urgency',
+        notify,
+      })
+    );
+
+    await waitFor(() => expect(result.current.attachments).toHaveLength(1));
+    expect(result.current.attachments[0]?.downloadUrl).toBeUndefined();
+
+    await act(async () => {
+      await result.current.regenerateAttachmentAccess(result.current.attachments[0]);
+    });
+
+    expect(executeRegenerateClinicalAttachmentAccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachmentId: 'att_1',
+        hospitalId: 'hhr',
+        storagePath: 'clinical-attachments/hhr/rut/episode/att_1/informe.pdf',
+        actor: expect.objectContaining({ uid: 'u1', role: 'doctor_urgency' }),
+      })
+    );
+    expect(result.current.attachments[0]?.downloadUrl).toBe('https://storage.test/informe.pdf');
+    expect(result.current.patientAttachments[0]?.downloadUrl).toBe(
+      'https://storage.test/informe.pdf'
+    );
+    expect(notify.success).toHaveBeenCalledWith(
+      'Acceso regenerado',
+      'El archivo vuelve a estar disponible.'
     );
   });
 

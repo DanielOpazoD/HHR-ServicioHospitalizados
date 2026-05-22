@@ -80,6 +80,7 @@ interface BuildSheetPropsParams {
   uploadAttachment: ClinicalDocumentsWorkspaceSheetModelProps['onUploadAttachment'];
   deleteAttachment: ClinicalDocumentsWorkspaceSheetModelProps['onDeleteAttachment'];
   renameAttachment: ClinicalDocumentsWorkspaceSheetModelProps['onRenameAttachment'];
+  regenerateAttachmentAccess: ClinicalDocumentsWorkspaceSheetModelProps['onRegenerateAttachmentAccess'];
   suggestAttachmentName: ClinicalDocumentsWorkspaceSheetModelProps['onSuggestAttachmentName'];
   uploadPastedImage: ClinicalDocumentsWorkspaceSheetModelProps['onUploadPastedImage'];
   handlePrint: () => Promise<void>;
@@ -219,6 +220,7 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   uploadAttachment,
   deleteAttachment,
   renameAttachment,
+  regenerateAttachmentAccess,
   suggestAttachmentName,
   uploadPastedImage,
   handlePrint,
@@ -283,6 +285,7 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   onUploadAttachment: uploadAttachment,
   onDeleteAttachment: deleteAttachment,
   onRenameAttachment: renameAttachment,
+  onRegenerateAttachmentAccess: regenerateAttachmentAccess,
   onSuggestAttachmentName: suggestAttachmentName,
   onUploadPastedImage: uploadPastedImage,
   onPrint: handlePrint,
