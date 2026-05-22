@@ -10,6 +10,9 @@ import {
 } from '@/hooks/controllers/dailyRecordPendingPatchController';
 import { resetSyncMutationIdentityForTests } from '@/services/storage/sync/syncMutationIdentity';
 
+const FIXED_PENDING_PATCH_CREATED_AT = 4102444740000;
+const FIXED_PENDING_PATCH_EXPIRES_AT = FIXED_PENDING_PATCH_CREATED_AT + 60_000;
+
 describe('dailyRecordPendingPatchController', () => {
   afterEach(() => {
     clearPendingDailyRecordPatchesForTests();
@@ -136,8 +139,8 @@ describe('dailyRecordPendingPatchController', () => {
             mutationId: 'mutation-persisted-1',
             clientId: 'client-persisted',
             tabId: 'tab-other',
-            createdAt: Date.now(),
-            expiresAt: Date.now() + 60_000,
+            createdAt: FIXED_PENDING_PATCH_CREATED_AT,
+            expiresAt: FIXED_PENDING_PATCH_EXPIRES_AT,
             patch: {
               'beds.R1.status': PatientStatus.GRAVE,
             },
