@@ -200,6 +200,7 @@ export const ClinicalDocumentsWorkspace: React.FC<ClinicalDocumentsWorkspaceProp
           style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}
         >
           <ClinicalDocumentSheet
+            key={sheetProps.selectedDocument?.id ?? 'no-document'}
             {...sheetProps}
             toolbar={headerContent && !headerActionsContainer ? headerContent : null}
             activeTitleTarget={sheetState.activeTitleTarget}
