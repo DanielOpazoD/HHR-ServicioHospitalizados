@@ -4,6 +4,7 @@ import { recordOperationalErrorTelemetry } from '@/services/observability/operat
 const canUseWindow = (): boolean => typeof window !== 'undefined';
 const APP_STORAGE_PREFIXES = ['hhr_', 'hanga_roa_', 'indexeddb_'];
 const APP_STORAGE_KEYS = new Set(['offlineQueue']);
+const KNOWN_INDEXEDDB_DATABASES_TO_RESET = ['HangaRoaDB', 'firebaseLocalStorageDb'];
 const INDEXEDDB_DELETE_TIMEOUT_MS = 1500;
 
 interface ClearBrowserStorageOptions {
@@ -70,11 +71,28 @@ const deleteIndexedDatabase = (databaseName: string): Promise<void> =>
 const clearIndexedDatabases = async (): Promise<void> => {
   if (!canUseWindow()) return;
 
+  let databaseNames = KNOWN_INDEXEDDB_DATABASES_TO_RESET;
+
   try {
-    const dbs = await window.indexedDB.databases();
-    await Promise.all(
-      dbs.map(dbInfo => (dbInfo.name ? deleteIndexedDatabase(dbInfo.name) : Promise.resolve()))
+    const dbs =
+      typeof window.indexedDB.databases === 'function' ? await window.indexedDB.databases() : [];
+    const enumeratedDatabaseNames = dbs
+      .map(dbInfo => dbInfo.name)
+      .filter((name): name is string => Boolean(name));
+    databaseNames = Array.from(
+      new Set([...enumeratedDatabaseNames, ...KNOWN_INDEXEDDB_DATABASES_TO_RESET])
     );
+  } catch (error) {
+    recordOperationalErrorTelemetry('indexeddb', 'indexeddb_clear_databases_enumeration', error, {
+      code: 'indexeddb_clear_databases_enumeration_failed',
+      message: 'No fue posible enumerar las bases locales IndexedDB; se limpiarán las conocidas.',
+      severity: 'warning',
+      userSafeMessage: 'No fue posible enumerar todas las bases locales del navegador.',
+    });
+  }
+
+  try {
+    await Promise.all(databaseNames.map(databaseName => deleteIndexedDatabase(databaseName)));
   } catch (error) {
     recordOperationalErrorTelemetry('indexeddb', 'indexeddb_clear_databases', error, {
       code: 'indexeddb_clear_databases_failed',
