@@ -1,7 +1,11 @@
 import { GoogleGenAI } from '@google/genai';
 
 export type ClinicalAIProvider = 'gemini' | 'openai' | 'anthropic' | 'deepseek';
-export type ClinicalAIAction = 'clinical_ai_summary' | 'clinical_document_import' | 'cie10_search';
+export type ClinicalAIAction =
+  | 'clinical_ai_summary'
+  | 'clinical_document_import'
+  | 'cie10_search'
+  | 'clinical_attachment_name_suggestion';
 
 export interface ClinicalAIRoutingRule {
   enabled?: boolean;
@@ -177,6 +181,15 @@ export const resolveClinicalAIProviderConfig = (
   }
   if (explicitProvider === 'deepseek') {
     return buildConfig('deepseek');
+  }
+
+  if (action === 'clinical_attachment_name_suggestion') {
+    return (
+      buildConfig('deepseek') ||
+      buildConfig('gemini') ||
+      buildConfig('openai') ||
+      buildConfig('anthropic')
+    );
   }
 
   return (

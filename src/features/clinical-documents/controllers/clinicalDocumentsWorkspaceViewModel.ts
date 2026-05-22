@@ -71,6 +71,18 @@ interface BuildSheetPropsParams {
   flushPendingAutosave: ClinicalDocumentsWorkspaceSheetModelProps['flushPendingAutosave'];
   isUploadingPdf: boolean;
   validationIssues: ClinicalDocumentsWorkspaceSheetModelProps['validationIssues'];
+  attachments: ClinicalDocumentsWorkspaceSheetModelProps['attachments'];
+  patientAttachments: ClinicalDocumentsWorkspaceSheetModelProps['patientAttachments'];
+  isLoadingAttachments: boolean;
+  isLoadingPatientAttachments: boolean;
+  isUploadingAttachment: boolean;
+  uploadStatusMessage: string | null;
+  uploadAttachment: ClinicalDocumentsWorkspaceSheetModelProps['onUploadAttachment'];
+  deleteAttachment: ClinicalDocumentsWorkspaceSheetModelProps['onDeleteAttachment'];
+  renameAttachment: ClinicalDocumentsWorkspaceSheetModelProps['onRenameAttachment'];
+  regenerateAttachmentAccess: ClinicalDocumentsWorkspaceSheetModelProps['onRegenerateAttachmentAccess'];
+  suggestAttachmentName: ClinicalDocumentsWorkspaceSheetModelProps['onSuggestAttachmentName'];
+  uploadPastedImage: ClinicalDocumentsWorkspaceSheetModelProps['onUploadPastedImage'];
   handlePrint: () => Promise<void>;
   handleUploadPdf: () => Promise<void>;
   draft: ClinicalDocumentsWorkspaceSheetModelProps['selectedDocument'];
@@ -199,6 +211,18 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   flushPendingAutosave,
   isUploadingPdf,
   validationIssues,
+  attachments,
+  patientAttachments,
+  isLoadingAttachments,
+  isLoadingPatientAttachments,
+  isUploadingAttachment,
+  uploadStatusMessage,
+  uploadAttachment,
+  deleteAttachment,
+  renameAttachment,
+  regenerateAttachmentAccess,
+  suggestAttachmentName,
+  uploadPastedImage,
   handlePrint,
   handleUploadPdf,
   draft,
@@ -251,6 +275,19 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
   flushPendingAutosave,
   isUploadingPdf,
   validationIssues,
+  attachments,
+  currentDocumentId: selectedDocument?.id ?? null,
+  patientAttachments,
+  isLoadingAttachments,
+  isLoadingPatientAttachments,
+  isUploadingAttachment,
+  uploadStatusMessage,
+  onUploadAttachment: uploadAttachment,
+  onDeleteAttachment: deleteAttachment,
+  onRenameAttachment: renameAttachment,
+  onRegenerateAttachmentAccess: regenerateAttachmentAccess,
+  onSuggestAttachmentName: suggestAttachmentName,
+  onUploadPastedImage: uploadPastedImage,
   onPrint: handlePrint,
   onUploadPdf: () => void handleUploadPdf(),
   onRestoreTemplate: () =>
@@ -261,6 +298,7 @@ export const buildClinicalDocumentsWorkspaceSheetProps = ({
       restoreTemplateContent,
       info: notifications.info,
     }),
+  onImagePasteRejected: message => notifications.info('Imagen no insertada', message),
   patchDocumentTitle,
   patchPatientInfoTitle,
   patchPatientField,

@@ -19,4 +19,17 @@ describe('createEmptyPatient', () => {
       }
     }
   });
+
+  it('explicitly clears nursing and medical handoff fields for reusable beds', () => {
+    const emptyPatient = createEmptyPatient('R1');
+
+    expect(emptyPatient).toMatchObject({
+      handoffNote: '',
+      handoffNoteDayShift: '',
+      handoffNoteNightShift: '',
+      medicalHandoffNote: '',
+      medicalHandoffEntries: [],
+      medicalHandoffAudit: undefined,
+    });
+  });
 });

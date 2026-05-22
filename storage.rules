@@ -46,6 +46,27 @@ service firebase.storage {
       return hasClinicalReadRole();
     }
 
+    function canReadClinicalAttachments() {
+      return hasNormalizedRole([
+        'admin',
+        'nurse_hospital',
+        'doctor_urgency',
+        'doctor_specialist',
+        'viewer',
+        'editor'
+      ]);
+    }
+
+    function canWriteClinicalAttachments() {
+      return hasNormalizedRole([
+        'admin',
+        'nurse_hospital',
+        'doctor_urgency',
+        'doctor_specialist',
+        'editor'
+      ]);
+    }
+
     // Entrega de enfermería backups: editable only by clinical editors.
     match /entregas-enfermeria/{allPaths=**} {
       allow read: if canReadClinicalStorage();
@@ -73,6 +94,13 @@ service firebase.storage {
     match /reminders/{allPaths=**} {
       allow read: if canReadClinicalStorage();
       allow write: if canWriteReminderAssets();
+    }
+
+    match /clinical-attachments/{hospitalId}/{patientRutKey}/{episodeKey}/{attachmentId}/{fileName} {
+      allow read: if canReadClinicalAttachments();
+      allow write: if canWriteClinicalAttachments()
+                      && request.resource.size < 15 * 1024 * 1024
+                      && request.resource.contentType.matches('image/.*|application/pdf|application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     }
 
     // Prescription-photo backup blobs are written and cleaned up only by

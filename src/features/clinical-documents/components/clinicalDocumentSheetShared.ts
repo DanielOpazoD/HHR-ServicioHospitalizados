@@ -1,4 +1,5 @@
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
+import type { ClinicalAttachmentRecord } from '@/features/clinical-documents/domain/entities';
 import type { ClinicalDocumentSignatureProfile } from '@/features/clinical-documents/services/clinicalDocumentSignatureProfileService';
 import type { ClinicalDocumentIndicationSpecialtyId } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsController';
 import type { ClinicalDocumentPlanSubsectionId } from '@/features/clinical-documents/controllers/clinicalDocumentPlanSectionController';
@@ -47,6 +48,28 @@ export interface ClinicalDocumentSheetProps {
   onToggleIndicationsPanel: () => void;
   onEditorActivate: (activeSectionId: string, editorApi: ClinicalDocumentSheetEditorApi) => void;
   onEditorDeactivate: (sectionId: string) => void;
+  onImagePasteRejected: (message: string) => void;
+  attachments: ClinicalAttachmentRecord[];
+  currentDocumentId?: string | null;
+  currentEpisodeKey?: string | null;
+  patientAttachments: ClinicalAttachmentRecord[];
+  isLoadingAttachments: boolean;
+  isLoadingPatientAttachments: boolean;
+  isUploadingAttachment: boolean;
+  uploadStatusMessage: string | null;
+  onUploadAttachment: (file: File) => Promise<void> | void;
+  onDeleteAttachment: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
+  onRenameAttachment: (
+    attachment: ClinicalAttachmentRecord,
+    displayName: string
+  ) => Promise<void> | void;
+  onRegenerateAttachmentAccess: (attachment: ClinicalAttachmentRecord) => Promise<void> | void;
+  onSuggestAttachmentName: (attachment: ClinicalAttachmentRecord) => Promise<string | null>;
+  onUploadPastedImage: (file: File) => Promise<{
+    attachmentId: string;
+    imageUrl: string;
+    storagePath: string;
+  } | null>;
   dragHandlers: {
     onDragStart: (event: DragEvent<HTMLButtonElement>, sectionId: string) => void;
     onDragOver: (event: DragEvent<HTMLElement>, sectionId: string, canInteract: boolean) => void;
@@ -116,6 +139,8 @@ export interface ClinicalDocumentSpecialSectionRendererProps {
   onPatchSection: (sectionId: string, content: string) => void;
   onEditorActivate: (activeSectionId: string, editorApi: ClinicalDocumentSheetEditorApi) => void;
   onEditorDeactivate: (sectionId: string) => void;
+  onUploadPastedImage: ClinicalDocumentSheetProps['onUploadPastedImage'];
+  onImagePasteRejected: (message: string) => void;
   indicationsCatalog: ClinicalDocumentIndicationsCatalog;
   isSavingCustomIndication: boolean;
   customIndicationError: string | null;

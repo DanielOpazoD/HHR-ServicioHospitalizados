@@ -37,6 +37,8 @@ export const renderClinicalDocumentSectionContent = (
         onChange={content => props.onPatchSection(props.section.id, content)}
         onActivate={props.onEditorActivate}
         onDeactivate={props.onEditorDeactivate}
+        onUploadPastedImage={props.onUploadPastedImage}
+        onImagePasteRejected={props.onImagePasteRejected}
         disabled={!props.canEdit || props.document.isLocked}
       />
     );

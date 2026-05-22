@@ -27,6 +27,12 @@
         allow delete: if canDeleteClinicalDocument();
       }
 
+      match /clinicalAttachments/{attachmentId} {
+        allow read: if canReadClinicalData();
+        allow create, update: if canWriteClinicalAttachment();
+        allow delete: if isAdmin();
+      }
+
       match /clinicalDocumentTemplates/{templateId} {
         allow read: if canReadClinicalData();
         allow write: if isAdmin();

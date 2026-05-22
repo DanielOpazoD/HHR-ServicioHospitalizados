@@ -303,12 +303,12 @@ export const useClinicalDocumentWorkspaceExportActions = ({
 
   const handlePrintAnnex = useCallback(async () => {
     if (!selectedDocument?.annexContent?.trim()) {
-      notify.info('Sin anexo para imprimir', 'Agrega contenido al anexo clínico primero.');
+      notify.info('Sin anexo para imprimir', 'Agrega contenido al anexo del documento primero.');
       return;
     }
 
     const executeOpenClinicalDocumentPrint = await loadClinicalDocumentPrintUseCase();
-    const pageTitle = `Anexo clínico - ${selectedDocument.patientName || selectedDocument.title}`;
+    const pageTitle = `Anexo del documento - ${selectedDocument.patientName || selectedDocument.title}`;
     const opened = await executeOpenClinicalDocumentPrint(
       {
         ...selectedDocument,

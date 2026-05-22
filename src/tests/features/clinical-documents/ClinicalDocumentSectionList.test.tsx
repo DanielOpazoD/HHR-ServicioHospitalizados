@@ -130,6 +130,8 @@ describe('ClinicalDocumentSectionList', () => {
         onAddSection={onAddSection}
         onEditorActivate={vi.fn()}
         onEditorDeactivate={vi.fn()}
+        onUploadPastedImage={vi.fn(async () => null)}
+        onImagePasteRejected={vi.fn()}
         onPatchIeehDraft={vi.fn()}
         onClearIeehDraft={vi.fn()}
         onSetActivePlanSubsectionId={vi.fn()}

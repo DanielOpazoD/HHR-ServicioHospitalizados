@@ -60,6 +60,8 @@ interface ClinicalDocumentSectionListProps {
   onAddSection: (referenceSectionId: string, position: 'above' | 'below') => void;
   onEditorActivate: (activeSectionId: string, editorApi: ClinicalDocumentSheetEditorApi) => void;
   onEditorDeactivate: (sectionId: string) => void;
+  onUploadPastedImage: ClinicalDocumentSheetProps['onUploadPastedImage'];
+  onImagePasteRejected: (message: string) => void;
   onPatchIeehDraft: (draft: ClinicalDocumentIeehDraft) => void;
   onClearIeehDraft: () => void;
   /** Workspace patient data (provides birthDate for IEEH printing). */
@@ -109,6 +111,8 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
   onAddSection,
   onEditorActivate,
   onEditorDeactivate,
+  onUploadPastedImage,
+  onImagePasteRejected,
   onPatchIeehDraft,
   onClearIeehDraft,
   workspacePatient,
@@ -344,6 +348,8 @@ export const ClinicalDocumentSectionList: React.FC<ClinicalDocumentSectionListPr
                   onPatchSection,
                   onEditorActivate,
                   onEditorDeactivate,
+                  onUploadPastedImage,
+                  onImagePasteRejected,
                   indicationsCatalog,
                   isSavingCustomIndication,
                   customIndicationError,

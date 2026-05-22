@@ -1,9 +1,10 @@
 import { act, renderHook } from '@testing-library/react';
 import { createRef } from 'react';
-import type { KeyboardEvent, MutableRefObject } from 'react';
+import type { ClipboardEvent, KeyboardEvent, MutableRefObject } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useClinicalDocumentRichTextEditorController } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
+import { CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES } from '@/features/clinical-documents/controllers/clinicalDocumentPasteController';
 
 const applyEditorCommandMock = vi.fn();
 const normalizeContentMock = vi.fn((value: string) => value.trim());
@@ -260,5 +261,91 @@ describe('useClinicalDocumentRichTextEditorController', () => {
 
     expect(normalizeContentMock).toHaveBeenCalledWith('  <img src="x"> Actualizado ');
     expect(onChange).toHaveBeenLastCalledWith('<img src="x"> Actualizado');
+  });
+
+  it('uploads and inserts a Storage-backed pasted image when it exceeds the inline limit', async () => {
+    const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+    const editor = document.createElement('div');
+    editor.innerHTML = 'Inicial';
+    editorRef.current = editor;
+    const onChange = vi.fn();
+    const onUploadPastedImage = vi.fn(async () => ({
+      attachmentId: 'att_1',
+      imageUrl: 'https://storage.test/image.jpg',
+      storagePath: 'clinical-attachments/hhr/rut/episode/att_1/image.jpg',
+    }));
+    const preventDefault = vi.fn();
+    const file = new File(
+      [new Uint8Array(CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES + 1)],
+      'large.jpg',
+      { type: 'image/jpeg' }
+    );
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentRichTextEditorController({
+        sectionId: 'section-1',
+        value: 'Inicial',
+        disabled: false,
+        editorRef,
+        onChange,
+        onUploadPastedImage,
+      })
+    );
+
+    await act(async () => {
+      result.current.handlePaste({
+        preventDefault,
+        clipboardData: {
+          files: [file],
+          getData: () => '',
+        },
+      } as unknown as ClipboardEvent<HTMLDivElement>);
+    });
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(onUploadPastedImage).toHaveBeenCalledWith(file);
+    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('data-clinical-attachment-id'));
+    expect(editor.innerHTML).toContain('https://storage.test/image.jpg');
+  });
+
+  it('notifies and skips insertion when a Storage image upload fails', async () => {
+    const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+    const editor = document.createElement('div');
+    editor.innerHTML = 'Inicial';
+    editorRef.current = editor;
+    const onChange = vi.fn();
+    const onUploadPastedImage = vi.fn(async () => null);
+    const onImagePasteRejected = vi.fn();
+    const file = new File(
+      [new Uint8Array(CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES + 1)],
+      'large.jpg',
+      { type: 'image/jpeg' }
+    );
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentRichTextEditorController({
+        sectionId: 'section-1',
+        value: 'Inicial',
+        disabled: false,
+        editorRef,
+        onChange,
+        onUploadPastedImage,
+        onImagePasteRejected,
+      })
+    );
+
+    await act(async () => {
+      result.current.handlePaste({
+        preventDefault: vi.fn(),
+        clipboardData: {
+          files: [file],
+          getData: () => '',
+        },
+      } as unknown as ClipboardEvent<HTMLDivElement>);
+    });
+
+    expect(onImagePasteRejected).toHaveBeenCalledWith(expect.stringContaining('No se pudo subir'));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(editor.innerHTML).toBe('Inicial');
   });
 });

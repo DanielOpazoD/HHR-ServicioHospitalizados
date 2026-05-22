@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import clsx from 'clsx';
 
-import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
+import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/clinicalDocumentRichTextEditorTypes';
 import { useClinicalDocumentRichTextEditorController } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
 import { ClinicalDocumentImageEditor } from '@/features/clinical-documents/components/ClinicalDocumentImageEditor';
 import type { ClinicalDocumentMandatoryListType } from '@/features/clinical-documents/controllers/clinicalDocumentEmptySectionTemplateController';
@@ -30,6 +30,12 @@ interface ClinicalDocumentRichTextEditorProps {
   onChange: (value: string) => void;
   onActivate?: (sectionId: string, editor: ClinicalDocumentRichTextEditorActivationApi) => void;
   onDeactivate?: (sectionId: string) => void;
+  onUploadPastedImage?: (file: File) => Promise<{
+    attachmentId: string;
+    imageUrl: string;
+    storagePath: string;
+  } | null>;
+  onImagePasteRejected?: (message: string) => void;
   /** Called when user types `/lab` — should return formatted lab text or null. */
   onSlashLab?: () => Promise<string | null>;
 }
@@ -92,6 +98,8 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
   onChange,
   onActivate,
   onDeactivate,
+  onUploadPastedImage,
+  onImagePasteRejected,
   onSlashLab,
 }) => {
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -115,6 +123,8 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
     onChange,
     onActivate,
     onDeactivate,
+    onUploadPastedImage,
+    onImagePasteRejected,
     onSlashLab,
   });
 

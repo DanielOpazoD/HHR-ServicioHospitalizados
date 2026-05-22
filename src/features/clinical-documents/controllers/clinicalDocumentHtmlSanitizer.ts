@@ -146,8 +146,12 @@ export const preserveElementAttributes = (
   if (tagName === 'IMG') {
     const src = source.getAttribute('src');
     const alt = source.getAttribute('alt');
+    const attachmentId = source.getAttribute('data-clinical-attachment-id');
+    const storagePath = source.getAttribute('data-clinical-document-storage-path');
     if (src) clone.setAttribute('src', src);
     if (alt) clone.setAttribute('alt', alt);
+    if (attachmentId) clone.setAttribute('data-clinical-attachment-id', attachmentId);
+    if (storagePath) clone.setAttribute('data-clinical-document-storage-path', storagePath);
   }
   if (tagName === 'TD' || tagName === 'TH') {
     const colspan = source.getAttribute('colspan');

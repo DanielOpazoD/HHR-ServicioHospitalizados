@@ -34,6 +34,22 @@ describe('Security hardening static guards', () => {
     );
   });
 
+  it('keeps clinical attachment Storage scoped, authenticated, typed and size-limited', () => {
+    const rules = readProjectFile('storage.rules');
+    expect(rules).toContain(
+      'match /clinical-attachments/{hospitalId}/{patientRutKey}/{episodeKey}/{attachmentId}/{fileName}'
+    );
+    expect(rules).toMatch(
+      /match \/clinical-attachments\/\{hospitalId\}\/\{patientRutKey\}\/\{episodeKey\}\/\{attachmentId\}\/\{fileName\}[\s\S]*?allow read:\s*if canReadClinicalStorage\(\);/m
+    );
+    expect(rules).toMatch(
+      /match \/clinical-attachments\/\{hospitalId\}\/\{patientRutKey\}\/\{episodeKey\}\/\{attachmentId\}\/\{fileName\}[\s\S]*?allow write:\s*if hasClinicalWriteRole\(\)[\s\S]*request\.resource\.size < 15 \* 1024 \* 1024[\s\S]*request\.resource\.contentType\.matches/m
+    );
+    expect(rules).not.toMatch(
+      /match \/clinical-attachments\/\{hospitalId\}\/\{patientRutKey\}\/\{episodeKey\}\/\{attachmentId\}\/\{fileName\}[\s\S]*?allow write:\s*if true;/m
+    );
+  });
+
   it('uses robust admin check in setUserRole callable', () => {
     const authCallablePolicy = readProjectFile('functions/lib/auth/authCallablePolicy.js');
 
