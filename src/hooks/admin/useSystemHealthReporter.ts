@@ -5,7 +5,7 @@ import { useIsMutating } from '@tanstack/react-query';
 import { fetchErrorLogs } from '@/services/errorLogService';
 import type { UserHealthStatus } from '@/services/admin/healthService';
 import { getLocalPersistenceRuntimeSnapshot } from '@/services/storage/indexeddb/indexedDbCore';
-import { getSyncQueueTelemetry } from '@/services/storage/sync';
+import { getSyncQueueTelemetry, listRecentSyncQueueOperations } from '@/services/storage/sync';
 import { getRepositoryPerformanceSummary } from '@/services/repositories/repositoryPerformance';
 import {
   getOperationalTelemetryEvents,
@@ -50,7 +50,10 @@ export const useSystemHealthReporter = (enabled = true) => {
         // Get error count from IndexedDB
         const logs = await fetchErrorLogs(100);
         const localErrorCount = logs.length;
-        const syncTelemetry = await getSyncQueueTelemetry();
+        const [syncTelemetry, recentSyncOperations] = await Promise.all([
+          getSyncQueueTelemetry(),
+          listRecentSyncQueueOperations(8),
+        ]);
         const pendingSyncTasks = syncTelemetry.pending;
         const failedSyncTasks = syncTelemetry.failed;
         const conflictSyncTasks = syncTelemetry.conflict;
@@ -106,6 +109,7 @@ export const useSystemHealthReporter = (enabled = true) => {
           recentEvents: buildRecentUserHealthEvents({
             localErrors: logs,
             operationalEvents,
+            recentSyncOperations,
           }),
         });
 

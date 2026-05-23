@@ -32,6 +32,11 @@ export interface SyncQueueOperationSnapshot {
   timestamp: number;
   nextAttemptAt?: number;
   error?: string;
+  lastErrorCode?: SyncTask['lastErrorCode'];
+  lastErrorCategory?: SyncTask['lastErrorCategory'];
+  lastErrorSeverity?: SyncTask['lastErrorSeverity'];
+  lastErrorAction?: SyncTask['lastErrorAction'];
+  lastErrorAt?: SyncTask['lastErrorAt'];
   key?: string;
   contexts?: SyncTask['contexts'];
   origin?: SyncTask['origin'];
@@ -253,6 +258,11 @@ export const createSyncQueueEngine = ({
       timestamp: row.timestamp,
       nextAttemptAt: row.nextAttemptAt,
       error: row.error,
+      lastErrorCode: row.lastErrorCode,
+      lastErrorCategory: row.lastErrorCategory,
+      lastErrorSeverity: row.lastErrorSeverity,
+      lastErrorAction: row.lastErrorAction,
+      lastErrorAt: row.lastErrorAt,
       key: row.key,
       contexts: row.contexts,
       origin: row.origin,

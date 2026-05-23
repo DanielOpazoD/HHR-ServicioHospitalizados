@@ -223,6 +223,15 @@ describe('storage/sync public entrypoint', () => {
     expect(tasks[0].retryCount).toBe(0);
     expect(tasks[0].lastErrorCode).toBe('permission-denied');
     expect(tasks[0].lastErrorCategory).toBe('authorization');
+
+    const [operation] = await listRecentSyncQueueOperations(1);
+    expect(operation).toMatchObject({
+      status: 'FAILED',
+      lastErrorCode: 'permission-denied',
+      lastErrorCategory: 'authorization',
+      lastErrorAction: 'Revisar permisos/reglas y sesión del usuario.',
+    });
+    expect(operation.lastErrorAt).toEqual(expect.any(Number));
   });
 
   it('marks task as conflict when remote concurrency conflict occurs', async () => {

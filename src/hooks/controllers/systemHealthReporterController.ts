@@ -7,6 +7,7 @@ import type { UserRole } from '@/types/authRoleTypes';
 import type { OperationalTelemetrySummary } from '@/services/observability/operationalTelemetryContracts';
 import type { OperationalTelemetryEvent } from '@/services/observability/operationalTelemetryTypes';
 import type { ErrorLog } from '@/services/logging/errorLogTypes';
+import type { SyncQueueOperationSnapshot } from '@/services/storage/sync';
 import type {
   FirestoreSyncReason,
   RemoteSyncRuntimeStatus,
@@ -36,6 +37,7 @@ export interface BuildUserHealthStatusOptions {
 export interface BuildRecentUserHealthEventsOptions {
   localErrors: ErrorLog[];
   operationalEvents: OperationalTelemetryEvent[];
+  recentSyncOperations?: SyncQueueOperationSnapshot[];
   maxEvents?: number;
 }
 
@@ -51,6 +53,14 @@ export const canReportSystemHealthForRuntime = (
 
 const CONTEXT_KEYS = ['module', 'section', 'screen', 'feature', 'component', 'action', 'button'];
 const PRIVATE_CONTEXT_KEYS = new Set(['patient', 'patientname', 'rut', 'diagnosis', 'diagnostico']);
+const SYNC_CONTEXT_LABELS: Record<string, string> = {
+  clinical: 'Censo diario',
+  staffing: 'Dotacion',
+  movements: 'Movimientos',
+  handoff: 'Entrega turno',
+  metadata: 'Metadata',
+  unknown: 'Sincronizacion local',
+};
 
 const toContextString = (
   context: Record<string, unknown> | undefined,
@@ -102,6 +112,74 @@ const buildContextSummary = (context: Record<string, unknown> | undefined): stri
     .slice(0, 4);
 };
 
+const toIsoTimestamp = (value: number | undefined): string => {
+  const date = new Date(value || Date.now());
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+};
+
+const buildSyncOperationModule = (operation: SyncQueueOperationSnapshot): string => {
+  const contextLabels = Array.from(
+    new Set((operation.contexts || []).map(context => SYNC_CONTEXT_LABELS[context] || context))
+  ).filter(Boolean);
+
+  if (contextLabels.length > 0) return contextLabels.join(' / ');
+  return operation.type === 'UPDATE_DAILY_RECORD' ? 'Censo diario' : 'Paciente';
+};
+
+const buildSyncOperationMessage = (operation: SyncQueueOperationSnapshot): string => {
+  if (operation.status === 'CONFLICT') return `${operation.type} con conflicto en cola local`;
+  if (operation.status === 'FAILED') return `${operation.type} fallida en cola local`;
+  return `${operation.type} pendiente en cola local`;
+};
+
+const buildSyncOperationSeverity = (
+  operation: SyncQueueOperationSnapshot
+): UserHealthRecentEvent['severity'] => {
+  if (operation.status === 'FAILED' || operation.status === 'CONFLICT') return 'critical';
+  if (operation.lastErrorSeverity === 'critical' || operation.lastErrorSeverity === 'high') {
+    return 'critical';
+  }
+  return 'warning';
+};
+
+const buildSyncOperationIssue = (operation: SyncQueueOperationSnapshot): string | undefined => {
+  if (operation.lastErrorCategory && operation.lastErrorCode) {
+    return `${operation.lastErrorCategory}: ${operation.lastErrorCode}`;
+  }
+  return operation.error;
+};
+
+const buildSyncOperationHealthEvents = (
+  operations: SyncQueueOperationSnapshot[] | undefined
+): UserHealthRecentEvent[] =>
+  (operations || [])
+    .filter(operation => operation.status === 'FAILED' || operation.status === 'CONFLICT')
+    .map(operation => {
+      const issue = buildSyncOperationIssue(operation);
+      return {
+        id: `sync_queue:${operation.id || `${operation.type}:${operation.timestamp}`}`,
+        source: 'operational',
+        category: 'sync',
+        severity: buildSyncOperationSeverity(operation),
+        status: 'open',
+        timestamp: toIsoTimestamp(operation.lastErrorAt || operation.timestamp),
+        message: buildSyncOperationMessage(operation),
+        operation: operation.origin || operation.recoveryPolicy || operation.type,
+        module: buildSyncOperationModule(operation),
+        action: operation.lastErrorAction || 'Revisar cola local y reintentar sincronizacion.',
+        route: operation.key || 'Cola local del usuario',
+        runtimeState: operation.status === 'CONFLICT' ? 'blocked' : undefined,
+        telemetryStatus: operation.status === 'FAILED' ? 'failed' : 'degraded',
+        issues: issue ? [truncateText(issue)] : [],
+        contextSummary: [
+          `estado: ${operation.status}`,
+          `reintentos: ${operation.retryCount}`,
+          operation.recoveryPolicy ? `politica: ${operation.recoveryPolicy}` : '',
+          operation.contexts?.length ? `contextos: ${operation.contexts.join(', ')}` : '',
+        ].filter(Boolean),
+      };
+    });
+
 const getModuleFromContext = (context: Record<string, unknown> | undefined): string | undefined =>
   toContextString(context, 'module') ||
   toContextString(context, 'section') ||
@@ -115,6 +193,7 @@ const getActionFromContext = (context: Record<string, unknown> | undefined): str
 export const buildRecentUserHealthEvents = ({
   localErrors,
   operationalEvents,
+  recentSyncOperations,
   maxEvents = 8,
 }: BuildRecentUserHealthEventsOptions): UserHealthRecentEvent[] => {
   const localErrorEvents: UserHealthRecentEvent[] = localErrors.map(error => ({
@@ -151,7 +230,9 @@ export const buildRecentUserHealthEvents = ({
       contextSummary: buildContextSummary(event.context),
     }));
 
-  return [...localErrorEvents, ...operationalHealthEvents]
+  const syncQueueEvents = buildSyncOperationHealthEvents(recentSyncOperations);
+
+  return [...localErrorEvents, ...operationalHealthEvents, ...syncQueueEvents]
     .sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp))
     .slice(0, maxEvents);
 };

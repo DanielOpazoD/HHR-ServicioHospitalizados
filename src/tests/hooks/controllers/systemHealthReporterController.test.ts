@@ -183,4 +183,52 @@ describe('systemHealthReporterController', () => {
     expect(JSON.stringify(events)).not.toContain('No debe exponerse');
     expect(JSON.stringify(events)).not.toContain('11111111-1');
   });
+
+  it('adds actionable sync queue operations to recent health events', () => {
+    const events = buildRecentUserHealthEvents({
+      localErrors: [],
+      operationalEvents: [],
+      recentSyncOperations: [
+        {
+          id: 22,
+          type: 'UPDATE_DAILY_RECORD',
+          status: 'FAILED',
+          retryCount: 0,
+          timestamp: Date.parse('2026-05-21T14:01:00.000Z'),
+          key: 'daily:2026-05-21',
+          contexts: ['clinical', 'handoff'],
+          origin: 'partial_update_retry',
+          recoveryPolicy: 'mixed_clinical_priority',
+          lastErrorCode: 'permission-denied',
+          lastErrorCategory: 'authorization',
+          lastErrorSeverity: 'high',
+          lastErrorAction: 'Revisar permisos/reglas y sesión del usuario.',
+          lastErrorAt: Date.parse('2026-05-21T14:04:00.000Z'),
+          error: '[authorization/permission-denied] Missing or insufficient permissions',
+        },
+      ],
+    });
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      id: 'sync_queue:22',
+      source: 'operational',
+      category: 'sync',
+      severity: 'critical',
+      status: 'open',
+      timestamp: '2026-05-21T14:04:00.000Z',
+      message: 'UPDATE_DAILY_RECORD fallida en cola local',
+      operation: 'partial_update_retry',
+      module: 'Censo diario / Entrega turno',
+      action: 'Revisar permisos/reglas y sesión del usuario.',
+      route: 'daily:2026-05-21',
+      issues: ['authorization: permission-denied'],
+      contextSummary: [
+        'estado: FAILED',
+        'reintentos: 0',
+        'politica: mixed_clinical_priority',
+        'contextos: clinical, handoff',
+      ],
+    });
+  });
 });
