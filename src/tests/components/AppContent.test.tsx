@@ -84,6 +84,15 @@ vi.mock('@/components/AppProviders', () => ({
   ),
 }));
 
+vi.mock('@/context/ReminderCenterContext', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  return {
+    ReminderCenterProvider: ({ children }: { children: React.ReactNode }) =>
+      React.createElement('div', { 'data-testid': 'reminder-provider' }, children),
+  };
+});
+
 vi.mock('@/views/LazyViews', () => ({
   CensusEmailConfigModal: () => <div data-testid="email-modal">EmailModal</div>,
 }));

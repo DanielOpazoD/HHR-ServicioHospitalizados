@@ -147,10 +147,10 @@ git commit -m "test: share operational console noise filter"
 
 ### Task 7: Final Gate
 
-- [ ] Run `npm run typecheck`.
-- [ ] Run `npm run lint -- --max-warnings 0`.
-- [ ] Run `npm run check:quality`.
-- [ ] Run `npm run test:ci:unit`.
-- [ ] Run `npm run build`.
-- [ ] Run Firestore gates if the branch touched persistence/security.
-- [ ] Summarize before pushing or opening PR.
+- [x] Run `npm run typecheck`.
+- [x] Run `npm run lint -- --max-warnings 0`.
+- [x] Run `npm run check:quality`.
+- [x] Run `npm run test:ci:unit`.
+- [x] Run `npm run build`.
+- [x] Run Firestore gates if the branch touched persistence/security.
+- [x] Summarize before pushing or opening PR.
