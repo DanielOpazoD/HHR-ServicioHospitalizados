@@ -65,6 +65,21 @@ describe('chunkingPolicy', () => {
     );
   });
 
+  it('does not force domain providers into the authenticated shell budget', () => {
+    expect(chunkForModule('/repo/src/context/ReminderCenterContext.tsx')).toBeUndefined();
+  });
+
+  it('keeps the reminder center provider out of the static authenticated shell import graph', () => {
+    const appContentSource = readSource('src/components/layout/AppContent.tsx');
+    const reminderHookSource = readSource('src/hooks/useReminders.ts');
+
+    expect(appContentSource).not.toMatch(
+      /import\s+\{[^}]*ReminderCenterProvider[^}]*\}\s+from ['"]@\/context\/ReminderCenterContext['"]/
+    );
+    expect(appContentSource).toContain("import('@/context/ReminderCenterContext')");
+    expect(reminderHookSource).not.toContain('@/context/ReminderCenterContext');
+  });
+
   it('keeps authenticated shell runtime off the hooks barrel to avoid pulling feature hooks into startup', () => {
     const guardedFiles = [
       'src/app-shell/runtime/useAuthenticatedAppRuntime.ts',
@@ -147,6 +162,18 @@ describe('chunkingPolicy', () => {
       'vendor-firebase-aux'
     );
     expect(chunkForModule('/repo/node_modules/jspdf/dist/jspdf.es.min.js')).toBe('vendor-pdf-core');
+  });
+
+  it('keeps the node-only ExcelJS loader invisible to the browser bundler', () => {
+    const browserLoaderSource = readSource('src/services/exporters/excelJsModuleLoader.ts');
+    const nodeLoaderSource = readSource('src/services/exporters/excelJsModuleLoader.node.ts');
+    const viteConfigSource = readSource('vite.config.ts');
+
+    expect(browserLoaderSource).toContain('/vendor/exceljs.min.js');
+    expect(browserLoaderSource).not.toMatch(/await\s+import\(['"]exceljs['"]\)/);
+    expect(browserLoaderSource).toContain('loadNodeExcelLoader');
+    expect(viteConfigSource).toContain('__ENABLE_NODE_EXCEL_LOADER__');
+    expect(nodeLoaderSource).toContain('importExcelJsForNode');
   });
 
   it('isolates shared commonjs helpers from feature-labelled vendor chunks', () => {

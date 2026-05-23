@@ -9,8 +9,7 @@ export const chunkForModule = (moduleId: string): string | undefined => {
     has('/src/components/layout/AppContent.tsx') ||
     has('/src/components/layout/app-content/') ||
     has('/src/components/AppProviders.tsx') ||
-    has('/src/context/CensusContext.tsx') ||
-    has('/src/context/ReminderCenterContext.tsx')
+    has('/src/context/CensusContext.tsx')
   ) {
     return 'app-authenticated-shell';
   }

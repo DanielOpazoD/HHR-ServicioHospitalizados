@@ -1,6 +1,13 @@
 {
   "entryMaxBytes": 700000,
   "chunkMaxBytes": 1250000,
+  "assetPatternBudgets": [
+    {
+      "pattern": "^vendor/exceljs\\.min\\.js$",
+      "_comment": "Browser ExcelJS is served as a runtime asset instead of a duplicated Vite chunk. Keep this explicit ceiling so dependency bumps cannot silently bloat the precache.",
+      "maxBytes": 1000000
+    }
+  ],
   "startupChunkBudgets": [
     {
       "label": "entry-app",
@@ -39,11 +46,6 @@
     },
     {
       "pattern": "^vendor-excel-(?!core-).*\\.js$",
-      "maxBytes": 950000
-    },
-    {
-      "pattern": "^exceljs\\.min-.*\\.js$",
-      "_comment": "Browser ExcelJS is emitted as a standalone runtime asset and should remain async-only. This explicit ceiling catches accidental growth of the heavy generated asset rather than relying only on the global chunk limit.",
       "maxBytes": 950000
     },
     {

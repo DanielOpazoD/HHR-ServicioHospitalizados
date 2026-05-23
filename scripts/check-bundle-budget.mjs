@@ -38,6 +38,9 @@ const chunkMaxBytes = Number(parsedConfig?.chunkMaxBytes || 0);
 const startupChunkBudgets = Array.isArray(parsedConfig?.startupChunkBudgets)
   ? parsedConfig.startupChunkBudgets
   : [];
+const assetPatternBudgets = Array.isArray(parsedConfig?.assetPatternBudgets)
+  ? parsedConfig.assetPatternBudgets
+  : [];
 const chunkPatternBudgets = Array.isArray(parsedConfig?.chunkPatternBudgets)
   ? parsedConfig.chunkPatternBudgets
   : [];
@@ -78,6 +81,26 @@ const jsAssets = fs
       size: fs.statSync(filePath).size,
     };
   });
+
+const collectDistAssets = directory =>
+  fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    const filePath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      return collectDistAssets(filePath);
+    }
+    if (!entry.isFile()) {
+      return [];
+    }
+    return [
+      {
+        name: path.relative(distDir, filePath).replace(/\\/g, '/'),
+        filePath,
+        size: fs.statSync(filePath).size,
+      },
+    ];
+  });
+
+const distAssets = collectDistAssets(distDir);
 
 const violations = [];
 const nearLimitWarnings = [];
@@ -128,6 +151,38 @@ for (const patternBudget of chunkPatternBudgets) {
     } else if (asset.size / maxBytes >= nearLimitThresholdRatio) {
       nearLimitWarnings.push(
         `Chunk "${asset.name}" is near pattern limit: ${toKb(asset.size)} (${toPct(asset.size, maxBytes)} of ${toKb(maxBytes)}) [pattern ${pattern}]`
+      );
+    }
+  }
+}
+
+for (const patternBudget of assetPatternBudgets) {
+  const pattern = typeof patternBudget?.pattern === 'string' ? patternBudget.pattern : '';
+  const maxBytes = Number(patternBudget?.maxBytes || 0);
+  if (!pattern || !maxBytes) continue;
+
+  let regex;
+  try {
+    regex = new RegExp(pattern);
+  } catch (error) {
+    fail(
+      `Invalid asset regex "${pattern}" in config: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
+  const matchingAssets = distAssets.filter(candidate => regex.test(candidate.name));
+  if (matchingAssets.length === 0) {
+    violations.push(`No dist asset matched budget pattern ${pattern}`);
+  }
+
+  for (const asset of matchingAssets) {
+    if (asset.size > maxBytes) {
+      violations.push(
+        `Asset "${asset.name}" is ${toKb(asset.size)} (pattern ${pattern} limit ${toKb(maxBytes)})`
+      );
+    } else if (asset.size / maxBytes >= nearLimitThresholdRatio) {
+      nearLimitWarnings.push(
+        `Asset "${asset.name}" is near pattern limit: ${toKb(asset.size)} (${toPct(asset.size, maxBytes)} of ${toKb(maxBytes)}) [pattern ${pattern}]`
       );
     }
   }
@@ -192,6 +247,16 @@ entryFiles.forEach(entryFile => {
 });
 largestChunks.forEach(chunk => {
   console.warn(`[bundle-budget] Largest chunk: ${chunk.name} (${toKb(chunk.size)})`);
+});
+assetPatternBudgets.forEach(patternBudget => {
+  const pattern = typeof patternBudget?.pattern === 'string' ? patternBudget.pattern : '';
+  const regex = pattern ? new RegExp(pattern) : null;
+  if (!regex) return;
+  distAssets
+    .filter(candidate => regex.test(candidate.name))
+    .forEach(asset => {
+      console.warn(`[bundle-budget] Runtime asset: ${asset.name} (${toKb(asset.size)})`);
+    });
 });
 if (nearLimitWarnings.length > 0) {
   console.warn('[bundle-budget] Near-limit warnings:');
