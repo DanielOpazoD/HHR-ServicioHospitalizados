@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { UserHealthStatus } from '@/services/admin/healthService';
 import {
   buildSystemHealthTriageModel,
   buildSystemHealthIncidentTimeline,
@@ -9,51 +8,7 @@ import {
   resolveSystemHealthIncidentRow,
   shiftSystemHealthSelectedDate,
 } from '@/features/admin/components/systemHealthIncidentUtils';
-
-const baseStatus = (overrides: Partial<UserHealthStatus> = {}): UserHealthStatus => ({
-  uid: 'u1',
-  email: 'user@example.com',
-  displayName: 'User Example',
-  lastSeen: '2026-05-21T14:10:00.000Z',
-  isOnline: true,
-  isOutdated: false,
-  pendingMutations: 0,
-  pendingSyncTasks: 0,
-  failedSyncTasks: 0,
-  conflictSyncTasks: 0,
-  retryingSyncTasks: 0,
-  syncOrphanedTasks: 0,
-  oldestPendingAgeMs: 0,
-  remoteSyncReason: 'ready',
-  versionUpdateReason: 'current',
-  localErrorCount: 0,
-  degradedLocalPersistence: false,
-  repositoryWarningCount: 0,
-  slowestRepositoryOperationMs: 0,
-  operationalObservedCount: 0,
-  operationalFailureCount: 0,
-  operationalRetryableCount: 0,
-  operationalRecoverableCount: 0,
-  operationalDegradedCount: 0,
-  operationalBlockedCount: 0,
-  operationalUnauthorizedCount: 0,
-  operationalLastHourObservedCount: 0,
-  operationalSyncObservedCount: 0,
-  operationalIndexedDbObservedCount: 0,
-  operationalClinicalDocumentObservedCount: 0,
-  operationalCreateDayObservedCount: 0,
-  operationalHandoffObservedCount: 0,
-  operationalExportBackupObservedCount: 0,
-  operationalDailyRecordRecoveredRealtimeNullCount: 0,
-  operationalDailyRecordConfirmedRealtimeNullCount: 0,
-  operationalSyncReadUnavailableCount: 0,
-  operationalIndexedDbFallbackModeCount: 0,
-  operationalAuthBootstrapTimeoutCount: 0,
-  appVersion: 'v1',
-  platform: 'MacIntel',
-  userAgent: 'Vitest',
-  ...overrides,
-});
+import { baseStatus } from './systemHealthIncidentTestFixtures';
 
 describe('systemHealthIncidentUtils', () => {
   it('builds actionable incident rows from recent events and conflict counters', () => {

@@ -1,155 +1,42 @@
 import { evaluateSystemHealthState } from './systemHealthStatusPolicy';
+import type { UserHealthStatus } from '@/services/admin/healthService';
+import {
+  buildSystemHealthIncidentRows,
+  labelFor,
+  resolveSystemHealthIncidentRow,
+  severityRank,
+  STATUS_LABELS,
+  statusRank,
+  toMs,
+} from './systemHealthIncidentRows';
 import type {
-  SystemHealthIncidentResolution,
-  SystemHealthIncidentResolutionHistoryEntry,
-  SystemHealthIncidentResolutionState,
-  UserHealthEventSeverity,
-  UserHealthRecentEvent,
-  UserHealthStatus,
-} from '@/services/admin/healthService';
+  BuildSystemHealthTriageModelParams,
+  SystemHealthDateRange,
+  SystemHealthEventTypeFilter,
+  SystemHealthIncidentGroup,
+  SystemHealthIncidentQueueRow,
+  SystemHealthIncidentRow,
+  SystemHealthIncidentTimelineDay,
+  SystemHealthSeverityFilter,
+  SystemHealthTriageFilters,
+  SystemHealthTriageModel,
+} from './systemHealthIncidentTypes';
 
-export type SystemHealthDateRange = 'all' | 'day' | 'last24h' | 'last7d';
-export type SystemHealthSeverityFilter = 'all' | UserHealthEventSeverity | 'healthy';
-export type SystemHealthEventTypeFilter =
-  | 'all'
-  | 'sync'
-  | 'local_error'
-  | 'operational'
-  | 'sync_conflict';
-
-export interface SystemHealthTriageFilters {
-  searchTerm: string;
-  dateRange: SystemHealthDateRange;
-  severity: SystemHealthSeverityFilter;
-  eventType: SystemHealthEventTypeFilter;
-  selectedDate?: string;
-  nowMs?: number;
-}
-
-export interface SystemHealthIncidentRow {
-  id: string;
-  resolutionKey: string;
-  title: string;
-  timestamp: string;
-  source: UserHealthRecentEvent['source'];
-  category: UserHealthRecentEvent['category'];
-  sourceLabel: string;
-  categoryLabel: string;
-  severity: UserHealthEventSeverity;
-  status: UserHealthRecentEvent['status'];
-  statusLabel: string;
-  originLabel: string;
-  actionLabel: string;
-  routeLabel: string;
-  userLabel: string;
-  userUid: string;
-  userEmail: string;
-  resolvedAt?: string;
-  resolvedByName?: string;
-  resolutionNote?: string;
-  resolutionHistory?: SystemHealthIncidentResolutionHistoryEntry[];
-  details: string[];
-}
-
-export interface SystemHealthIncidentQueueRow extends SystemHealthIncidentRow {
-  healthLevel: 'healthy' | 'warning' | 'critical';
-}
-
-export interface SystemHealthIncidentGroup {
-  id: string;
-  title: string;
-  categoryLabel: string;
-  originLabel: string;
-  actionLabel: string;
-  routeLabel: string;
-  severity: UserHealthEventSeverity;
-  status: UserHealthRecentEvent['status'] | 'recurrent';
-  statusLabel: string;
-  occurrenceCount: number;
-  affectedUsers: number;
-  firstSeenAt: string;
-  lastSeenAt: string;
-  userLabels: string[];
-}
-
-export interface SystemHealthIncidentTimelineDay {
-  date: string;
-  totalIncidents: number;
-  criticalIncidents: number;
-  warningIncidents: number;
-  affectedUsers: number;
-  firstSeenAt: string;
-  lastSeenAt: string;
-  durationMinutes: number;
-}
-
-export interface SystemHealthTriageTotals {
-  totalIncidents: number;
-  criticalIncidents: number;
-  warningIncidents: number;
-  affectedUsers: number;
-  openIncidents: number;
-  recoveredIncidents: number;
-  resolvedIncidents: number;
-}
-
-export interface SystemHealthUserTriage {
-  user: UserHealthStatus;
-  healthLevel: 'healthy' | 'warning' | 'critical';
-  incidents: SystemHealthIncidentRow[];
-  latestIncidentAt?: string;
-  criticalCount: number;
-  warningCount: number;
-}
-
-export interface SystemHealthTriageModel {
-  filteredUsers: UserHealthStatus[];
-  selectedUser?: UserHealthStatus;
-  selectedIncidents: SystemHealthIncidentRow[];
-  userTriage: SystemHealthUserTriage[];
-  incidentQueue: SystemHealthIncidentQueueRow[];
-  incidentGroups: SystemHealthIncidentGroup[];
-  timeline: SystemHealthIncidentTimelineDay[];
-  totals: SystemHealthTriageTotals;
-}
-
-const CATEGORY_LABELS: Record<string, string> = {
-  auth: 'Auth',
-  daily_record: 'Censo diario',
-  firestore: 'Firestore',
-  sync: 'Sync',
-  indexeddb: 'IndexedDB',
-  integration: 'Integracion',
-  export: 'Exportacion',
-  backup: 'Backup',
-  reminders: 'Recordatorios',
-  transfers: 'Traslados',
-  clinical_document: 'Documento clinico',
-  create_day: 'Crear dia',
-  handoff: 'Entrega turno',
-  prescription: 'Recetas',
-  local_error: 'Error local',
-  sync_conflict: 'Conflicto',
-  health_snapshot: 'Estado',
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  local_error: 'Error local',
-  operational: 'Operacional',
-  sync_conflict: 'Conflicto',
-  health_snapshot: 'Estado',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  open: 'Abierto',
-  recovered: 'Recuperado',
-  resolved: 'Resuelto',
-};
-
-const toMs = (timestamp: string | undefined): number => {
-  const value = Date.parse(timestamp || '');
-  return Number.isFinite(value) ? value : 0;
-};
+export type {
+  BuildSystemHealthTriageModelParams,
+  SystemHealthDateRange,
+  SystemHealthEventTypeFilter,
+  SystemHealthIncidentGroup,
+  SystemHealthIncidentQueueRow,
+  SystemHealthIncidentRow,
+  SystemHealthIncidentTimelineDay,
+  SystemHealthSeverityFilter,
+  SystemHealthTriageFilters,
+  SystemHealthTriageModel,
+  SystemHealthTriageTotals,
+  SystemHealthUserTriage,
+} from './systemHealthIncidentTypes';
+export { buildSystemHealthIncidentRows, resolveSystemHealthIncidentRow };
 
 const isWithinDateRange = (
   timestamp: string | undefined,
@@ -166,131 +53,6 @@ const isWithinDateRange = (
   const maxAgeMs = dateRange === 'last24h' ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
   return nowMs - eventMs <= maxAgeMs;
 };
-
-const labelFor = (labels: Record<string, string>, value: string | undefined, fallback: string) =>
-  value ? labels[value] || value : fallback;
-
-const buildOriginLabel = (event: UserHealthRecentEvent): string => {
-  if (event.module && event.operation) return `${event.module} / ${event.operation}`;
-  return event.module || event.operation || labelFor(CATEGORY_LABELS, event.category, 'Sin origen');
-};
-
-const buildSyntheticEvent = (
-  user: UserHealthStatus,
-  id: string,
-  message: string,
-  category: UserHealthRecentEvent['category'],
-  severity: UserHealthEventSeverity,
-  timestamp: string,
-  metadata: Pick<UserHealthRecentEvent, 'module' | 'operation' | 'action' | 'route'> = {}
-): UserHealthRecentEvent => ({
-  id: `${user.uid}:${id}`,
-  source: category === 'sync_conflict' ? 'sync_conflict' : 'health_snapshot',
-  category,
-  severity,
-  status: 'open',
-  timestamp,
-  message,
-  ...metadata,
-});
-
-const buildSyntheticHealthEvents = (user: UserHealthStatus): UserHealthRecentEvent[] => {
-  const events: UserHealthRecentEvent[] = [];
-  const knownEventTimestamp = user.recentEvents?.[0]?.timestamp;
-  const syntheticTimestamp = user.latestOperationalIssueAt || knownEventTimestamp || user.lastSeen;
-
-  if ((user.conflictSyncTasks || 0) > 0) {
-    events.push(
-      buildSyntheticEvent(
-        user,
-        'sync-conflicts',
-        `${user.conflictSyncTasks} conflicto(s) de sincronizacion pendientes`,
-        'sync_conflict',
-        'critical',
-        syntheticTimestamp,
-        {
-          module: 'Sincronizacion local',
-          operation: 'outbox',
-          action: 'Resolver conflicto pendiente',
-          route: 'Modulo donde se genero la cola local',
-        }
-      )
-    );
-  }
-
-  if (user.failedSyncTasks > 0) {
-    events.push(
-      buildSyntheticEvent(
-        user,
-        'failed-sync',
-        `${user.failedSyncTasks} sincronizacion(es) fallidas`,
-        'sync',
-        'critical',
-        syntheticTimestamp,
-        {
-          module: 'Sincronizacion local',
-          operation:
-            user.latestOperationalOperation || user.operationalTopObservedOperation || 'outbox',
-          action: 'Reintentar sincronizacion',
-          route: 'Cola local del usuario',
-        }
-      )
-    );
-  }
-
-  if (
-    user.localErrorCount > 0 &&
-    !(user.recentEvents || []).some(event => event.source === 'local_error')
-  ) {
-    events.push(
-      buildSyntheticEvent(
-        user,
-        'local-errors',
-        `${user.localErrorCount} error(es) locales acumulados`,
-        'local_error',
-        user.localErrorCount >= 10 ? 'critical' : 'warning',
-        syntheticTimestamp,
-        {
-          module: 'Navegador del usuario',
-          operation: 'error_local_acumulado',
-          action: 'Revisar consola/telemetria local',
-          route: 'Sesion del usuario',
-        }
-      )
-    );
-  }
-
-  return events;
-};
-
-export const buildSystemHealthIncidentRows = (user: UserHealthStatus): SystemHealthIncidentRow[] =>
-  [...(user.recentEvents || []), ...buildSyntheticHealthEvents(user)]
-    .sort((a, b) => toMs(b.timestamp) - toMs(a.timestamp))
-    .map(event => ({
-      id: event.id,
-      resolutionKey: `${user.uid}:${event.id}`,
-      title: event.message,
-      timestamp: event.timestamp,
-      source: event.source,
-      category: event.category,
-      sourceLabel: labelFor(SOURCE_LABELS, event.source, 'Evento'),
-      categoryLabel: labelFor(CATEGORY_LABELS, event.category, 'Evento'),
-      severity: event.severity,
-      status: event.status,
-      statusLabel: labelFor(STATUS_LABELS, event.status, 'Abierto'),
-      originLabel: buildOriginLabel(event),
-      actionLabel: event.action || 'Sin accion registrada',
-      routeLabel: event.route || 'Sin ruta registrada',
-      userLabel: user.displayName || user.email,
-      userUid: user.uid,
-      userEmail: user.email,
-      details: [
-        event.runtimeState ? `runtime: ${event.runtimeState}` : '',
-        event.telemetryStatus ? `telemetria: ${event.telemetryStatus}` : '',
-        ...(event.issues || []),
-        ...(event.contextSummary || []),
-      ].filter(Boolean),
-    }));
 
 const userMatchesSearch = (user: UserHealthStatus, searchTerm: string): boolean => {
   const normalized = searchTerm.trim().toLowerCase();
@@ -339,18 +101,6 @@ export const filterSystemHealthStatsForTriage = (
       userMatchesEventType(rows, filters.eventType)
     );
   });
-};
-
-const severityRank = (severity: UserHealthEventSeverity): number => {
-  if (severity === 'critical') return 0;
-  if (severity === 'warning') return 1;
-  return 2;
-};
-
-const statusRank = (status: UserHealthRecentEvent['status']): number => {
-  if (status === 'open') return 0;
-  if (status === 'recovered') return 1;
-  return 2;
 };
 
 const buildIncidentCauseKey = (incident: SystemHealthIncidentRow): string =>
@@ -492,15 +242,7 @@ export const exportSystemHealthIncidentsCsv = (incidents: SystemHealthIncidentRo
 
 export const buildSystemHealthTriageModel = (
   stats: UserHealthStatus[],
-  {
-    selectedUid,
-    filters,
-    resolutionState = {},
-  }: {
-    selectedUid: string | null;
-    filters: SystemHealthTriageFilters;
-    resolutionState?: SystemHealthIncidentResolutionState;
-  }
+  { selectedUid, filters, resolutionState = {} }: BuildSystemHealthTriageModelParams
 ): SystemHealthTriageModel => {
   const filteredUsers = filterSystemHealthStatsForTriage(stats, filters);
   const userTriage = filteredUsers.map(user => {
@@ -557,28 +299,6 @@ export const buildSystemHealthTriageModel = (
       recoveredIncidents: incidentQueue.filter(incident => incident.status === 'recovered').length,
       resolvedIncidents: incidentQueue.filter(incident => incident.status === 'resolved').length,
     },
-  };
-};
-
-export const resolveSystemHealthIncidentRow = (
-  row: SystemHealthIncidentRow,
-  resolution?: SystemHealthIncidentResolution
-): SystemHealthIncidentRow => {
-  if (!resolution || resolution.status !== 'resolved') return row;
-  return {
-    ...row,
-    status: 'resolved',
-    statusLabel: 'Resuelto',
-    resolvedAt: resolution.resolvedAt,
-    resolvedByName: resolution.resolvedByName,
-    resolutionNote: resolution.note,
-    resolutionHistory: resolution.history,
-    details: [
-      ...row.details,
-      resolution.resolvedAt ? `resuelto: ${resolution.resolvedAt}` : '',
-      resolution.resolvedByName ? `por: ${resolution.resolvedByName}` : '',
-      resolution.note ? `nota: ${resolution.note}` : '',
-    ].filter(Boolean),
   };
 };
 
