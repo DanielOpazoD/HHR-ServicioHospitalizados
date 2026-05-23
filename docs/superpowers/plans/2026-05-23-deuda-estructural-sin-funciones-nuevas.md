@@ -128,10 +128,10 @@ git commit -m "test: share operational console noise filter"
 
 - Modify only existing census/hook controllers with high churn and clear responsibility leakage.
 
-- [ ] Rename/group controller helpers where cohesion is obvious.
-- [ ] Preserve exports or add compatibility wrappers only when needed.
-- [ ] Run focused census/hook tests plus `npm run check:census-module-size`.
-- [ ] Commit.
+- [x] Rename/group controller helpers where cohesion is obvious.
+- [x] Preserve exports or add compatibility wrappers only when needed.
+- [x] Run focused census/hook tests plus `npm run check:census-module-size`.
+- [x] Commit.
 
 ### Task 6: IndexedDB Runtime Boundary Cleanup
 
