@@ -4,7 +4,6 @@ import {
   parseCompositeEpisodeKey,
   summarizeClinicalDocuments,
 } from '@/features/census/components/global-search/patientSelectionDocumentController';
-import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/clinicalDocumentRecordTypes';
 
 describe('patientSelectionDocumentController', () => {
   it('parses composite episode keys with optional admission time', () => {
@@ -45,7 +44,7 @@ describe('patientSelectionDocumentController', () => {
           createdBy: { displayName: 'Dra. Hiva' },
         },
       },
-    ] as ClinicalDocumentRecord[];
+    ];
 
     expect(summarizeClinicalDocuments(documents, 'fallback-key')).toEqual([
       {

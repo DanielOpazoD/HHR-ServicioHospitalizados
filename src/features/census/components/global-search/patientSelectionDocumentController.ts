@@ -1,5 +1,4 @@
 import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
-import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/clinicalDocumentRecordTypes';
 import type { ClinicalDocSummary } from '@/features/census/components/global-search/globalSearchContracts';
 
 export interface ParsedCompositeEpisodeKey {
@@ -46,8 +45,22 @@ export const buildClinicalDocumentEpisodeKeyCandidates = ({
   ];
 };
 
+interface ClinicalDocumentSummarySource {
+  id?: string;
+  episodeKey?: string;
+  documentType?: string;
+  status?: string;
+  audit?: {
+    createdAt?: string;
+    createdBy?: {
+      displayName?: string;
+    };
+    updatedAt?: string;
+  };
+}
+
 export const summarizeClinicalDocuments = (
-  documents: ClinicalDocumentRecord[],
+  documents: ClinicalDocumentSummarySource[],
   fallbackEpisodeKey: string
 ): ClinicalDocSummary[] =>
   documents.map(document => ({
