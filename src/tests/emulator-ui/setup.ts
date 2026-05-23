@@ -1,4 +1,7 @@
 import 'fake-indexeddb/auto';
+import { wrapConsoleForOperationalNoise } from '@/tests/utils/operationalConsoleNoiseFilter';
+
+wrapConsoleForOperationalNoise(['warn', 'error']);
 
 if (typeof globalThis.crypto === 'undefined') {
   Object.defineProperty(globalThis, 'crypto', {

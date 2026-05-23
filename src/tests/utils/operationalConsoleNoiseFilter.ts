@@ -1,8 +1,8 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+const originalConsoleMethods = new Map<ConsoleMethod, Console[ConsoleMethod]>();
 
-const EXPECTED_NOISY_CONSOLE_PATTERNS = [
+export type ConsoleMethod = 'log' | 'warn' | 'error' | 'info' | 'debug';
+
+export const ALLOWED_OPERATIONAL_CONSOLE_NOISE_PATTERNS = [
   '[IndexedDB]',
   '[Migration]',
   '[Repository DEBUG]',
@@ -70,48 +70,27 @@ const EXPECTED_NOISY_CONSOLE_PATTERNS = [
   '[PatientRowAsyncAction] Async patient row action failed silently',
 ] as const;
 
-const extractAllowedPatterns = (setup: string) => {
-  const match = setup.match(
-    /export const ALLOWED_OPERATIONAL_CONSOLE_NOISE_PATTERNS = \[(?<body>[\s\S]*?)\] as const;/
-  );
-  if (!match?.groups?.body) return [];
-
-  return [...match.groups.body.matchAll(/^\s*'(?<pattern>[^']+)',\s*$/gm)].map(
-    ({ groups }) => groups?.pattern ?? ''
-  );
+export const shouldFilterOperationalConsoleMessage = (args: unknown[]): boolean => {
+  const message = args.map(arg => String(arg)).join(' ');
+  return ALLOWED_OPERATIONAL_CONSOLE_NOISE_PATTERNS.some(pattern => message.includes(pattern));
 };
 
-const readProjectFile = (relativePath: string) =>
-  fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
+const wrapConsoleMethodForOperationalNoise = (method: ConsoleMethod): void => {
+  if (!originalConsoleMethods.has(method)) {
+    // eslint-disable-next-line no-console
+    originalConsoleMethods.set(method, console[method].bind(console));
+  }
 
-describe('test setup console noise filter', () => {
-  it('keeps the expected operational-noise filters explicit and reviewed', () => {
-    const sharedFilter = readProjectFile('src/tests/utils/operationalConsoleNoiseFilter.ts');
-    const allowedPatterns = extractAllowedPatterns(sharedFilter);
+  const original = originalConsoleMethods.get(method);
+  if (!original) return;
 
-    expect(allowedPatterns).toEqual(EXPECTED_NOISY_CONSOLE_PATTERNS);
+  // eslint-disable-next-line no-console
+  console[method] = (...args: unknown[]) => {
+    if (shouldFilterOperationalConsoleMessage(args)) return;
+    original(...args);
+  };
+};
 
-    expect(sharedFilter).not.toContain("'Firestore query failed'");
-    expect(sharedFilter).not.toContain("'Firebase bootstrap failed'");
-    expect(sharedFilter).not.toContain("'Network error'");
-    expect(sharedFilter).not.toContain("'Error'");
-  });
-
-  it('shares the operational-noise filter with unit and emulator UI setup', () => {
-    const unitSetup = readProjectFile('src/tests/setup.ts');
-    const emulatorConfig = readProjectFile('vitest.emulator.config.ts');
-    const emulatorSetup = readProjectFile('src/tests/emulator/setup.ts');
-    const emulatorUiSetup = readProjectFile('src/tests/emulator-ui/setup.ts');
-    const sharedFilter = readProjectFile('src/tests/utils/operationalConsoleNoiseFilter.ts');
-
-    expect(sharedFilter).toContain('export const ALLOWED_OPERATIONAL_CONSOLE_NOISE_PATTERNS');
-    expect(sharedFilter).toContain('export const shouldFilterOperationalConsoleMessage');
-    expect(sharedFilter).toContain('export const wrapConsoleForOperationalNoise');
-    expect(unitSetup).toContain(
-      "wrapConsoleForOperationalNoise(['log', 'warn', 'error', 'info', 'debug'])"
-    );
-    expect(emulatorConfig).toContain("setupFiles: ['./src/tests/emulator/setup.ts']");
-    expect(emulatorSetup).toContain("wrapConsoleForOperationalNoise(['warn', 'error'])");
-    expect(emulatorUiSetup).toContain("wrapConsoleForOperationalNoise(['warn', 'error'])");
-  });
-});
+export const wrapConsoleForOperationalNoise = (methods: ConsoleMethod[]): void => {
+  methods.forEach(wrapConsoleMethodForOperationalNoise);
+};

@@ -164,11 +164,11 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
   });
 
   afterEach(async () => {
-    while (unmounts.length > 0) {
-      const unmount = unmounts.pop();
-      unmount?.();
-    }
     await act(async () => {
+      while (unmounts.length > 0) {
+        const unmount = unmounts.pop();
+        unmount?.();
+      }
       await Promise.resolve();
     });
     clearPendingDailyRecordPatchesForTests();
@@ -418,11 +418,13 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
     markDailyRecordTabVisible(6 * 60 * 1000);
     expect(getDailyRecordFreshnessStatus(date)).toBe('stale_due_to_inactivity');
 
-    await testEnv.withSecurityRulesDisabled(async context => {
-      await context
-        .firestore()
-        .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
-        .set(updatedByClientA);
+    await act(async () => {
+      await testEnv.withSecurityRulesDisabled(async context => {
+        await context
+          .firestore()
+          .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
+          .set(updatedByClientA);
+      });
     });
 
     await waitFor(() => {
