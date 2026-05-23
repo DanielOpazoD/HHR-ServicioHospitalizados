@@ -94,10 +94,10 @@ git commit -m "test: share operational console noise filter"
 - Modify/Create focused helpers under `src/services/repositories/`
 - Test: targeted repository/controller tests already covering partial writes and invariant repair.
 
-- [ ] Extract retry/recovery decision code from `dailyRecordRepositoryWriteService.ts`.
-- [ ] Keep public API unchanged.
-- [ ] Run `npm run test:repository-compat` plus focused write-service tests.
-- [ ] Commit.
+- [x] Extract retry/recovery decision code from `dailyRecordRepositoryWriteService.ts`.
+- [x] Keep public API unchanged.
+- [x] Run `npm run test:repository-compat` plus focused write-service tests.
+- [x] Commit.
 
 ### Task 3: Contract Surface Protection
 

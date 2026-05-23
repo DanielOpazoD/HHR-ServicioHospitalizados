@@ -18,10 +18,7 @@ import { buildDailyRecordSyncContract } from '@/services/storage/sync/syncTaskCo
 import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordPersistencePreparation';
 import { preparePatchedRecordForPersistence } from '@/services/repositories/dailyRecordPatchPreparation';
-import {
-  assertRemoteSaveCompatibility,
-  resolveRemoteWriteRecovery,
-} from '@/services/repositories/dailyRecordRemoteWriteController';
+import { assertRemoteSaveCompatibility } from '@/services/repositories/dailyRecordRemoteWriteController';
 import { attemptConflictAutoMergeRecovery } from '@/services/repositories/dailyRecordConflictAutoMergeController';
 import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyRecordBackgroundMasterSyncController';
 import { resolveBlockingFieldShrinkages } from '@/services/repositories/dailyRecordFieldShrinkageGuard';
@@ -34,6 +31,7 @@ import {
   createRemoteWriteState,
   type RemoteWriteState,
 } from '@/services/repositories/dailyRecordWriteState';
+import { persistLocalAndAttemptRemoteSync } from '@/services/repositories/dailyRecordRemotePersistenceController';
 import { dailyRecordWriteLogger } from '@/services/repositories/repositoryLoggers';
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
@@ -52,38 +50,6 @@ const runRemoteSaveIntegrityCheck = async (date: string, record: DailyRecord): P
     }
     dailyRecordWriteLogger.warn('Could not perform integrity check, proceeding anyway', err);
   }
-};
-
-const applyRemoteRecovery = async (
-  date: string,
-  record: DailyRecord,
-  fields: string[],
-  error: unknown,
-  state: RemoteWriteState,
-  expectedVersion?: string
-): Promise<'continue' | 'return'> => {
-  const recovery = await resolveRemoteWriteRecovery(date, record, fields, error, expectedVersion);
-  if (recovery.status === 'throw') {
-    applyRecoveryDecisionToState(
-      state,
-      recovery.decision,
-      recovery.error instanceof Error ? recovery.error : undefined
-    );
-    return 'return';
-  }
-
-  state.queuedForRetry = recovery.queuedForRetry;
-  state.autoMerged = recovery.autoMerged;
-  applyRecoveryDecisionToState(state, recovery.decision);
-  return recovery.status === 'auto_merged' ? 'return' : 'continue';
-};
-
-const markRemoteWriteSucceeded = (state: RemoteWriteState): void => {
-  state.savedRemotely = true;
-  state.consistencyState = 'persisted_and_synced';
-  state.recoveryAction = 'none';
-  state.retryability = 'not_applicable';
-  state.observabilityTags = ['daily_record', 'write', 'persisted_and_synced'];
 };
 
 const tryAutoMergeBlockedFullSaveRegression = async (
@@ -115,39 +81,6 @@ const tryAutoMergeBlockedFullSaveRegression = async (
       'Se detectó una posible pérdida de datos y se fusionó automáticamente con la copia remota.',
   });
   return true;
-};
-
-const persistLocalAndAttemptRemoteSync = async ({
-  date,
-  record,
-  changedPaths,
-  remoteState,
-  remoteWrite,
-  onRemoteFailure,
-  expectedVersion,
-}: {
-  date: string;
-  record: DailyRecord;
-  changedPaths: string[];
-  remoteState: RemoteWriteState;
-  remoteWrite: () => Promise<void>;
-  onRemoteFailure: (error: unknown) => void;
-  expectedVersion?: string;
-}): Promise<'continue' | 'return'> => {
-  await saveToIndexedDB(record);
-
-  if (!isFirestoreEnabled()) {
-    return 'continue';
-  }
-
-  try {
-    await remoteWrite();
-    markRemoteWriteSucceeded(remoteState);
-    return 'continue';
-  } catch (err) {
-    onRemoteFailure(err);
-    return applyRemoteRecovery(date, record, changedPaths, err, remoteState, expectedVersion);
-  }
 };
 
 const resolvePartialUpdateBaseRecord = async (date: string): Promise<DailyRecord | null> => {
