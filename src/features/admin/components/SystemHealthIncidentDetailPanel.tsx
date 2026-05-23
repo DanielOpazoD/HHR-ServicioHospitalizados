@@ -36,6 +36,7 @@ export const SystemHealthIncidentDetailPanel = ({
   onResolveIncident,
   onReopenIncident,
   deleting,
+  canManageSystemHealthOperations,
 }: {
   user?: UserHealthStatus;
   incidents: SystemHealthIncidentRow[];
@@ -43,6 +44,7 @@ export const SystemHealthIncidentDetailPanel = ({
   onResolveIncident: (incidentId: string, note?: string) => void;
   onReopenIncident: (incidentId: string) => void;
   deleting: boolean;
+  canManageSystemHealthOperations: boolean;
 }) => {
   const [resolutionNotes, setResolutionNotes] = useState<Record<string, string>>({});
 
@@ -65,16 +67,22 @@ export const SystemHealthIncidentDetailPanel = ({
             <h3 className="mt-1 truncate text-sm font-black text-slate-900">{user.displayName}</h3>
             <p className="truncate text-xs text-slate-500">{user.email}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => onDeleteSnapshot(user)}
-            disabled={deleting}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-100 bg-red-50 text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-            title="Borrar registro de salud"
-            aria-label="Borrar registro de salud"
-          >
-            <Trash2 size={14} />
-          </button>
+          {canManageSystemHealthOperations ? (
+            <button
+              type="button"
+              onClick={() => onDeleteSnapshot(user)}
+              disabled={deleting}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-100 bg-red-50 text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+              title="Borrar registro de salud"
+              aria-label="Borrar registro de salud"
+            >
+              <Trash2 size={14} />
+            </button>
+          ) : (
+            <span className="shrink-0 rounded-md border border-amber-100 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">
+              Requiere rol admin
+            </span>
+          )}
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-slate-600">
@@ -170,7 +178,11 @@ export const SystemHealthIncidentDetailPanel = ({
               ) : null}
 
               <div className="mt-3 flex justify-end">
-                {incident.status === 'resolved' ? (
+                {!canManageSystemHealthOperations ? (
+                  <span className="rounded-md border border-amber-100 bg-white/70 px-2 py-1 text-[10px] font-bold text-amber-700">
+                    Requiere rol admin
+                  </span>
+                ) : incident.status === 'resolved' ? (
                   <button
                     type="button"
                     onClick={() => onReopenIncident(incident.resolutionKey)}

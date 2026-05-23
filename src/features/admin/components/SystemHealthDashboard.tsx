@@ -35,7 +35,7 @@ import {
 const todayInputValue = () => new Date().toISOString().slice(0, 10);
 
 export const SystemHealthDashboard = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, role } = useAuth();
   const { confirm } = useConfirmDialog();
   const { success, error } = useNotification();
   const [stats, setStats] = useState<UserHealthStatus[]>([]);
@@ -80,6 +80,11 @@ export const SystemHealthDashboard = () => {
   );
   const summary = buildSystemHealthSummary(stats);
   const { filteredUsers, selectedUser, selectedIncidents, incidentQueue, totals } = triageModel;
+  const canManageSystemHealthOperations = role === 'admin';
+
+  const notifyAdminOnlyAction = () => {
+    error('Accion restringida', 'Requiere rol admin');
+  };
 
   const orderedSelectedIncidents = useMemo(() => {
     if (!selectedResolutionKey) return selectedIncidents;
@@ -117,6 +122,11 @@ export const SystemHealthDashboard = () => {
   }, [filteredUsers, incidentQueue, selectedResolutionKey]);
 
   const handleDeleteSnapshot = async (user: UserHealthStatus) => {
+    if (!canManageSystemHealthOperations) {
+      notifyAdminOnlyAction();
+      return;
+    }
+
     const confirmed = await confirm({
       title: 'Borrar registro de salud',
       message: `Se eliminara el snapshot operativo de ${user.displayName}. Si el usuario sigue activo, volvera a reportar en el proximo ciclo.`,
@@ -149,6 +159,11 @@ export const SystemHealthDashboard = () => {
   });
 
   const handleResolveIncident = async (resolutionKey: string, note?: string) => {
+    if (!canManageSystemHealthOperations) {
+      notifyAdminOnlyAction();
+      return;
+    }
+
     const resolvedAt = new Date().toISOString();
     const actor = buildResolutionActor();
     let previousResolutionState: SystemHealthIncidentResolutionState | null = null;
@@ -183,6 +198,11 @@ export const SystemHealthDashboard = () => {
   };
 
   const handleReopenIncident = async (resolutionKey: string) => {
+    if (!canManageSystemHealthOperations) {
+      notifyAdminOnlyAction();
+      return;
+    }
+
     const reopenedAt = new Date().toISOString();
     const actor = buildResolutionActor();
     let previousResolutionState: SystemHealthIncidentResolutionState | null = null;
@@ -215,6 +235,11 @@ export const SystemHealthDashboard = () => {
   };
 
   const handleResolveVisibleIncidents = async () => {
+    if (!canManageSystemHealthOperations) {
+      notifyAdminOnlyAction();
+      return;
+    }
+
     const openIncidents = incidentQueue.filter(incident => incident.status !== 'resolved');
     if (openIncidents.length === 0) return;
 
@@ -315,6 +340,7 @@ export const SystemHealthDashboard = () => {
             }}
             onExportCsv={handleExportCsv}
             onResolveVisibleIncidents={handleResolveVisibleIncidents}
+            canManageSystemHealthOperations={canManageSystemHealthOperations}
           />
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_430px]">
@@ -352,6 +378,7 @@ export const SystemHealthDashboard = () => {
                 onResolveIncident={handleResolveIncident}
                 onReopenIncident={handleReopenIncident}
                 deleting={deletingUid === selectedUser?.uid}
+                canManageSystemHealthOperations={canManageSystemHealthOperations}
               />
             </div>
           </div>

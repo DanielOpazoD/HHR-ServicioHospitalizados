@@ -11,7 +11,11 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
+  authRole: vi.fn(() => 'admin'),
 }));
+
+const recentIncidentTimestamp = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+const recentLastSeenTimestamp = new Date(Date.now() - 50 * 60 * 1000).toISOString();
 
 vi.mock('@/context/UIContext', () => ({
   useConfirmDialog: () => ({ confirm: mocks.confirm }),
@@ -37,6 +41,7 @@ vi.mock('@/context/AuthContext', () => ({
       email: 'admin@example.com',
       displayName: 'Admin User',
     },
+    role: mocks.authRole(),
   }),
 }));
 
@@ -44,7 +49,7 @@ const userStatus: UserHealthStatus = {
   uid: 'u1',
   email: 'user@example.com',
   displayName: 'User Example',
-  lastSeen: '2026-05-22T14:10:00.000Z',
+  lastSeen: recentLastSeenTimestamp,
   isOnline: true,
   isOutdated: false,
   pendingMutations: 0,
@@ -83,7 +88,7 @@ const userStatus: UserHealthStatus = {
   operationalTopObservedOperation: 'daily_record_remote_write',
   latestOperationalOperation: 'daily_record_remote_write',
   latestOperationalRuntimeState: 'blocked',
-  latestOperationalIssueAt: '2026-05-22T14:03:00.000Z',
+  latestOperationalIssueAt: recentIncidentTimestamp,
   recentEvents: [
     {
       id: 'event-1',
@@ -91,7 +96,7 @@ const userStatus: UserHealthStatus = {
       category: 'sync',
       severity: 'critical',
       status: 'open',
-      timestamp: '2026-05-22T14:03:00.000Z',
+      timestamp: recentIncidentTimestamp,
       message: 'Escritura remota bloqueada',
       operation: 'daily_record_remote_write',
       module: 'Censo diario',
@@ -132,6 +137,7 @@ describe('SystemHealthDashboard', () => {
   beforeEach(() => {
     window.localStorage.clear();
     vi.clearAllMocks();
+    mocks.authRole.mockReturnValue('admin');
     mocks.resolveSystemHealthIncident.mockResolvedValue(undefined);
     mocks.reopenSystemHealthIncident.mockResolvedValue(undefined);
   });
@@ -247,5 +253,22 @@ describe('SystemHealthDashboard', () => {
       )
     );
     expect(screen.getAllByRole('button', { name: /Marcar resuelto/i }).length).toBeGreaterThan(0);
+  });
+
+  it('keeps health maintenance actions admin-only for clinical operators', async () => {
+    mocks.authRole.mockReturnValue('nurse_hospital');
+
+    render(<SystemHealthDashboard />);
+
+    expect(await screen.findByPlaceholderText('Buscar usuario...')).toBeInTheDocument();
+    expect(screen.getByText('Incidencias activas')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Exportar CSV/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Marcar visibles resueltos/i })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Marcar resuelto/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Reabrir/i })).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Borrar registro de salud')).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Requiere rol admin/i).length).toBeGreaterThan(0);
   });
 });
