@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import {
   AlertTriangle,
+  CheckCircle2,
   Clock3,
   Download,
   ListChecks,
@@ -29,11 +30,13 @@ export const SystemHealthIncidentQueue = ({
   selectedResolutionKey,
   onSelectIncident,
   onExportCsv,
+  onResolveVisibleIncidents,
 }: {
   incidents: SystemHealthIncidentQueueRow[];
   selectedResolutionKey?: string | null;
   onSelectIncident: (incident: SystemHealthIncidentQueueRow) => void;
   onExportCsv: () => void;
+  onResolveVisibleIncidents: () => void;
 }) => (
   <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
@@ -42,6 +45,14 @@ export const SystemHealthIncidentQueue = ({
         <h3 className="text-sm font-black text-slate-900">Incidencias activas</h3>
       </div>
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onResolveVisibleIncidents}
+          disabled={!incidents.some(incident => incident.status !== 'resolved')}
+          className="inline-flex items-center gap-1 rounded-md border border-emerald-100 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <CheckCircle2 size={13} /> Marcar visibles resueltos
+        </button>
         <button
           type="button"
           onClick={onExportCsv}

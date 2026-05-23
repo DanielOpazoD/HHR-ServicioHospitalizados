@@ -42,6 +42,16 @@ const persistSnapshot = (snapshot: OperationalAlertSnapshotState) => {
   window.localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));
 };
 
+const formatAlertTime = (timestamp: string | undefined): string => {
+  if (!timestamp) return 'sin fecha';
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return 'sin fecha';
+  return new Intl.DateTimeFormat('es-CL', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(date);
+};
+
 export const SystemHealthAlertsPanel = ({ stats }: { stats: UserHealthStatus[] }) => {
   const rawAlerts = useMemo(() => buildOperationalAlerts(stats), [stats]);
   const [, setSnapshotVersion] = useState(0);
@@ -129,8 +139,27 @@ export const SystemHealthAlertsPanel = ({ stats }: { stats: UserHealthStatus[] }
                 </span>
               </div>
               <p className="mt-1">{alert.description}</p>
+              <div className="mt-2 grid gap-1 rounded bg-white/65 px-2 py-1.5 text-[11px] sm:grid-cols-2">
+                <span>
+                  <span className="font-semibold">Donde:</span>{' '}
+                  {alert.originLabel || 'Cola de incidentes'}
+                </span>
+                <span>
+                  <span className="font-semibold">Ultimo:</span> {formatAlertTime(alert.lastSeenAt)}
+                </span>
+                <span>
+                  <span className="font-semibold">Accion:</span>{' '}
+                  {alert.actionLabel || alert.recommendedAction}
+                </span>
+                <span>
+                  <span className="font-semibold">Ruta:</span>{' '}
+                  {alert.routeLabel || 'Salud de usuarios'}
+                </span>
+              </div>
               <div className="mt-2 rounded bg-white/60 px-2 py-1 text-[11px]">
-                <span className="font-semibold">Accion:</span> {alert.recommendedAction}
+                <span className="font-semibold">Usuarios:</span>{' '}
+                {alert.affectedUserLabels.slice(0, 4).join(', ')}
+                {alert.affectedUserLabels.length > 4 ? ' +' : ''}
                 <span className="ml-2 font-semibold">SLA:</span> {alert.slaMinutes} min
               </div>
             </div>

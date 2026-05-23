@@ -146,6 +146,7 @@ describe('SystemHealthDashboard', () => {
     expect(screen.queryByText('Causas agrupadas')).not.toBeInTheDocument();
     expect(screen.queryByText('Linea temporal')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Exportar CSV/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Marcar visibles resueltos/i })).toBeInTheDocument();
     expect(screen.getByText('Incidencias activas')).toBeInTheDocument();
     expect(screen.getByText('Origen / donde ocurrio')).toBeInTheDocument();
     expect(screen.getByText('Accion observada')).toBeInTheDocument();
@@ -209,5 +210,42 @@ describe('SystemHealthDashboard', () => {
 
     await waitFor(() => expect(mocks.deleteUserHealthSnapshot).toHaveBeenCalledWith('u1'));
     expect(mocks.success).toHaveBeenCalledWith('Registro de salud borrado', 'user@example.com');
+  });
+
+  it('marks all visible open incidents as resolved in bulk', async () => {
+    render(<SystemHealthDashboard />);
+
+    expect(await screen.findByPlaceholderText('Buscar usuario...')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Marcar visibles resueltos/i }));
+
+    await waitFor(() =>
+      expect(mocks.resolveSystemHealthIncident).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resolutionKey: 'u1:event-1',
+          note: 'Cierre operacional masivo desde Salud de usuarios',
+        })
+      )
+    );
+    expect(mocks.resolveSystemHealthIncident).toHaveBeenCalledTimes(4);
+    expect(mocks.success).toHaveBeenCalledWith('Incidentes visibles marcados como resueltos', '4');
+  });
+
+  it('restores visible incidents when bulk resolve cannot be persisted', async () => {
+    mocks.resolveSystemHealthIncident.mockRejectedValueOnce(new Error('permission-denied'));
+
+    render(<SystemHealthDashboard />);
+
+    expect(await screen.findByPlaceholderText('Buscar usuario...')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Marcar visibles resueltos/i }));
+
+    await waitFor(() =>
+      expect(mocks.error).toHaveBeenCalledWith(
+        'No se pudieron resolver los incidentes visibles',
+        'Error: permission-denied'
+      )
+    );
+    expect(screen.getAllByRole('button', { name: /Marcar resuelto/i }).length).toBeGreaterThan(0);
   });
 });

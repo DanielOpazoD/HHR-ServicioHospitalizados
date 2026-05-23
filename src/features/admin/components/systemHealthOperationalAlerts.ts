@@ -5,6 +5,20 @@ import {
   PROLONGED_OFFLINE_USER_AGE_MS,
   SYSTEM_HEALTH_ALERT_SLA_MINUTES,
 } from '@/services/admin/systemHealthOperationalBudgets';
+import { buildOperationalAlertContext } from './systemHealthOperationalAlertContext';
+
+export {
+  EMPTY_OPERATIONAL_ALERT_SNAPSHOT,
+  applyOperationalAlertsSnapshot,
+  buildOperationalAlertFingerprint,
+  clearOperationalAlertsSnapshot,
+  getVisibleOperationalAlerts,
+  isOperationalAlertDismissed,
+} from './systemHealthOperationalAlertSnapshot';
+export type {
+  OperationalAlertHistoryEvent,
+  OperationalAlertSnapshotState,
+} from './systemHealthOperationalAlertSnapshot';
 
 export type OperationalAlertSeverity = 'warning' | 'critical';
 
@@ -16,39 +30,13 @@ export interface OperationalAlert {
   recommendedAction: string;
   slaMinutes: number;
   affectedUsers: string[];
+  affectedUserLabels: string[];
   affectedCount: number;
+  originLabel?: string;
+  actionLabel?: string;
+  routeLabel?: string;
+  lastSeenAt?: string;
 }
-
-export interface OperationalAlertHistoryEvent {
-  key: string;
-  title: string;
-  severity: OperationalAlertSeverity;
-  type: 'opened' | 'resolved';
-  at: string;
-  affectedCount: number;
-}
-
-export interface OperationalAlertSnapshotState {
-  active: Record<
-    string,
-    {
-      title: string;
-      severity: OperationalAlertSeverity;
-      affectedCount: number;
-      updatedAt: string;
-      fingerprint: string;
-    }
-  >;
-  dismissed?: Record<string, { fingerprint: string; dismissedAt: string }>;
-  history: OperationalAlertHistoryEvent[];
-  lastClearedAt?: string;
-}
-
-export const EMPTY_OPERATIONAL_ALERT_SNAPSHOT: OperationalAlertSnapshotState = {
-  active: {},
-  dismissed: {},
-  history: [],
-};
 
 const uniqueEmails = (users: UserHealthStatus[]): string[] =>
   Array.from(new Set(users.map(user => user.email).filter(Boolean)));
@@ -111,6 +99,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.criticalUsers,
       affectedUsers: uniqueEmails(criticalUsers),
       affectedCount: criticalUsers.length,
+      ...buildOperationalAlertContext(criticalUsers, {
+        originLabel: 'Salud de usuarios',
+        actionLabel: 'Revisar incidentes criticos',
+        routeLabel: 'Cola de incidentes',
+      }),
     });
   }
 
@@ -125,6 +118,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.failedSync,
       affectedUsers: uniqueEmails(failedSyncUsers),
       affectedCount: failedSyncUsers.length,
+      ...buildOperationalAlertContext(failedSyncUsers, {
+        originLabel: 'Sincronizacion local',
+        actionLabel: 'Reintentar sincronizacion',
+        routeLabel: 'Cola local del usuario',
+      }),
     });
   }
 
@@ -139,6 +137,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.syncConflicts,
       affectedUsers: uniqueEmails(conflictUsers),
       affectedCount: conflictUsers.length,
+      ...buildOperationalAlertContext(conflictUsers, {
+        originLabel: 'Sincronizacion local',
+        actionLabel: 'Resolver conflicto pendiente',
+        routeLabel: 'Cola local del usuario',
+      }),
     });
   }
 
@@ -153,6 +156,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.staleQueue,
       affectedUsers: uniqueEmails(staleQueueUsers),
       affectedCount: staleQueueUsers.length,
+      ...buildOperationalAlertContext(staleQueueUsers, {
+        originLabel: 'Outbox local',
+        actionLabel: 'Reintentar cola',
+        routeLabel: 'Cola local del usuario',
+      }),
     });
   }
 
@@ -167,6 +175,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.failedSync,
       affectedUsers: uniqueEmails(syncReadUnavailableUsers),
       affectedCount: syncReadUnavailableUsers.length,
+      ...buildOperationalAlertContext(syncReadUnavailableUsers, {
+        originLabel: 'Sync runtime',
+        actionLabel: 'Revisar IndexedDB/cola local',
+        routeLabel: 'Cliente del usuario',
+      }),
     });
   }
 
@@ -181,6 +194,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.failedSync,
       affectedUsers: uniqueEmails(syncOwnershipDriftUsers),
       affectedCount: syncOwnershipDriftUsers.length,
+      ...buildOperationalAlertContext(syncOwnershipDriftUsers, {
+        originLabel: 'Outbox local',
+        actionLabel: 'Limpiar ownership local',
+        routeLabel: 'Sesion del usuario',
+      }),
     });
   }
 
@@ -195,6 +213,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.failedSync,
       affectedUsers: uniqueEmails(runtimeContractMismatchUsers),
       affectedCount: runtimeContractMismatchUsers.length,
+      ...buildOperationalAlertContext(runtimeContractMismatchUsers, {
+        originLabel: 'Runtime client/backend',
+        actionLabel: 'Recargar deploy vigente',
+        routeLabel: 'Sesion del usuario',
+      }),
     });
   }
 
@@ -209,6 +232,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.failedSync,
       affectedUsers: uniqueEmails(schemaAheadUsers),
       affectedCount: schemaAheadUsers.length,
+      ...buildOperationalAlertContext(schemaAheadUsers, {
+        originLabel: 'Runtime schema',
+        actionLabel: 'Actualizar cliente',
+        routeLabel: 'Sesion del usuario',
+      }),
     });
   }
 
@@ -223,6 +251,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.warningUsers,
       affectedUsers: uniqueEmails(indexedDbFallbackUsers),
       affectedCount: indexedDbFallbackUsers.length,
+      ...buildOperationalAlertContext(indexedDbFallbackUsers, {
+        originLabel: 'IndexedDB',
+        actionLabel: 'Recarga controlada',
+        routeLabel: 'Cliente del usuario',
+      }),
     });
   }
 
@@ -237,6 +270,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.warningUsers,
       affectedUsers: uniqueEmails(authBootstrapTimeoutUsers),
       affectedCount: authBootstrapTimeoutUsers.length,
+      ...buildOperationalAlertContext(authBootstrapTimeoutUsers, {
+        originLabel: 'Auth bootstrap',
+        actionLabel: 'Reintentar inicio de sesion',
+        routeLabel: 'Login',
+      }),
     });
   }
 
@@ -252,6 +290,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.warningUsers,
       affectedUsers: uniqueEmails(recoveredNullRealtimeUsers),
       affectedCount: recoveredNullRealtimeUsers.length,
+      ...buildOperationalAlertContext(recoveredNullRealtimeUsers, {
+        originLabel: 'Censo diario realtime',
+        actionLabel: 'Monitorear recuperacion realtime',
+        routeLabel: 'Censo diario',
+      }),
     });
   }
 
@@ -266,6 +309,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.offlineUsers,
       affectedUsers: uniqueEmails(prolongedOfflineUsers),
       affectedCount: prolongedOfflineUsers.length,
+      ...buildOperationalAlertContext(prolongedOfflineUsers, {
+        originLabel: 'Sesion del usuario',
+        actionLabel: 'Validar conectividad local',
+        routeLabel: 'Cliente del usuario',
+      }),
     });
   }
 
@@ -280,6 +328,11 @@ export const buildOperationalAlerts = (
       slaMinutes: SYSTEM_HEALTH_ALERT_SLA_MINUTES.warningUsers,
       affectedUsers: uniqueEmails(warningUsers),
       affectedCount: warningUsers.length,
+      ...buildOperationalAlertContext(warningUsers, {
+        originLabel: 'Salud de usuarios',
+        actionLabel: 'Monitorear evolucion',
+        routeLabel: 'Cola de incidentes',
+      }),
     });
   }
 
@@ -289,98 +342,4 @@ export const buildOperationalAlerts = (
     }
     return b.affectedCount - a.affectedCount;
   });
-};
-
-export const applyOperationalAlertsSnapshot = (
-  previous: OperationalAlertSnapshotState,
-  currentAlerts: OperationalAlert[],
-  nowIso: string,
-  maxHistoryEntries: number = 50
-): OperationalAlertSnapshotState => {
-  const nextActive: OperationalAlertSnapshotState['active'] = {};
-  const nextHistory: OperationalAlertHistoryEvent[] = [...previous.history];
-
-  const previousActive = previous.active;
-  const visibleAlerts = getVisibleOperationalAlerts(currentAlerts, previous);
-  const currentByKey = new Map(visibleAlerts.map(alert => [alert.key, alert]));
-
-  for (const [key, alert] of currentByKey) {
-    nextActive[key] = {
-      title: alert.title,
-      severity: alert.severity,
-      affectedCount: alert.affectedCount,
-      updatedAt: nowIso,
-      fingerprint: buildOperationalAlertFingerprint(alert),
-    };
-
-    if (!previousActive[key]) {
-      nextHistory.push({
-        key,
-        title: alert.title,
-        severity: alert.severity,
-        type: 'opened',
-        at: nowIso,
-        affectedCount: alert.affectedCount,
-      });
-    }
-  }
-
-  for (const [key, previousAlert] of Object.entries(previousActive)) {
-    if (!currentByKey.has(key)) {
-      nextHistory.push({
-        key,
-        title: previousAlert.title,
-        severity: previousAlert.severity,
-        type: 'resolved',
-        at: nowIso,
-        affectedCount: previousAlert.affectedCount,
-      });
-    }
-  }
-
-  return {
-    active: nextActive,
-    dismissed: previous.dismissed || {},
-    history: nextHistory.slice(-maxHistoryEntries),
-    lastClearedAt: previous.lastClearedAt,
-  };
-};
-
-export const buildOperationalAlertFingerprint = (alert: OperationalAlert): string =>
-  JSON.stringify({
-    key: alert.key,
-    severity: alert.severity,
-    affectedUsers: [...alert.affectedUsers].sort(),
-  });
-
-export const isOperationalAlertDismissed = (
-  snapshot: OperationalAlertSnapshotState,
-  alert: OperationalAlert
-): boolean =>
-  snapshot.dismissed?.[alert.key]?.fingerprint === buildOperationalAlertFingerprint(alert);
-
-export const getVisibleOperationalAlerts = (
-  alerts: OperationalAlert[],
-  snapshot: OperationalAlertSnapshotState
-): OperationalAlert[] => alerts.filter(alert => !isOperationalAlertDismissed(snapshot, alert));
-
-export const clearOperationalAlertsSnapshot = (
-  previous: OperationalAlertSnapshotState,
-  currentAlerts: OperationalAlert[],
-  nowIso: string
-): OperationalAlertSnapshotState => {
-  const dismissed = { ...(previous.dismissed || {}) };
-  for (const alert of currentAlerts) {
-    dismissed[alert.key] = {
-      fingerprint: buildOperationalAlertFingerprint(alert),
-      dismissedAt: nowIso,
-    };
-  }
-
-  return {
-    active: {},
-    dismissed,
-    history: [],
-    lastClearedAt: nowIso,
-  };
 };

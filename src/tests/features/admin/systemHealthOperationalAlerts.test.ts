@@ -63,11 +63,33 @@ describe('systemHealthOperationalAlerts', () => {
   it('returns critical alerts when there are failed sync users', () => {
     const status = baseStatus();
     status.failedSyncTasks = 1;
+    status.recentEvents = [
+      {
+        id: 'sync-1',
+        source: 'operational',
+        category: 'sync',
+        severity: 'critical',
+        status: 'open',
+        timestamp: '2026-02-19T19:58:00.000Z',
+        message: 'UPDATE_DAILY_RECORD fallida en cola local',
+        operation: 'partial_update_retry',
+        module: 'Censo diario',
+        action: 'Revisar permisos/reglas y sesión del usuario.',
+        route: 'daily:2026-02-19',
+      },
+    ];
 
     const alerts = buildOperationalAlerts([status]);
     expect(alerts.length).toBeGreaterThan(0);
     expect(alerts[0].severity).toBe('critical');
-    expect(alerts.some(alert => alert.key === 'failed-sync')).toBe(true);
+    const failedSync = alerts.find(alert => alert.key === 'failed-sync');
+    expect(failedSync).toMatchObject({
+      originLabel: 'Censo diario / partial_update_retry',
+      actionLabel: 'Revisar permisos/reglas y sesión del usuario.',
+      routeLabel: 'daily:2026-02-19',
+      lastSeenAt: '2026-02-19T19:58:00.000Z',
+      affectedUserLabels: ['User'],
+    });
   });
 
   it('returns warning alert when users are offline for prolonged time', () => {

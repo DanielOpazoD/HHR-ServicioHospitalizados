@@ -27,6 +27,10 @@ import {
   type SystemHealthEventTypeFilter,
   type SystemHealthSeverityFilter,
 } from './systemHealthIncidentUtils';
+import {
+  buildReopenedIncidentResolution,
+  buildResolvedIncidentResolution,
+} from './systemHealthResolutionState';
 
 const todayInputValue = () => new Date().toISOString().slice(0, 10);
 
@@ -147,30 +151,20 @@ export const SystemHealthDashboard = () => {
   const handleResolveIncident = async (resolutionKey: string, note?: string) => {
     const resolvedAt = new Date().toISOString();
     const actor = buildResolutionActor();
-    setResolutionState(current => ({
-      ...current,
-      [resolutionKey]: {
-        resolutionKey,
-        status: 'resolved',
-        updatedAt: resolvedAt,
-        resolvedAt,
-        resolvedByUid: actor.uid || 'unknown',
-        resolvedByEmail: actor.email || 'unknown@local',
-        resolvedByName: actor.displayName || actor.email || 'Usuario del sistema',
-        note: note || '',
-        history: [
-          ...(current[resolutionKey]?.history || []),
-          {
-            action: 'resolved',
-            at: resolvedAt,
-            actorUid: actor.uid || 'unknown',
-            actorEmail: actor.email || 'unknown@local',
-            actorName: actor.displayName || actor.email || 'Usuario del sistema',
-            note,
-          },
-        ],
-      },
-    }));
+    let previousResolutionState: SystemHealthIncidentResolutionState | null = null;
+    setResolutionState(current => {
+      previousResolutionState = current;
+      return {
+        ...current,
+        [resolutionKey]: buildResolvedIncidentResolution({
+          resolutionKey,
+          previous: current,
+          resolvedAt,
+          actor,
+          note,
+        }),
+      };
+    });
 
     try {
       await resolveSystemHealthIncident({
@@ -181,6 +175,9 @@ export const SystemHealthDashboard = () => {
       });
       success('Incidente marcado como resuelto', resolutionKey);
     } catch (resolveError) {
+      if (previousResolutionState) {
+        setResolutionState(previousResolutionState);
+      }
       error('No se pudo resolver el incidente', String(resolveError));
     }
   };
@@ -188,32 +185,19 @@ export const SystemHealthDashboard = () => {
   const handleReopenIncident = async (resolutionKey: string) => {
     const reopenedAt = new Date().toISOString();
     const actor = buildResolutionActor();
-    setResolutionState(current => ({
-      ...current,
-      [resolutionKey]: {
-        ...(current[resolutionKey] || {
+    let previousResolutionState: SystemHealthIncidentResolutionState | null = null;
+    setResolutionState(current => {
+      previousResolutionState = current;
+      return {
+        ...current,
+        [resolutionKey]: buildReopenedIncidentResolution({
           resolutionKey,
-          history: [],
+          previous: current,
+          reopenedAt,
+          actor,
         }),
-        resolutionKey,
-        status: 'open',
-        updatedAt: reopenedAt,
-        reopenedAt,
-        reopenedByUid: actor.uid || 'unknown',
-        reopenedByEmail: actor.email || 'unknown@local',
-        reopenedByName: actor.displayName || actor.email || 'Usuario del sistema',
-        history: [
-          ...(current[resolutionKey]?.history || []),
-          {
-            action: 'reopened',
-            at: reopenedAt,
-            actorUid: actor.uid || 'unknown',
-            actorEmail: actor.email || 'unknown@local',
-            actorName: actor.displayName || actor.email || 'Usuario del sistema',
-          },
-        ],
-      },
-    }));
+      };
+    });
 
     try {
       await reopenSystemHealthIncident({
@@ -223,7 +207,53 @@ export const SystemHealthDashboard = () => {
       });
       success('Incidente reabierto', resolutionKey);
     } catch (reopenError) {
+      if (previousResolutionState) {
+        setResolutionState(previousResolutionState);
+      }
       error('No se pudo reabrir el incidente', String(reopenError));
+    }
+  };
+
+  const handleResolveVisibleIncidents = async () => {
+    const openIncidents = incidentQueue.filter(incident => incident.status !== 'resolved');
+    if (openIncidents.length === 0) return;
+
+    const note = 'Cierre operacional masivo desde Salud de usuarios';
+    const resolvedAt = new Date().toISOString();
+    const actor = buildResolutionActor();
+    let previousResolutionState: SystemHealthIncidentResolutionState | null = null;
+    setResolutionState(current => {
+      previousResolutionState = current;
+      const next = { ...current };
+      openIncidents.forEach(incident => {
+        next[incident.resolutionKey] = buildResolvedIncidentResolution({
+          resolutionKey: incident.resolutionKey,
+          previous: current,
+          resolvedAt,
+          actor,
+          note,
+        });
+      });
+      return next;
+    });
+
+    try {
+      await Promise.all(
+        openIncidents.map(incident =>
+          resolveSystemHealthIncident({
+            resolutionKey: incident.resolutionKey,
+            resolvedAt,
+            actor,
+            note,
+          })
+        )
+      );
+      success('Incidentes visibles marcados como resueltos', String(openIncidents.length));
+    } catch (resolveError) {
+      if (previousResolutionState) {
+        setResolutionState(previousResolutionState);
+      }
+      error('No se pudieron resolver los incidentes visibles', String(resolveError));
     }
   };
 
@@ -284,6 +314,7 @@ export const SystemHealthDashboard = () => {
               setSelectedResolutionKey(incident.resolutionKey);
             }}
             onExportCsv={handleExportCsv}
+            onResolveVisibleIncidents={handleResolveVisibleIncidents}
           />
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_430px]">
