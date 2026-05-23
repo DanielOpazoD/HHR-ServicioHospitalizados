@@ -117,10 +117,10 @@ git commit -m "test: share operational console noise filter"
 - Modify route/component imports only where heavy modules enter the authenticated shell.
 - Test: build/bundle budget and relevant entrypoint tests.
 
-- [ ] Identify heavy imports in authenticated shell.
-- [ ] Move safe heavy imports behind existing lazy boundaries.
-- [ ] Run `npm run build` and `npm run check:bundle-budget`.
-- [ ] Commit.
+- [x] Identify heavy imports in authenticated shell.
+- [x] Move safe heavy imports behind existing lazy boundaries.
+- [x] Run `npm run build` and `npm run check:bundle-budget`.
+- [x] Commit.
 
 ### Task 5: Census/Hook Churn Organization
 

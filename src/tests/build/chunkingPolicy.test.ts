@@ -101,6 +101,46 @@ describe('chunkingPolicy', () => {
     }
   });
 
+  it('keeps backup export presentation helpers out of the initial authenticated shell import graph', () => {
+    const exportManagerSource = readSource('src/hooks/useExportManager.ts');
+    const archiveStatusSource = readSource('src/hooks/useBackupArchiveStatus.ts');
+    const fileOperationsSource = readSource('src/hooks/useFileOperations.ts');
+
+    expect(exportManagerSource).not.toMatch(
+      /import\s+\{[\s\S]*(?:presentBackupExportOutcome|dispatchExportManagerNotice|buildBackupHandoffConfirmDescriptor)[\s\S]*\}\s+from ['"]@\/hooks\/controllers\//
+    );
+    expect(exportManagerSource).toContain(
+      "import('@/hooks/controllers/backupExportOutcomeController')"
+    );
+    expect(exportManagerSource).toContain(
+      "import('@/hooks/controllers/exportManagerNoticeController')"
+    );
+    expect(exportManagerSource).toContain(
+      "import('@/hooks/controllers/exportManagerConfirmController')"
+    );
+    expect(archiveStatusSource).not.toContain('@/hooks/controllers/exportManagerController');
+    expect(archiveStatusSource).toContain('@/hooks/controllers/backupArchiveStatusController');
+    expect(archiveStatusSource).not.toMatch(
+      /import\s+\{[\s\S]*presentBackupLookupOutcome[\s\S]*\}\s+from ['"]@\/hooks\/controllers\/backupStorageOutcomeController['"]/
+    );
+    expect(archiveStatusSource).toContain(
+      "import('@/hooks/controllers/backupStorageOutcomeController')"
+    );
+    expect(fileOperationsSource).not.toMatch(
+      /import\s+[\s\S]*\s+from ['"]@\/services\/exporters\/exportService['"]/
+    );
+    expect(fileOperationsSource).not.toMatch(
+      /import\s+\{[\s\S]*executeImportJsonBackup[\s\S]*\}\s+from ['"]@\/application\/backup-export\/backupExportMaintenanceUseCases['"]/
+    );
+    expect(fileOperationsSource).not.toMatch(
+      /import\s+\{[\s\S]*presentBackupExportOutcome[\s\S]*\}\s+from ['"]@\/hooks\/controllers\/backupExportOutcomeController['"]/
+    );
+    expect(fileOperationsSource).toContain("import('@/services/exporters/exportService')");
+    expect(fileOperationsSource).toContain(
+      "import('@/application/backup-export/backupExportMaintenanceUseCases')"
+    );
+  });
+
   it('keeps production source off the backup export barrel', () => {
     const sourceFiles = collectProductionSourceFiles(path.resolve(process.cwd(), 'src'));
     const offenders = sourceFiles
