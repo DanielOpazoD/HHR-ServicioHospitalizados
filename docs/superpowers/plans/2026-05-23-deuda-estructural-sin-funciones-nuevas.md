@@ -105,10 +105,10 @@ git commit -m "test: share operational console noise filter"
 
 - Modify existing contract tests under `src/tests/application`, `src/tests/shared`, and `src/tests/features/census`.
 
-- [ ] Add/strengthen contract tests around high-inbound contract modules.
-- [ ] Avoid production changes unless tests reveal an actual contract ambiguity.
-- [ ] Run focused contract tests and `npm run check:quality`.
-- [ ] Commit.
+- [x] Add/strengthen contract tests around high-inbound contract modules.
+- [x] Avoid production changes unless tests reveal an actual contract ambiguity.
+- [x] Run focused contract tests and `npm run check:quality`.
+- [x] Commit.
 
 ### Task 4: Startup Bundle Pressure Reduction
 
