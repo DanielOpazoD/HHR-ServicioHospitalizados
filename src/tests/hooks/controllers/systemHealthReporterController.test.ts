@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildRecentUserHealthEvents,
   buildUserHealthStatus,
   canReportSystemHealthForRole,
   canReportSystemHealthForRuntime,
@@ -120,5 +121,66 @@ describe('systemHealthReporterController', () => {
     expect(status.latestOperationalOperation).toBe('backup_handoff_pdf');
     expect(status.latestOperationalRuntimeState).toBe('recoverable');
     expect(status.appVersion).toContain('sync-batch:25');
+  });
+
+  it('builds recent user health events with safe operational context', () => {
+    const events = buildRecentUserHealthEvents({
+      localErrors: [
+        {
+          id: 'err-1',
+          timestamp: '2026-05-21T14:02:00.000Z',
+          message: 'No se pudo guardar el censo diario',
+          severity: 'critical',
+          userId: 'u1',
+          userEmail: 'user@example.com',
+          url: 'https://hhr.local/censo?debug=true',
+          context: {
+            module: 'Censo diario',
+            action: 'Guardar dia',
+            patientName: 'No debe exponerse',
+            rut: '11111111-1',
+          },
+        },
+      ],
+      operationalEvents: [
+        {
+          category: 'sync',
+          status: 'failed',
+          runtimeState: 'blocked',
+          operation: 'daily_record_remote_write',
+          timestamp: '2026-05-21T14:03:00.000Z',
+          issues: ['permission-denied'],
+          context: {
+            route: '/censo',
+            button: 'Reintentar sincronizacion',
+          },
+        },
+      ],
+    });
+
+    expect(events).toHaveLength(2);
+    expect(events[0]).toMatchObject({
+      id: 'operational:sync:daily_record_remote_write:2026-05-21T14:03:00.000Z',
+      source: 'operational',
+      category: 'sync',
+      severity: 'critical',
+      status: 'open',
+      operation: 'daily_record_remote_write',
+      action: 'Reintentar sincronizacion',
+      route: '/censo',
+    });
+    expect(events[1]).toMatchObject({
+      id: 'local_error:err-1',
+      source: 'local_error',
+      category: 'local_error',
+      severity: 'critical',
+      status: 'open',
+      message: 'No se pudo guardar el censo diario',
+      module: 'Censo diario',
+      action: 'Guardar dia',
+      route: '/censo',
+    });
+    expect(JSON.stringify(events)).not.toContain('No debe exponerse');
+    expect(JSON.stringify(events)).not.toContain('11111111-1');
   });
 });

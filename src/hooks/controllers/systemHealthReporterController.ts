@@ -5,11 +5,13 @@ import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import { BACKEND_RUNTIME_CONTRACT_VERSION } from '@/constants/runtimeContracts';
 import type { UserRole } from '@/types/authRoleTypes';
 import type { OperationalTelemetrySummary } from '@/services/observability/operationalTelemetryContracts';
+import type { OperationalTelemetryEvent } from '@/services/observability/operationalTelemetryTypes';
+import type { ErrorLog } from '@/services/logging/errorLogTypes';
 import type {
   FirestoreSyncReason,
   RemoteSyncRuntimeStatus,
 } from '@/services/repositories/repositoryConfig';
-import type { VersionUpdateReason } from '@/services/admin/healthService';
+import type { UserHealthRecentEvent, VersionUpdateReason } from '@/services/admin/healthService';
 
 export interface BuildUserHealthStatusOptions {
   uid: string;
@@ -28,6 +30,13 @@ export interface BuildUserHealthStatusOptions {
   syncTelemetry: SyncQueueTelemetry;
   repositoryPerformance: RepositoryPerformanceSummary;
   operationalTelemetry: OperationalTelemetrySummary;
+  recentEvents?: UserHealthRecentEvent[];
+}
+
+export interface BuildRecentUserHealthEventsOptions {
+  localErrors: ErrorLog[];
+  operationalEvents: OperationalTelemetryEvent[];
+  maxEvents?: number;
 }
 
 const HEALTH_REPORTER_ROLES = new Set<UserRole>(['admin', 'nurse_hospital']);
@@ -39,6 +48,113 @@ export const canReportSystemHealthForRuntime = (
   role: UserRole | undefined,
   remoteSyncStatus: RemoteSyncRuntimeStatus
 ): boolean => canReportSystemHealthForRole(role) && remoteSyncStatus === 'ready';
+
+const CONTEXT_KEYS = ['module', 'section', 'screen', 'feature', 'component', 'action', 'button'];
+const PRIVATE_CONTEXT_KEYS = new Set(['patient', 'patientname', 'rut', 'diagnosis', 'diagnostico']);
+
+const toContextString = (
+  context: Record<string, unknown> | undefined,
+  key: string
+): string | undefined => {
+  const value = context?.[key];
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+};
+
+const truncateText = (value: string, maxLength = 180): string =>
+  value.length > maxLength ? `${value.slice(0, maxLength - 3)}...` : value;
+
+const toPathname = (url: string | undefined): string | undefined => {
+  if (!url) return undefined;
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return url.startsWith('/') ? url : undefined;
+  }
+};
+
+const mapErrorSeverity = (severity: ErrorLog['severity']): UserHealthRecentEvent['severity'] =>
+  severity === 'critical' || severity === 'high' ? 'critical' : 'warning';
+
+const mapTelemetrySeverity = (
+  event: OperationalTelemetryEvent
+): UserHealthRecentEvent['severity'] => {
+  if (event.status === 'failed' || event.runtimeState === 'blocked') return 'critical';
+  if (event.status === 'partial' || event.status === 'degraded') return 'warning';
+  return 'info';
+};
+
+const mapTelemetryStatus = (event: OperationalTelemetryEvent): UserHealthRecentEvent['status'] =>
+  event.runtimeState === 'recoverable' || event.status === 'partial' ? 'recovered' : 'open';
+
+const buildContextSummary = (context: Record<string, unknown> | undefined): string[] => {
+  if (!context) return [];
+  return Object.entries(context)
+    .filter(([key, value]) => {
+      const normalizedKey = key.toLowerCase();
+      return (
+        !PRIVATE_CONTEXT_KEYS.has(normalizedKey) &&
+        CONTEXT_KEYS.includes(normalizedKey) &&
+        typeof value === 'string' &&
+        value.trim().length > 0
+      );
+    })
+    .map(([key, value]) => `${key}: ${String(value).trim()}`)
+    .slice(0, 4);
+};
+
+const getModuleFromContext = (context: Record<string, unknown> | undefined): string | undefined =>
+  toContextString(context, 'module') ||
+  toContextString(context, 'section') ||
+  toContextString(context, 'screen') ||
+  toContextString(context, 'feature') ||
+  toContextString(context, 'component');
+
+const getActionFromContext = (context: Record<string, unknown> | undefined): string | undefined =>
+  toContextString(context, 'action') || toContextString(context, 'button');
+
+export const buildRecentUserHealthEvents = ({
+  localErrors,
+  operationalEvents,
+  maxEvents = 8,
+}: BuildRecentUserHealthEventsOptions): UserHealthRecentEvent[] => {
+  const localErrorEvents: UserHealthRecentEvent[] = localErrors.map(error => ({
+    id: `local_error:${error.id}`,
+    source: 'local_error',
+    category: 'local_error',
+    severity: mapErrorSeverity(error.severity),
+    status: 'open',
+    timestamp: error.timestamp,
+    message: truncateText(error.message),
+    module: getModuleFromContext(error.context),
+    action: getActionFromContext(error.context),
+    route: toPathname(error.url),
+    contextSummary: buildContextSummary(error.context),
+  }));
+
+  const operationalHealthEvents: UserHealthRecentEvent[] = operationalEvents
+    .filter(event => event.status !== 'success')
+    .map(event => ({
+      id: `operational:${event.category}:${event.operation}:${event.timestamp}`,
+      source: 'operational',
+      category: event.category,
+      severity: mapTelemetrySeverity(event),
+      status: mapTelemetryStatus(event),
+      timestamp: event.timestamp,
+      message: truncateText(event.issues?.[0] || event.operation),
+      operation: event.operation,
+      module: getModuleFromContext(event.context),
+      action: getActionFromContext(event.context),
+      route: toContextString(event.context, 'route'),
+      runtimeState: event.runtimeState,
+      telemetryStatus: event.status,
+      issues: event.issues?.slice(0, 3),
+      contextSummary: buildContextSummary(event.context),
+    }));
+
+  return [...localErrorEvents, ...operationalHealthEvents]
+    .sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp))
+    .slice(0, maxEvents);
+};
 
 export const buildUserHealthStatus = (options: BuildUserHealthStatusOptions): UserHealthStatus => ({
   uid: options.uid,
@@ -87,6 +203,7 @@ export const buildUserHealthStatus = (options: BuildUserHealthStatusOptions): Us
   latestOperationalOperation: options.operationalTelemetry.latestObservedOperation,
   latestOperationalRuntimeState: options.operationalTelemetry.latestRuntimeState,
   latestOperationalIssueAt: options.operationalTelemetry.latestIssueAt,
+  recentEvents: options.recentEvents || [],
   appVersion: `v${CURRENT_SCHEMA_VERSION} (sync-batch:${options.syncTelemetry.batchSize}, backend-contract:${BACKEND_RUNTIME_CONTRACT_VERSION})`,
   platform: options.platform,
   userAgent: options.userAgent,

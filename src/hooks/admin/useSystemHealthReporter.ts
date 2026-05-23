@@ -7,10 +7,14 @@ import type { UserHealthStatus } from '@/services/admin/healthService';
 import { getLocalPersistenceRuntimeSnapshot } from '@/services/storage/indexeddb/indexedDbCore';
 import { getSyncQueueTelemetry } from '@/services/storage/sync';
 import { getRepositoryPerformanceSummary } from '@/services/repositories/repositoryPerformance';
-import { getOperationalTelemetrySummary } from '@/services/observability/operationalTelemetryRecorder';
+import {
+  getOperationalTelemetryEvents,
+  getOperationalTelemetrySummary,
+} from '@/services/observability/operationalTelemetryRecorder';
 import { buildClientOperationalRuntimeSnapshot } from '@/services/observability/clientOperationalRuntimeSnapshot';
 import { buildAuthRuntimeSnapshot } from '@/services/auth/authRuntimeSnapshot';
 import {
+  buildRecentUserHealthEvents,
   buildUserHealthStatus,
   canReportSystemHealthForRuntime,
 } from '@/hooks/controllers/systemHealthReporterController';
@@ -54,6 +58,7 @@ export const useSystemHealthReporter = (enabled = true) => {
         const oldestPendingAgeMs = syncTelemetry.oldestPendingAgeMs;
         const syncBatchSize = syncTelemetry.batchSize;
         const repositoryPerformance = getRepositoryPerformanceSummary();
+        const operationalEvents = getOperationalTelemetryEvents();
         const operationalTelemetry = getOperationalTelemetrySummary();
         const localPersistence = getLocalPersistenceRuntimeSnapshot();
         const authRuntime =
@@ -98,6 +103,10 @@ export const useSystemHealthReporter = (enabled = true) => {
           },
           repositoryPerformance,
           operationalTelemetry,
+          recentEvents: buildRecentUserHealthEvents({
+            localErrors: logs,
+            operationalEvents,
+          }),
         });
 
         const { reportUserHealth } = await loadHealthService();
