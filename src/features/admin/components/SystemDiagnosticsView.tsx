@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { Activity, AlertTriangle, BarChart3, Radar, ShieldCheck } from 'lucide-react';
+import { Activity, BarChart3, Radar, ShieldCheck } from 'lucide-react';
 import clsx from 'clsx';
 import { AuditView } from './AuditView';
 import { FunctionsTelemetryView } from './FunctionsTelemetryView';
-import { ErrorDashboard } from './ErrorDashboard';
 import { SystemHealthDashboard } from './SystemHealthDashboard';
 
-type ObservabilityTab = 'AUDIT' | 'SERVICES' | 'ERRORS' | 'USERS_HEALTH';
+type ObservabilityTab = 'AUDIT' | 'SERVICES' | 'USERS_HEALTH';
 
 // Observability view — unifies what used to be split across:
 //   - "Auditoría" (audit logs)
 //   - "Telemetría de Servicios" (functions telemetry)
-//   - "Panel de Errores" (client error logs)
 //   - "Diagnóstico del Sistema > Telemetría de Red" (user health)
 // The module slot is still named DIAGNOSTICS in the router to preserve deep links.
 export const SystemDiagnosticsView: React.FC = () => {
@@ -25,7 +23,6 @@ export const SystemDiagnosticsView: React.FC = () => {
   }> = [
     { id: 'AUDIT', label: 'Auditoría clínica', icon: ShieldCheck, color: 'text-emerald-400' },
     { id: 'SERVICES', label: 'Servicios externos', icon: Radar, color: 'text-indigo-400' },
-    { id: 'ERRORS', label: 'Errores del cliente', icon: AlertTriangle, color: 'text-rose-400' },
     { id: 'USERS_HEALTH', label: 'Salud de usuarios', icon: BarChart3, color: 'text-sky-400' },
   ];
 
@@ -65,7 +62,6 @@ export const SystemDiagnosticsView: React.FC = () => {
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
         {activeTab === 'AUDIT' && <AuditView />}
         {activeTab === 'SERVICES' && <FunctionsTelemetryView />}
-        {activeTab === 'ERRORS' && <ErrorDashboard />}
         {activeTab === 'USERS_HEALTH' && <SystemHealthDashboard />}
       </div>
     </div>

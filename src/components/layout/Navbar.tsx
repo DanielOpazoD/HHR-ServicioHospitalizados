@@ -94,8 +94,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         return 'bg-gradient-to-r from-indigo-800 via-indigo-700 to-indigo-800';
       case 'REMINDERS':
         return 'bg-gradient-to-r from-amber-800 via-amber-700 to-amber-800';
-      case 'ERRORS':
-        return 'bg-gradient-to-r from-rose-900 via-rose-800 to-rose-900';
       default:
         return 'bg-gradient-to-r from-[#0c4a6e] via-[#0369a1] to-[#0c4a6e]';
     }
