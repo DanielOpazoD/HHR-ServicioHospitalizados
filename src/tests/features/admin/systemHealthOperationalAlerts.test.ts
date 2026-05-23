@@ -4,6 +4,8 @@ import {
   EMPTY_OPERATIONAL_ALERT_SNAPSHOT,
   applyOperationalAlertsSnapshot,
   buildOperationalAlerts,
+  clearOperationalAlertsSnapshot,
+  getVisibleOperationalAlerts,
 } from '@/features/admin/components/systemHealthOperationalAlerts';
 
 const FIXED_NOW_MS = Date.parse('2026-02-19T20:00:00.000Z');
@@ -113,5 +115,43 @@ describe('systemHealthOperationalAlerts', () => {
     const resolved = applyOperationalAlertsSnapshot(opened, [], '2026-02-19T20:10:00.000Z');
     expect(resolved.history.some(event => event.type === 'resolved')).toBe(true);
     expect(Object.keys(resolved.active)).toHaveLength(0);
+  });
+
+  it('clears current global alerts and starts a new alert window from the current fingerprint', () => {
+    const status = baseStatus();
+    status.failedSyncTasks = 1;
+    const alerts = buildOperationalAlerts([status], FIXED_NOW_MS);
+
+    const opened = applyOperationalAlertsSnapshot(
+      EMPTY_OPERATIONAL_ALERT_SNAPSHOT,
+      alerts,
+      '2026-02-19T20:00:00.000Z'
+    );
+    const cleared = clearOperationalAlertsSnapshot(opened, alerts, '2026-02-19T20:05:00.000Z');
+
+    expect(cleared.history).toEqual([]);
+    expect(getVisibleOperationalAlerts(alerts, cleared)).toEqual([]);
+
+    const sameFingerprint = applyOperationalAlertsSnapshot(
+      cleared,
+      alerts,
+      '2026-02-19T20:06:00.000Z'
+    );
+    expect(Object.keys(sameFingerprint.active)).toHaveLength(0);
+    expect(sameFingerprint.history).toEqual([]);
+
+    const secondStatus = baseStatus();
+    secondStatus.uid = 'u2';
+    secondStatus.email = 'other@example.com';
+    secondStatus.failedSyncTasks = 1;
+    const changedAlerts = buildOperationalAlerts([status, secondStatus], FIXED_NOW_MS);
+    const reopened = applyOperationalAlertsSnapshot(
+      sameFingerprint,
+      changedAlerts,
+      '2026-02-19T20:07:00.000Z'
+    );
+
+    expect(Object.keys(reopened.active).length).toBeGreaterThan(0);
+    expect(reopened.history.some(event => event.type === 'opened')).toBe(true);
   });
 });

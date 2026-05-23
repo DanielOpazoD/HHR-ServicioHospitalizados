@@ -26,7 +26,17 @@ const HealthMetric = ({
   </div>
 );
 
-export const SystemHealthUserCard = ({ user }: { user: UserHealthStatus }) => {
+export const SystemHealthUserCard = ({
+  user,
+  selected = false,
+  compact = false,
+  onSelect,
+}: {
+  user: UserHealthStatus;
+  selected?: boolean;
+  compact?: boolean;
+  onSelect?: (user: UserHealthStatus) => void;
+}) => {
   const health = evaluateSystemHealthState(user);
   const isOffline = !user.isOnline;
   const syncIssueCount = user.failedSyncTasks + (user.conflictSyncTasks || 0);
@@ -35,8 +45,20 @@ export const SystemHealthUserCard = ({ user }: { user: UserHealthStatus }) => {
 
   return (
     <div
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onClick={() => onSelect?.(user)}
+      onKeyDown={event => {
+        if (!onSelect) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect(user);
+        }
+      }}
       className={clsx(
         'group relative overflow-hidden card bg-gradient-to-br p-0 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl',
+        onSelect ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-medical-500/30' : '',
+        selected ? 'ring-2 ring-medical-500 shadow-lg' : '',
         health.cardClassName
       )}
     >
@@ -50,7 +72,7 @@ export const SystemHealthUserCard = ({ user }: { user: UserHealthStatus }) => {
         {user.isOutdated ? <span className="rounded bg-white/20 px-2">OBSOLETO</span> : null}
       </div>
 
-      <div className="space-y-4 p-5">
+      <div className={clsx('space-y-4', compact ? 'p-4' : 'p-5')}>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-100 bg-white shadow-sm">
@@ -133,7 +155,7 @@ export const SystemHealthUserCard = ({ user }: { user: UserHealthStatus }) => {
           </div>
         ) : null}
 
-        {user.operationalObservedCount > 0 ? (
+        {!compact && user.operationalObservedCount > 0 ? (
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-500">
             <span>12h {user.operationalObservedCount}</span>
             <span>1h {user.operationalLastHourObservedCount}</span>
@@ -189,7 +211,7 @@ export const SystemHealthUserCard = ({ user }: { user: UserHealthStatus }) => {
           {health.actionHint}
         </div>
 
-        {health.level !== 'healthy' ? (
+        {!compact && health.level !== 'healthy' ? (
           <div className="space-y-1">
             <p className="pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
               Diagnostico
@@ -232,6 +254,12 @@ export const SystemHealthUserCard = ({ user }: { user: UserHealthStatus }) => {
             })}
           </div>
         </div>
+
+        {!compact && onSelect ? (
+          <div className="flex justify-end text-[10px] font-bold text-slate-500">
+            Seleccionar usuario
+          </div>
+        ) : null}
       </div>
 
       <div className="absolute bottom-0 left-0 h-1 w-full bg-white/20" />

@@ -31,13 +31,22 @@ export interface OperationalAlertHistoryEvent {
 export interface OperationalAlertSnapshotState {
   active: Record<
     string,
-    { title: string; severity: OperationalAlertSeverity; affectedCount: number; updatedAt: string }
+    {
+      title: string;
+      severity: OperationalAlertSeverity;
+      affectedCount: number;
+      updatedAt: string;
+      fingerprint: string;
+    }
   >;
+  dismissed?: Record<string, { fingerprint: string; dismissedAt: string }>;
   history: OperationalAlertHistoryEvent[];
+  lastClearedAt?: string;
 }
 
 export const EMPTY_OPERATIONAL_ALERT_SNAPSHOT: OperationalAlertSnapshotState = {
   active: {},
+  dismissed: {},
   history: [],
 };
 
@@ -292,7 +301,8 @@ export const applyOperationalAlertsSnapshot = (
   const nextHistory: OperationalAlertHistoryEvent[] = [...previous.history];
 
   const previousActive = previous.active;
-  const currentByKey = new Map(currentAlerts.map(alert => [alert.key, alert]));
+  const visibleAlerts = getVisibleOperationalAlerts(currentAlerts, previous);
+  const currentByKey = new Map(visibleAlerts.map(alert => [alert.key, alert]));
 
   for (const [key, alert] of currentByKey) {
     nextActive[key] = {
@@ -300,6 +310,7 @@ export const applyOperationalAlertsSnapshot = (
       severity: alert.severity,
       affectedCount: alert.affectedCount,
       updatedAt: nowIso,
+      fingerprint: buildOperationalAlertFingerprint(alert),
     };
 
     if (!previousActive[key]) {
@@ -329,6 +340,47 @@ export const applyOperationalAlertsSnapshot = (
 
   return {
     active: nextActive,
+    dismissed: previous.dismissed || {},
     history: nextHistory.slice(-maxHistoryEntries),
+    lastClearedAt: previous.lastClearedAt,
+  };
+};
+
+export const buildOperationalAlertFingerprint = (alert: OperationalAlert): string =>
+  JSON.stringify({
+    key: alert.key,
+    severity: alert.severity,
+    affectedUsers: [...alert.affectedUsers].sort(),
+  });
+
+export const isOperationalAlertDismissed = (
+  snapshot: OperationalAlertSnapshotState,
+  alert: OperationalAlert
+): boolean =>
+  snapshot.dismissed?.[alert.key]?.fingerprint === buildOperationalAlertFingerprint(alert);
+
+export const getVisibleOperationalAlerts = (
+  alerts: OperationalAlert[],
+  snapshot: OperationalAlertSnapshotState
+): OperationalAlert[] => alerts.filter(alert => !isOperationalAlertDismissed(snapshot, alert));
+
+export const clearOperationalAlertsSnapshot = (
+  previous: OperationalAlertSnapshotState,
+  currentAlerts: OperationalAlert[],
+  nowIso: string
+): OperationalAlertSnapshotState => {
+  const dismissed = { ...(previous.dismissed || {}) };
+  for (const alert of currentAlerts) {
+    dismissed[alert.key] = {
+      fingerprint: buildOperationalAlertFingerprint(alert),
+      dismissedAt: nowIso,
+    };
+  }
+
+  return {
+    active: {},
+    dismissed,
+    history: [],
+    lastClearedAt: nowIso,
   };
 };
