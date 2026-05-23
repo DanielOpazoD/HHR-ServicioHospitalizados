@@ -42,7 +42,7 @@
     match /stats/system_health/users/{userId} {
       allow read: if canReportSystemHealth();
       allow create, update: if isValidSystemHealthWrite(userId);
-      allow delete: if canReportSystemHealth();
+      allow delete: if canManageSystemHealthOperations();
     }
     match /stats/system_health/resolutions/{resolutionId} {
       allow read: if canReportSystemHealth();

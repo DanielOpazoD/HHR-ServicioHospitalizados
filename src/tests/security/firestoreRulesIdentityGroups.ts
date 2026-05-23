@@ -192,7 +192,7 @@ export function registerFirestoreRulesIdentityGroups({
       await assertSucceeds(nurse().doc('stats/system_health/users/user_nurse').get());
     });
 
-    it('Clinical write roles can delete stale system health snapshots', async () => {
+    it('Only admins can delete stale system health snapshots', async () => {
       const healthPath = 'stats/system_health/users/user_nurse';
       await assertSucceeds(
         nurse()
@@ -205,7 +205,8 @@ export function registerFirestoreRulesIdentityGroups({
           })
       );
 
-      await assertSucceeds(nurse().doc(healthPath).delete());
+      await assertFails(nurse().doc(healthPath).delete());
+      await assertSucceeds(admin().doc(healthPath).delete());
     });
 
     it('Regular viewers cannot delete system health snapshots', async () => {
@@ -215,30 +216,28 @@ export function registerFirestoreRulesIdentityGroups({
       await assertFails(authed().doc(healthPath).delete());
     });
 
-    it('Clinical write roles can persist and read system health incident resolutions', async () => {
+    it('Only admins can persist system health incident resolutions', async () => {
       const resolutionPath = 'stats/system_health/resolutions/user_nurse%3Aevent-1';
+      const resolutionPayload = {
+        resolutionKey: 'user_nurse:event-1',
+        status: 'resolved',
+        updatedAt: '2026-05-22T14:15:00.000Z',
+        resolvedAt: '2026-05-22T14:15:00.000Z',
+        resolvedByUid: 'user_admin',
+        resolvedByEmail: 'daniel.opazo@hospitalhangaroa.cl',
+        resolvedByName: 'Admin User',
+        note: 'Permiso corregido',
+        history: [
+          {
+            action: 'resolved',
+            at: '2026-05-22T14:15:00.000Z',
+            actorUid: 'user_admin',
+          },
+        ],
+      };
 
-      await assertSucceeds(
-        nurse()
-          .doc(resolutionPath)
-          .set({
-            resolutionKey: 'user_nurse:event-1',
-            status: 'resolved',
-            updatedAt: '2026-05-22T14:15:00.000Z',
-            resolvedAt: '2026-05-22T14:15:00.000Z',
-            resolvedByUid: 'user_nurse',
-            resolvedByEmail: 'hospitalizados@hospitalhangaroa.cl',
-            resolvedByName: 'Nurse User',
-            note: 'Permiso corregido',
-            history: [
-              {
-                action: 'resolved',
-                at: '2026-05-22T14:15:00.000Z',
-                actorUid: 'user_nurse',
-              },
-            ],
-          })
-      );
+      await assertFails(nurse().doc(resolutionPath).set(resolutionPayload));
+      await assertSucceeds(admin().doc(resolutionPath).set(resolutionPayload));
       await assertSucceeds(nurse().doc(resolutionPath).get());
     });
 

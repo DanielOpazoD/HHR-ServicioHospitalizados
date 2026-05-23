@@ -67,6 +67,9 @@ service cloud.firestore {
     function canReportSystemHealth() {
       return canEdit();
     }
+    function canManageSystemHealthOperations() {
+      return isAdmin();
+    }
     function isEditorRole() {
       return hasEffectiveRole('editor');
     }
@@ -449,7 +452,7 @@ service cloud.firestore {
     }
     function isValidSystemHealthResolutionWrite() {
       let payload = request.resource.data;
-      return canReportSystemHealth() &&
+      return canManageSystemHealthOperations() &&
              hasOnlySystemHealthResolutionKeys(payload) &&
              payload.resolutionKey is string &&
              payload.updatedAt is string &&
@@ -707,7 +710,7 @@ service cloud.firestore {
     match /stats/system_health/users/{userId} {
       allow read: if canReportSystemHealth();
       allow create, update: if isValidSystemHealthWrite(userId);
-      allow delete: if canReportSystemHealth();
+      allow delete: if canManageSystemHealthOperations();
     }
     match /stats/system_health/resolutions/{resolutionId} {
       allow read: if canReportSystemHealth();

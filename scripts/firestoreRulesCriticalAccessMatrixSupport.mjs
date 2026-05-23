@@ -69,7 +69,15 @@ export const CRITICAL_FIRESTORE_ACCESS_MATRIX = [
     read: 'canReportSystemHealth()',
     create: 'isValidSystemHealthWrite(userId)',
     update: 'isValidSystemHealthWrite(userId)',
-    delete: 'canReportSystemHealth()',
+    delete: 'canManageSystemHealthOperations()',
+  },
+  {
+    path: 'systemHealthResolutions',
+    matchPath: '/stats/system_health/resolutions/{resolutionId}',
+    read: 'canReportSystemHealth()',
+    create: 'isValidSystemHealthResolutionWrite()',
+    update: 'isValidSystemHealthResolutionWrite()',
+    delete: 'false',
   },
   {
     path: 'configRoles',

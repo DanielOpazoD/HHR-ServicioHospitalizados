@@ -100,7 +100,7 @@
 
     function isValidSystemHealthResolutionWrite() {
       let payload = request.resource.data;
-      return canReportSystemHealth() &&
+      return canManageSystemHealthOperations() &&
              hasOnlySystemHealthResolutionKeys(payload) &&
              payload.resolutionKey is string &&
              payload.updatedAt is string &&
