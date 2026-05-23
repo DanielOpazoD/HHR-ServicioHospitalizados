@@ -51,7 +51,30 @@ export const canReportSystemHealthForRuntime = (
   remoteSyncStatus: RemoteSyncRuntimeStatus
 ): boolean => canReportSystemHealthForRole(role) && remoteSyncStatus === 'ready';
 
-const CONTEXT_KEYS = ['module', 'section', 'screen', 'feature', 'component', 'action', 'button'];
+const CONTEXT_SUMMARY_LABELS: Record<string, string> = {
+  clinicaldate: 'fecha clinica',
+  bedlabel: 'cama',
+  fieldlabel: 'campo',
+  patchtype: 'tipo',
+  bedid: 'cama',
+  fieldkey: 'campo',
+};
+const CONTEXT_KEYS = [
+  'clinicaldate',
+  'bedlabel',
+  'fieldlabel',
+  'patchtype',
+  'bedid',
+  'fieldkey',
+  'module',
+  'section',
+  'screen',
+  'feature',
+  'component',
+  'action',
+  'button',
+];
+const CONTEXT_SUMMARY_PRIORITY = new Map(CONTEXT_KEYS.map((key, index) => [key, index]));
 const PRIVATE_CONTEXT_KEYS = new Set(['patient', 'patientname', 'rut', 'diagnosis', 'diagnostico']);
 const SYNC_CONTEXT_LABELS: Record<string, string> = {
   clinical: 'Censo diario',
@@ -108,7 +131,15 @@ const buildContextSummary = (context: Record<string, unknown> | undefined): stri
         value.trim().length > 0
       );
     })
-    .map(([key, value]) => `${key}: ${String(value).trim()}`)
+    .sort(
+      ([leftKey], [rightKey]) =>
+        (CONTEXT_SUMMARY_PRIORITY.get(leftKey.toLowerCase()) ?? CONTEXT_KEYS.length) -
+        (CONTEXT_SUMMARY_PRIORITY.get(rightKey.toLowerCase()) ?? CONTEXT_KEYS.length)
+    )
+    .map(([key, value]) => {
+      const normalizedKey = key.toLowerCase();
+      return `${CONTEXT_SUMMARY_LABELS[normalizedKey] || key}: ${String(value).trim()}`;
+    })
     .slice(0, 4);
 };
 

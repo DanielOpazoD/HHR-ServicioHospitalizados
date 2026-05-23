@@ -184,6 +184,57 @@ describe('systemHealthReporterController', () => {
     expect(JSON.stringify(events)).not.toContain('11111111-1');
   });
 
+  it('keeps non-sensitive clinical context for admin health triage', () => {
+    const events = buildRecentUserHealthEvents({
+      localErrors: [],
+      operationalEvents: [
+        {
+          category: 'daily_record',
+          status: 'failed',
+          runtimeState: 'blocked',
+          operation: 'daily_record_bed_patch_failed',
+          timestamp: '2026-05-21T14:03:00.000Z',
+          issues: ['Missing or insufficient permissions'],
+          context: {
+            module: 'Censo diario',
+            action: 'Guardar diagnostico',
+            route: '/censo',
+            clinicalDate: '2026-05-21',
+            bedId: 'R1',
+            bedLabel: 'Cama R1',
+            fieldKey: 'pathology',
+            fieldLabel: 'Diagnostico',
+            patchType: 'UPDATE_PATIENT',
+            diagnosis: 'Neumonia no debe exponerse',
+            patientName: 'Paciente no debe exponerse',
+            rut: '11111111-1',
+          },
+        },
+      ],
+    });
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      source: 'operational',
+      category: 'daily_record',
+      severity: 'critical',
+      status: 'open',
+      operation: 'daily_record_bed_patch_failed',
+      module: 'Censo diario',
+      action: 'Guardar diagnostico',
+      route: '/censo',
+      contextSummary: [
+        'fecha clinica: 2026-05-21',
+        'cama: Cama R1',
+        'campo: Diagnostico',
+        'tipo: UPDATE_PATIENT',
+      ],
+    });
+    expect(JSON.stringify(events)).not.toContain('Neumonia no debe exponerse');
+    expect(JSON.stringify(events)).not.toContain('Paciente no debe exponerse');
+    expect(JSON.stringify(events)).not.toContain('11111111-1');
+  });
+
   it('adds actionable sync queue operations to recent health events', () => {
     const events = buildRecentUserHealthEvents({
       localErrors: [],

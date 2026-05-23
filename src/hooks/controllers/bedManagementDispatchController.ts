@@ -12,6 +12,8 @@ import type { BedAction } from '@/hooks/contracts/bedManagementActionContracts';
 import { bedManagementReducer } from '@/hooks/useBedManagementReducer';
 import { bedManagementDispatchLogger } from '@/hooks/controllers/hookControllerLoggers';
 import { buildBedMovementAuditDetails } from '@/services/admin/auditClinicalEventCatalog';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
+import { buildBedPatchFailureTelemetryEvent } from '@/hooks/controllers/bedManagementHealthTelemetry';
 export interface BedManagementValidationPort {
   processFieldValue: (
     field: keyof PatientData,
@@ -175,6 +177,9 @@ export const executeBedManagementAction = ({
 
     void patchRecord(patch).catch(error => {
       bedManagementDispatchLogger.warn('Bed management patch failed', error);
+      recordOperationalTelemetry(
+        buildBedPatchFailureTelemetryEvent(currentRecord, validatedAction, error)
+      );
     });
   } catch (error) {
     bedManagementDispatchLogger.warn('Bed management action failed', error);

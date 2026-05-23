@@ -104,6 +104,12 @@ const userStatus: UserHealthStatus = {
       route: '/censo',
       runtimeState: 'blocked',
       issues: ['permission-denied'],
+      contextSummary: [
+        'fecha clinica: 2026-05-21',
+        'cama: Cama R1',
+        'campo: Diagnostico',
+        'tipo: UPDATE_PATIENT',
+      ],
     },
   ],
   appVersion: 'v1',
@@ -168,6 +174,10 @@ describe('SystemHealthDashboard', () => {
     );
     expect(screen.getAllByText('Guardar dia').length).toBeGreaterThan(0);
     expect(screen.getByText('/censo')).toBeInTheDocument();
+    expect(screen.getByText('fecha clinica: 2026-05-21')).toBeInTheDocument();
+    expect(screen.getByText('cama: Cama R1')).toBeInTheDocument();
+    expect(screen.getByText('campo: Diagnostico')).toBeInTheDocument();
+    expect(screen.getByText('tipo: UPDATE_PATIENT')).toBeInTheDocument();
     expect(screen.queryByText('Detalle')).not.toBeInTheDocument();
 
     await userEvent.type(

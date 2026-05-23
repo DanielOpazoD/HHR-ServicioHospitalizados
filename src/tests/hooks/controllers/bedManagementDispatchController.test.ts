@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { executeBedManagementAction } from '@/hooks/controllers/bedManagementDispatchController';
 import type {
   BedManagementAuditPort,
@@ -8,6 +8,14 @@ import type { BedAction } from '@/hooks/contracts/bedManagementActionContracts';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 import { bedManagementDispatchLogger } from '@/hooks/controllers/hookControllerLoggers';
+
+const telemetryMocks = vi.hoisted(() => ({
+  recordOperationalTelemetry: vi.fn(),
+}));
+
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
+  recordOperationalTelemetry: telemetryMocks.recordOperationalTelemetry,
+}));
 
 const buildRecord = (): DailyRecord => ({
   date: '2026-03-06',
@@ -38,6 +46,10 @@ const buildRecord = (): DailyRecord => ({
 });
 
 describe('bedManagementDispatchController', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('stops dispatch when validation fails', () => {
     const patchRecord = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
     const action: BedAction = {
@@ -138,6 +150,25 @@ describe('bedManagementDispatchController', () => {
     await Promise.resolve();
 
     expect(warnSpy).toHaveBeenCalledWith('Bed management patch failed', patchError);
+    expect(telemetryMocks.recordOperationalTelemetry).toHaveBeenCalledWith({
+      category: 'daily_record',
+      operation: 'daily_record_bed_patch_failed',
+      status: 'failed',
+      runtimeState: 'blocked',
+      date: '2026-03-06',
+      issues: ['freshness gate blocked'],
+      context: expect.objectContaining({
+        module: 'Censo diario',
+        action: 'Guardar edad',
+        route: '/censo',
+        clinicalDate: '2026-03-06',
+        bedId: 'R1',
+        bedLabel: 'Cama R1',
+        fieldKey: 'age',
+        fieldLabel: 'Edad',
+        patchType: 'UPDATE_PATIENT',
+      }),
+    });
     warnSpy.mockRestore();
   });
 });
