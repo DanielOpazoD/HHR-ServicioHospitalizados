@@ -140,10 +140,10 @@ git commit -m "test: share operational console noise filter"
 - Modify `src/services/storage/indexeddb/` helpers.
 - Test: indexedDB recovery/runtime tests.
 
-- [ ] Split open/recovery/health concerns only where current tests expose repeated setup.
-- [ ] Keep behavior identical.
-- [ ] Run indexedDB focused tests.
-- [ ] Commit.
+- [x] Split open/recovery/health concerns only where current tests expose repeated setup.
+- [x] Keep behavior identical.
+- [x] Run indexedDB focused tests.
+- [x] Commit.
 
 ### Task 7: Final Gate
 
