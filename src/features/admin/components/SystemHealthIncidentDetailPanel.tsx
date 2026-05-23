@@ -33,6 +33,7 @@ export const SystemHealthIncidentDetailPanel = ({
   user,
   incidents,
   onDeleteSnapshot,
+  onClearUserWindow,
   onResolveIncident,
   onReopenIncident,
   deleting,
@@ -41,6 +42,7 @@ export const SystemHealthIncidentDetailPanel = ({
   user?: UserHealthStatus;
   incidents: SystemHealthIncidentRow[];
   onDeleteSnapshot: (user: UserHealthStatus) => void;
+  onClearUserWindow: (user: UserHealthStatus, incidents: SystemHealthIncidentRow[]) => void;
   onResolveIncident: (incidentId: string, note?: string) => void;
   onReopenIncident: (incidentId: string) => void;
   deleting: boolean;
@@ -68,16 +70,27 @@ export const SystemHealthIncidentDetailPanel = ({
             <p className="truncate text-xs text-slate-500">{user.email}</p>
           </div>
           {canManageSystemHealthOperations ? (
-            <button
-              type="button"
-              onClick={() => onDeleteSnapshot(user)}
-              disabled={deleting}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-100 bg-red-50 text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-              title="Borrar registro de salud"
-              aria-label="Borrar registro de salud"
-            >
-              <Trash2 size={14} />
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onClearUserWindow(user, incidents)}
+                disabled={deleting || incidents.length === 0}
+                className="inline-flex items-center gap-1 rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Resolver incidentes visibles del usuario y borrar snapshot actual"
+              >
+                <CheckCircle2 size={12} /> Limpiar usuario
+              </button>
+              <button
+                type="button"
+                onClick={() => onDeleteSnapshot(user)}
+                disabled={deleting}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-100 bg-red-50 text-red-600 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Borrar registro de salud"
+                aria-label="Borrar registro de salud"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           ) : (
             <span className="shrink-0 rounded-md border border-amber-100 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">
               Requiere rol admin

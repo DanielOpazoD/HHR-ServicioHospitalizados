@@ -1,13 +1,5 @@
 import clsx from 'clsx';
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Clock3,
-  Download,
-  ListChecks,
-  MapPin,
-  MousePointerClick,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock3, Download, ListChecks, MapPin } from 'lucide-react';
 import type { SystemHealthIncidentQueueRow } from './systemHealthIncidentUtils';
 
 const formatIncidentTime = (timestamp: string): string => {
@@ -80,71 +72,58 @@ export const SystemHealthIncidentQueue = ({
         Sin incidentes para los filtros actuales.
       </div>
     ) : (
-      <div className="overflow-x-auto">
-        <div className="min-w-[920px]">
-          <div className="grid grid-cols-[145px_180px_105px_minmax(210px,1fr)_minmax(180px,1fr)_160px_90px] gap-2 border-b border-slate-100 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            <span>Fecha</span>
-            <span>Usuario</span>
-            <span>Severidad</span>
-            <span>Problema</span>
-            <span>Origen / donde ocurrio</span>
-            <span>Accion observada</span>
-            <span>Estado</span>
-          </div>
+      <div>
+        <div className="grid grid-cols-[128px_180px_86px_minmax(0,1fr)] gap-3 border-b border-slate-100 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <span>Fecha</span>
+          <span>Usuario</span>
+          <span>Severidad</span>
+          <span>Incidencia accionable</span>
+        </div>
 
-          <div className="max-h-[420px] overflow-y-auto">
-            {incidents.map(incident => (
-              <button
-                key={incident.resolutionKey}
-                type="button"
-                onClick={() => onSelectIncident(incident)}
+        <div className="max-h-[560px] overflow-y-auto">
+          {incidents.map(incident => (
+            <button
+              key={incident.resolutionKey}
+              type="button"
+              onClick={() => onSelectIncident(incident)}
+              className={clsx(
+                'grid w-full grid-cols-[128px_180px_86px_minmax(0,1fr)] gap-3 border-b border-slate-100 px-4 py-3 text-left text-xs transition-colors hover:bg-slate-50 focus:bg-medical-50 focus:outline-none',
+                selectedResolutionKey === incident.resolutionKey ? 'bg-medical-50/70' : 'bg-white',
+                incident.status === 'resolved' && 'opacity-65'
+              )}
+            >
+              <span className="flex items-start gap-1 text-slate-600">
+                <Clock3 size={12} className="mt-0.5 shrink-0" />{' '}
+                {formatIncidentTime(incident.timestamp)}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate font-bold text-slate-800">
+                  {incident.userLabel}
+                </span>
+                <span className="block truncate text-[10px] text-slate-500">
+                  {incident.userEmail}
+                </span>
+              </span>
+              <span
                 className={clsx(
-                  'grid w-full grid-cols-[145px_180px_105px_minmax(210px,1fr)_minmax(180px,1fr)_160px_90px] gap-2 border-b border-slate-100 px-4 py-2 text-left text-xs transition-colors hover:bg-slate-50 focus:bg-medical-50 focus:outline-none',
-                  selectedResolutionKey === incident.resolutionKey
-                    ? 'bg-medical-50/70'
-                    : 'bg-white',
-                  incident.status === 'resolved' && 'opacity-65'
+                  'h-fit w-fit rounded border px-1.5 py-0.5 text-[10px] font-black uppercase',
+                  severityClassName[incident.severity]
                 )}
               >
-                <span className="flex items-center gap-1 text-slate-600">
-                  <Clock3 size={12} /> {formatIncidentTime(incident.timestamp)}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-bold text-slate-800">
-                    {incident.userLabel}
-                  </span>
-                  <span className="block truncate text-[10px] text-slate-500">
-                    {incident.userEmail}
-                  </span>
-                </span>
-                <span
-                  className={clsx(
-                    'w-fit rounded border px-1.5 py-0.5 text-[10px] font-black uppercase',
-                    severityClassName[incident.severity]
-                  )}
-                >
-                  {incident.severity}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-bold text-slate-800">{incident.title}</span>
-                  <span className="block truncate text-[10px] text-slate-500">
-                    {incident.categoryLabel}
-                  </span>
-                </span>
-                <span className="flex min-w-0 items-center gap-1 text-slate-600">
+                {incident.severity}
+              </span>
+              <span className="min-w-0 space-y-1">
+                <span className="block font-bold text-slate-800">{incident.title}</span>
+                <span className="flex min-w-0 items-center gap-1 text-[11px] text-slate-600">
                   <MapPin size={12} className="shrink-0 text-slate-400" />
                   <span className="truncate">{incident.originLabel}</span>
                 </span>
-                <span className="flex min-w-0 items-center gap-1 text-slate-600">
-                  <MousePointerClick size={12} className="shrink-0 text-slate-400" />
-                  <span className="truncate">{incident.actionLabel}</span>
+                <span className="block text-[11px] text-slate-500">
+                  {incident.actionLabel} · {incident.routeLabel} · {incident.statusLabel}
                 </span>
-                <span className="truncate font-semibold text-slate-700">
-                  {incident.statusLabel}
-                </span>
-              </button>
-            ))}
-          </div>
+              </span>
+            </button>
+          ))}
         </div>
       </div>
     )}

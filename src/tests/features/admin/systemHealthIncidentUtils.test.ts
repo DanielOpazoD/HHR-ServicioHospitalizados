@@ -246,7 +246,7 @@ describe('systemHealthIncidentUtils', () => {
   it('builds a resolved incident row without mutating the original object', () => {
     const [row] = buildSystemHealthIncidentRows(
       baseStatus({
-        localErrorCount: 1,
+        localErrorCount: 10,
       })
     );
     const resolved = resolveSystemHealthIncidentRow(row, {

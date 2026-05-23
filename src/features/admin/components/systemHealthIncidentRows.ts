@@ -33,6 +33,8 @@ const SOURCE_LABELS: Record<string, string> = {
   health_snapshot: 'Estado',
 };
 
+const SYNTHETIC_LOCAL_ERROR_THRESHOLD = 10;
+
 export const STATUS_LABELS: Record<string, string> = {
   open: 'Abierto',
   recovered: 'Recuperado',
@@ -131,22 +133,22 @@ const buildSyntheticHealthEvents = (user: UserHealthStatus): UserHealthRecentEve
   }
 
   if (
-    user.localErrorCount > 0 &&
+    user.localErrorCount >= SYNTHETIC_LOCAL_ERROR_THRESHOLD &&
     !(user.recentEvents || []).some(event => event.source === 'local_error')
   ) {
     events.push(
       buildSyntheticEvent(
         user,
         'local-errors',
-        `${user.localErrorCount} error(es) locales acumulados`,
+        `${user.localErrorCount} error(es) locales acumulados sin detalle reciente`,
         'local_error',
-        user.localErrorCount >= 10 ? 'critical' : 'warning',
+        user.localErrorCount >= SYNTHETIC_LOCAL_ERROR_THRESHOLD ? 'critical' : 'warning',
         syntheticTimestamp,
         {
           module: 'Navegador del usuario',
-          operation: 'error_local_acumulado',
-          action: 'Revisar consola/telemetria local',
-          route: 'Sesion del usuario',
+          operation: 'contador_local_acumulado',
+          action: 'Limpiar usuario y monitorear si reaparece con detalle',
+          route: 'Contador local sin evento granular',
         }
       )
     );
@@ -189,6 +191,7 @@ export const resolveSystemHealthIncidentRow = (
   resolution?: SystemHealthIncidentResolution
 ): SystemHealthIncidentRow => {
   if (!resolution || resolution.status !== 'resolved') return row;
+  if (resolution.resolvedAt && toMs(row.timestamp) > toMs(resolution.resolvedAt)) return row;
   return {
     ...row,
     status: 'resolved',

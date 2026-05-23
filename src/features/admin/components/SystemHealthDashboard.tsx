@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Users } from 'lucide-react';
 import {
-  buildSystemHealthSummary,
   deleteUserHealthSnapshot,
   reopenSystemHealthIncident,
   resolveSystemHealthIncident,
@@ -12,25 +11,26 @@ import {
 } from '@/services/admin/healthService';
 import { useAuth } from '@/context/AuthContext';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
-import { DailyOpsChecklistCard } from './DailyOpsChecklistCard';
-import { SystemHealthAlertsPanel } from './SystemHealthAlertsPanel';
 import { SystemHealthIncidentDetailPanel } from './SystemHealthIncidentDetailPanel';
 import { SystemHealthIncidentQueue } from './SystemHealthIncidentQueue';
-import { SystemHealthSummaryGrid } from './SystemHealthSummaryGrid';
 import { SystemHealthTriageToolbar } from './SystemHealthTriageToolbar';
-import { SystemHealthUserCard } from './SystemHealthUserCard';
 import {
   buildSystemHealthTriageModel,
   exportSystemHealthIncidentsCsv,
   shiftSystemHealthSelectedDate,
   type SystemHealthDateRange,
   type SystemHealthEventTypeFilter,
+  type SystemHealthIncidentRow,
   type SystemHealthSeverityFilter,
 } from './systemHealthIncidentUtils';
 import {
   buildReopenedIncidentResolution,
   buildResolvedIncidentResolution,
 } from './systemHealthResolutionState';
+import {
+  runClearSystemHealthUserWindowAction,
+  runResolveVisibleSystemHealthIncidentsAction,
+} from './systemHealthUserWindowActions';
 
 const todayInputValue = () => new Date().toISOString().slice(0, 10);
 
@@ -78,8 +78,7 @@ export const SystemHealthDashboard = () => {
       }),
     [dateRange, eventType, resolutionState, searchTerm, selectedDate, selectedUid, severity, stats]
   );
-  const summary = buildSystemHealthSummary(stats);
-  const { filteredUsers, selectedUser, selectedIncidents, incidentQueue, totals } = triageModel;
+  const { filteredUsers, selectedUser, selectedIncidents, incidentQueue } = triageModel;
   const canManageSystemHealthOperations = role === 'admin';
 
   const notifyAdminOnlyAction = () => {
@@ -150,6 +149,35 @@ export const SystemHealthDashboard = () => {
     } finally {
       setDeletingUid(null);
     }
+  };
+
+  const handleClearUserWindow = async (
+    user: UserHealthStatus,
+    incidents: SystemHealthIncidentRow[]
+  ) => {
+    if (!canManageSystemHealthOperations) {
+      notifyAdminOnlyAction();
+      return;
+    }
+
+    await runClearSystemHealthUserWindowAction({
+      user,
+      incidents,
+      actor: buildResolutionActor(),
+      confirm,
+      resolveIncident: resolveSystemHealthIncident,
+      deleteSnapshot: deleteUserHealthSnapshot,
+      setDeletingUid,
+      setResolutionState,
+      onClearSelection: () => {
+        if (selectedUid === user.uid) {
+          setSelectedUid(null);
+          setSelectedResolutionKey(null);
+        }
+      },
+      onSuccess: clearedUser => success('Usuario limpiado desde ahora', clearedUser.email),
+      onError: clearError => error('No se pudo limpiar el usuario', String(clearError)),
+    });
   };
 
   const buildResolutionActor = () => ({
@@ -240,46 +268,15 @@ export const SystemHealthDashboard = () => {
       return;
     }
 
-    const openIncidents = incidentQueue.filter(incident => incident.status !== 'resolved');
-    if (openIncidents.length === 0) return;
-
-    const note = 'Cierre operacional masivo desde Salud de usuarios';
-    const resolvedAt = new Date().toISOString();
-    const actor = buildResolutionActor();
-    let previousResolutionState: SystemHealthIncidentResolutionState | null = null;
-    setResolutionState(current => {
-      previousResolutionState = current;
-      const next = { ...current };
-      openIncidents.forEach(incident => {
-        next[incident.resolutionKey] = buildResolvedIncidentResolution({
-          resolutionKey: incident.resolutionKey,
-          previous: current,
-          resolvedAt,
-          actor,
-          note,
-        });
-      });
-      return next;
+    await runResolveVisibleSystemHealthIncidentsAction({
+      incidents: incidentQueue,
+      actor: buildResolutionActor(),
+      resolveIncident: resolveSystemHealthIncident,
+      setResolutionState,
+      onSuccess: count => success('Incidentes visibles marcados como resueltos', String(count)),
+      onError: resolveError =>
+        error('No se pudieron resolver los incidentes visibles', String(resolveError)),
     });
-
-    try {
-      await Promise.all(
-        openIncidents.map(incident =>
-          resolveSystemHealthIncident({
-            resolutionKey: incident.resolutionKey,
-            resolvedAt,
-            actor,
-            note,
-          })
-        )
-      );
-      success('Incidentes visibles marcados como resueltos', String(openIncidents.length));
-    } catch (resolveError) {
-      if (previousResolutionState) {
-        setResolutionState(previousResolutionState);
-      }
-      error('No se pudieron resolver los incidentes visibles', String(resolveError));
-    }
   };
 
   const handleExportCsv = () => {
@@ -295,18 +292,12 @@ export const SystemHealthDashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
-      <DailyOpsChecklistCard />
-      <SystemHealthAlertsPanel stats={stats} />
-
-      <SystemHealthSummaryGrid summary={summary} />
-
       <SystemHealthTriageToolbar
         searchTerm={searchTerm}
         dateRange={dateRange}
         selectedDate={selectedDate}
         severity={severity}
         eventType={eventType}
-        totals={totals}
         onSearchTermChange={setSearchTerm}
         onDateRangeChange={setDateRange}
         onSelectedDateChange={setSelectedDate}
@@ -331,50 +322,25 @@ export const SystemHealthDashboard = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          <SystemHealthIncidentQueue
-            incidents={incidentQueue}
-            selectedResolutionKey={selectedResolutionKey}
-            onSelectIncident={incident => {
-              setSelectedUid(incident.userUid);
-              setSelectedResolutionKey(incident.resolutionKey);
-            }}
-            onExportCsv={handleExportCsv}
-            onResolveVisibleIncidents={handleResolveVisibleIncidents}
-            canManageSystemHealthOperations={canManageSystemHealthOperations}
-          />
-
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_430px]">
-            <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
-                <h3 className="text-sm font-black text-slate-900">Usuarios afectados</h3>
-                <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">
-                  {filteredUsers.length} usuario(s)
-                </span>
-              </div>
-              <div className="grid grid-cols-1 gap-3 p-3 lg:grid-cols-2">
-                {filteredUsers.map(user => (
-                  <SystemHealthUserCard
-                    key={user.uid}
-                    user={user}
-                    selected={selectedUser?.uid === user.uid}
-                    compact
-                    onSelect={nextUser => {
-                      setSelectedUid(nextUser.uid);
-                      const firstIncident = incidentQueue.find(
-                        incident => incident.userUid === nextUser.uid
-                      );
-                      setSelectedResolutionKey(firstIncident?.resolutionKey || null);
-                    }}
-                  />
-                ))}
-              </div>
-            </section>
+            <SystemHealthIncidentQueue
+              incidents={incidentQueue}
+              selectedResolutionKey={selectedResolutionKey}
+              onSelectIncident={incident => {
+                setSelectedUid(incident.userUid);
+                setSelectedResolutionKey(incident.resolutionKey);
+              }}
+              onExportCsv={handleExportCsv}
+              onResolveVisibleIncidents={handleResolveVisibleIncidents}
+              canManageSystemHealthOperations={canManageSystemHealthOperations}
+            />
 
             <div className="xl:sticky xl:top-24 xl:self-start">
               <SystemHealthIncidentDetailPanel
                 user={selectedUser}
                 incidents={orderedSelectedIncidents}
                 onDeleteSnapshot={handleDeleteSnapshot}
+                onClearUserWindow={handleClearUserWindow}
                 onResolveIncident={handleResolveIncident}
                 onReopenIncident={handleReopenIncident}
                 deleting={deletingUid === selectedUser?.uid}

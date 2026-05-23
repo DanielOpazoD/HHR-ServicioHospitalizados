@@ -3,7 +3,6 @@ import type {
   SystemHealthDateRange,
   SystemHealthEventTypeFilter,
   SystemHealthSeverityFilter,
-  SystemHealthTriageTotals,
 } from './systemHealthIncidentUtils';
 
 export const SystemHealthTriageToolbar = ({
@@ -12,7 +11,6 @@ export const SystemHealthTriageToolbar = ({
   selectedDate,
   severity,
   eventType,
-  totals,
   onSearchTermChange,
   onDateRangeChange,
   onSelectedDateChange,
@@ -25,7 +23,6 @@ export const SystemHealthTriageToolbar = ({
   selectedDate: string;
   severity: SystemHealthSeverityFilter;
   eventType: SystemHealthEventTypeFilter;
-  totals: SystemHealthTriageTotals;
   onSearchTermChange: (value: string) => void;
   onDateRangeChange: (value: SystemHealthDateRange) => void;
   onSelectedDateChange: (value: string) => void;
@@ -34,43 +31,12 @@ export const SystemHealthTriageToolbar = ({
   onShiftDate: (deltaDays: number) => void;
 }) => (
   <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-    <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-6">
-      <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Incidentes</p>
-        <p className="text-lg font-black text-slate-900">{totals.totalIncidents}</p>
-      </div>
-      <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-red-400">Criticos</p>
-        <p className="text-lg font-black text-red-700">{totals.criticalIncidents}</p>
-      </div>
-      <div className="rounded-md border border-amber-100 bg-amber-50 px-3 py-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">
-          Advertencias
-        </p>
-        <p className="text-lg font-black text-amber-700">{totals.warningIncidents}</p>
-      </div>
-      <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Abiertos</p>
-        <p className="text-lg font-black text-slate-900">{totals.openIncidents}</p>
-      </div>
-      <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">
-          Recuperados
-        </p>
-        <p className="text-lg font-black text-emerald-700">{totals.recoveredIncidents}</p>
-      </div>
-      <div className="rounded-md border border-sky-100 bg-sky-50 px-3 py-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-sky-500">Resueltos</p>
-        <p className="text-lg font-black text-sky-700">{totals.resolvedIncidents}</p>
-      </div>
-    </div>
-
     <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.3fr)_160px_150px_170px_190px]">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
         <input
           type="text"
-          placeholder="Buscar usuario..."
+          placeholder="Buscar usuario, modulo, cama o campo..."
           value={searchTerm}
           onChange={event => onSearchTermChange(event.target.value)}
           className="w-full rounded-md border border-slate-200 bg-white py-2 pr-4 pl-9 text-xs outline-none transition-all focus:border-medical-500 focus:ring-2 focus:ring-medical-500/20"

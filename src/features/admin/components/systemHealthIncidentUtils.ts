@@ -54,10 +54,26 @@ const isWithinDateRange = (
   return nowMs - eventMs <= maxAgeMs;
 };
 
-const userMatchesSearch = (user: UserHealthStatus, searchTerm: string): boolean => {
+const userMatchesSearch = (
+  user: UserHealthStatus,
+  rows: SystemHealthIncidentRow[],
+  searchTerm: string
+): boolean => {
   const normalized = searchTerm.trim().toLowerCase();
   if (!normalized) return true;
-  return [user.displayName, user.email, user.uid].some(value =>
+  return [
+    user.displayName,
+    user.email,
+    user.uid,
+    ...rows.flatMap(row => [
+      row.title,
+      row.categoryLabel,
+      row.originLabel,
+      row.actionLabel,
+      row.routeLabel,
+      ...row.details,
+    ]),
+  ].some(value =>
     String(value || '')
       .toLowerCase()
       .includes(normalized)
@@ -95,7 +111,7 @@ export const filterSystemHealthStatsForTriage = (
     const rows = buildSystemHealthIncidentRows(user);
     const relevantTimestamp = rows[0]?.timestamp || user.latestOperationalIssueAt || user.lastSeen;
     return (
-      userMatchesSearch(user, filters.searchTerm) &&
+      userMatchesSearch(user, rows, filters.searchTerm) &&
       isWithinDateRange(relevantTimestamp, filters.dateRange, filters.selectedDate, nowMs) &&
       userMatchesSeverity(user, rows, filters.severity) &&
       userMatchesEventType(rows, filters.eventType)

@@ -14,24 +14,12 @@ const mocks = vi.hoisted(() => ({
   authRole: vi.fn(() => 'admin'),
 }));
 
-const recentIncidentTimestamp = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-const recentLastSeenTimestamp = new Date(Date.now() - 50 * 60 * 1000).toISOString();
+const recentIncidentTimestamp = '2026-05-23T17:00:00.000Z';
+const recentLastSeenTimestamp = '2026-05-23T17:10:00.000Z';
 
 vi.mock('@/context/UIContext', () => ({
   useConfirmDialog: () => ({ confirm: mocks.confirm }),
   useNotification: () => ({ success: mocks.success, error: mocks.error }),
-}));
-
-vi.mock('@/features/admin/components/DailyOpsChecklistCard', () => ({
-  DailyOpsChecklistCard: () => <div data-testid="daily-ops" />,
-}));
-
-vi.mock('@/features/admin/components/SystemHealthAlertsPanel', () => ({
-  SystemHealthAlertsPanel: () => <div data-testid="alerts-panel" />,
-}));
-
-vi.mock('@/features/admin/components/SystemHealthSummaryGrid', () => ({
-  SystemHealthSummaryGrid: () => <div data-testid="summary-grid" />,
 }));
 
 vi.mock('@/context/AuthContext', () => ({
@@ -154,18 +142,21 @@ describe('SystemHealthDashboard', () => {
 
     render(<SystemHealthDashboard />);
 
-    expect(await screen.findByPlaceholderText('Buscar usuario...')).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText('Buscar usuario, modulo, cama o campo...')
+    ).toBeInTheDocument();
     expect(screen.queryByText('Causas agrupadas')).not.toBeInTheDocument();
     expect(screen.queryByText('Linea temporal')).not.toBeInTheDocument();
+    expect(screen.queryByText('Checklist Diario (Soporte)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Alertas Operativas')).not.toBeInTheDocument();
+    expect(screen.queryByText('Incidencias abiertas')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Exportar CSV/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Marcar visibles resueltos/i })).toBeInTheDocument();
     expect(screen.getByText('Incidencias activas')).toBeInTheDocument();
-    expect(screen.getByText('Origen / donde ocurrio')).toBeInTheDocument();
-    expect(screen.getByText('Accion observada')).toBeInTheDocument();
-    expect(screen.getByText('Usuarios afectados')).toBeInTheDocument();
-    expect(screen.getByText('Incidentes')).toBeInTheDocument();
-    expect(screen.getAllByText('Criticos').length).toBeGreaterThan(0);
-    expect(screen.getByText('Resueltos')).toBeInTheDocument();
+    expect(screen.getByText('Incidencia accionable')).toBeInTheDocument();
+    expect(screen.queryByText('Usuarios afectados')).not.toBeInTheDocument();
+    expect(screen.queryByText('Incidentes')).not.toBeInTheDocument();
+    expect(screen.queryByText('Resueltos')).not.toBeInTheDocument();
     expect(screen.getByText('Ultimas 24 h')).toBeInTheDocument();
     expect(screen.getByText('Detalle operativo')).toBeInTheDocument();
     expect(screen.getAllByText('Escritura remota bloqueada').length).toBeGreaterThan(0);
@@ -231,7 +222,9 @@ describe('SystemHealthDashboard', () => {
   it('marks all visible open incidents as resolved in bulk', async () => {
     render(<SystemHealthDashboard />);
 
-    expect(await screen.findByPlaceholderText('Buscar usuario...')).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText('Buscar usuario, modulo, cama o campo...')
+    ).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /Marcar visibles resueltos/i }));
 
@@ -243,8 +236,8 @@ describe('SystemHealthDashboard', () => {
         })
       )
     );
-    expect(mocks.resolveSystemHealthIncident).toHaveBeenCalledTimes(4);
-    expect(mocks.success).toHaveBeenCalledWith('Incidentes visibles marcados como resueltos', '4');
+    expect(mocks.resolveSystemHealthIncident).toHaveBeenCalledTimes(3);
+    expect(mocks.success).toHaveBeenCalledWith('Incidentes visibles marcados como resueltos', '3');
   });
 
   it('restores visible incidents when bulk resolve cannot be persisted', async () => {
@@ -252,7 +245,9 @@ describe('SystemHealthDashboard', () => {
 
     render(<SystemHealthDashboard />);
 
-    expect(await screen.findByPlaceholderText('Buscar usuario...')).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText('Buscar usuario, modulo, cama o campo...')
+    ).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /Marcar visibles resueltos/i }));
 
@@ -270,7 +265,9 @@ describe('SystemHealthDashboard', () => {
 
     render(<SystemHealthDashboard />);
 
-    expect(await screen.findByPlaceholderText('Buscar usuario...')).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText('Buscar usuario, modulo, cama o campo...')
+    ).toBeInTheDocument();
     expect(screen.getByText('Incidencias activas')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Exportar CSV/i })).toBeInTheDocument();
     expect(
@@ -280,5 +277,32 @@ describe('SystemHealthDashboard', () => {
     expect(screen.queryByRole('button', { name: /Reabrir/i })).not.toBeInTheDocument();
     expect(screen.queryByTitle('Borrar registro de salud')).not.toBeInTheDocument();
     expect(screen.getAllByText(/Requiere rol admin/i).length).toBeGreaterThan(0);
+  });
+
+  it('filters incidents by clinical bed context and clears the selected user window', async () => {
+    mocks.confirm.mockResolvedValue(true);
+    mocks.deleteUserHealthSnapshot.mockResolvedValue(undefined);
+
+    render(<SystemHealthDashboard />);
+
+    await userEvent.type(
+      await screen.findByPlaceholderText('Buscar usuario, modulo, cama o campo...'),
+      'Diagnostico'
+    );
+
+    expect(screen.getAllByText('Escritura remota bloqueada').length).toBeGreaterThan(0);
+
+    await userEvent.click(screen.getByRole('button', { name: /Limpiar usuario/i }));
+
+    await waitFor(() =>
+      expect(mocks.resolveSystemHealthIncident).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resolutionKey: 'u1:event-1',
+          note: 'Borrón y cuenta nueva para el usuario desde Salud de usuarios',
+        })
+      )
+    );
+    expect(mocks.deleteUserHealthSnapshot).toHaveBeenCalledWith('u1');
+    expect(mocks.success).toHaveBeenCalledWith('Usuario limpiado desde ahora', 'user@example.com');
   });
 });

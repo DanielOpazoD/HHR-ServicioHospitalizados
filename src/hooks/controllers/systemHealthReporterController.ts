@@ -84,6 +84,29 @@ const SYNC_CONTEXT_LABELS: Record<string, string> = {
   metadata: 'Metadata',
   unknown: 'Sincronizacion local',
 };
+const SYNC_FIELD_LABELS: Record<string, string> = {
+  pathology: 'Diagnostico',
+  specialty: 'Especialidad',
+  secondarySpecialty: 'Especialidad secundaria',
+  status: 'Estado',
+  patientName: 'Nombre paciente',
+  rut: 'RUT',
+  age: 'Edad',
+  admissionDate: 'Fecha de ingreso',
+  admissionTime: 'Hora de ingreso',
+  bedMode: 'Tipo de cupo',
+  devices: 'Dispositivos',
+  deviceDetails: 'Detalle dispositivos',
+  clinicalEvents: 'Eventos clinicos',
+  handoffNoteDayShift: 'Nota entrega dia',
+  handoffNoteNightShift: 'Nota entrega noche',
+  medicalHandoffNote: 'Nota medica',
+  isUPC: 'UPC',
+  upcChecklist: 'Checklist UPC',
+  surgicalComplication: 'Complicacion quirurgica',
+  isBlocked: 'Bloqueo de cama',
+  blockedReason: 'Motivo de bloqueo',
+};
 
 const toContextString = (
   context: Record<string, unknown> | undefined,
@@ -103,6 +126,17 @@ const toPathname = (url: string | undefined): string | undefined => {
   } catch {
     return url.startsWith('/') ? url : undefined;
   }
+};
+
+const inferModuleFromPathname = (pathname: string | undefined): string | undefined => {
+  if (!pathname) return undefined;
+  if (pathname.includes('censo') || pathname.includes('census')) return 'Censo diario';
+  if (pathname.includes('handoff') || pathname.includes('entrega')) return 'Entrega turno';
+  if (pathname.includes('transfer') || pathname.includes('traslado')) return 'Gestion traslados';
+  if (pathname.includes('audit')) return 'Auditoria clinica';
+  if (pathname.includes('diagnostics') || pathname.includes('observabilidad'))
+    return 'Observabilidad';
+  return undefined;
 };
 
 const mapErrorSeverity = (severity: ErrorLog['severity']): UserHealthRecentEvent['severity'] =>
@@ -180,6 +214,37 @@ const buildSyncOperationIssue = (operation: SyncQueueOperationSnapshot): string 
   return operation.error;
 };
 
+const getClinicalDateFromSyncKey = (key: string | undefined): string | undefined => {
+  const match = /^daily:(\d{4}-\d{2}-\d{2})$/.exec(key || '');
+  return match?.[1];
+};
+
+const getFieldLabelFromPath = (fieldPath: string | undefined): string | undefined => {
+  if (!fieldPath) return undefined;
+  const [fieldKey] = fieldPath.split('.');
+  return SYNC_FIELD_LABELS[fieldKey] || fieldKey;
+};
+
+const buildSyncOperationClinicalContextSummary = (
+  operation: SyncQueueOperationSnapshot
+): string[] => {
+  const changedPath = operation.syncContract?.changedPaths?.find(path =>
+    /^beds\.[^.]+(?:\.|$)/.test(path)
+  );
+  if (!changedPath) return [];
+
+  const [, bedId, ...fieldParts] = changedPath.split('.');
+  const fieldKey = fieldParts.join('.');
+  return [
+    getClinicalDateFromSyncKey(operation.key)
+      ? `fecha clinica: ${getClinicalDateFromSyncKey(operation.key)}`
+      : '',
+    bedId ? `cama: Cama ${bedId}` : '',
+    fieldKey ? `campo: ${getFieldLabelFromPath(fieldKey)}` : 'campo: Cama completa',
+    `tipo: ${operation.type}`,
+  ].filter(Boolean);
+};
+
 const buildSyncOperationHealthEvents = (
   operations: SyncQueueOperationSnapshot[] | undefined
 ): UserHealthRecentEvent[] =>
@@ -187,6 +252,7 @@ const buildSyncOperationHealthEvents = (
     .filter(operation => operation.status === 'FAILED' || operation.status === 'CONFLICT')
     .map(operation => {
       const issue = buildSyncOperationIssue(operation);
+      const clinicalContextSummary = buildSyncOperationClinicalContextSummary(operation);
       return {
         id: `sync_queue:${operation.id || `${operation.type}:${operation.timestamp}`}`,
         source: 'operational',
@@ -202,12 +268,15 @@ const buildSyncOperationHealthEvents = (
         runtimeState: operation.status === 'CONFLICT' ? 'blocked' : undefined,
         telemetryStatus: operation.status === 'FAILED' ? 'failed' : 'degraded',
         issues: issue ? [truncateText(issue)] : [],
-        contextSummary: [
-          `estado: ${operation.status}`,
-          `reintentos: ${operation.retryCount}`,
-          operation.recoveryPolicy ? `politica: ${operation.recoveryPolicy}` : '',
-          operation.contexts?.length ? `contextos: ${operation.contexts.join(', ')}` : '',
-        ].filter(Boolean),
+        contextSummary:
+          clinicalContextSummary.length > 0
+            ? clinicalContextSummary
+            : [
+                `estado: ${operation.status}`,
+                `reintentos: ${operation.retryCount}`,
+                operation.recoveryPolicy ? `politica: ${operation.recoveryPolicy}` : '',
+                operation.contexts?.length ? `contextos: ${operation.contexts.join(', ')}` : '',
+              ].filter(Boolean),
       };
     });
 
@@ -221,25 +290,33 @@ const getModuleFromContext = (context: Record<string, unknown> | undefined): str
 const getActionFromContext = (context: Record<string, unknown> | undefined): string | undefined =>
   toContextString(context, 'action') || toContextString(context, 'button');
 
+const getOperationFromContext = (
+  context: Record<string, unknown> | undefined
+): string | undefined => toContextString(context, 'operation') || toContextString(context, 'event');
+
 export const buildRecentUserHealthEvents = ({
   localErrors,
   operationalEvents,
   recentSyncOperations,
-  maxEvents = 8,
+  maxEvents = 12,
 }: BuildRecentUserHealthEventsOptions): UserHealthRecentEvent[] => {
-  const localErrorEvents: UserHealthRecentEvent[] = localErrors.map(error => ({
-    id: `local_error:${error.id}`,
-    source: 'local_error',
-    category: 'local_error',
-    severity: mapErrorSeverity(error.severity),
-    status: 'open',
-    timestamp: error.timestamp,
-    message: truncateText(error.message),
-    module: getModuleFromContext(error.context),
-    action: getActionFromContext(error.context),
-    route: toPathname(error.url),
-    contextSummary: buildContextSummary(error.context),
-  }));
+  const localErrorEvents: UserHealthRecentEvent[] = localErrors.map(error => {
+    const route = toPathname(error.url);
+    return {
+      id: `local_error:${error.id}`,
+      source: 'local_error',
+      category: 'local_error',
+      severity: mapErrorSeverity(error.severity),
+      status: 'open',
+      timestamp: error.timestamp,
+      message: truncateText(error.message),
+      operation: getOperationFromContext(error.context),
+      module: getModuleFromContext(error.context) || inferModuleFromPathname(route),
+      action: getActionFromContext(error.context),
+      route,
+      contextSummary: buildContextSummary(error.context),
+    };
+  });
 
   const operationalHealthEvents: UserHealthRecentEvent[] = operationalEvents
     .filter(event => event.status !== 'success')

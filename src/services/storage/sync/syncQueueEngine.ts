@@ -41,6 +41,7 @@ export interface SyncQueueOperationSnapshot {
   contexts?: SyncTask['contexts'];
   origin?: SyncTask['origin'];
   recoveryPolicy?: SyncTask['recoveryPolicy'];
+  syncContract?: SyncTask['syncContract'];
 }
 
 interface CreateSyncQueueEngineOptions {
@@ -79,6 +80,20 @@ const getTaskKey = (type: SyncTask['type'], payload: unknown): string | undefine
   }
 
   return undefined;
+};
+
+const sanitizeSyncContractForOperationalSnapshot = (
+  syncContract: SyncTask['syncContract']
+): SyncTask['syncContract'] | undefined => {
+  if (!syncContract) return undefined;
+  return {
+    expectedVersion: syncContract.expectedVersion,
+    recordRevision: syncContract.recordRevision,
+    changedPaths: syncContract.changedPaths,
+    mutationId: syncContract.mutationId,
+    clientId: syncContract.clientId,
+    tabId: syncContract.tabId,
+  };
 };
 
 export const createSyncQueueEngine = ({
@@ -267,6 +282,7 @@ export const createSyncQueueEngine = ({
       contexts: row.contexts,
       origin: row.origin,
       recoveryPolicy: row.recoveryPolicy,
+      syncContract: sanitizeSyncContractForOperationalSnapshot(row.syncContract),
     }));
   };
 
