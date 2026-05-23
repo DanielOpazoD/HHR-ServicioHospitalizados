@@ -93,6 +93,10 @@ service cloud.firestore {
       return canEdit();
     }
 
+    function canManageSystemHealthOperations() {
+      return isAdmin();
+    }
+
     function isEditorRole() {
       return hasEffectiveRole('editor');
     }

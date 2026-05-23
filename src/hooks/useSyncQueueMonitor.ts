@@ -42,7 +42,15 @@ export interface SyncQueueOperation {
   timestamp: number;
   nextAttemptAt?: number;
   error?: string;
+  lastErrorCode?: SyncQueueOperationSnapshot['lastErrorCode'];
+  lastErrorCategory?: SyncQueueOperationSnapshot['lastErrorCategory'];
+  lastErrorSeverity?: SyncQueueOperationSnapshot['lastErrorSeverity'];
+  lastErrorAction?: SyncQueueOperationSnapshot['lastErrorAction'];
+  lastErrorAt?: SyncQueueOperationSnapshot['lastErrorAt'];
   key?: string;
+  contexts?: SyncQueueOperationSnapshot['contexts'];
+  origin?: SyncQueueOperationSnapshot['origin'];
+  recoveryPolicy?: SyncQueueOperationSnapshot['recoveryPolicy'];
 }
 
 export const useSyncQueueMonitor = (

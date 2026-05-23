@@ -3,6 +3,11 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  buildAuditAttemptEnv,
+  classifyAuditFailure,
+  shouldRetryAuditWithSystemCa,
+} from './lib/dependencyAuditSupport.mjs';
 
 const root = process.cwd();
 const reportsDir = path.join(root, 'reports', 'security');
@@ -29,26 +34,6 @@ const workspaceConfigs = [
 ];
 
 const auditArgs = ['audit', '--omit=dev', '--audit-level=high', '--json'];
-
-const classifyAuditFailure = (stderr, stdout) => {
-  const combined = `${stdout}\n${stderr}`.toLowerCase();
-  if (
-    combined.includes('eai_again') ||
-    combined.includes('enotfound') ||
-    combined.includes('network request') ||
-    combined.includes('socket hang up') ||
-    combined.includes('fetch failed')
-  ) {
-    return 'network_unavailable';
-  }
-  if (combined.includes('does not exist') || combined.includes('enoent')) {
-    return 'missing_inputs';
-  }
-  if (combined.includes('not support') || combined.includes('unsupported')) {
-    return 'unsupported';
-  }
-  return 'audit_failed';
-};
 
 const extractCounts = report => {
   const vulnerabilities = report?.metadata?.vulnerabilities;
@@ -135,11 +120,31 @@ const runAuditForWorkspace = workspace => {
     };
   }
 
-  const result = spawnSync('npm', auditArgs, {
-    cwd: workspace.cwd,
-    encoding: 'utf8',
-    shell: process.platform === 'win32',
-  });
+  const runAudit = env =>
+    spawnSync('npm', auditArgs, {
+      cwd: workspace.cwd,
+      encoding: 'utf8',
+      env,
+      shell: process.platform === 'win32',
+    });
+
+  let result = runAudit(process.env);
+  let retriedWithSystemCa = false;
+
+  const firstFailureCategory =
+    result.status === 0
+      ? null
+      : classifyAuditFailure({ stderr: result.stderr || '', stdout: result.stdout || '' });
+
+  if (
+    shouldRetryAuditWithSystemCa({
+      failureCategory: firstFailureCategory,
+      nodeOptions: process.env.NODE_OPTIONS,
+    })
+  ) {
+    result = runAudit(buildAuditAttemptEnv(process.env));
+    retriedWithSystemCa = true;
+  }
 
   const stdout = result.stdout || '';
   const stderr = result.stderr || '';
@@ -174,7 +179,7 @@ const runAuditForWorkspace = workspace => {
     failureCategory = 'high_or_critical_vulnerabilities';
   } else if (result.status !== 0) {
     status = 'unavailable';
-    failureCategory = classifyAuditFailure(stderr, stdout);
+    failureCategory = classifyAuditFailure({ stderr, stdout });
   }
 
   return {
@@ -187,6 +192,7 @@ const runAuditForWorkspace = workspace => {
     exitCode: result.status,
     counts,
     vulnerablePackages,
+    retriedWithSystemCa,
     issues:
       status === 'vulnerable'
         ? [

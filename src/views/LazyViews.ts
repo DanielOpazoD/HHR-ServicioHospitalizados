@@ -103,12 +103,6 @@ export const PrescriptionAdminView = lazyWithRetry(() =>
   }))
 );
 
-export const ErrorDashboard = lazyWithRetry(() =>
-  import(/* webpackChunkName: "error-db" */ '@/features/admin').then(module => ({
-    default: module.ErrorDashboard,
-  }))
-);
-
 export const BackupFilesView = lazyWithRetry(() =>
   import(/* webpackChunkName: "backup" */ '@/application/backup/public').then(module => ({
     default: module.BackupFilesView,

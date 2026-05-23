@@ -69,6 +69,14 @@ export const CRITICAL_FIRESTORE_ACCESS_MATRIX = [
     read: 'canReportSystemHealth()',
     create: 'isValidSystemHealthWrite(userId)',
     update: 'isValidSystemHealthWrite(userId)',
+    delete: 'canManageSystemHealthOperations()',
+  },
+  {
+    path: 'systemHealthResolutions',
+    matchPath: '/stats/system_health/resolutions/{resolutionId}',
+    read: 'canReportSystemHealth()',
+    create: 'isValidSystemHealthResolutionWrite()',
+    update: 'isValidSystemHealthResolutionWrite()',
     delete: 'false',
   },
   {
@@ -173,9 +181,7 @@ export function buildFirestoreRulesCriticalAccessMatrix(rules) {
       update: access.update ?? null,
       delete: access.delete ?? null,
     };
-  }).filter(entry =>
-    OPERATIONS.some(operation => entry[operation] !== null)
-  );
+  }).filter(entry => OPERATIONS.some(operation => entry[operation] !== null));
 }
 
 export function findCriticalAccessMatrixDrift(rules) {

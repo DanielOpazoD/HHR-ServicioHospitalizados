@@ -32,10 +32,16 @@ export interface SyncQueueOperationSnapshot {
   timestamp: number;
   nextAttemptAt?: number;
   error?: string;
+  lastErrorCode?: SyncTask['lastErrorCode'];
+  lastErrorCategory?: SyncTask['lastErrorCategory'];
+  lastErrorSeverity?: SyncTask['lastErrorSeverity'];
+  lastErrorAction?: SyncTask['lastErrorAction'];
+  lastErrorAt?: SyncTask['lastErrorAt'];
   key?: string;
   contexts?: SyncTask['contexts'];
   origin?: SyncTask['origin'];
   recoveryPolicy?: SyncTask['recoveryPolicy'];
+  syncContract?: SyncTask['syncContract'];
 }
 
 interface CreateSyncQueueEngineOptions {
@@ -74,6 +80,20 @@ const getTaskKey = (type: SyncTask['type'], payload: unknown): string | undefine
   }
 
   return undefined;
+};
+
+const sanitizeSyncContractForOperationalSnapshot = (
+  syncContract: SyncTask['syncContract']
+): SyncTask['syncContract'] | undefined => {
+  if (!syncContract) return undefined;
+  return {
+    expectedVersion: syncContract.expectedVersion,
+    recordRevision: syncContract.recordRevision,
+    changedPaths: syncContract.changedPaths,
+    mutationId: syncContract.mutationId,
+    clientId: syncContract.clientId,
+    tabId: syncContract.tabId,
+  };
 };
 
 export const createSyncQueueEngine = ({
@@ -253,10 +273,16 @@ export const createSyncQueueEngine = ({
       timestamp: row.timestamp,
       nextAttemptAt: row.nextAttemptAt,
       error: row.error,
+      lastErrorCode: row.lastErrorCode,
+      lastErrorCategory: row.lastErrorCategory,
+      lastErrorSeverity: row.lastErrorSeverity,
+      lastErrorAction: row.lastErrorAction,
+      lastErrorAt: row.lastErrorAt,
       key: row.key,
       contexts: row.contexts,
       origin: row.origin,
       recoveryPolicy: row.recoveryPolicy,
+      syncContract: sanitizeSyncContractForOperationalSnapshot(row.syncContract),
     }));
   };
 
