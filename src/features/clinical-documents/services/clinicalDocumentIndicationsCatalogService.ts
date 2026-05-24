@@ -1,18 +1,15 @@
 import { firestoreDb, type IDatabaseProvider } from '@/services/storage/firestore';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import {
-  applyClinicalDocumentIndicationsAddItem,
-  applyClinicalDocumentIndicationsCreateTab,
-  applyClinicalDocumentIndicationsDeleteItem,
-  applyClinicalDocumentIndicationsDeleteTab,
-  applyClinicalDocumentIndicationsRenameTab,
-  applyClinicalDocumentIndicationsReorderTab,
-  applyClinicalDocumentIndicationsUpdateItem,
   getDefaultClinicalDocumentIndicationsCatalog,
   normalizeClinicalDocumentIndicationsCatalog,
   type ClinicalDocumentIndicationsCatalog,
   type RawClinicalDocumentIndicationsCatalog,
 } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsCatalogController';
+import {
+  createClinicalDocumentIndicationsCatalogOperations,
+  type ClinicalDocumentIndicationsCatalogOwner,
+} from '@/features/clinical-documents/services/clinicalDocumentIndicationsCatalogOperations';
 
 export type {
   ClinicalDocumentIndicationCatalogItem,
@@ -24,11 +21,6 @@ export {
   getDefaultClinicalDocumentIndicationsCatalog,
   normalizeClinicalDocumentIndicationsCatalog,
 } from '@/features/clinical-documents/controllers/clinicalDocumentIndicationsCatalogController';
-
-interface ClinicalDocumentIndicationsCatalogOwner {
-  uid?: string | null;
-  email?: string | null;
-}
 
 interface UserSettingsDocument {
   clinicalDocumentIndicationsProfile?: RawClinicalDocumentIndicationsCatalog;
@@ -97,240 +89,112 @@ const saveReadyCatalog = (
   });
 };
 
-const saveCatalogIfChanged = async (
-  saveCatalog: (
-    owner: ClinicalDocumentIndicationsCatalogOwner,
-    catalog: ClinicalDocumentIndicationsCatalog
-  ) => Promise<ClinicalDocumentIndicationsCatalog>,
-  owner: ClinicalDocumentIndicationsCatalogOwner,
-  currentCatalog: ClinicalDocumentIndicationsCatalog,
-  nextCatalog: ClinicalDocumentIndicationsCatalog
-): Promise<ClinicalDocumentIndicationsCatalog> =>
-  nextCatalog === currentCatalog ? currentCatalog : saveCatalog(owner, nextCatalog);
-
 export const createClinicalDocumentIndicationsCatalogService = (
   repository: Pick<IDatabaseProvider, 'getDoc' | 'setDoc' | 'subscribeDoc'> = firestoreDb
-) => ({
-  async load(
-    owner: ClinicalDocumentIndicationsCatalogOwner
-  ): Promise<ClinicalDocumentIndicationsCatalog> {
-    const normalizedOwner = normalizeOwner(owner);
-    if (!normalizedOwner.uid) {
-      return getDefaultClinicalDocumentIndicationsCatalog(undefined, normalizedOwner);
-    }
+) => {
+  const persistence = {
+    async load(
+      owner: ClinicalDocumentIndicationsCatalogOwner
+    ): Promise<ClinicalDocumentIndicationsCatalog> {
+      const normalizedOwner = normalizeOwner(owner);
+      if (!normalizedOwner.uid) {
+        return getDefaultClinicalDocumentIndicationsCatalog(undefined, normalizedOwner);
+      }
 
-    if (!isFirestoreEnabled()) {
-      return (
-        readLocalProfiles()[normalizedOwner.uid] ||
-        getDefaultClinicalDocumentIndicationsCatalog(undefined, normalizedOwner)
-      );
-    }
-
-    const settings = await repository.getDoc<UserSettingsDocument>(
-      USER_SETTINGS_COLLECTION,
-      normalizedOwner.uid
-    );
-    return normalizeClinicalDocumentIndicationsCatalog(
-      settings?.clinicalDocumentIndicationsProfile,
-      normalizedOwner
-    );
-  },
-
-  subscribe(
-    callback: (catalog: ClinicalDocumentIndicationsCatalog) => void,
-    owner: ClinicalDocumentIndicationsCatalogOwner
-  ): () => void {
-    const normalizedOwner = normalizeOwner(owner);
-    if (!normalizedOwner.uid) {
-      callback(getDefaultClinicalDocumentIndicationsCatalog(undefined, normalizedOwner));
-      return () => {};
-    }
-
-    if (!isFirestoreEnabled()) {
-      callback(
-        readLocalProfiles()[normalizedOwner.uid] ||
+      if (!isFirestoreEnabled()) {
+        return (
+          readLocalProfiles()[normalizedOwner.uid] ||
           getDefaultClinicalDocumentIndicationsCatalog(undefined, normalizedOwner)
-      );
-      return () => {};
-    }
-
-    return repository.subscribeDoc<UserSettingsDocument>(
-      USER_SETTINGS_COLLECTION,
-      normalizedOwner.uid,
-      settings => {
-        callback(
-          normalizeClinicalDocumentIndicationsCatalog(
-            settings?.clinicalDocumentIndicationsProfile,
-            normalizedOwner
-          )
         );
       }
-    );
-  },
 
-  async saveCatalog(
-    owner: ClinicalDocumentIndicationsCatalogOwner,
-    catalog: ClinicalDocumentIndicationsCatalog
-  ): Promise<ClinicalDocumentIndicationsCatalog> {
-    const normalizedOwner = normalizeOwner(owner);
-    assertOwnerUid(normalizedOwner);
-    const nextCatalog = saveReadyCatalog(
-      normalizedOwner,
-      normalizeClinicalDocumentIndicationsCatalog(catalog, normalizedOwner)
-    );
+      const settings = await repository.getDoc<UserSettingsDocument>(
+        USER_SETTINGS_COLLECTION,
+        normalizedOwner.uid
+      );
+      return normalizeClinicalDocumentIndicationsCatalog(
+        settings?.clinicalDocumentIndicationsProfile,
+        normalizedOwner
+      );
+    },
 
-    if (!isFirestoreEnabled()) {
-      writeLocalProfile(nextCatalog);
+    subscribe(
+      callback: (catalog: ClinicalDocumentIndicationsCatalog) => void,
+      owner: ClinicalDocumentIndicationsCatalogOwner
+    ): () => void {
+      const normalizedOwner = normalizeOwner(owner);
+      if (!normalizedOwner.uid) {
+        callback(getDefaultClinicalDocumentIndicationsCatalog(undefined, normalizedOwner));
+        return () => {};
+      }
+
+      if (!isFirestoreEnabled()) {
+        callback(
+          readLocalProfiles()[normalizedOwner.uid] ||
+            getDefaultClinicalDocumentIndicationsCatalog(undefined, normalizedOwner)
+        );
+        return () => {};
+      }
+
+      return repository.subscribeDoc<UserSettingsDocument>(
+        USER_SETTINGS_COLLECTION,
+        normalizedOwner.uid,
+        settings => {
+          callback(
+            normalizeClinicalDocumentIndicationsCatalog(
+              settings?.clinicalDocumentIndicationsProfile,
+              normalizedOwner
+            )
+          );
+        }
+      );
+    },
+
+    async saveCatalog(
+      owner: ClinicalDocumentIndicationsCatalogOwner,
+      catalog: ClinicalDocumentIndicationsCatalog
+    ): Promise<ClinicalDocumentIndicationsCatalog> {
+      const normalizedOwner = normalizeOwner(owner);
+      assertOwnerUid(normalizedOwner);
+      const nextCatalog = saveReadyCatalog(
+        normalizedOwner,
+        normalizeClinicalDocumentIndicationsCatalog(catalog, normalizedOwner)
+      );
+
+      if (!isFirestoreEnabled()) {
+        writeLocalProfile(nextCatalog);
+        return nextCatalog;
+      }
+
+      await repository.setDoc<UserSettingsDocument>(
+        USER_SETTINGS_COLLECTION,
+        normalizedOwner.uid,
+        { clinicalDocumentIndicationsProfile: nextCatalog },
+        { merge: true }
+      );
       return nextCatalog;
-    }
+    },
+  };
 
-    await repository.setDoc<UserSettingsDocument>(
-      USER_SETTINGS_COLLECTION,
-      normalizedOwner.uid,
-      { clinicalDocumentIndicationsProfile: nextCatalog },
-      { merge: true }
-    );
-    return nextCatalog;
-  },
+  return {
+    ...persistence,
+    ...createClinicalDocumentIndicationsCatalogOperations(persistence),
 
-  async createTab({
-    uid,
-    email,
-    label,
-  }: ClinicalDocumentIndicationsCatalogOwner & {
-    label: string;
-  }): Promise<ClinicalDocumentIndicationsCatalog> {
-    const currentCatalog = await this.load({ uid, email });
-    return saveCatalogIfChanged(
-      this.saveCatalog.bind(this),
-      { uid, email },
-      currentCatalog,
-      applyClinicalDocumentIndicationsCreateTab(currentCatalog, label)
-    );
-  },
-
-  async renameTab({
-    uid,
-    email,
-    tabId,
-    label,
-  }: ClinicalDocumentIndicationsCatalogOwner & {
-    tabId: string;
-    label: string;
-  }): Promise<ClinicalDocumentIndicationsCatalog> {
-    const currentCatalog = await this.load({ uid, email });
-    return saveCatalogIfChanged(
-      this.saveCatalog.bind(this),
-      { uid, email },
-      currentCatalog,
-      applyClinicalDocumentIndicationsRenameTab(currentCatalog, tabId, label)
-    );
-  },
-
-  async deleteTab({
-    uid,
-    email,
-    tabId,
-  }: ClinicalDocumentIndicationsCatalogOwner & {
-    tabId: string;
-  }): Promise<ClinicalDocumentIndicationsCatalog> {
-    const currentCatalog = await this.load({ uid, email });
-    return saveCatalogIfChanged(
-      this.saveCatalog.bind(this),
-      { uid, email },
-      currentCatalog,
-      applyClinicalDocumentIndicationsDeleteTab(currentCatalog, tabId)
-    );
-  },
-
-  async reorderTab({
-    uid,
-    email,
-    tabId,
-    direction,
-  }: ClinicalDocumentIndicationsCatalogOwner & {
-    tabId: string;
-    direction: 'left' | 'right';
-  }): Promise<ClinicalDocumentIndicationsCatalog> {
-    const currentCatalog = await this.load({ uid, email });
-    return saveCatalogIfChanged(
-      this.saveCatalog.bind(this),
-      { uid, email },
-      currentCatalog,
-      applyClinicalDocumentIndicationsReorderTab(currentCatalog, tabId, direction)
-    );
-  },
-
-  async addItem({
-    uid,
-    email,
-    tabId,
-    text,
-  }: ClinicalDocumentIndicationsCatalogOwner & {
-    tabId?: string;
-    text: string;
-  }): Promise<ClinicalDocumentIndicationsCatalog> {
-    const currentCatalog = await this.load({ uid, email });
-    return saveCatalogIfChanged(
-      this.saveCatalog.bind(this),
-      { uid, email },
-      currentCatalog,
-      applyClinicalDocumentIndicationsAddItem(currentCatalog, { tabId, text })
-    );
-  },
-
-  async updateItem({
-    uid,
-    email,
-    tabId,
-    itemId,
-    text,
-  }: ClinicalDocumentIndicationsCatalogOwner & {
-    tabId?: string;
-    itemId: string;
-    text: string;
-  }): Promise<ClinicalDocumentIndicationsCatalog> {
-    const currentCatalog = await this.load({ uid, email });
-    return saveCatalogIfChanged(
-      this.saveCatalog.bind(this),
-      { uid, email },
-      currentCatalog,
-      applyClinicalDocumentIndicationsUpdateItem(currentCatalog, { tabId, itemId, text })
-    );
-  },
-
-  async deleteItem({
-    uid,
-    email,
-    tabId,
-    itemId,
-  }: ClinicalDocumentIndicationsCatalogOwner & {
-    tabId?: string;
-    itemId: string;
-  }): Promise<ClinicalDocumentIndicationsCatalog> {
-    const currentCatalog = await this.load({ uid, email });
-    return saveCatalogIfChanged(
-      this.saveCatalog.bind(this),
-      { uid, email },
-      currentCatalog,
-      applyClinicalDocumentIndicationsDeleteItem(currentCatalog, { tabId, itemId })
-    );
-  },
-
-  async replaceCatalog({
-    uid,
-    email,
-    catalog,
-  }: ClinicalDocumentIndicationsCatalogOwner & {
-    catalog: RawClinicalDocumentIndicationsCatalog;
-  }): Promise<ClinicalDocumentIndicationsCatalog> {
-    const normalizedOwner = normalizeOwner({ uid, email });
-    return this.saveCatalog(
-      normalizedOwner,
-      normalizeClinicalDocumentIndicationsCatalog(catalog, normalizedOwner)
-    );
-  },
-});
+    async replaceCatalog({
+      uid,
+      email,
+      catalog,
+    }: ClinicalDocumentIndicationsCatalogOwner & {
+      catalog: RawClinicalDocumentIndicationsCatalog;
+    }): Promise<ClinicalDocumentIndicationsCatalog> {
+      const normalizedOwner = normalizeOwner({ uid, email });
+      return persistence.saveCatalog(
+        normalizedOwner,
+        normalizeClinicalDocumentIndicationsCatalog(catalog, normalizedOwner)
+      );
+    },
+  };
+};
 
 const defaultClinicalDocumentIndicationsCatalogService =
   createClinicalDocumentIndicationsCatalogService();
