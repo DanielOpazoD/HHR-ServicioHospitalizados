@@ -164,11 +164,11 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
   });
 
   afterEach(async () => {
-    while (unmounts.length > 0) {
-      const unmount = unmounts.pop();
-      unmount?.();
-    }
     await act(async () => {
+      while (unmounts.length > 0) {
+        const unmount = unmounts.pop();
+        unmount?.();
+      }
       await Promise.resolve();
     });
     clearPendingDailyRecordPatchesForTests();
@@ -414,15 +414,19 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
       expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag Inicial');
     });
 
-    markDailyRecordTabHidden(0);
-    markDailyRecordTabVisible(6 * 60 * 1000);
+    await act(async () => {
+      markDailyRecordTabHidden(0);
+      markDailyRecordTabVisible(6 * 60 * 1000);
+    });
     expect(getDailyRecordFreshnessStatus(date)).toBe('stale_due_to_inactivity');
 
-    await testEnv.withSecurityRulesDisabled(async context => {
-      await context
-        .firestore()
-        .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
-        .set(updatedByClientA);
+    await act(async () => {
+      await testEnv.withSecurityRulesDisabled(async context => {
+        await context
+          .firestore()
+          .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
+          .set(updatedByClientA);
+      });
     });
 
     await waitFor(() => {
@@ -434,6 +438,10 @@ describeUiEmulator('UI sync flow with Firestore emulator', () => {
       await resultRef.current.patchRecord({
         'beds.R1.status': 'Grave',
       });
+    });
+
+    await waitFor(() => {
+      expect(resultRef.current.record?.beds?.R1?.status).toBe('Grave');
     });
 
     let remoteSnap: { data: () => Record<string, unknown> | undefined } | undefined;

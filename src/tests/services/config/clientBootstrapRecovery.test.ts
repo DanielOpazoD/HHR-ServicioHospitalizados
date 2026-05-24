@@ -1,16 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockGetLocalStorageItem = vi.fn();
-const mockSetLocalStorageItem = vi.fn();
-const mockReload = vi.fn();
-
-vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
-  defaultBrowserWindowRuntime: {
-    getLocalStorageItem: (...args: unknown[]) => mockGetLocalStorageItem(...args),
-    setLocalStorageItem: (...args: unknown[]) => mockSetLocalStorageItem(...args),
-    reload: (...args: unknown[]) => mockReload(...args),
-  },
+const { mockGetLocalStorageItem, mockSetLocalStorageItem, mockReload } = vi.hoisted(() => ({
+  mockGetLocalStorageItem: vi.fn(),
+  mockSetLocalStorageItem: vi.fn(),
+  mockReload: vi.fn(),
 }));
+
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', async () => {
+  const { createMockBrowserWindowRuntime } = await import('@/tests/utils/browserWindowRuntimeMock');
+
+  return {
+    defaultBrowserWindowRuntime: createMockBrowserWindowRuntime({
+      getLocalStorageItem: mockGetLocalStorageItem,
+      setLocalStorageItem: mockSetLocalStorageItem,
+      reload: mockReload,
+    }),
+  };
+});
 
 import {
   getClientBootstrapRecoveryConstants,

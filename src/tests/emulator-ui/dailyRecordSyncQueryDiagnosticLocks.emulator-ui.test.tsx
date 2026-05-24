@@ -158,11 +158,11 @@ describeUiEmulator('UI sync flow silent refresh with Firestore emulator', () => 
   });
 
   afterEach(async () => {
-    while (unmounts.length > 0) {
-      const unmount = unmounts.pop();
-      unmount?.();
-    }
     await act(async () => {
+      while (unmounts.length > 0) {
+        const unmount = unmounts.pop();
+        unmount?.();
+      }
       await Promise.resolve();
     });
     clearPendingDailyRecordPatchesForTests();
@@ -193,9 +193,18 @@ describeUiEmulator('UI sync flow silent refresh with Firestore emulator', () => 
     await saveRecord(seed);
 
     const { wrapper } = createQueryClientTestWrapper();
-    const hook = renderHook(() => useDailyRecordSyncQuery(date, false, 'ready'), { wrapper });
-    unmounts.push(hook.unmount);
-    const resultRef = hook.result as {
+    let safeResult: { current: unknown } | null = null;
+    let safeUnmount: (() => void) | null = null;
+    await act(async () => {
+      const hook = renderHook(() => useDailyRecordSyncQuery(date, false, 'ready'), { wrapper });
+      safeResult = hook.result;
+      safeUnmount = hook.unmount;
+    });
+    if (!safeResult || !safeUnmount) {
+      throw new Error('Failed to initialize diagnostic lock harness');
+    }
+    unmounts.push(safeUnmount);
+    const resultRef = safeResult as {
       current: {
         record: DailyRecord | null;
         patchRecord: (patch: Record<string, unknown>) => Promise<void>;
@@ -206,15 +215,19 @@ describeUiEmulator('UI sync flow silent refresh with Firestore emulator', () => 
       expect(resultRef.current.record?.beds?.R1?.pathology).toBe('Diag Inicial');
     });
 
-    markDailyRecordTabHidden(0);
-    markDailyRecordTabVisible(6 * 60 * 1000);
-    markDailyRecordStaleBaseline(date, resultRef.current.record);
+    await act(async () => {
+      markDailyRecordTabHidden(0);
+      markDailyRecordTabVisible(6 * 60 * 1000);
+      markDailyRecordStaleBaseline(date, resultRef.current.record);
+    });
 
-    await testEnv.withSecurityRulesDisabled(async context => {
-      await context
-        .firestore()
-        .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
-        .set(updatedByClientA);
+    await act(async () => {
+      await testEnv.withSecurityRulesDisabled(async context => {
+        await context
+          .firestore()
+          .doc(`hospitals/hanga_roa/dailyRecords/${date}`)
+          .set(updatedByClientA);
+      });
     });
 
     await waitFor(() => {
@@ -226,6 +239,10 @@ describeUiEmulator('UI sync flow silent refresh with Firestore emulator', () => 
       await resultRef.current.patchRecord({
         'beds.R1.cie10Code': 'I10',
       });
+    });
+
+    await waitFor(() => {
+      expect(resultRef.current.record?.beds?.R1?.cie10Code).toBe('I10');
     });
 
     expect(mockNotifyWarning).not.toHaveBeenCalled();

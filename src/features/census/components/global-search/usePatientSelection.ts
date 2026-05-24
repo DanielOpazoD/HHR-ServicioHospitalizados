@@ -14,9 +14,13 @@ import type {
   ClinicalDocSummary,
 } from '@/features/census/components/global-search/globalSearchContracts';
 import { buildPatientEpisodeTimelineState } from '@/features/census/components/global-search/patientEpisodeTimelineController';
+import {
+  buildClinicalDocumentEpisodeKeyCandidates,
+  parseCompositeEpisodeKey,
+  summarizeClinicalDocuments,
+} from '@/features/census/components/global-search/patientSelectionDocumentController';
 import { globalPatientSearchLogger } from '@/hooks/hookLoggers';
 import { defaultBrowserWindowRuntime } from '@/shared/runtime/browserWindowRuntimeCore';
-import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
 
 // ---------------------------------------------------------------------------
 // Lazy loaders
@@ -47,52 +51,8 @@ const loadClinicalDocPdf = () => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const parseCompositeEpisodeKey = (
-  key: string
-): { rut: string; admissionDate: string; admissionTime?: string } | null => {
-  const [rut, admissionDate, admissionTime] = key.split('__');
-  if (!rut || !admissionDate) return null;
-  return { rut, admissionDate, admissionTime };
-};
-
 const buildPatientHistoryCacheKey = (patient: MasterPatient): string =>
   `${patient.rut}::${patient.updatedAt ?? 0}`;
-
-const shiftIsoDate = (isoDate: string, deltaDays: number): string | null => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return null;
-  const date = new Date(`${isoDate}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime())) return null;
-  date.setUTCDate(date.getUTCDate() + deltaDays);
-  return date.toISOString().slice(0, 10);
-};
-
-const buildClinicalDocumentEpisodeKeyCandidates = ({
-  rut,
-  admissionDate,
-  admissionTime,
-}: {
-  rut: string;
-  admissionDate: string;
-  admissionTime?: string;
-}): string[] => {
-  const rutWithoutDots = rut.replace(/\./g, '');
-  const admissionDates = [
-    admissionDate,
-    shiftIsoDate(admissionDate, 1),
-    shiftIsoDate(admissionDate, -1),
-  ].filter((date): date is string => Boolean(date));
-
-  return [
-    ...new Set(
-      admissionDates.flatMap(date => [
-        buildClinicalEpisodeKey(rut, date, admissionTime),
-        buildClinicalEpisodeKey(rutWithoutDots, date, admissionTime),
-        buildClinicalEpisodeKey(rut, date),
-        buildClinicalEpisodeKey(rutWithoutDots, date),
-      ])
-    ),
-  ];
-};
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -204,15 +164,7 @@ export function usePatientSelection(): UsePatientSelectionReturn {
       for (const candidateKey of candidateKeys) {
         const docs = await docMod.ClinicalDocumentRepository.listByEpisode(candidateKey);
         if (docs.length > 0) {
-          foundDocs = docs.map(d => ({
-            id: d.id || '',
-            episodeKey: d.episodeKey || candidateKey,
-            documentType: d.documentType || '',
-            status: d.status || '',
-            createdAt: d.audit?.createdAt || '',
-            createdBy: d.audit?.createdBy?.displayName || '',
-            updatedAt: d.audit?.updatedAt || '',
-          }));
+          foundDocs = summarizeClinicalDocuments(docs, candidateKey);
           break;
         }
       }

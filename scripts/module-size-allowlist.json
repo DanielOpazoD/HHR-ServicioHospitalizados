@@ -3,8 +3,7 @@
   "allowlist": {
     "src/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService.ts": 450,
     "src/features/clinical-documents/controllers/clinicalDocumentIndicationsCatalogController.ts": 450,
-    "src/features/clinical-documents/controllers/clinicalDocumentPlanSectionController.ts": 425,
-    "src/services/repositories/dailyRecordRepositoryWriteService.ts": 425
+    "src/features/clinical-documents/controllers/clinicalDocumentPlanSectionController.ts": 425
   },
   "backlog": {
     "src/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService.ts": {
@@ -21,11 +20,6 @@
       "limit": 425,
       "owner": "clinical-documents",
       "reason": "Plan section controller is over the global module-size guard and needs a focused helper extraction outside this CI hotfix."
-    },
-    "src/services/repositories/dailyRecordRepositoryWriteService.ts": {
-      "limit": 425,
-      "owner": "repositories",
-      "reason": "Daily record write service is just over the global module-size guard and should be split in a repository cleanup slice."
     }
   }
 }

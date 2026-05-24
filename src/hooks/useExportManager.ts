@@ -1,16 +1,28 @@
 import { useState, useCallback } from 'react';
 import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
-import { dispatchExportManagerNotice } from '@/hooks/controllers/exportManagerNoticeController';
-import { presentBackupExportOutcome } from '@/hooks/controllers/backupExportOutcomeController';
 import { recordOperationalOutcome } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { useBackupArchiveStatus } from '@/hooks/useBackupArchiveStatus';
-import { buildBackupHandoffConfirmDescriptor } from '@/hooks/controllers/exportManagerConfirmController';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
 import type { BackupHandoffPdfOutput } from '@/application/backup-export/backupExportArchiveContracts';
 
 const loadBackupArchiveUseCases = () =>
   import('@/application/backup-export/backupExportArchiveUseCases');
+const loadBackupExportPresentation = async () => {
+  const [{ presentBackupExportOutcome }, { dispatchExportManagerNotice }] = await Promise.all([
+    import('@/hooks/controllers/backupExportOutcomeController'),
+    import('@/hooks/controllers/exportManagerNoticeController'),
+  ]);
+
+  return {
+    presentBackupExportOutcome,
+    dispatchExportManagerNotice,
+  };
+};
+const loadBackupHandoffConfirmDescriptor = async () =>
+  import('@/hooks/controllers/exportManagerConfirmController').then(
+    module => module.buildBackupHandoffConfirmDescriptor
+  );
 
 interface UseExportManagerProps {
   currentDateString: string;
@@ -94,6 +106,8 @@ export const useExportManager = ({
       return;
     }
 
+    const { presentBackupExportOutcome, dispatchExportManagerNotice } =
+      await loadBackupExportPresentation();
     const notice = presentBackupExportOutcome(outcome, {
       successTitle: 'PDF generado',
       partialTitle: 'Impresión abierta con observaciones',
@@ -129,6 +143,8 @@ export const useExportManager = ({
         date: currentDateString,
         allowSuccess: true,
       });
+      const { presentBackupExportOutcome, dispatchExportManagerNotice } =
+        await loadBackupExportPresentation();
       const notice = presentBackupExportOutcome(outcome, {
         successTitle: 'Excel archivado',
         successMessage: `Guardado para ${currentDateString}`,
@@ -163,6 +179,7 @@ export const useExportManager = ({
       if (!exportRecord) return;
 
       if (!skipConfirmation) {
+        const buildBackupHandoffConfirmDescriptor = await loadBackupHandoffConfirmDescriptor();
         const confirmed = await confirm(
           buildBackupHandoffConfirmDescriptor({
             recordDate: exportRecord.date,
@@ -188,6 +205,8 @@ export const useExportManager = ({
           context: { shift: selectedShift },
           allowSuccess: true,
         });
+        const { presentBackupExportOutcome, dispatchExportManagerNotice } =
+          await loadBackupExportPresentation();
         const notice = presentBackupExportOutcome(
           outcome,
           resolveBackupHandoffNoticeOptions(outcome, selectedShift)
