@@ -2,14 +2,34 @@ import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { IEEHFormDialog } from '../../features/census/components/IEEHFormDialog';
-import { printIEEHForm } from '../../services/pdf/ieehPdfService';
+import { printIEEHForm } from '@/services/pdf/ieehPdfService';
 import type { PatientData } from '../../types/domain/patient';
 import { PatientStatus, Specialty } from '../../types/domain/patientClassification';
-import type { DischargeFormData } from '../../services/pdf/ieehPdfService';
+import type { DischargeFormData } from '@/services/pdf/ieehPdfService';
+
+const { mockBrowserOpen } = vi.hoisted(() => ({
+  mockBrowserOpen: vi.fn(() => null),
+}));
 
 // Mock services
-vi.mock('../../services/pdf/ieehPdfService', () => ({
+vi.mock('@/services/pdf/ieehPdfService', () => ({
   printIEEHForm: vi.fn(),
+}));
+
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
+  defaultBrowserWindowRuntime: {
+    alert: vi.fn(),
+    confirm: vi.fn(() => true),
+    open: mockBrowserOpen,
+    reload: vi.fn(),
+    getLocationOrigin: vi.fn(() => 'http://localhost'),
+    getLocationPathname: vi.fn(() => '/'),
+    getLocationHref: vi.fn(() => 'http://localhost/'),
+    getViewportWidth: vi.fn(() => 1024),
+    getLocalStorageItem: vi.fn(() => null),
+    setLocalStorageItem: vi.fn(),
+    removeLocalStorageItem: vi.fn(),
+  },
 }));
 
 vi.mock('../../services/terminology/terminologyService', () => ({
@@ -97,6 +117,7 @@ describe('IEEHFormDialog Component', () => {
     await waitFor(() => {
       expect(printIEEHForm).toHaveBeenCalled();
     });
+    expect(mockBrowserOpen).toHaveBeenCalledWith('', '_blank');
   });
 
   it('sends "No" defaults for cirugía y procedimiento sin interacción previa', async () => {
