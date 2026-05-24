@@ -1,5 +1,3 @@
-import type { DailyRecordStoreChangedEventDetail } from '@/services/storage/indexeddb/indexedDbRecordEvents';
-
 const CHANNEL_NAME = 'hhr_records_sync_channel';
 
 const TAB_ID: string =
@@ -7,9 +5,14 @@ const TAB_ID: string =
     ? crypto.randomUUID()
     : `tab_${Math.random().toString(36).slice(2)}`;
 
+export interface SyncDailyRecordStoreChangedDetail {
+  dates?: string[];
+  operation: 'save' | 'delete' | 'clear';
+}
+
 export type SyncBroadcastMessage = {
   type: 'DAILY_RECORD_STORE_CHANGED';
-  detail: DailyRecordStoreChangedEventDetail;
+  detail: SyncDailyRecordStoreChangedDetail;
   tabId: string;
 };
 
@@ -28,7 +31,7 @@ const getChannel = (): BroadcastChannel | null => {
 };
 
 export const broadcastDailyRecordStoreChanged = (
-  detail: DailyRecordStoreChangedEventDetail
+  detail: SyncDailyRecordStoreChangedDetail
 ): void => {
   getChannel()?.postMessage({
     type: 'DAILY_RECORD_STORE_CHANGED',

@@ -6,11 +6,11 @@ import { createDexieSyncQueueStore } from '@/services/storage/sync/dexieSyncQueu
 import { createFirestoreSyncTransport } from '@/services/storage/sync/firestoreSyncTransport';
 import {
   createSyncQueueEngine,
-  type SyncQueueDomainMetrics,
   type SyncQueueEnqueueResult,
   type SyncQueueOperationSnapshot,
-  type SyncQueueTelemetry,
 } from '@/services/storage/sync/syncQueueEngine';
+import type { SyncQueueDomainMetrics } from '@/services/storage/sync/syncDomainPolicy';
+import type { SyncQueueTelemetry } from '@/services/storage/sync/syncQueueTelemetryContracts';
 import { classifySyncError } from '@/services/storage/syncErrorCatalog';
 import { createDomainObservability } from '@/services/observability/domainObservability';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';

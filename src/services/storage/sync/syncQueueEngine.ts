@@ -23,13 +23,15 @@ import {
   recordSyncQueueDecisionTelemetry,
 } from '@/services/storage/sync/syncQueueTelemetryController';
 import { buildSyncTaskContract } from '@/services/storage/sync/syncTaskContractPolicy';
+import {
+  clearSyncTaskRuntimeState,
+  createSyncQueueAttemptId,
+  createSyncQueueWorkerId,
+  getSyncTaskKey,
+  sanitizeSyncContractForOperationalSnapshot,
+} from '@/services/storage/sync/syncQueueTaskFactory';
 
 const SYNC_QUEUE_LEASE_MS = 30_000;
-
-const createWorkerId = (): string => `sync_worker_${Math.random().toString(36).slice(2)}`;
-
-const createAttemptId = (): string =>
-  `sync_attempt_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
 export interface SyncQueueOperationSnapshot {
   id?: number;
@@ -73,45 +75,6 @@ export interface SyncQueueEnqueueResult {
   maxPendingTasks: number;
 }
 
-const clearTaskErrorState = () => ({
-  status: 'PENDING' as const,
-  nextAttemptAt: 0,
-  error: undefined,
-  lastErrorCode: undefined,
-  lastErrorCategory: undefined,
-  lastErrorSeverity: undefined,
-  lastErrorAction: undefined,
-  lastErrorAt: undefined,
-  leaseOwner: undefined,
-  leaseUntil: undefined,
-  attemptId: undefined,
-  processingStartedAt: undefined,
-});
-
-const getTaskKey = (type: SyncTask['type'], payload: unknown): string | undefined => {
-  if (type === 'UPDATE_DAILY_RECORD') {
-    const record = payload as DailyRecord;
-    return record?.date ? `daily:${record.date}` : undefined;
-  }
-
-  return undefined;
-};
-
-const sanitizeSyncContractForOperationalSnapshot = (
-  syncContract: SyncTask['syncContract']
-): SyncTask['syncContract'] | undefined => {
-  if (!syncContract) return undefined;
-  return {
-    expectedVersion: syncContract.expectedVersion,
-    recordRevision: syncContract.recordRevision,
-    baseRevision: syncContract.baseRevision,
-    changedPaths: syncContract.changedPaths,
-    mutationId: syncContract.mutationId,
-    clientId: syncContract.clientId,
-    tabId: syncContract.tabId,
-  };
-};
-
 export const createSyncQueueEngine = ({
   store,
   runtime,
@@ -123,7 +86,7 @@ export const createSyncQueueEngine = ({
   maxRetryDelayMs,
 }: CreateSyncQueueEngineOptions) => {
   let isProcessing = false;
-  const workerId = createWorkerId();
+  const workerId = createSyncQueueWorkerId();
 
   const triggerProcessing = (): void => {
     if (!runtime.isOnline()) return;
@@ -196,7 +159,7 @@ export const createSyncQueueEngine = ({
     payload: unknown,
     meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>
   ): Promise<SyncQueueEnqueueResult> => {
-    const key = getTaskKey(type, payload);
+    const key = getSyncTaskKey(type, payload);
     const ownerKey = runtime.getOwnerKey();
     const taskOwnerKey = ownerKey ?? undefined;
     const now = Date.now();
@@ -219,7 +182,7 @@ export const createSyncQueueEngine = ({
           origin: meta?.origin || existing.origin || 'direct_queue',
           recoveryPolicy: contextMeta.recoveryPolicy,
           syncContract,
-          ...clearTaskErrorState(),
+          ...clearSyncTaskRuntimeState(),
         });
         triggerProcessing();
         const pendingTasks = (await store.listAll(ownerKey)).filter(
@@ -258,7 +221,7 @@ export const createSyncQueueEngine = ({
       origin: meta?.origin || 'direct_queue',
       recoveryPolicy: contextMeta.recoveryPolicy,
       syncContract,
-      ...clearTaskErrorState(),
+      ...clearSyncTaskRuntimeState(),
     });
     triggerProcessing();
     return {
@@ -274,7 +237,7 @@ export const createSyncQueueEngine = ({
     meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>
   ): Promise<SyncQueueEnqueueResult> => {
     const type: SyncTask['type'] = 'UPDATE_DAILY_RECORD';
-    const key = getTaskKey(type, record);
+    const key = getSyncTaskKey(type, record);
     const ownerKey = runtime.getOwnerKey();
     const taskOwnerKey = ownerKey ?? undefined;
     const now = Date.now();
@@ -309,7 +272,7 @@ export const createSyncQueueEngine = ({
       origin: meta?.origin || existing?.origin || 'direct_queue',
       recoveryPolicy: contextMeta.recoveryPolicy,
       syncContract,
-      ...clearTaskErrorState(),
+      ...clearSyncTaskRuntimeState(),
     });
 
     triggerProcessing();
@@ -385,7 +348,7 @@ export const createSyncQueueEngine = ({
               {
                 leaseOwner: workerId,
                 leaseUntil: now + SYNC_QUEUE_LEASE_MS,
-                attemptId: createAttemptId(),
+                attemptId: createSyncQueueAttemptId(),
               }
             );
             if (readyTasks.length === 0) {
@@ -432,6 +395,3 @@ export const createSyncQueueEngine = ({
     ensureOnlineListener,
   };
 };
-
-export type { SyncQueueDomainMetrics } from '@/services/storage/sync/syncDomainPolicy';
-export type { SyncQueueTelemetry } from '@/services/storage/sync/syncQueueTelemetryContracts';
