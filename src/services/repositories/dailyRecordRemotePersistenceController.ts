@@ -1,5 +1,8 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
+import {
+  saveRecordStrict as saveToIndexedDB,
+  type LocalRecordWriteResult,
+} from '@/services/storage/indexeddb/indexedDbRecordService';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { resolveRemoteWriteRecovery } from '@/services/repositories/dailyRecordRemoteWriteController';
 import {
@@ -13,6 +16,40 @@ const markRemoteWriteSucceeded = (state: RemoteWriteState): void => {
   state.recoveryAction = 'none';
   state.retryability = 'not_applicable';
   state.observabilityTags = ['daily_record', 'write', 'persisted_and_synced'];
+};
+
+const toLocalPersistenceError = (result: LocalRecordWriteResult): Error => {
+  if (result.error instanceof Error) {
+    return result.error;
+  }
+
+  return new Error(result.userSafeMessage || 'No fue posible guardar el registro local.');
+};
+
+const applyLocalPersistenceFailure = (
+  date: string,
+  changedPaths: string[],
+  result: LocalRecordWriteResult,
+  state: RemoteWriteState
+): void => {
+  const error = toLocalPersistenceError(result);
+  applyRecoveryDecisionToState(
+    state,
+    {
+      consistencyState: 'unrecoverable',
+      retryability: 'manual_review',
+      recoveryAction: 'block_and_surface',
+      conflictSummary: {
+        kind: 'local_persistence_failed',
+        sourceOfTruth: 'none',
+        changedPaths,
+        message: result.userSafeMessage || error.message,
+      },
+      observabilityTags: ['daily_record', 'write', 'local_persistence_failed'],
+      userSafeMessage: result.userSafeMessage || 'No fue posible guardar el registro local.',
+    },
+    error
+  );
 };
 
 const applyRemoteRecovery = async (
@@ -56,7 +93,11 @@ export const persistLocalAndAttemptRemoteSync = async ({
   onRemoteFailure: (error: unknown) => void;
   expectedVersion?: string;
 }): Promise<'continue' | 'return'> => {
-  await saveToIndexedDB(record);
+  const localResult = await saveToIndexedDB(record);
+  if (!localResult.ok) {
+    applyLocalPersistenceFailure(date, changedPaths, localResult, remoteState);
+    return 'return';
+  }
 
   if (!isFirestoreEnabled()) {
     return 'continue';

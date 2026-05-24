@@ -12,6 +12,7 @@ const { saveToIndexedDBMock, isFirestoreEnabledMock, resolveRemoteWriteRecoveryM
 
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   saveRecord: saveToIndexedDBMock,
+  saveRecordStrict: saveToIndexedDBMock,
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
@@ -44,6 +45,12 @@ describe('dailyRecordRemotePersistenceController', () => {
 
   it('persists locally and skips remote write when Firestore is disabled', async () => {
     isFirestoreEnabledMock.mockReturnValue(false);
+    saveToIndexedDBMock.mockResolvedValue({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: ['2026-05-23'],
+    });
     const state = createRemoteWriteState();
     const remoteWrite = vi.fn();
 
@@ -66,6 +73,12 @@ describe('dailyRecordRemotePersistenceController', () => {
   });
 
   it('marks the remote state as synced after a successful remote write', async () => {
+    saveToIndexedDBMock.mockResolvedValue({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: ['2026-05-23'],
+    });
     const state = createRemoteWriteState();
     const remoteWrite = vi.fn().mockResolvedValue(undefined);
 
@@ -88,6 +101,12 @@ describe('dailyRecordRemotePersistenceController', () => {
   });
 
   it('applies recovery and returns early when remote recovery asks to throw', async () => {
+    saveToIndexedDBMock.mockResolvedValue({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: ['2026-05-23'],
+    });
     const state = createRemoteWriteState();
     const remoteError = new Error('remote failed');
     const blockingError = new Error('manual review');
@@ -130,5 +149,39 @@ describe('dailyRecordRemotePersistenceController', () => {
     );
     expect(state.consistencyState).toBe('unrecoverable');
     expect(state.blockingError).toBe(blockingError);
+  });
+
+  it('blocks remote writes when strict local persistence fails', async () => {
+    const localError = new Error('indexeddb quota exceeded');
+    saveToIndexedDBMock.mockResolvedValue({
+      ok: false,
+      operation: 'save',
+      store: 'none',
+      dates: ['2026-05-23'],
+      error: localError,
+      userSafeMessage: 'No fue posible guardar el registro local.',
+    });
+    const state = createRemoteWriteState();
+    const remoteWrite = vi.fn().mockResolvedValue(undefined);
+
+    const result = await persistLocalAndAttemptRemoteSync({
+      date: '2026-05-23',
+      record: buildRecord('2026-05-23'),
+      changedPaths: ['*'],
+      remoteState: state,
+      remoteWrite,
+      onRemoteFailure: vi.fn(),
+      expectedVersion: '2026-05-23T10:00:00.000Z',
+    });
+
+    expect(result).toBe('return');
+    expect(remoteWrite).not.toHaveBeenCalled();
+    expect(state.consistencyState).toBe('unrecoverable');
+    expect(state.recoveryAction).toBe('block_and_surface');
+    expect(state.blockingError).toBe(localError);
+    expect(state.conflictSummary).toMatchObject({
+      kind: 'local_persistence_failed',
+      sourceOfTruth: 'none',
+    });
   });
 });
