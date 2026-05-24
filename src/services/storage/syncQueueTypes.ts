@@ -23,6 +23,10 @@ export interface SyncTask {
   lastErrorAt?: number;
   key?: string;
   ownerKey?: string;
+  leaseOwner?: string;
+  leaseUntil?: number;
+  attemptId?: string;
+  processingStartedAt?: number;
   contexts?: SyncDomainContext[];
   origin?: SyncTaskOrigin;
   recoveryPolicy?: string;

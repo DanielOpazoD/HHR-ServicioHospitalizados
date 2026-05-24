@@ -24,6 +24,13 @@ import {
 } from '@/services/storage/sync/syncQueueTelemetryController';
 import { buildSyncTaskContract } from '@/services/storage/sync/syncTaskContractPolicy';
 
+const SYNC_QUEUE_LEASE_MS = 30_000;
+
+const createWorkerId = (): string => `sync_worker_${Math.random().toString(36).slice(2)}`;
+
+const createAttemptId = (): string =>
+  `sync_attempt_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
 export interface SyncQueueOperationSnapshot {
   id?: number;
   type: SyncTask['type'];
@@ -38,6 +45,10 @@ export interface SyncQueueOperationSnapshot {
   lastErrorAction?: SyncTask['lastErrorAction'];
   lastErrorAt?: SyncTask['lastErrorAt'];
   key?: string;
+  leaseOwner?: SyncTask['leaseOwner'];
+  leaseUntil?: SyncTask['leaseUntil'];
+  attemptId?: SyncTask['attemptId'];
+  processingStartedAt?: SyncTask['processingStartedAt'];
   contexts?: SyncTask['contexts'];
   origin?: SyncTask['origin'];
   recoveryPolicy?: SyncTask['recoveryPolicy'];
@@ -71,6 +82,10 @@ const clearTaskErrorState = () => ({
   lastErrorSeverity: undefined,
   lastErrorAction: undefined,
   lastErrorAt: undefined,
+  leaseOwner: undefined,
+  leaseUntil: undefined,
+  attemptId: undefined,
+  processingStartedAt: undefined,
 });
 
 const getTaskKey = (type: SyncTask['type'], payload: unknown): string | undefined => {
@@ -107,6 +122,7 @@ export const createSyncQueueEngine = ({
   maxRetryDelayMs,
 }: CreateSyncQueueEngineOptions) => {
   let isProcessing = false;
+  const workerId = createWorkerId();
 
   const triggerProcessing = (): void => {
     if (!runtime.isOnline()) return;
@@ -145,6 +161,10 @@ export const createSyncQueueEngine = ({
       lastErrorSeverity: decision.lastErrorSeverity as ErrorSeverity | undefined,
       lastErrorAction: decision.lastErrorAction,
       lastErrorAt: decision.lastErrorAt,
+      leaseOwner: undefined,
+      leaseUntil: undefined,
+      attemptId: undefined,
+      processingStartedAt: undefined,
     });
 
     if (decision.shouldLogPermanentFailure) {
@@ -331,6 +351,10 @@ export const createSyncQueueEngine = ({
       lastErrorAction: row.lastErrorAction,
       lastErrorAt: row.lastErrorAt,
       key: row.key,
+      leaseOwner: row.leaseOwner,
+      leaseUntil: row.leaseUntil,
+      attemptId: row.attemptId,
+      processingStartedAt: row.processingStartedAt,
       contexts: row.contexts,
       origin: row.origin,
       recoveryPolicy: row.recoveryPolicy,
@@ -352,10 +376,16 @@ export const createSyncQueueEngine = ({
         'syncQueue.process',
         async () => {
           while (true) {
-            const readyTasks = await store.listReadyPending(
-              Date.now(),
+            const now = Date.now();
+            const readyTasks = await store.claimReadyPending(
+              now,
               batchSize,
-              runtime.getOwnerKey()
+              runtime.getOwnerKey(),
+              {
+                leaseOwner: workerId,
+                leaseUntil: now + SYNC_QUEUE_LEASE_MS,
+                attemptId: createAttemptId(),
+              }
             );
             if (readyTasks.length === 0) {
               return;
@@ -365,7 +395,6 @@ export const createSyncQueueEngine = ({
               if (!task.id) continue;
 
               try {
-                await updateTaskState(task.id, { status: 'PROCESSING' });
                 await transport.run(task);
                 await store.delete(task.id);
               } catch (error) {

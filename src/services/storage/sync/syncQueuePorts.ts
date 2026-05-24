@@ -3,10 +3,22 @@ import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts
 
 export type SyncQueueTaskWriteMode = 'created' | 'reused';
 
+export interface SyncQueueLeaseClaim {
+  leaseOwner: string;
+  leaseUntil: number;
+  attemptId: string;
+}
+
 export interface SyncQueueStorePort {
   listAll(ownerKey?: string | null): Promise<SyncTask[]>;
   listRecent(limit: number, ownerKey?: string | null): Promise<SyncTask[]>;
   listReadyPending(now: number, limit: number, ownerKey?: string | null): Promise<SyncTask[]>;
+  claimReadyPending(
+    now: number,
+    limit: number,
+    ownerKey: string | null | undefined,
+    claim: SyncQueueLeaseClaim
+  ): Promise<SyncTask[]>;
   findReusableTask(
     type: SyncTask['type'],
     key: string,

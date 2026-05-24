@@ -1,4 +1,5 @@
 import type {
+  SyncQueueLeaseClaim,
   SyncQueueStorePort,
   SyncQueueTaskWriteMode,
 } from '@/services/storage/sync/syncQueuePorts';
@@ -8,6 +9,18 @@ import type { SyncTask } from '@/services/storage/syncQueueTypes';
 
 const matchesOwner = (ownerKey: string | null | undefined, taskOwnerKey?: string): boolean =>
   ownerKey ? taskOwnerKey === ownerKey || !taskOwnerKey : !taskOwnerKey;
+
+const isReadyForClaim = (task: SyncTask, now: number): boolean => {
+  if ((task.nextAttemptAt || 0) > now) {
+    return false;
+  }
+
+  if (task.status === 'PENDING') {
+    return true;
+  }
+
+  return task.status === 'PROCESSING' && Boolean(task.leaseUntil && task.leaseUntil <= now);
+};
 
 export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
   async listAll(ownerKey) {
@@ -23,6 +36,36 @@ export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
     return tasks
       .filter(task => matchesOwner(ownerKey, task.ownerKey) && (task.nextAttemptAt || 0) <= now)
       .slice(0, limit);
+  },
+  async claimReadyPending(
+    now: number,
+    limit: number,
+    ownerKey: string | null | undefined,
+    claim: SyncQueueLeaseClaim
+  ): Promise<SyncTask[]> {
+    return hospitalDB.transaction('rw', hospitalDB.syncQueue, async () => {
+      const tasks = await hospitalDB.syncQueue.orderBy('timestamp').toArray();
+      const readyTasks = tasks
+        .filter(task => matchesOwner(ownerKey, task.ownerKey) && isReadyForClaim(task, now))
+        .slice(0, limit);
+
+      const claimedTasks: SyncTask[] = [];
+      for (const task of readyTasks) {
+        if (!task.id) continue;
+        const claimedTask: SyncTask = {
+          ...task,
+          status: 'PROCESSING',
+          leaseOwner: claim.leaseOwner,
+          leaseUntil: claim.leaseUntil,
+          attemptId: claim.attemptId,
+          processingStartedAt: now,
+        };
+        await hospitalDB.syncQueue.put(claimedTask);
+        claimedTasks.push(claimedTask);
+      }
+
+      return claimedTasks;
+    });
   },
   async findReusableTask(type, key, ownerKey) {
     const existing = await hospitalDB.syncQueue.where('type').equals(type).toArray();

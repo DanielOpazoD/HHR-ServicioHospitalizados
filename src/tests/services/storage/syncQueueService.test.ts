@@ -150,6 +150,60 @@ describe('storage/sync public entrypoint', () => {
     addSpy.mockRestore();
   });
 
+  it('claims ready pending tasks with a durable lease so another worker cannot claim them', async () => {
+    const store = createDexieSyncQueueStore();
+    await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord('2025-01-19', 'v1'));
+    await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord('2025-01-20', 'v1'));
+
+    const firstClaim = await store.claimReadyPending(1760000000000, 1, null, {
+      leaseOwner: 'worker-a',
+      leaseUntil: 1760000030000,
+      attemptId: 'attempt-a',
+    });
+    const secondClaim = await store.claimReadyPending(1760000000000, 2, null, {
+      leaseOwner: 'worker-b',
+      leaseUntil: 1760000030000,
+      attemptId: 'attempt-b',
+    });
+
+    expect(firstClaim).toHaveLength(1);
+    expect(firstClaim[0]).toMatchObject({
+      status: 'PROCESSING',
+      leaseOwner: 'worker-a',
+      attemptId: 'attempt-a',
+    });
+    expect(secondClaim).toHaveLength(1);
+    expect(secondClaim[0].key).not.toBe(firstClaim[0].key);
+  });
+
+  it('reclaims expired processing leases', async () => {
+    const store = createDexieSyncQueueStore();
+    await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord('2025-01-21', 'v1'));
+    await hospitalDB.syncQueue
+      .where('status')
+      .equals('PENDING')
+      .modify(task => {
+        task.status = 'PROCESSING';
+        task.leaseOwner = 'stale-worker';
+        task.leaseUntil = 1760000000000 - 1;
+        task.attemptId = 'stale-attempt';
+      });
+
+    const reclaimed = await store.claimReadyPending(1760000000000, 1, null, {
+      leaseOwner: 'worker-fresh',
+      leaseUntil: 1760000030000,
+      attemptId: 'attempt-fresh',
+    });
+
+    expect(reclaimed).toHaveLength(1);
+    expect(reclaimed[0]).toMatchObject({
+      status: 'PROCESSING',
+      leaseOwner: 'worker-fresh',
+      leaseUntil: 1760000030000,
+      attemptId: 'attempt-fresh',
+    });
+  });
+
   it('stores an extensible sync contract for daily record tasks', async () => {
     const record = makeRecord('2025-01-12', '2025-01-12T10:00:00.000Z');
     record.beds.R1 = {
