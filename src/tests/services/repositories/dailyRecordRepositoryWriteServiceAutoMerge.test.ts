@@ -6,6 +6,14 @@ import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
   saveRecord: vi.fn(),
+  saveRecordStrict: vi.fn(record =>
+    Promise.resolve({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: [record.date],
+    })
+  ),
 }));
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
@@ -20,6 +28,7 @@ vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
 vi.mock('@/services/storage/sync', () => ({
   isRetryableSyncError: vi.fn(),
   queueSyncTask: vi.fn(),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn(),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
@@ -59,7 +68,7 @@ import {
   saveRecordToFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
 } from '@/services/storage/firestore/firestoreRecordWrites';
-import { queueSyncTask } from '@/services/storage/sync';
+import { queueDailyRecordSyncTaskWithLocalRecord as queueSyncTask } from '@/services/storage/sync';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
 
 const buildRecord = (date: string): DailyRecord => ({
@@ -119,7 +128,6 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
 
     await expect(save(local, '2026-02-16T00:00:00.000Z')).resolves.toBeUndefined();
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         date: '2026-02-16',
         beds: expect.objectContaining({
@@ -202,7 +210,6 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
     await expect(save(local, '2026-02-16T00:00:00.000Z')).resolves.toBeUndefined();
 
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         cma: expect.arrayContaining([expect.objectContaining({ id: 'cma-remote' })]),
         discharges: expect.arrayContaining([expect.objectContaining({ id: 'discharge-remote' })]),
@@ -241,7 +248,6 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
     ).resolves.toBeUndefined();
 
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         date: '2026-02-15',
         beds: expect.objectContaining({
@@ -310,7 +316,6 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
     ).resolves.toBeUndefined();
 
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         date: '2026-02-15',
         beds: expect.objectContaining({
@@ -378,7 +383,6 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
     ).resolves.toBeUndefined();
 
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         date: '2026-02-15',
         beds: expect.objectContaining({
@@ -446,7 +450,6 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
     ).resolves.toBeUndefined();
 
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         beds: expect.objectContaining({
           R1: expect.objectContaining({
@@ -479,10 +482,7 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
       'beds.R1.patientName': 'Paciente actualizado',
     });
 
-    expect(queueSyncTask).not.toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
-      expect.objectContaining({ date: '2026-02-14' })
-    );
+    expect(queueSyncTask).not.toHaveBeenCalledWith(expect.objectContaining({ date: '2026-02-14' }));
     expect(logRepositoryConflictAutoMerged).not.toHaveBeenCalled();
     expect(result.consistencyState).toBe('unrecoverable');
   });

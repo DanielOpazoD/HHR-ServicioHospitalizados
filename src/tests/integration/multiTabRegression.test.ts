@@ -27,6 +27,14 @@ import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
   saveRecord: vi.fn(),
+  saveRecordStrict: vi.fn(record =>
+    Promise.resolve({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: [record.date],
+    })
+  ),
 }));
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
@@ -41,6 +49,7 @@ vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
 vi.mock('@/services/storage/sync', () => ({
   isRetryableSyncError: vi.fn(() => false),
   queueSyncTask: vi.fn().mockResolvedValue({ accepted: true }),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn().mockResolvedValue({ accepted: true }),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({

@@ -7,6 +7,14 @@ import { restoreConsole, suppressConsole } from '@/tests/utils/consoleTestUtils'
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
   saveRecord: vi.fn(),
+  saveRecordStrict: vi.fn(record =>
+    Promise.resolve({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: [record.date],
+    })
+  ),
 }));
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
@@ -21,6 +29,7 @@ vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
 vi.mock('@/services/storage/sync', () => ({
   isRetryableSyncError: vi.fn(),
   queueSyncTask: vi.fn(),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn(),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
@@ -57,14 +66,18 @@ import {
 } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import {
   getRecordForDate as getRecordFromIndexedDB,
-  saveRecord as saveToIndexedDB,
+  saveRecord as saveLegacyToIndexedDB,
+  saveRecordStrict as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import {
   saveRecordToFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
 } from '@/services/storage/firestore/firestoreRecordWrites';
-import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
+import {
+  isRetryableSyncError,
+  queueDailyRecordSyncTaskWithLocalRecord as queueSyncTask,
+} from '@/services/storage/sync';
 
 const buildRecord = (date: string): DailyRecord => ({
   date,
@@ -124,7 +137,6 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
 
     expect(saveToIndexedDB).toHaveBeenCalled();
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({ date: '2026-02-19' }),
       expect.objectContaining({
         contexts: ['clinical', 'staffing', 'movements', 'handoff', 'metadata'],
@@ -196,7 +208,6 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     });
 
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         date: '2026-02-18',
         beds: expect.objectContaining({
@@ -247,7 +258,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     expect(result.outcome).toBe('clean');
     expect(result.savedLocally).toBe(true);
     expect(result.updatedRemotely).toBe(true);
-    expect(saveToIndexedDB).toHaveBeenCalledWith(remote);
+    expect(saveLegacyToIndexedDB).toHaveBeenCalledWith(remote);
     expect(saveToIndexedDB).toHaveBeenCalledWith(
       expect.objectContaining({
         beds: expect.objectContaining({
