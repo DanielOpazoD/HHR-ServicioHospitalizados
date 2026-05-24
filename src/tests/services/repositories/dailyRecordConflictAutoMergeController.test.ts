@@ -4,7 +4,6 @@ import { attemptConflictAutoMergeRecovery } from '@/services/repositories/dailyR
 
 const {
   getRecordFromFirestoreMock,
-  saveToIndexedDBMock,
   resolveConflictMock,
   buildConflictAuditSummaryMock,
   logRepositoryConflictAutoMergedMock,
@@ -12,7 +11,6 @@ const {
   loggerWarnMock,
 } = vi.hoisted(() => ({
   getRecordFromFirestoreMock: vi.fn(),
-  saveToIndexedDBMock: vi.fn(),
   resolveConflictMock: vi.fn(),
   buildConflictAuditSummaryMock: vi.fn(),
   logRepositoryConflictAutoMergedMock: vi.fn(),
@@ -22,10 +20,6 @@ const {
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
   getRecordFromFirestore: getRecordFromFirestoreMock,
-}));
-
-vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
-  saveRecord: saveToIndexedDBMock,
 }));
 
 vi.mock('@/services/repositories/conflictResolutionMatrix', () => ({
@@ -41,7 +35,7 @@ vi.mock('@/services/repositories/ports/repositoryAuditPort', () => ({
 }));
 
 vi.mock('@/services/storage/sync', () => ({
-  queueSyncTask: queueSyncTaskMock,
+  queueDailyRecordSyncTaskWithLocalRecord: queueSyncTaskMock,
 }));
 
 vi.mock('@/services/repositories/repositoryLoggers', () => ({
@@ -82,7 +76,15 @@ describe('dailyRecordConflictAutoMergeController', () => {
       attemptConflictAutoMergeRecovery('2026-04-15', record, ['beds.R1.patientName'])
     ).resolves.toEqual({ status: 'auto_merged' });
 
-    expect(saveToIndexedDBMock).toHaveBeenCalledWith(record);
+    expect(queueSyncTaskMock).toHaveBeenCalledWith(
+      record,
+      expect.objectContaining({
+        origin: 'conflict_auto_merge',
+        syncContract: expect.objectContaining({
+          changedPaths: ['beds.R1.patientName'],
+        }),
+      })
+    );
     expect(logRepositoryConflictAutoMergedMock).toHaveBeenCalled();
   });
 

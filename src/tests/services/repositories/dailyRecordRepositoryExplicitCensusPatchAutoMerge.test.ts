@@ -6,6 +6,14 @@ import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
   saveRecord: vi.fn(),
+  saveRecordStrict: vi.fn(record =>
+    Promise.resolve({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: [record.date],
+    })
+  ),
 }));
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
@@ -20,6 +28,7 @@ vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
 vi.mock('@/services/storage/sync', () => ({
   isRetryableSyncError: vi.fn(),
   queueSyncTask: vi.fn(),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn(),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
@@ -55,7 +64,7 @@ import {
 import { getRecordForDate as getRecordFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { updateRecordPartial as updateRecordPartialToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
-import { queueSyncTask } from '@/services/storage/sync';
+import { queueDailyRecordSyncTaskWithLocalRecord as queueSyncTask } from '@/services/storage/sync';
 
 const buildRecord = (date: string): DailyRecord => ({
   date,
@@ -129,7 +138,6 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
     ).resolves.toBeUndefined();
 
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         date: '2026-02-15',
         beds: expect.objectContaining({
@@ -198,7 +206,6 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
     });
 
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         date: '2026-02-15',
         beds: expect.objectContaining({
@@ -261,7 +268,6 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
     });
 
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         date: '2026-02-15',
         beds: expect.objectContaining({

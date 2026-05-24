@@ -6,6 +6,14 @@ import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
   saveRecord: vi.fn(),
+  saveRecordStrict: vi.fn(record =>
+    Promise.resolve({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: [record.date],
+    })
+  ),
 }));
 
 vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
@@ -20,6 +28,7 @@ vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
 vi.mock('@/services/storage/sync', () => ({
   isRetryableSyncError: vi.fn(),
   queueSyncTask: vi.fn(),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn(),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
@@ -50,7 +59,7 @@ vi.mock('@/services/repositories/repositoryLoggers', () => ({
 
 import { updatePartialDetailed } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { getRecordForDate as getRecordFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
+import { saveRecordStrict as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { updateRecordPartial as updateRecordPartialToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
