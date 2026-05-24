@@ -3,19 +3,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { TransferDocumentPackageModal } from '@/features/transfers/components/internal/TransferDocumentPackageModal';
 
-const mockAlert = vi.fn();
-const mockOpen = vi.fn();
-const mockConfirm = vi.fn();
-const mockSuccess = vi.fn();
-const mockInfo = vi.fn();
-const mockWarning = vi.fn();
-
-vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
-  defaultBrowserWindowRuntime: {
-    alert: (...args: unknown[]) => mockAlert(...args),
-    open: (...args: unknown[]) => mockOpen(...args),
-  },
+const { mockAlert, mockOpen, mockConfirm, mockSuccess, mockInfo, mockWarning } = vi.hoisted(() => ({
+  mockAlert: vi.fn(),
+  mockOpen: vi.fn(),
+  mockConfirm: vi.fn(),
+  mockSuccess: vi.fn(),
+  mockInfo: vi.fn(),
+  mockWarning: vi.fn(),
 }));
+
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', async () => {
+  const { createMockBrowserWindowRuntime } = await import('@/tests/utils/browserWindowRuntimeMock');
+
+  return {
+    defaultBrowserWindowRuntime: createMockBrowserWindowRuntime({
+      alert: mockAlert,
+      open: mockOpen,
+    }),
+  };
+});
 
 vi.mock('@/context/UIContext', () => ({
   useConfirmDialog: () => ({

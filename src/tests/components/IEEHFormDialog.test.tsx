@@ -16,21 +16,15 @@ vi.mock('@/services/pdf/ieehPdfService', () => ({
   printIEEHForm: vi.fn(),
 }));
 
-vi.mock('@/shared/runtime/browserWindowRuntimeCore', () => ({
-  defaultBrowserWindowRuntime: {
-    alert: vi.fn(),
-    confirm: vi.fn(() => true),
-    open: mockBrowserOpen,
-    reload: vi.fn(),
-    getLocationOrigin: vi.fn(() => 'http://localhost'),
-    getLocationPathname: vi.fn(() => '/'),
-    getLocationHref: vi.fn(() => 'http://localhost/'),
-    getViewportWidth: vi.fn(() => 1024),
-    getLocalStorageItem: vi.fn(() => null),
-    setLocalStorageItem: vi.fn(),
-    removeLocalStorageItem: vi.fn(),
-  },
-}));
+vi.mock('@/shared/runtime/browserWindowRuntimeCore', async () => {
+  const { createMockBrowserWindowRuntime } = await import('@/tests/utils/browserWindowRuntimeMock');
+
+  return {
+    defaultBrowserWindowRuntime: createMockBrowserWindowRuntime({
+      open: mockBrowserOpen,
+    }),
+  };
+});
 
 vi.mock('../../services/terminology/terminologyService', () => ({
   searchDiagnoses: vi.fn().mockResolvedValue([]),
