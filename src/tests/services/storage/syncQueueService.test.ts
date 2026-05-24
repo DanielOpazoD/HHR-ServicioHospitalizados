@@ -430,6 +430,62 @@ describe('storage/sync public entrypoint', () => {
     await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
   });
 
+  it('keeps stale tasks in conflict when the remote mutation changed the same path', async () => {
+    const local = makeRecord('2025-01-22', '2025-01-22T10:10:00.000Z');
+    local.beds.R1 = {
+      bedId: 'R1',
+      patientName: 'Paciente Sync',
+      rut: '11.111.111-1',
+      age: '40a',
+      pathology: 'Diagnostico local same-path',
+      specialty: 'Medicina',
+      status: 'Estable',
+      admissionDate: '2025-01-22',
+      isBlocked: false,
+      bedMode: 'Cama',
+      hasCompanionCrib: false,
+      hasWristband: true,
+      devices: [],
+      surgicalComplication: false,
+      isUPC: false,
+    } as DailyRecord['beds'][string];
+
+    const remote = makeRecord('2025-01-22', '2025-01-22T10:20:00.000Z');
+    remote.beds.R1 = {
+      ...local.beds.R1,
+      pathology: 'Diagnostico remoto same-path',
+    };
+    (remote as DailyRecord & { meta: Record<string, unknown> }).meta = {
+      revision: 5,
+      lastMutationId: 'remote-mutation',
+      lastChangedPaths: ['beds.R1.pathology'],
+    };
+
+    vi.mocked(getDoc).mockResolvedValue({
+      exists: () => true,
+      data: () => remote as unknown as Record<string, unknown>,
+    } as Awaited<ReturnType<typeof getDoc>>);
+
+    await queueSyncTask('UPDATE_DAILY_RECORD', local, {
+      contexts: ['clinical'],
+      origin: 'partial_update_retry',
+      syncContract: {
+        expectedVersion: '2025-01-22T10:00:00.000Z',
+        changedPaths: ['beds.R1.pathology'],
+        mutationId: 'local-mutation',
+      },
+    });
+
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    await processSyncQueue();
+
+    expect(setDoc).not.toHaveBeenCalled();
+    const [task] = await hospitalDB.syncQueue.toArray();
+    expect(task.status).toBe('CONFLICT');
+    expect(task.lastErrorCategory).toBe('conflict');
+    expect(task.error).toContain('same changed path');
+  });
+
   it('writes non-stale daily record tasks without remote remerge', async () => {
     const local = makeRecord('2025-01-14', '2025-01-14T10:10:00.000Z');
     local.beds.R1 = {

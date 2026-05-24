@@ -47,6 +47,42 @@ const getRemoteLastUpdated = (remoteData: Record<string, unknown>): string | und
       ? remoteData.lastUpdated
       : undefined;
 
+const normalizeChangedPaths = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((path): path is string => typeof path === 'string' && path.trim().length > 0)
+    : [];
+
+const pathsOverlap = (left: string, right: string): boolean =>
+  left === right || left.startsWith(`${right}.`) || right.startsWith(`${left}.`);
+
+const hasOverlappingChangedPath = (left: string[], right: string[]): boolean =>
+  left.some(leftPath => right.some(rightPath => pathsOverlap(leftPath, rightPath)));
+
+const assertNoSamePathRemoteMutation = (
+  task: SyncTask,
+  remoteData: Record<string, unknown>
+): void => {
+  const remoteMeta = remoteData.meta as Record<string, unknown> | undefined;
+  const remoteMutationId =
+    typeof remoteMeta?.lastMutationId === 'string' ? remoteMeta.lastMutationId : undefined;
+  const localMutationId = task.syncContract?.mutationId;
+  if (remoteMutationId && localMutationId && remoteMutationId === localMutationId) {
+    return;
+  }
+
+  const remoteChangedPaths = normalizeChangedPaths(remoteMeta?.lastChangedPaths);
+  const localChangedPaths = normalizeChangedPaths(task.syncContract?.changedPaths);
+  if (
+    remoteChangedPaths.length > 0 &&
+    localChangedPaths.length > 0 &&
+    hasOverlappingChangedPath(remoteChangedPaths, localChangedPaths)
+  ) {
+    throw new ConcurrencyError(
+      `Sync queue: remote mutation changed the same changed path for ${String(task.key || 'daily record')}.`
+    );
+  }
+};
+
 const assertSyncQueueConcurrency = (
   record: DailyRecord,
   remoteLastUpdated: string | undefined
@@ -92,6 +128,7 @@ const resolveRecordForSyncTask = async (
     return record;
   }
 
+  assertNoSamePathRemoteMutation(task, remoteData);
   const remoteRecord = docToRecord(remoteData, record.date);
   const mergedRecord = resolveDailyRecordConflict(remoteRecord, record, {
     changedPaths: task.syncContract?.changedPaths,
