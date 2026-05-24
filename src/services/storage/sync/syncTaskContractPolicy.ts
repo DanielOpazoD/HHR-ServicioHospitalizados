@@ -29,6 +29,11 @@ const collectPatientEpisodeKeys = (patient: PatientData | undefined): string[] =
   return keys;
 };
 
+const resolveRecordBaseRevision = (record: DailyRecord): number | undefined => {
+  const revision = Number((record as { meta?: { revision?: unknown } }).meta?.revision);
+  return Number.isFinite(revision) && revision >= 0 ? revision : undefined;
+};
+
 export const buildDailyRecordSyncContract = (
   record: DailyRecord,
   baseContract: SyncTaskContract = {}
@@ -44,6 +49,7 @@ export const buildDailyRecordSyncContract = (
   return {
     ...baseContract,
     expectedVersion: baseContract.expectedVersion || record.lastUpdated,
+    baseRevision: baseContract.baseRevision ?? resolveRecordBaseRevision(record),
     recordRevision: record.lastUpdated,
     clinicalEpisodeKeys,
     changedPaths: baseContract.changedPaths?.length ? baseContract.changedPaths : undefined,

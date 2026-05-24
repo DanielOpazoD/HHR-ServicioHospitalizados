@@ -35,6 +35,7 @@ export interface SyncTask {
 
 export interface SyncTaskContract {
   expectedVersion?: string;
+  baseRevision?: number;
   recordRevision?: string;
   clinicalEpisodeKeys?: string[];
   changedPaths?: string[];

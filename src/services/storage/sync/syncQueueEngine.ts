@@ -104,6 +104,7 @@ const sanitizeSyncContractForOperationalSnapshot = (
   return {
     expectedVersion: syncContract.expectedVersion,
     recordRevision: syncContract.recordRevision,
+    baseRevision: syncContract.baseRevision,
     changedPaths: syncContract.changedPaths,
     mutationId: syncContract.mutationId,
     clientId: syncContract.clientId,

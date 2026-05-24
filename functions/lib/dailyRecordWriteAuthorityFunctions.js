@@ -218,6 +218,26 @@ const resolveCurrentRevision = record => {
   return Number.isFinite(revision) && revision >= 0 ? revision : 0;
 };
 
+const resolveBaseRevision = syncContract => {
+  const revision = Number(syncContract?.baseRevision);
+  return Number.isFinite(revision) && revision >= 0 ? revision : undefined;
+};
+
+const assertExpectedRevision = ({ snapshot, syncContract }) => {
+  const baseRevision = resolveBaseRevision(syncContract);
+  if (baseRevision === undefined || !snapshot.exists) {
+    return;
+  }
+
+  const currentRevision = resolveCurrentRevision(snapshot.data());
+  if (currentRevision !== baseRevision) {
+    throw new functions.https.HttpsError(
+      'aborted',
+      `revision_mismatch: Daily record base revision ${baseRevision} does not match remote revision ${currentRevision}.`
+    );
+  }
+};
+
 const buildNextMeta = ({ remoteData, syncContract, now }) => {
   const mutationId = normalizeShortString(syncContract?.mutationId);
   const clientId = normalizeShortString(syncContract?.clientId);
@@ -465,11 +485,13 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
 
     const db = admin.firestore();
     const docRef = db.collection('hospitals').doc(HOSPITAL_ID).collection('dailyRecords').doc(date);
+    let revision;
 
     try {
       await db.runTransaction(async transaction => {
         const snapshot = await transaction.get(docRef);
         assertExpectedVersion({ snapshot, expectedLastUpdated });
+        assertExpectedRevision({ snapshot, syncContract });
 
         if (dryRun) {
           return;
@@ -484,8 +506,15 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
           });
         }
 
+        const nextMeta = buildNextMeta({
+          remoteData: snapshot.exists ? snapshot.data() || {} : {},
+          syncContract,
+          now,
+        });
+        revision = nextMeta.revision;
         transaction.set(docRef, {
           ...record,
+          meta: nextMeta,
           lastUpdated: now,
         });
       });
@@ -503,7 +532,14 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
         startedAt,
       });
 
-      return buildAuthorityResponse({ date, mode, authority, coverage });
+      return buildAuthorityResponse({
+        date,
+        mode,
+        authority,
+        coverage,
+        revision,
+        mutationId: normalizeShortString(syncContract?.mutationId),
+      });
     } catch (error) {
       if (error instanceof functions.https.HttpsError) {
         await recordAuthorityTelemetry({
@@ -558,6 +594,7 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
 
         const remoteData = snapshot.data() || {};
         assertExpectedVersion({ snapshot, expectedLastUpdated });
+        assertExpectedRevision({ snapshot, syncContract });
         assertPatchTargetsCurrentClinicalEpisode({ remoteData, patch });
         const now = admin.firestore.Timestamp.now();
         const patchedRecord = applyPatchToRecord({ date, remoteData, patch });
