@@ -138,6 +138,38 @@ describe('clinicalDocumentIndicationsCatalogService', () => {
     ]);
   });
 
+  it('does not persist no-op catalog mutations', async () => {
+    repository.getDoc.mockResolvedValue({
+      clinicalDocumentIndicationsProfile: {
+        uid: 'specialist-uid',
+        email: 'especialista@hospital.cl',
+        activeTabId: 'postop',
+        tabs: [
+          {
+            id: 'postop',
+            label: 'Post operatorio',
+            items: [{ id: 'item-a', text: 'Control en policlínico', source: 'custom' }],
+          },
+        ],
+      },
+    });
+    const service = createClinicalDocumentIndicationsCatalogService(repository);
+
+    await service.createTab({
+      uid: 'specialist-uid',
+      email: 'especialista@hospital.cl',
+      label: '   ',
+    });
+    await service.addItem({
+      uid: 'specialist-uid',
+      email: 'especialista@hospital.cl',
+      tabId: 'postop',
+      text: 'Control   en policlínico',
+    });
+
+    expect(repository.setDoc).not.toHaveBeenCalled();
+  });
+
   it('creates, renames, deletes and reorders personal tabs', async () => {
     repository.getDoc.mockResolvedValue({
       clinicalDocumentIndicationsProfile: {

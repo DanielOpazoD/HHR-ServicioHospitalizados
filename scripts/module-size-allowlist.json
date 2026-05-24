@@ -1,25 +1,5 @@
 {
   "globalMax": 400,
-  "allowlist": {
-    "src/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService.ts": 450,
-    "src/features/clinical-documents/controllers/clinicalDocumentIndicationsCatalogController.ts": 450,
-    "src/features/clinical-documents/controllers/clinicalDocumentPlanSectionController.ts": 425
-  },
-  "backlog": {
-    "src/features/clinical-documents/services/clinicalDocumentIndicationsCatalogService.ts": {
-      "limit": 450,
-      "owner": "clinical-documents",
-      "reason": "Personal indications catalog service is over the global module-size guard and needs a focused extraction outside this CI hotfix."
-    },
-    "src/features/clinical-documents/controllers/clinicalDocumentIndicationsCatalogController.ts": {
-      "limit": 450,
-      "owner": "clinical-documents",
-      "reason": "Personal indications catalog controller is over the global module-size guard and needs a focused extraction outside this CI hotfix."
-    },
-    "src/features/clinical-documents/controllers/clinicalDocumentPlanSectionController.ts": {
-      "limit": 425,
-      "owner": "clinical-documents",
-      "reason": "Plan section controller is over the global module-size guard and needs a focused helper extraction outside this CI hotfix."
-    }
-  }
+  "allowlist": {},
+  "backlog": {}
 }
