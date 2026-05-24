@@ -94,4 +94,50 @@ describe('syncBroadcastChannel', () => {
     cleanup();
     expect(removeEventListener).toHaveBeenCalledWith('message', expect.any(Function));
   });
+
+  it('ignores malformed cross-tab payloads before notifying subscribers', () => {
+    let handler: ((event: MessageEvent<unknown>) => void) | undefined;
+    const addEventListener = vi.fn((_eventName, nextHandler) => {
+      handler = nextHandler as typeof handler;
+    });
+    globalThis.BroadcastChannel = vi.fn(function () {
+      return {
+        postMessage: vi.fn(),
+        addEventListener,
+        removeEventListener: vi.fn(),
+        close: vi.fn(),
+      };
+    }) as unknown as typeof BroadcastChannel;
+
+    const callback = vi.fn();
+    onSyncBroadcastMessage(callback);
+    handler?.({
+      data: {
+        type: 'DAILY_RECORD_STORE_CHANGED',
+        detail: { operation: 'save', dates: [42] },
+        tabId: 'other-tab',
+      },
+    } as MessageEvent<unknown>);
+    handler?.({
+      data: {
+        type: 'DAILY_RECORD_STORE_CHANGED',
+        detail: { operation: 'unexpected', dates: ['2026-05-24'] },
+        tabId: 'other-tab',
+      },
+    } as MessageEvent<unknown>);
+    handler?.({
+      data: {
+        type: 'DAILY_RECORD_STORE_CHANGED',
+        detail: { operation: 'save', dates: ['2026-05-24'] },
+        tabId: 'other-tab',
+      },
+    } as MessageEvent<unknown>);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: { operation: 'save', dates: ['2026-05-24'] },
+      })
+    );
+  });
 });

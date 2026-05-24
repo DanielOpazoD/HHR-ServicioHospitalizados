@@ -18,6 +18,29 @@ export type SyncBroadcastMessage = {
 
 let channel: BroadcastChannel | null = null;
 
+const isStoreChangedOperation = (
+  operation: unknown
+): operation is SyncDailyRecordStoreChangedDetail['operation'] =>
+  operation === 'save' || operation === 'delete' || operation === 'clear';
+
+const isStoreChangedDetail = (detail: unknown): detail is SyncDailyRecordStoreChangedDetail => {
+  if (!detail || typeof detail !== 'object') return false;
+  const candidate = detail as Partial<SyncDailyRecordStoreChangedDetail>;
+  if (!isStoreChangedOperation(candidate.operation)) return false;
+  if (candidate.dates === undefined) return true;
+  return Array.isArray(candidate.dates) && candidate.dates.every(date => typeof date === 'string');
+};
+
+const isSyncBroadcastMessage = (message: unknown): message is SyncBroadcastMessage => {
+  if (!message || typeof message !== 'object') return false;
+  const candidate = message as Partial<SyncBroadcastMessage>;
+  return (
+    candidate.type === 'DAILY_RECORD_STORE_CHANGED' &&
+    typeof candidate.tabId === 'string' &&
+    isStoreChangedDetail(candidate.detail)
+  );
+};
+
 const getChannel = (): BroadcastChannel | null => {
   if (typeof BroadcastChannel === 'undefined') return null;
   if (!channel) {
@@ -46,8 +69,9 @@ export const onSyncBroadcastMessage = (
   const ch = getChannel();
   if (!ch) return () => {};
 
-  const handler = (event: MessageEvent<SyncBroadcastMessage>) => {
-    if (event.data?.tabId === TAB_ID) return;
+  const handler = (event: MessageEvent<unknown>) => {
+    if (!isSyncBroadcastMessage(event.data)) return;
+    if (event.data.tabId === TAB_ID) return;
     callback(event.data);
   };
 

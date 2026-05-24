@@ -8,6 +8,12 @@
 
 **Tech Stack:** TypeScript, React, Dexie/IndexedDB, Firebase Firestore/callable functions, Vitest, fake-indexeddb, Playwright/emulator tests where appropriate.
 
+## Execution Summary
+
+Status: completed on branch `codex/strict-local-persistence-sync-foundations`.
+
+The implementation preserved the existing local-Firebase sync stack and added strict write guarantees, transactional daily-record outbox enqueue, durable queue leases, remote revision metadata, mutation-aware conflict checks, cross-tab store-change broadcasts, and regression coverage for race-prone sync paths. Final closure added guardrails for legacy queue usage, strict JSON import persistence, malformed BroadcastChannel payloads, and a browser-like cross-tab event test.
+
 ---
 
 ## Branch Scope
@@ -31,14 +37,14 @@ The branch should avoid a single large rewrite. The desired final state is a str
 
 - Create: `docs/superpowers/plans/2026-05-24-strict-local-firebase-sync-foundations.md`
 
-- [ ] Run focused baseline checks:
+- [x] Run focused baseline checks:
 
 ```bash
 npm run typecheck
 vitest run src/tests/services/repositories/dailyRecordRemotePersistenceController.test.ts src/tests/services/storage/syncQueueService.test.ts src/tests/services/storage/indexedDBService.test.ts
 ```
 
-- [ ] Commit the plan and any baseline notes.
+- [x] Commit the plan and any baseline notes.
 
 ```bash
 git add docs/superpowers/plans/2026-05-24-strict-local-firebase-sync-foundations.md
@@ -56,11 +62,11 @@ git commit -m "docs: plan strict local firebase sync foundations"
 - Test: `src/tests/services/storage/indexedDBService.test.ts`
 - Test: `src/tests/services/repositories/dailyRecordRemotePersistenceController.test.ts`
 
-- [ ] Add typed local write result APIs: `saveRecordStrict`, `saveRecordsStrict`, and `deleteRecordStrict`.
-- [ ] Keep legacy `saveRecord`, `saveRecords`, and `deleteRecord` wrappers behavior-compatible.
-- [ ] Make critical repository persistence call the strict API and return/block when local persistence fails.
-- [ ] Add tests proving local write failure prevents remote write and fallback mode is reported as fallback, not silently treated as IndexedDB.
-- [ ] Commit after focused tests pass.
+- [x] Add typed local write result APIs: `saveRecordStrict`, `saveRecordsStrict`, and `deleteRecordStrict`.
+- [x] Keep legacy `saveRecord`, `saveRecords`, and `deleteRecord` wrappers behavior-compatible.
+- [x] Make critical repository persistence call the strict API and return/block when local persistence fails.
+- [x] Add tests proving local write failure prevents remote write and fallback mode is reported as fallback, not silently treated as IndexedDB.
+- [x] Commit after focused tests pass.
 
 ### Task 3: Transactional Outbox
 
@@ -74,11 +80,11 @@ git commit -m "docs: plan strict local firebase sync foundations"
 - Test: `src/tests/services/storage/syncQueueService.test.ts`
 - Test: `src/tests/services/repositories/dailyRecordRepositoryWriteService.test.ts`
 
-- [ ] Add a store method that persists daily record and sync task in one Dexie transaction.
-- [ ] Use it for retryable critical daily-record writes where the remote write is not the source of truth.
-- [ ] Preserve queue backpressure and existing task reuse semantics.
-- [ ] Add tests for transaction abort when either record write or queue enqueue fails.
-- [ ] Commit after focused tests pass.
+- [x] Add a store method that persists daily record and sync task in one Dexie transaction.
+- [x] Use it for retryable critical daily-record writes where the remote write is not the source of truth.
+- [x] Preserve queue backpressure and existing task reuse semantics.
+- [x] Add tests for transaction abort when either record write or queue enqueue fails.
+- [x] Commit after focused tests pass.
 
 ### Task 4: Multitab Claim And Lease
 
@@ -90,11 +96,11 @@ git commit -m "docs: plan strict local firebase sync foundations"
 - Modify: `src/services/storage/sync/syncQueueEngine.ts`
 - Test: `src/tests/services/storage/syncQueueService.test.ts`
 
-- [ ] Add lease fields: `leaseOwner`, `leaseUntil`, `attemptId`, and `processingStartedAt`.
-- [ ] Replace read-then-mark processing with a transactional `claimReadyPending` method.
-- [ ] Make expired `PROCESSING` leases reclaimable.
-- [ ] Add tests proving concurrent claims are disjoint and expired leases are reclaimed.
-- [ ] Commit after focused tests pass.
+- [x] Add lease fields: `leaseOwner`, `leaseUntil`, `attemptId`, and `processingStartedAt`.
+- [x] Replace read-then-mark processing with a transactional `claimReadyPending` method.
+- [x] Make expired `PROCESSING` leases reclaimable.
+- [x] Add tests proving concurrent claims are disjoint and expired leases are reclaimed.
+- [x] Commit after focused tests pass.
 
 ### Task 5: Revision-Aware Remote Writes
 
@@ -108,11 +114,11 @@ git commit -m "docs: plan strict local firebase sync foundations"
 - Test: `src/tests/services/storage/firestoreRecordWritesAuthorityPatch.test.ts`
 - Test: `src/tests/emulator/sync-concurrency.emulator.test.ts`
 
-- [ ] Promote `baseRevision` into the sync task contract while preserving `expectedVersion`.
-- [ ] Ensure callable writes reject stale base revision deterministically.
-- [ ] Return conflict details that can be classified as revision mismatch.
-- [ ] Add tests for two clients writing from the same revision: first succeeds, second conflicts.
-- [ ] Commit after focused function and Firestore tests pass.
+- [x] Promote `baseRevision` into the sync task contract while preserving `expectedVersion`.
+- [x] Ensure callable writes reject stale base revision deterministically.
+- [x] Return conflict details that can be classified as revision mismatch.
+- [x] Add tests for two clients writing from the same revision: first succeeds, second conflicts.
+- [x] Commit after focused function and Firestore tests pass.
 
 ### Task 6: Mutation-Aware Conflict Handling
 
@@ -125,11 +131,11 @@ git commit -m "docs: plan strict local firebase sync foundations"
 - Test: `src/tests/services/repositories/conflictResolutionMatrix.test.ts`
 - Test: `src/tests/services/storage/syncQueueService.test.ts`
 
-- [ ] Treat queued daily-record writes as mutations with `changedPaths`, not only as snapshots.
-- [ ] Allow safe merge for non-overlapping changed paths.
-- [ ] Classify same-path divergence as deterministic conflict.
-- [ ] Add tests for non-conflicting patches surviving and same-path edits becoming conflicts.
-- [ ] Commit after focused tests pass.
+- [x] Treat queued daily-record writes as mutations with `changedPaths`, not only as snapshots.
+- [x] Allow safe merge for non-overlapping changed paths.
+- [x] Classify same-path divergence as deterministic conflict.
+- [x] Add tests for non-conflicting patches surviving and same-path edits becoming conflicts.
+- [x] Commit after focused tests pass.
 
 ### Task 7: Cross-Tab And Operational Evidence
 
@@ -141,11 +147,11 @@ git commit -m "docs: plan strict local firebase sync foundations"
 - Test: `src/tests/services/storage/syncBroadcastChannel.test.ts`
 - Test: `src/tests/integration/multiTabRegression.test.ts`
 
-- [ ] Add record/sync BroadcastChannel events with safe no-op fallback.
-- [ ] Keep existing same-tab custom event behavior.
-- [ ] Invalidate/read refresh where existing query controllers already listen to store changes.
-- [ ] Add tests for no BroadcastChannel support and cross-tab event delivery.
-- [ ] Commit after focused tests pass.
+- [x] Add record/sync BroadcastChannel events with safe no-op fallback.
+- [x] Keep existing same-tab custom event behavior.
+- [x] Invalidate/read refresh where existing query controllers already listen to store changes.
+- [x] Add tests for no BroadcastChannel support and cross-tab event delivery.
+- [x] Commit after focused tests pass.
 
 ### Task 8: Final Gates
 
@@ -153,13 +159,13 @@ git commit -m "docs: plan strict local firebase sync foundations"
 
 - Modify docs only if implementation changes require operational notes.
 
-- [ ] Run targeted sync suite:
+- [x] Run targeted sync suite:
 
 ```bash
 vitest run src/tests/services/repositories/dailyRecordRemotePersistenceController.test.ts src/tests/services/repositories/dailyRecordRepositoryWriteService.test.ts src/tests/services/storage/indexedDBService.test.ts src/tests/services/storage/syncQueueService.test.ts src/tests/services/storage/firestoreRecordWritesAuthorityPatch.test.ts src/tests/functions/dailyRecordWriteAuthorityFunctions.test.ts
 ```
 
-- [ ] Run broader quality gate:
+- [x] Run broader quality gate:
 
 ```bash
 npm run typecheck
@@ -167,10 +173,10 @@ npm run lint -- --max-warnings 0
 npm run check:quality
 ```
 
-- [ ] Run emulator sync gate if local emulator tooling is healthy:
+- [x] Run emulator sync gate if local emulator tooling is healthy:
 
 ```bash
 npm run test:emulator:sync:ci
 ```
 
-- [ ] Produce final branch summary with commits, tests, known residual watchlist, and PR recommendation.
+- [x] Produce final branch summary with commits, tests, known residual watchlist, and PR recommendation.
