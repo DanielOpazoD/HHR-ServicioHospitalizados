@@ -1,4 +1,7 @@
 import type { SyncTask } from '@/services/storage/syncQueueTypes';
+import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
+
+export type SyncQueueTaskWriteMode = 'created' | 'reused';
 
 export interface SyncQueueStorePort {
   listAll(ownerKey?: string | null): Promise<SyncTask[]>;
@@ -10,6 +13,7 @@ export interface SyncQueueStorePort {
     ownerKey?: string | null
   ): Promise<SyncTask | null>;
   add(task: SyncTask): Promise<void>;
+  saveDailyRecordWithTask(record: DailyRecord, task: SyncTask): Promise<SyncQueueTaskWriteMode>;
   update(taskId: number, patch: Partial<SyncTask>): Promise<void>;
   delete(taskId: number): Promise<void>;
   deleteAll(): Promise<void>;

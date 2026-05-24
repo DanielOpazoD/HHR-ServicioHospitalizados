@@ -1,5 +1,6 @@
 import { ensureDbReady } from '@/services/storage/indexeddb/indexedDbCore';
 import type { SyncTask } from '@/services/storage/syncQueueTypes';
+import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
 import { createBrowserSyncRuntime } from '@/services/storage/sync/browserSyncRuntime';
 import { createDexieSyncQueueStore } from '@/services/storage/sync/dexieSyncQueueStore';
 import { createFirestoreSyncTransport } from '@/services/storage/sync/firestoreSyncTransport';
@@ -228,6 +229,63 @@ export const queueSyncTask = async (
       issues: [toSyncIssueMessage(error, 'La cola de sincronizacion no pudo recibir la tarea.')],
       context: {
         type,
+        contexts: meta?.contexts,
+        origin: meta?.origin,
+        recoveryPolicy: meta?.recoveryPolicy,
+      },
+    });
+    return {
+      accepted: false,
+      mode: 'enqueue_failed',
+      pendingTasks: 0,
+      maxPendingTasks: SYNC_QUEUE_MAX_PENDING_TASKS,
+    };
+  }
+};
+
+export const queueDailyRecordSyncTaskWithLocalRecord = async (
+  record: DailyRecord,
+  meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>
+): Promise<SyncQueueEnqueueResult> => {
+  try {
+    await ensureDbReady();
+    const result = await syncQueueEngine.queueDailyRecordTaskWithLocalRecord(record, meta);
+    if (!result.accepted && result.mode === 'rejected_backpressure') {
+      recordOperationalTelemetry({
+        category: 'sync',
+        operation: 'sync_queue_backpressure_rejected',
+        status: 'failed',
+        runtimeState: 'blocked',
+        issues: [
+          'La cola de sincronizacion alcanzo su limite operativo y no acepto una nueva tarea.',
+        ],
+        context: {
+          type: 'UPDATE_DAILY_RECORD',
+          contexts: meta?.contexts,
+          origin: meta?.origin,
+          recoveryPolicy: meta?.recoveryPolicy,
+          pendingTasks: result.pendingTasks,
+          maxPendingTasks: result.maxPendingTasks,
+        },
+      });
+    }
+    return result;
+  } catch (error) {
+    syncObservability.logger.error('Failed to queue task with local record', error);
+    recordOperationalTelemetry({
+      category: 'sync',
+      operation: 'sync_queue_transactional_enqueue_failure',
+      status: 'failed',
+      runtimeState: 'blocked',
+      issues: [
+        toSyncIssueMessage(
+          error,
+          'La cola de sincronizacion no pudo guardar el registro y la tarea.'
+        ),
+      ],
+      context: {
+        type: 'UPDATE_DAILY_RECORD',
+        date: record.date,
         contexts: meta?.contexts,
         origin: meta?.origin,
         recoveryPolicy: meta?.recoveryPolicy,

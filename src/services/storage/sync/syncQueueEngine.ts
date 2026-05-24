@@ -248,6 +248,58 @@ export const createSyncQueueEngine = ({
     };
   };
 
+  const queueDailyRecordTaskWithLocalRecord = async (
+    record: DailyRecord,
+    meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>
+  ): Promise<SyncQueueEnqueueResult> => {
+    const type: SyncTask['type'] = 'UPDATE_DAILY_RECORD';
+    const key = getTaskKey(type, record);
+    const ownerKey = runtime.getOwnerKey();
+    const taskOwnerKey = ownerKey ?? undefined;
+    const now = Date.now();
+    const contextMeta = buildSyncQueueTaskContextMeta({
+      contexts: meta?.contexts,
+      recoveryPolicy: meta?.recoveryPolicy,
+    });
+    const syncContract = buildSyncTaskContract(type, record, meta?.syncContract);
+    const existing = key ? await store.findReusableTask(type, key, ownerKey) : null;
+
+    const pendingTasks = (await store.listAll(ownerKey)).filter(
+      task => task.status === 'PENDING' || task.status === 'PROCESSING'
+    ).length;
+    if (!existing && pendingTasks >= maxPendingTasks) {
+      return {
+        accepted: false,
+        mode: 'rejected_backpressure',
+        pendingTasks,
+        maxPendingTasks,
+      };
+    }
+
+    const mode = await store.saveDailyRecordWithTask(record, {
+      opId: `${type}:${key ?? 'global'}:${now}`,
+      type,
+      payload: record,
+      timestamp: now,
+      retryCount: 0,
+      key,
+      ownerKey: taskOwnerKey,
+      contexts: contextMeta.contexts,
+      origin: meta?.origin || existing?.origin || 'direct_queue',
+      recoveryPolicy: contextMeta.recoveryPolicy,
+      syncContract,
+      ...clearTaskErrorState(),
+    });
+
+    triggerProcessing();
+    return {
+      accepted: true,
+      mode,
+      pendingTasks: mode === 'created' ? pendingTasks + 1 : pendingTasks,
+      maxPendingTasks,
+    };
+  };
+
   const getTelemetry = async (): Promise<SyncQueueTelemetry> => {
     const ownerKey = runtime.getOwnerKey();
     const rows = await store.listAll(ownerKey);
@@ -341,6 +393,7 @@ export const createSyncQueueEngine = ({
 
   return {
     queueTask,
+    queueDailyRecordTaskWithLocalRecord,
     processQueue,
     getTelemetry,
     getDomainMetrics,

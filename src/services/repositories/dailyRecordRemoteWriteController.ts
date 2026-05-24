@@ -1,7 +1,10 @@
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
-import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
+import {
+  isRetryableSyncError,
+  queueDailyRecordSyncTaskWithLocalRecord,
+} from '@/services/storage/sync';
 import {
   calculateDensity,
   checkRegression,
@@ -28,9 +31,9 @@ const isConcurrencyError = (error: unknown): boolean =>
 
 const queueRecoveryTask = async (
   record: DailyRecord,
-  meta: NonNullable<Parameters<typeof queueSyncTask>[2]>
+  meta: NonNullable<Parameters<typeof queueDailyRecordSyncTaskWithLocalRecord>[1]>
 ): Promise<boolean> => {
-  const result = await queueSyncTask('UPDATE_DAILY_RECORD', record, meta);
+  const result = await queueDailyRecordSyncTaskWithLocalRecord(record, meta);
   return result.accepted;
 };
 

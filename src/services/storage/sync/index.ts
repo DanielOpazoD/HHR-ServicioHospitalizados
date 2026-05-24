@@ -15,6 +15,7 @@ export {
   isRetryableSyncError,
   listRecentSyncQueueOperations,
   processSyncQueue,
+  queueDailyRecordSyncTaskWithLocalRecord,
   queueSyncTask,
   recordSyncQueueOwnershipTelemetry,
 } from '@/services/storage/sync/publicSyncQueue';

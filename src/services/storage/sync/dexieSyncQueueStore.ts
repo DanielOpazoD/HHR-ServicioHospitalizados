@@ -1,5 +1,10 @@
-import type { SyncQueueStorePort } from '@/services/storage/sync/syncQueuePorts';
+import type {
+  SyncQueueStorePort,
+  SyncQueueTaskWriteMode,
+} from '@/services/storage/sync/syncQueuePorts';
 import { hospitalDB } from '@/services/storage/indexeddb/indexedDbCore';
+import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
+import type { SyncTask } from '@/services/storage/syncQueueTypes';
 
 const matchesOwner = (ownerKey: string | null | undefined, taskOwnerKey?: string): boolean =>
   ownerKey ? taskOwnerKey === ownerKey || !taskOwnerKey : !taskOwnerKey;
@@ -30,6 +35,33 @@ export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
   },
   async add(task) {
     await hospitalDB.syncQueue.add(task);
+  },
+  async saveDailyRecordWithTask(
+    record: DailyRecord,
+    task: SyncTask
+  ): Promise<SyncQueueTaskWriteMode> {
+    return hospitalDB.transaction('rw', hospitalDB.dailyRecords, hospitalDB.syncQueue, async () => {
+      await hospitalDB.dailyRecords.put(record);
+
+      if (task.key) {
+        const existing = (
+          await hospitalDB.syncQueue.where('type').equals(task.type).toArray()
+        ).find(
+          candidate =>
+            matchesOwner(task.ownerKey, candidate.ownerKey) &&
+            candidate.key === task.key &&
+            candidate.status !== 'FAILED'
+        );
+
+        if (existing?.id) {
+          await hospitalDB.syncQueue.put({ ...existing, ...task, id: existing.id });
+          return 'reused';
+        }
+      }
+
+      await hospitalDB.syncQueue.add(task);
+      return 'created';
+    });
   },
   async update(taskId, patch) {
     await hospitalDB.syncQueue.update(taskId, patch);
