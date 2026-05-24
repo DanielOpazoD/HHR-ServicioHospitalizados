@@ -2,7 +2,7 @@ import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import {
   getRecordForDate as getRecordFromIndexedDB,
-  saveRecord as saveToIndexedDB,
+  saveRecordStrict as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
 import {
   saveRecordToFirestore,
@@ -99,7 +99,12 @@ const resolvePartialUpdateBaseRecord = async (date: string): Promise<DailyRecord
       return null;
     }
 
-    await saveToIndexedDB(remoteRecord);
+    const localResult = await saveToIndexedDB(remoteRecord);
+    if (!localResult.ok) {
+      throw localResult.error instanceof Error
+        ? localResult.error
+        : new Error(localResult.userSafeMessage || 'No fue posible guardar la base remota local.');
+    }
     return remoteRecord;
   } catch (error) {
     dailyRecordWriteLogger.warn(

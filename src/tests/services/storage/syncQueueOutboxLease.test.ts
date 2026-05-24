@@ -1,7 +1,32 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('firebase/firestore', async importOriginal => {
+  const actual = await importOriginal<typeof import('firebase/firestore')>();
+  return {
+    ...actual,
+    getDoc: vi.fn().mockResolvedValue({ exists: () => false, data: () => undefined }),
+    setDoc: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
+vi.mock('@/services/storage/firestore/firestoreShared', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/services/storage/firestore/firestoreShared')>();
+  return {
+    ...actual,
+    getRecordDocRef: vi.fn(() => ({ id: 'sync-test-doc-ref' })),
+    sanitizeForFirestore: vi.fn(value => value),
+  };
+});
+
+import { getDoc, setDoc } from 'firebase/firestore';
 import { hospitalDB } from '@/services/storage/indexedDBService';
-import { queueDailyRecordSyncTaskWithLocalRecord, queueSyncTask } from '@/services/storage/sync';
+import {
+  processSyncQueue,
+  queueDailyRecordSyncTaskWithLocalRecord,
+  queueSyncTask,
+} from '@/services/storage/sync';
 import { createDexieSyncQueueStore } from '@/services/storage/sync/dexieSyncQueueStore';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
@@ -21,6 +46,11 @@ describe('sync queue transactional outbox and leases', () => {
     await hospitalDB.dailyRecords.clear();
     await hospitalDB.syncQueue.clear();
     vi.restoreAllMocks();
+    vi.mocked(getDoc).mockResolvedValue({
+      exists: () => false,
+      data: () => undefined,
+    } as Awaited<ReturnType<typeof getDoc>>);
+    vi.mocked(setDoc).mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
   });
 
@@ -142,5 +172,48 @@ describe('sync queue transactional outbox and leases', () => {
       leaseUntil: 1760000030000,
       attemptId: 'attempt-fresh',
     });
+  });
+
+  it('does not reuse a non-expired processing task when the same record is queued again', async () => {
+    const store = createDexieSyncQueueStore();
+    await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord('2025-01-22', 'v1'));
+    await store.claimReadyPending(1760000000000, 1, null, {
+      leaseOwner: 'worker-a',
+      leaseUntil: 1760000030000,
+      attemptId: 'attempt-a',
+    });
+
+    const result = await queueDailyRecordSyncTaskWithLocalRecord(makeRecord('2025-01-22', 'v2'), {
+      contexts: ['clinical'],
+      origin: 'partial_update_retry',
+    });
+
+    const tasks = await hospitalDB.syncQueue.orderBy('timestamp').toArray();
+    expect(result.mode).toBe('created');
+    expect(tasks).toHaveLength(2);
+    expect(tasks.map(task => task.status)).toEqual(['PROCESSING', 'PENDING']);
+    expect((tasks[1].payload as DailyRecord).lastUpdated).toBe('v2');
+  });
+
+  it('does not let a stale worker completion delete a newer requeued mutation', async () => {
+    await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord('2025-01-23', 'v1'));
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    vi.mocked(setDoc).mockImplementationOnce(async () => {
+      await queueDailyRecordSyncTaskWithLocalRecord(makeRecord('2025-01-23', 'v2'), {
+        contexts: ['clinical'],
+        origin: 'partial_update_retry',
+      });
+    });
+
+    await processSyncQueue();
+
+    const tasks = await hospitalDB.syncQueue.toArray();
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0]).toMatchObject({
+      status: 'PENDING',
+      leaseOwner: undefined,
+      attemptId: undefined,
+    });
+    expect((tasks[0].payload as DailyRecord).lastUpdated).toBe('v2');
   });
 });

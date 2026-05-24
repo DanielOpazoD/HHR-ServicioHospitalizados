@@ -66,7 +66,6 @@ import {
 } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import {
   getRecordForDate as getRecordFromIndexedDB,
-  saveRecord as saveLegacyToIndexedDB,
   saveRecordStrict as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
@@ -258,7 +257,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     expect(result.outcome).toBe('clean');
     expect(result.savedLocally).toBe(true);
     expect(result.updatedRemotely).toBe(true);
-    expect(saveLegacyToIndexedDB).toHaveBeenCalledWith(remote);
+    expect(saveToIndexedDB).toHaveBeenCalledWith(remote);
     expect(saveToIndexedDB).toHaveBeenCalledWith(
       expect.objectContaining({
         beds: expect.objectContaining({

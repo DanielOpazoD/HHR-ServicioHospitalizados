@@ -4,6 +4,7 @@ import { logError } from '@/services/utils/errorService';
 import type { SyncTask } from '@/services/storage/syncQueueTypes';
 import type { SyncErrorCategory } from '@/services/storage/syncErrorCatalog';
 import type {
+  SyncQueueLeaseClaim,
   SyncQueueStorePort,
   SyncRuntimePort,
   SyncTransportPort,
@@ -28,34 +29,13 @@ import {
   createSyncQueueAttemptId,
   createSyncQueueWorkerId,
   getSyncTaskKey,
-  sanitizeSyncContractForOperationalSnapshot,
 } from '@/services/storage/sync/syncQueueTaskFactory';
+import {
+  toSyncQueueOperationSnapshot,
+  type SyncQueueOperationSnapshot,
+} from '@/services/storage/sync/syncQueueOperationSnapshot';
 
 const SYNC_QUEUE_LEASE_MS = 30_000;
-
-export interface SyncQueueOperationSnapshot {
-  id?: number;
-  type: SyncTask['type'];
-  status: SyncTask['status'];
-  retryCount: number;
-  timestamp: number;
-  nextAttemptAt?: number;
-  error?: string;
-  lastErrorCode?: SyncTask['lastErrorCode'];
-  lastErrorCategory?: SyncTask['lastErrorCategory'];
-  lastErrorSeverity?: SyncTask['lastErrorSeverity'];
-  lastErrorAction?: SyncTask['lastErrorAction'];
-  lastErrorAt?: SyncTask['lastErrorAt'];
-  key?: string;
-  leaseOwner?: SyncTask['leaseOwner'];
-  leaseUntil?: SyncTask['leaseUntil'];
-  attemptId?: SyncTask['attemptId'];
-  processingStartedAt?: SyncTask['processingStartedAt'];
-  contexts?: SyncTask['contexts'];
-  origin?: SyncTask['origin'];
-  recoveryPolicy?: SyncTask['recoveryPolicy'];
-  syncContract?: SyncTask['syncContract'];
-}
 
 interface CreateSyncQueueEngineOptions {
   store: SyncQueueStorePort;
@@ -93,11 +73,25 @@ export const createSyncQueueEngine = ({
     void processQueue();
   };
 
-  const updateTaskState = async (
-    taskId: number,
+  const buildTaskClaim = (task: SyncTask): SyncQueueLeaseClaim | null => {
+    if (!task.leaseOwner || !task.attemptId || !task.leaseUntil) {
+      return null;
+    }
+    return {
+      leaseOwner: task.leaseOwner,
+      leaseUntil: task.leaseUntil,
+      attemptId: task.attemptId,
+    };
+  };
+
+  const updateClaimedTaskState = async (
+    task: SyncTask,
     patch: Partial<SyncTask> & { status: SyncTask['status'] }
   ): Promise<void> => {
-    await store.update(taskId, patch);
+    if (!task.id) return;
+    const claim = buildTaskClaim(task);
+    if (!claim) return;
+    await store.updateClaimed(task.id, patch, claim);
   };
 
   const handleTaskFailure = async (task: SyncTask, error: unknown): Promise<void> => {
@@ -113,7 +107,7 @@ export const createSyncQueueEngine = ({
       maxRetryDelayMs,
     });
 
-    await updateTaskState(task.id, {
+    await updateClaimedTaskState(task, {
       status: decision.status,
       retryCount: decision.retryCount,
       nextAttemptAt: decision.nextAttemptAt,
@@ -301,29 +295,7 @@ export const createSyncQueueEngine = ({
 
   const listRecentOperations = async (limit: number): Promise<SyncQueueOperationSnapshot[]> => {
     const rows = await store.listRecent(limit, runtime.getOwnerKey());
-    return rows.map(row => ({
-      id: row.id,
-      type: row.type,
-      status: row.status,
-      retryCount: row.retryCount,
-      timestamp: row.timestamp,
-      nextAttemptAt: row.nextAttemptAt,
-      error: row.error,
-      lastErrorCode: row.lastErrorCode,
-      lastErrorCategory: row.lastErrorCategory,
-      lastErrorSeverity: row.lastErrorSeverity,
-      lastErrorAction: row.lastErrorAction,
-      lastErrorAt: row.lastErrorAt,
-      key: row.key,
-      leaseOwner: row.leaseOwner,
-      leaseUntil: row.leaseUntil,
-      attemptId: row.attemptId,
-      processingStartedAt: row.processingStartedAt,
-      contexts: row.contexts,
-      origin: row.origin,
-      recoveryPolicy: row.recoveryPolicy,
-      syncContract: sanitizeSyncContractForOperationalSnapshot(row.syncContract),
-    }));
+    return rows.map(toSyncQueueOperationSnapshot);
   };
 
   const getDomainMetrics = async (): Promise<SyncQueueDomainMetrics> => {
@@ -360,7 +332,10 @@ export const createSyncQueueEngine = ({
 
               try {
                 await transport.run(task);
-                await store.delete(task.id);
+                const claim = buildTaskClaim(task);
+                if (claim) {
+                  await store.deleteClaimed(task.id, claim);
+                }
               } catch (error) {
                 await handleTaskFailure(task, error);
               }

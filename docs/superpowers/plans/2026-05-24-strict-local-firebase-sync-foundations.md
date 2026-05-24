@@ -180,3 +180,13 @@ npm run test:emulator:sync:ci
 ```
 
 - [x] Produce final branch summary with commits, tests, known residual watchlist, and PR recommendation.
+
+## Post-Review Hardening 2026-05-24
+
+Critical review after the first closure identified five small, high-value hardening items that fit the same plan objective without adding product scope.
+
+- [x] Prevent a non-expired `PROCESSING` outbox task from being reused by a newer mutation with the same key.
+- [x] Make worker completion/failure conditional on the claimed `leaseOwner` and `attemptId`, so stale workers cannot delete or mutate refreshed tasks.
+- [x] Add a release gate for daily-record authority mode: release writes that claim revision guarantees must run with `VITE_DAILY_RECORD_AUTHORITY_MODE=enforced` or `VITE_DAILY_RECORD_AUTHORITY_CALLABLE=true`.
+- [x] Add a repository guardrail that keeps critical daily-record repository flows off void local persistence wrappers.
+- [x] Extend the sync resilience runbook with concrete `PENDING`/`PROCESSING`/`FAILED`/`CONFLICT` triage actions.

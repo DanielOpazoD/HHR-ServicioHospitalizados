@@ -7,8 +7,8 @@ import { createFirestoreSyncTransport } from '@/services/storage/sync/firestoreS
 import {
   createSyncQueueEngine,
   type SyncQueueEnqueueResult,
-  type SyncQueueOperationSnapshot,
 } from '@/services/storage/sync/syncQueueEngine';
+import type { SyncQueueOperationSnapshot } from '@/services/storage/sync/syncQueueOperationSnapshot';
 import type { SyncQueueDomainMetrics } from '@/services/storage/sync/syncDomainPolicy';
 import type { SyncQueueTelemetry } from '@/services/storage/sync/syncQueueTelemetryContracts';
 import { classifySyncError } from '@/services/storage/syncErrorCatalog';

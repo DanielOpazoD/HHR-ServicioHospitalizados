@@ -22,6 +22,14 @@ const isReadyForClaim = (task: SyncTask, now: number): boolean => {
   return task.status === 'PROCESSING' && Boolean(task.leaseUntil && task.leaseUntil <= now);
 };
 
+const matchesClaim = (task: SyncTask | undefined, claim: SyncQueueLeaseClaim): boolean =>
+  Boolean(
+    task &&
+    task.status === 'PROCESSING' &&
+    task.leaseOwner === claim.leaseOwner &&
+    task.attemptId === claim.attemptId
+  );
+
 export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
   async listAll(ownerKey) {
     const tasks = await hospitalDB.syncQueue.toArray();
@@ -72,7 +80,7 @@ export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
     return (
       existing.find(
         task =>
-          matchesOwner(ownerKey, task.ownerKey) && task.key === key && task.status !== 'FAILED'
+          matchesOwner(ownerKey, task.ownerKey) && task.key === key && task.status === 'PENDING'
       ) || null
     );
   },
@@ -93,7 +101,7 @@ export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
           candidate =>
             matchesOwner(task.ownerKey, candidate.ownerKey) &&
             candidate.key === task.key &&
-            candidate.status !== 'FAILED'
+            candidate.status === 'PENDING'
         );
 
         if (existing?.id) {
@@ -109,8 +117,28 @@ export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
   async update(taskId, patch) {
     await hospitalDB.syncQueue.update(taskId, patch);
   },
+  async updateClaimed(taskId, patch, claim) {
+    return hospitalDB.transaction('rw', hospitalDB.syncQueue, async () => {
+      const task = await hospitalDB.syncQueue.get(taskId);
+      if (!matchesClaim(task, claim)) {
+        return false;
+      }
+      await hospitalDB.syncQueue.update(taskId, patch);
+      return true;
+    });
+  },
   async delete(taskId) {
     await hospitalDB.syncQueue.delete(taskId);
+  },
+  async deleteClaimed(taskId, claim) {
+    return hospitalDB.transaction('rw', hospitalDB.syncQueue, async () => {
+      const task = await hospitalDB.syncQueue.get(taskId);
+      if (!matchesClaim(task, claim)) {
+        return false;
+      }
+      await hospitalDB.syncQueue.delete(taskId);
+      return true;
+    });
   },
   async deleteAll() {
     await hospitalDB.syncQueue.clear();

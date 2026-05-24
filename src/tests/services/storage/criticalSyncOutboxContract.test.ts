@@ -28,4 +28,16 @@ describe('critical daily-record sync outbox contract', () => {
 
     expect(offenders.map(filePath => path.relative(process.cwd(), filePath))).toEqual([]);
   });
+
+  it('keeps repository writes off void local daily-record persistence wrappers', () => {
+    const repositoryRoot = path.join(SERVICES_ROOT, 'repositories');
+    const offenders = listSourceFiles(repositoryRoot).filter(filePath => {
+      const source = fs.readFileSync(filePath, 'utf8');
+      return /import\s*\{[^}]*\b(?:saveRecord|saveRecords|deleteRecord)\b(?!Strict)[^}]*\}\s*from\s*['"]@\/services\/storage\/indexeddb\/indexedDbRecordService['"]/.test(
+        source
+      );
+    });
+
+    expect(offenders.map(filePath => path.relative(process.cwd(), filePath))).toEqual([]);
+  });
 });

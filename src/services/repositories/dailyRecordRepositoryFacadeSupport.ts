@@ -1,6 +1,9 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
-import { deleteRecord as deleteFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
+import {
+  deleteRecordStrict as deleteFromIndexedDB,
+  type LocalRecordWriteResult,
+} from '@/services/storage/indexeddb/indexedDbRecordService';
 import {
   deleteRecordFromFirestore,
   getRecordFromFirestore,
@@ -43,9 +46,17 @@ export const buildCopyPatientToDateCommand = (
   targetBedId: string
 ) => createCopyPatientToDateCommand(sourceDate, sourceBedId, targetDate, targetBedId);
 
+const toLocalDeleteError = (result: LocalRecordWriteResult): Error =>
+  result.error instanceof Error
+    ? result.error
+    : new Error(result.userSafeMessage || 'No fue posible eliminar el registro local.');
+
 export const deleteDailyRecordAcrossStores = async (date: string): Promise<void> => {
   const command = createDeleteDayCommand(date);
-  await deleteFromIndexedDB(command.date);
+  const localResult = await deleteFromIndexedDB(command.date);
+  if (!localResult.ok) {
+    throw toLocalDeleteError(localResult);
+  }
   await softDeleteDailyRecordRemote(command.date, {
     isRemoteEnabled: isFirestoreEnabled(),
     loadRecord: getRecordFromFirestore,

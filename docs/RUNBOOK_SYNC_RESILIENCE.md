@@ -109,6 +109,24 @@ Verificación:
 - `retryingSyncTasks` retorna a 0.
 - `orphanedTasks` queda en 0 tras cambio de usuario/logout manual.
 
+## Procedimiento 2.2: estados del outbox y accion humana
+
+Usar esta tabla cuando soporte vea tareas en `listRecentSyncQueueOperations` o en
+`Admin > System Health`.
+
+| Estado                                | Significado operativo                                                        | Acción segura                                                            |
+| ------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `PENDING` reciente                    | Mutación local aceptada y pendiente de flush remoto.                         | Esperar el backoff normal si la red está degradada. No limpiar cache.    |
+| `PENDING` antiguo                     | Mutación no drenada dentro del presupuesto (`oldestPendingAgeMs >= 15 min`). | Validar red/auth, recargar una vez y escalar si no baja.                 |
+| `PROCESSING` con `leaseUntil` futuro  | Otra pestaña/worker tiene la tarea reclamada.                                | No reenviar manualmente ni limpiar; esperar expiración o cierre natural. |
+| `PROCESSING` con `leaseUntil` vencido | Worker anterior quedó obsoleto; la tarea puede ser reclamada de nuevo.       | Recargar la app o esperar siguiente ciclo online. Escalar si se repite.  |
+| `FAILED`                              | Error no recuperable automático, usualmente permisos/configuración.          | Ir a Procedimiento 3 y corregir rol/reglas antes de pedir nuevo intento. |
+| `CONFLICT`                            | La mutación local no pudo fusionarse sin riesgo de pérdida.                  | Ir a Procedimiento 4; validar campos afectados antes de resolver.        |
+
+Regla de seguridad: nunca borrar tareas `PENDING`/`PROCESSING` desde soporte si no
+hay confirmación explícita de que la mutación ya está reflejada en Firestore y en
+la UI del usuario. Un lease vencido debe reintentarse; no es señal de descarte.
+
 ## Procedimiento 2.1: contaminación entre sesiones locales
 
 Síntomas:
@@ -162,10 +180,12 @@ Síntomas:
 
 Acciones:
 
-1. Confirmar que la app aplicó merge automático.
-2. Verificar que campos clínicos locales se preservaron.
-3. Validar que cambios administrativos remotos no se perdieron.
-4. Confirmar que se encoló actualización consolidada.
+1. Revisar `syncContract.changedPaths`, `mutationId`, `clientId` y `tabId` en la operación reciente.
+2. Confirmar si el conflicto fue por misma ruta (`same changed path`) o por revisión remota.
+3. Si fue por misma ruta clínica, comparar manualmente UI local vs Firestore antes de reintentar.
+4. Si la app aplicó merge automático, verificar que campos clínicos locales se preservaron.
+5. Validar que cambios administrativos remotos no se perdieron.
+6. Confirmar que se encoló actualización consolidada.
 
 Verificación:
 
@@ -202,6 +222,7 @@ npm run typecheck
 npm run check:quality
 npm run check:operational-runbooks
 npm run report:operational-health
+npm run test:emulator:sync:ci
 npm run test:rules:ci
 npm run test -- src/tests/integration/sync-resilience.test.ts
 npm run test -- src/tests/integration/sync-ui-resilience.test.tsx

@@ -27,7 +27,13 @@ export interface SyncQueueStorePort {
   add(task: SyncTask): Promise<void>;
   saveDailyRecordWithTask(record: DailyRecord, task: SyncTask): Promise<SyncQueueTaskWriteMode>;
   update(taskId: number, patch: Partial<SyncTask>): Promise<void>;
+  updateClaimed(
+    taskId: number,
+    patch: Partial<SyncTask>,
+    claim: SyncQueueLeaseClaim
+  ): Promise<boolean>;
   delete(taskId: number): Promise<void>;
+  deleteClaimed(taskId: number, claim: SyncQueueLeaseClaim): Promise<boolean>;
   deleteAll(): Promise<void>;
   deleteByOwner(ownerKey: string | null): Promise<void>;
   countForeign(ownerKey: string | null): Promise<number>;
