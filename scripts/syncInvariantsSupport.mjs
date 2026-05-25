@@ -34,8 +34,10 @@ export const evaluateSyncInvariants = root => {
   const packageJson = JSON.parse(readText(root, 'package.json'));
   const ports = readText(root, 'src/services/storage/sync/syncQueuePorts.ts');
   const engine = readText(root, 'src/services/storage/sync/syncQueueEngine.ts');
+  const enqueuePolicy = readText(root, 'src/services/storage/sync/syncQueueEnqueuePolicy.ts');
   const publicQueue = readText(root, 'src/services/storage/sync/publicSyncQueue.ts');
   const contractPolicy = readText(root, 'src/services/storage/sync/syncTaskContractPolicy.ts');
+  const transport = readText(root, 'src/services/storage/sync/firestoreSyncTransport.ts');
   const repositoryWrite = readText(
     root,
     'src/services/repositories/dailyRecordRepositoryWriteService.ts'
@@ -103,8 +105,11 @@ export const evaluateSyncInvariants = root => {
       repositoryWrite.includes('queueLocalBeforeRemote') &&
         repositoryWrite.includes('ackLocalAfterRemote') &&
         publicQueue.includes('ackDailyRecordSyncTask') &&
-        engine.includes('deferProcessing'),
-      'Repository writes must prequeue local outbox tasks transactionally, defer processing, and ack them after confirmed remote success.',
+        engine.includes('deferProcessing') &&
+        engine.includes('resolveSyncTaskNextAttemptAt') &&
+        enqueuePolicy.includes('holdForMs') &&
+        repositoryWrite.includes('PRE_OUTBOX_DIRECT_WRITE_HOLD_MS'),
+      'Repository writes must prequeue local outbox tasks transactionally, hold/defer processing, and ack them after confirmed remote success.',
       [
         'src/services/repositories/dailyRecordRepositoryWriteService.ts',
         'src/services/storage/sync/publicSyncQueue.ts',
@@ -120,6 +125,14 @@ export const evaluateSyncInvariants = root => {
         'src/services/storage/sync/syncTaskContractPolicy.ts',
         'src/services/storage/sync/syncQueueEngine.ts',
       ]
+    ),
+    buildInvariant(
+      'idempotent-mutation-drain',
+      transport.includes('hasRemoteAppliedMutation') &&
+        transport.includes('return null') &&
+        transport.includes('lastMutationId'),
+      'Sync queue replay must treat a remote matching mutationId as an already-applied success so local outbox can drain.',
+      ['src/services/storage/sync/firestoreSyncTransport.ts']
     ),
   ];
 

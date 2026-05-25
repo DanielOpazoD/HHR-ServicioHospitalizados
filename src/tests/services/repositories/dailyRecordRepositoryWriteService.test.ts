@@ -272,7 +272,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
         origin: 'direct_queue',
         syncContract: expect.objectContaining({ changedPaths: ['beds.R2.patientName'] }),
       }),
-      { deferProcessing: true }
+      expect.objectContaining({ deferProcessing: true, holdForMs: expect.any(Number) })
     );
     expect(updateRecordPartialToFirestore).toHaveBeenCalledWith(
       '2026-02-18',

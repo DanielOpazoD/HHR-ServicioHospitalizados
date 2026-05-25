@@ -63,10 +63,7 @@ const assertNoSamePathRemoteMutation = (
   remoteData: Record<string, unknown>
 ): void => {
   const remoteMeta = remoteData.meta as Record<string, unknown> | undefined;
-  const remoteMutationId =
-    typeof remoteMeta?.lastMutationId === 'string' ? remoteMeta.lastMutationId : undefined;
-  const localMutationId = task.syncContract?.mutationId;
-  if (remoteMutationId && localMutationId && remoteMutationId === localMutationId) {
+  if (hasRemoteAppliedMutation(task, remoteMeta)) {
     return;
   }
 
@@ -81,6 +78,16 @@ const assertNoSamePathRemoteMutation = (
       `Sync queue: remote mutation changed the same changed path for ${String(task.key || 'daily record')}.`
     );
   }
+};
+
+const hasRemoteAppliedMutation = (
+  task: SyncTask,
+  remoteMeta: Record<string, unknown> | undefined
+): boolean => {
+  const remoteMutationId =
+    typeof remoteMeta?.lastMutationId === 'string' ? remoteMeta.lastMutationId : undefined;
+  const localMutationId = task.syncContract?.mutationId;
+  return Boolean(remoteMutationId && localMutationId && remoteMutationId === localMutationId);
 };
 
 const assertSyncQueueConcurrency = (
@@ -113,7 +120,7 @@ const resolveRecordForSyncTask = async (
   task: SyncTask,
   record: DailyRecord,
   runtime: FirestoreServiceRuntimePort
-): Promise<DailyRecord> => {
+): Promise<DailyRecord | null> => {
   const docRef = getRecordDocRef(record.date, runtime);
   const remoteSnap = await getDoc(docRef);
   if (!remoteSnap.exists()) {
@@ -121,6 +128,10 @@ const resolveRecordForSyncTask = async (
   }
 
   const remoteData = remoteSnap.data() as Record<string, unknown>;
+  if (hasRemoteAppliedMutation(task, remoteData.meta as Record<string, unknown> | undefined)) {
+    return null;
+  }
+
   const remoteLastUpdated = getRemoteLastUpdated(remoteData);
 
   if (!shouldRevalidateAgainstRemote(remoteLastUpdated, task.syncContract?.expectedVersion)) {
@@ -157,6 +168,10 @@ const syncDailyRecord = async (
     'syncQueue.writeDailyRecord',
     async () => {
       const recordToWrite = await resolveRecordForSyncTask(task, record, runtime);
+      if (!recordToWrite) {
+        return;
+      }
+
       const authority = evaluateDailyRecordClinicalAuthority(recordToWrite, {
         date: recordToWrite.date,
         phase: 'sync_publish',

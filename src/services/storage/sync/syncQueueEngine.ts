@@ -38,6 +38,11 @@ import {
   toSyncQueueOperationSnapshot,
   type SyncQueueOperationSnapshot,
 } from '@/services/storage/sync/syncQueueOperationSnapshot';
+import {
+  countActiveSyncTasks,
+  resolveSyncTaskNextAttemptAt,
+  type SyncQueueEnqueueOptions,
+} from '@/services/storage/sync/syncQueueEnqueuePolicy';
 
 const SYNC_QUEUE_LEASE_MS = 30_000;
 
@@ -59,10 +64,6 @@ export interface SyncQueueEnqueueResult {
   maxPendingTasks: number;
 }
 
-export interface SyncQueueEnqueueOptions {
-  deferProcessing?: boolean;
-}
-
 export const createSyncQueueEngine = ({
   store,
   runtime,
@@ -82,9 +83,7 @@ export const createSyncQueueEngine = ({
   };
 
   const countActiveTasks = async (ownerKey: string | null): Promise<number> =>
-    (await store.listAll(ownerKey)).filter(
-      task => task.status === 'PENDING' || task.status === 'PROCESSING'
-    ).length;
+    countActiveSyncTasks(await store.listAll(ownerKey));
 
   const buildTaskClaim = (task: SyncTask): SyncQueueLeaseClaim | null => {
     if (!task.leaseOwner || !task.attemptId || !task.leaseUntil) {
@@ -195,6 +194,7 @@ export const createSyncQueueEngine = ({
           recoveryPolicy: contextMeta.recoveryPolicy,
           syncContract: mergedSyncContract,
           ...clearSyncTaskRuntimeState(),
+          nextAttemptAt: resolveSyncTaskNextAttemptAt(now, options),
         });
         if (!options.deferProcessing) {
           triggerProcessing();
@@ -232,6 +232,7 @@ export const createSyncQueueEngine = ({
       recoveryPolicy: contextMeta.recoveryPolicy,
       syncContract,
       ...clearSyncTaskRuntimeState(),
+      nextAttemptAt: resolveSyncTaskNextAttemptAt(now, options),
     });
     if (!options.deferProcessing) {
       triggerProcessing();
@@ -287,6 +288,7 @@ export const createSyncQueueEngine = ({
       recoveryPolicy: contextMeta.recoveryPolicy,
       syncContract,
       ...clearSyncTaskRuntimeState(),
+      nextAttemptAt: resolveSyncTaskNextAttemptAt(now, options),
     });
 
     if (!options.deferProcessing) {

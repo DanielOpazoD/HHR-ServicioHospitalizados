@@ -6,9 +6,9 @@ import { createDexieSyncQueueStore } from '@/services/storage/sync/dexieSyncQueu
 import { createFirestoreSyncTransport } from '@/services/storage/sync/firestoreSyncTransport';
 import {
   createSyncQueueEngine,
-  type SyncQueueEnqueueOptions,
   type SyncQueueEnqueueResult,
 } from '@/services/storage/sync/syncQueueEngine';
+import type { SyncQueueEnqueueOptions } from '@/services/storage/sync/syncQueueEnqueuePolicy';
 import type { SyncQueueOperationSnapshot } from '@/services/storage/sync/syncQueueOperationSnapshot';
 import type { SyncQueueDomainMetrics } from '@/services/storage/sync/syncDomainPolicy';
 import type { SyncQueueTelemetry } from '@/services/storage/sync/syncQueueTelemetryContracts';

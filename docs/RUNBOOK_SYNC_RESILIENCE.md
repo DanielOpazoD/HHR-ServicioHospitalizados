@@ -144,10 +144,15 @@ Lectura operativa:
 
 - Si la pestaña cae después de guardar localmente y antes del remoto, la tarea
   `PENDING` debe quedar disponible para flush posterior.
+- Durante los primeros segundos la tarea queda retenida con `nextAttemptAt`
+  futuro para que otra pestaña no la procese antes del intento remoto directo.
 - Si el remoto directo confirma, la tarea correspondiente debe desaparecer del
   outbox sin pasar por `PROCESSING`.
 - Si el remoto falla, la tarea ya existe; el recovery solo debe reutilizarla,
   actualizar contexto/origen y habilitar el procesamiento normal.
+- Si el ack local falló pero Firebase ya aplicó la mutación, el siguiente flush
+  debe reconocer `remote.meta.lastMutationId == syncContract.mutationId` como
+  éxito idempotente y drenar la tarea sin reescribir.
 - Si queda una tarea `direct_queue` reciente, no borrar: puede representar una
   confirmación remota pendiente o un ack local que no alcanzó a ejecutarse.
 

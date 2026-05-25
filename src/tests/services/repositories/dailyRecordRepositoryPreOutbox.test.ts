@@ -102,7 +102,7 @@ describe('dailyRecordRepositoryWriteService pre-outbox', () => {
           mutationId: expect.any(String),
         }),
       }),
-      { deferProcessing: true }
+      expect.objectContaining({ deferProcessing: true, holdForMs: expect.any(Number) })
     );
     expect(saveRecordToFirestore).toHaveBeenCalledWith(
       expect.objectContaining({ date: '2026-02-21' }),

@@ -41,6 +41,8 @@ import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuar
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
 import { classifyConflictChangedContexts } from '@/services/repositories/conflictResolutionDomainPolicy';
 
+const PRE_OUTBOX_DIRECT_WRITE_HOLD_MS = 5_000;
+
 const runRemoteSaveIntegrityCheck = async (date: string, record: DailyRecord): Promise<void> => {
   if (!isFirestoreEnabled()) return;
 
@@ -210,7 +212,7 @@ export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: st
           origin: 'direct_queue',
           syncContract,
         },
-        { deferProcessing: true }
+        { deferProcessing: true, holdForMs: PRE_OUTBOX_DIRECT_WRITE_HOLD_MS }
       ),
     ackLocalAfterRemote: () => ackDailyRecordSyncTask(validatedRecord, syncContract).then(() => {}),
     onRemoteFailure: err => {
@@ -360,7 +362,7 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
           origin: 'direct_queue',
           syncContract,
         },
-        { deferProcessing: true }
+        { deferProcessing: true, holdForMs: PRE_OUTBOX_DIRECT_WRITE_HOLD_MS }
       ),
     ackLocalAfterRemote: () => ackDailyRecordSyncTask(validatedRecord, syncContract).then(() => {}),
     onRemoteFailure: err => {

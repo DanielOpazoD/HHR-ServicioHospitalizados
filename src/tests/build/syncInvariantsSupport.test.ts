@@ -12,6 +12,10 @@ describe('sync invariants support', () => {
       'authority-release-gate',
       'strict-repository-local-persistence',
       'sync-runbook',
+      'full-save-sync-contract',
+      'pre-outbox-direct-write-ack',
+      'sync-contract-coalescing',
+      'idempotent-mutation-drain',
     ]);
   });
 });

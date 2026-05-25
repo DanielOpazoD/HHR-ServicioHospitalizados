@@ -21,7 +21,7 @@ vi.mock('@/services/storage/firestore/firestoreShared', async importOriginal => 
   };
 });
 
-import { setDoc } from 'firebase/firestore';
+import { getDoc, setDoc } from 'firebase/firestore';
 import {
   ackDailyRecordSyncTask,
   queueDailyRecordSyncTaskWithLocalRecord,
@@ -112,6 +112,67 @@ describe('storage/sync pre-outbox guarantees', () => {
     await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(1);
 
     await expect(ackDailyRecordSyncTask(record, syncContract)).resolves.toBe(true);
+    await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
+  });
+
+  it('holds pre-outbox tasks so another worker cannot process them immediately', async () => {
+    const record = makeRecord('2025-01-18', '2025-01-18T10:00:00.000Z');
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+
+    await queueDailyRecordSyncTaskWithLocalRecord(
+      record,
+      {
+        contexts: ['clinical'],
+        origin: 'direct_queue',
+        syncContract: {
+          expectedVersion: '2025-01-18T09:55:00.000Z',
+          changedPaths: ['beds.R1.pathology'],
+          mutationId: 'mutation-held-direct-save',
+        },
+      },
+      { deferProcessing: true, holdForMs: 5_000 }
+    );
+
+    const [task] = await hospitalDB.syncQueue.toArray();
+    expect(task.nextAttemptAt || 0).toBeGreaterThan(Date.now());
+
+    const { processSyncQueue } = await import('@/services/storage/sync');
+    await processSyncQueue();
+
+    expect(setDoc).not.toHaveBeenCalled();
+    await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(1);
+  });
+
+  it('drains the outbox without rewriting when remote already has the same mutationId', async () => {
+    const record = makeRecord('2025-01-19', '2025-01-19T10:00:00.000Z');
+    vi.mocked(getDoc).mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        ...record,
+        lastUpdated: '2025-01-19T10:05:00.000Z',
+        meta: {
+          revision: 3,
+          lastMutationId: 'mutation-already-applied',
+          lastChangedPaths: ['beds.R1.pathology'],
+        },
+      }),
+    } as Awaited<ReturnType<typeof getDoc>>);
+
+    await queueDailyRecordSyncTaskWithLocalRecord(record, {
+      contexts: ['clinical'],
+      origin: 'direct_queue',
+      syncContract: {
+        expectedVersion: '2025-01-19T09:55:00.000Z',
+        changedPaths: ['beds.R1.pathology'],
+        mutationId: 'mutation-already-applied',
+      },
+    });
+
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    const { processSyncQueue } = await import('@/services/storage/sync');
+    await processSyncQueue();
+
+    expect(setDoc).not.toHaveBeenCalled();
     await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
   });
 });
