@@ -34,6 +34,7 @@ interface NotificationHelpers {
 interface BuildSidebarPropsParams {
   canEdit: boolean;
   canDelete: boolean;
+  canDeleteDocument: ClinicalDocumentsSidebarProps['canDeleteDocument'];
   readOnlyMessage: string | null;
   patientName?: string;
   patientRut?: string;
@@ -137,6 +138,7 @@ export const scrollToClinicalDocumentAnnex = () => {
 export const buildClinicalDocumentsWorkspaceSidebarProps = ({
   canEdit,
   canDelete,
+  canDeleteDocument,
   readOnlyMessage,
   patientName,
   patientRut,
@@ -162,6 +164,7 @@ export const buildClinicalDocumentsWorkspaceSidebarProps = ({
 }: BuildSidebarPropsParams): ClinicalDocumentsSidebarProps => ({
   canEdit,
   canDelete,
+  canDeleteDocument,
   readOnlyMessage,
   patientName,
   patientRut,

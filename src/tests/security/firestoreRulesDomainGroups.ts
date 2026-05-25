@@ -168,6 +168,42 @@ export function registerFirestoreRulesDomainGroups({
       await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
       await assertFails(authed().doc(clinicalDocumentPath).delete());
     });
+
+    it('Document authors can delete their own active unlocked clinical document', async () => {
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        isActiveEpisodeDocument: true,
+        isLocked: false,
+        audit: {
+          ...clinicalDocumentPayload.audit,
+          createdBy: {
+            uid: 'user_specialist',
+            email: 'specialist@example.com',
+            displayName: 'Especialista Test',
+            role: 'doctor_specialist',
+          },
+        },
+      });
+
+      await assertSucceeds(specialist().doc(clinicalDocumentPath).delete());
+
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        isActiveEpisodeDocument: true,
+        isLocked: true,
+        audit: {
+          ...clinicalDocumentPayload.audit,
+          createdBy: {
+            uid: 'user_specialist',
+            email: 'specialist@example.com',
+            displayName: 'Especialista Test',
+            role: 'doctor_specialist',
+          },
+        },
+      });
+
+      await assertFails(specialist().doc(clinicalDocumentPath).delete());
+    });
   });
 
   describe('Clinical Attachments Collection', () => {

@@ -114,7 +114,7 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
         <div className="flex items-center gap-2">
           <FolderOpen size={15} className="text-slate-500" />
           <h2 className="text-xs font-black uppercase tracking-[0.16em] text-slate-600">
-            Archivos del episodio
+            Archivos globales del episodio
           </h2>
         </div>
         {canEdit && (
@@ -146,7 +146,7 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
         </p>
       )}
       <p className="mt-2 text-[11px] leading-snug text-slate-500">
-        Disponible para todo el episodio clínico.
+        No forman parte del documento actual; quedan disponibles para todo el episodio clínico.
       </p>
       {isLoading && (
         <p className="mt-2 text-xs text-slate-500">Cargando archivos del episodio...</p>
