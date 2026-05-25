@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildRestoreClinicalDocumentTemplateConfirmOptions,
   canApplyClinicalDocumentTemplateSelection,
+  canDeleteClinicalDocumentFromWorkspace,
   mergeDraftIntoClinicalDocumentsSidebar,
   resolveClinicalDocumentsWorkspaceAccessState,
 } from '@/features/clinical-documents/hooks/clinicalDocumentsWorkspaceModelSupport';
@@ -94,6 +95,41 @@ describe('clinicalDocumentsWorkspaceModelSupport', () => {
       })
     ).toBe(false);
     expect(canApplyClinicalDocumentTemplateSelection({ draft: null, canEdit: true })).toBe(false);
+  });
+
+  it('allows the document author to delete their own active unlocked document', () => {
+    const ownedDocument = {
+      ...buildDocument('doc-owned'),
+      isActiveEpisodeDocument: true,
+      isLocked: false,
+    };
+
+    expect(
+      canDeleteClinicalDocumentFromWorkspace({
+        document: ownedDocument,
+        canDeleteByRole: false,
+        canMutateEpisode: true,
+        user: { uid: 'u1', email: 'doctor@test.com' },
+      })
+    ).toBe(true);
+
+    expect(
+      canDeleteClinicalDocumentFromWorkspace({
+        document: { ...ownedDocument, isLocked: true },
+        canDeleteByRole: false,
+        canMutateEpisode: true,
+        user: { uid: 'u1', email: 'doctor@test.com' },
+      })
+    ).toBe(false);
+
+    expect(
+      canDeleteClinicalDocumentFromWorkspace({
+        document: ownedDocument,
+        canDeleteByRole: false,
+        canMutateEpisode: true,
+        user: { uid: 'other-user', email: 'other@test.com' },
+      })
+    ).toBe(false);
   });
 
   it('builds a stable restore-template confirmation payload', () => {

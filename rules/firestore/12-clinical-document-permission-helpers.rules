@@ -15,8 +15,20 @@
       return isAdmin() || isDoctor() || isSpecialistClinicalDocumentDraftWrite();
     }
 
+    function isClinicalDocumentAuthorForActiveEpisode() {
+      return isAuthenticated() &&
+             resource != null &&
+             resource.data.isActiveEpisodeDocument == true &&
+             resource.data.isLocked == false &&
+             resource.data.audit.createdBy.uid == request.auth.uid;
+    }
+
     function canDeleteClinicalDocument() {
-      return canWriteClinicalDocument() || isNurse() || isEditorRole();
+      return isAdmin() ||
+             isDoctor() ||
+             isNurse() ||
+             isEditorRole() ||
+             isClinicalDocumentAuthorForActiveEpisode();
     }
 
     function canWriteClinicalAttachment() {

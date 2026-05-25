@@ -125,6 +125,34 @@ describe('ClinicalDocumentSheet', () => {
     );
   });
 
+  it('places episode files after the document sheet so they read as global episode context', () => {
+    const document = buildDocument();
+    const { container } = render(
+      <ClinicalDocumentSheet
+        selectedDocument={document}
+        canEdit={true}
+        isSaving={false}
+        isUploadingPdf={false}
+        validationIssues={[]}
+        indicationsCatalog={getDefaultClinicalDocumentIndicationsCatalog()}
+        isSavingCustomIndication={false}
+        customIndicationError={null}
+        {...defaultHandlers}
+        toolbar={buildToolbar(defaultHandlers)}
+      />
+    );
+
+    const sheet = container.querySelector('#clinical-document-sheet');
+    const attachmentsPanel = container.querySelector('.clinical-document-attachments-panel');
+
+    expect(sheet).not.toBeNull();
+    expect(attachmentsPanel).not.toBeNull();
+    expect(sheet?.contains(attachmentsPanel)).toBe(false);
+    expect(sheet?.compareDocumentPosition(attachmentsPanel as Node)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+  });
+
   it('marks the active section and annex with stronger visual state', () => {
     const clinicalDocument = buildDocument();
     clinicalDocument.annexContent = '<p>Anexo activo</p>';

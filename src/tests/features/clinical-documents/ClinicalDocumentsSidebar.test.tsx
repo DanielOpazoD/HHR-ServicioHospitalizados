@@ -61,8 +61,8 @@ describe('ClinicalDocumentsSidebar', () => {
     expect(screen.getByRole('button', { name: /^crear documento$/i })).toBeDisabled();
   });
 
-  it('renders documents and delegates selection and deletion', () => {
-    const document = buildDocument();
+  it('renders documents with their saved title and delegates selection and deletion', () => {
+    const document = { ...buildDocument(), title: 'Evolución médica 25/05/2026' };
     const onSelectDocument = vi.fn();
     const onDuplicateDocument = vi.fn();
     const onDeleteDocument = vi.fn();
@@ -87,7 +87,7 @@ describe('ClinicalDocumentsSidebar', () => {
 
     fireEvent.click(
       screen.getByRole('button', {
-        name: /epicrisis/i,
+        name: /evolución médica 25\/05\/2026/i,
       })
     );
     expect(onSelectDocument).toHaveBeenCalledWith(document.id);
@@ -97,9 +97,37 @@ describe('ClinicalDocumentsSidebar', () => {
 
     fireEvent.click(screen.getByTitle(/eliminar documento/i));
     expect(onDeleteDocument).toHaveBeenCalledWith(document);
-    expect(screen.getAllByText(/epicrisis/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('Evolución médica 25/05/2026')).toBeInTheDocument();
     expect(screen.getByText(/doctor test/i)).toBeInTheDocument();
     expect(screen.queryByText(/borrador/i)).not.toBeInTheDocument();
+  });
+
+  it('allows the current author delete action even when global delete is disabled', () => {
+    const document = buildDocument();
+    const onDeleteDocument = vi.fn();
+
+    render(
+      <ClinicalDocumentsSidebar
+        canEdit={true}
+        canDelete={false}
+        canDeleteDocument={candidate => candidate.id === document.id}
+        readOnlyMessage={null}
+        patientName="Paciente Test"
+        templates={[{ id: 'epicrisis', name: 'Epicrisis' }]}
+        selectedTemplateId="epicrisis"
+        onSelectTemplate={() => {}}
+        onCreateDocument={() => {}}
+        documents={[document]}
+        selectedDocumentId={document.id}
+        onSelectDocument={() => {}}
+        onDuplicateDocument={() => {}}
+        onDeleteDocument={onDeleteDocument}
+      />
+    );
+
+    fireEvent.click(screen.getByTitle(/eliminar documento/i));
+
+    expect(onDeleteDocument).toHaveBeenCalledWith(document);
   });
 
   it('shows closed-episode notice while keeping the selected document visible', () => {
@@ -167,7 +195,7 @@ describe('ClinicalDocumentsSidebar', () => {
     expect(onOpenMMRADDialog).toHaveBeenCalledTimes(1);
   });
 
-  it('labels the annex shortcut as a complementary document action', () => {
+  it('labels the annex shortcut as an add-annexes action', () => {
     const document = buildDocument();
     const onToggleAnnex = vi.fn();
 
@@ -190,8 +218,10 @@ describe('ClinicalDocumentsSidebar', () => {
       />
     );
 
-    expect(screen.queryByRole('button', { name: /^anexo$/i })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /documento complementario/i }));
+    expect(
+      screen.queryByRole('button', { name: /documento complementario/i })
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /agregar anexos/i }));
 
     expect(onToggleAnnex).toHaveBeenCalledTimes(1);
   });
