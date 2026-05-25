@@ -32,6 +32,14 @@ const expectLoginError = async (page: Page, code: string) => {
   }
 };
 
+const isNavigationContextReset = (error: unknown): boolean => {
+  const message = String((error as Error)?.message || error);
+  return (
+    message.includes('Execution context was destroyed') ||
+    message.includes('Cannot find context with specified id')
+  );
+};
+
 const expectLoginIdle = async (page: Page) => {
   await expect
     .poll(
@@ -119,24 +127,38 @@ test.describe('Auth login resilience matrix', () => {
     await page.getByTestId('login-reset-local-button').click();
     await page.getByRole('button', { name: 'Reiniciar ahora' }).click();
     await expect(page.getByTestId('login-google-button')).toBeVisible();
+    await page.waitForLoadState('domcontentloaded').catch(() => undefined);
 
     await expect
       .poll(
-        async () =>
-          page.evaluate(async () => ({
-            hasSeededLocalKeys:
-              window.localStorage.getItem('hhr_login_background_mode') !== null ||
-              window.localStorage.getItem('firebase:authUser:test:[DEFAULT]') !== null ||
-              window.localStorage.getItem('unrelated_local_key') !== null,
-            hasSeededSessionKeys:
-              window.sessionStorage.getItem('hhr_google_login_attempt_pending') !== null ||
-              window.sessionStorage.getItem('unrelated_session_key') !== null,
-            resetCacheStillPresent:
-              'caches' in window
-                ? (await window.caches.keys()).includes('hhr-reset-smoke-cache')
-                : false,
-            errorVisible: Boolean(document.querySelector('[data-testid="login-error-alert"]')),
-          })),
+        async () => {
+          try {
+            return await page.evaluate(async () => ({
+              hasSeededLocalKeys:
+                window.localStorage.getItem('hhr_login_background_mode') !== null ||
+                window.localStorage.getItem('firebase:authUser:test:[DEFAULT]') !== null ||
+                window.localStorage.getItem('unrelated_local_key') !== null,
+              hasSeededSessionKeys:
+                window.sessionStorage.getItem('hhr_google_login_attempt_pending') !== null ||
+                window.sessionStorage.getItem('unrelated_session_key') !== null,
+              resetCacheStillPresent:
+                'caches' in window
+                  ? (await window.caches.keys()).includes('hhr-reset-smoke-cache')
+                  : false,
+              errorVisible: Boolean(document.querySelector('[data-testid="login-error-alert"]')),
+            }));
+          } catch (error) {
+            if (!isNavigationContextReset(error)) {
+              throw error;
+            }
+            return {
+              hasSeededLocalKeys: true,
+              hasSeededSessionKeys: true,
+              resetCacheStillPresent: true,
+              errorVisible: true,
+            };
+          }
+        },
         { timeout: 5000 }
       )
       .toMatchObject({

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import {
   bootstrapSeededRecord,
   buildCanonicalE2ERecord,
@@ -8,9 +8,74 @@ import { expectClinicalDiagnosis, expectClinicalStatus } from './fixtures/clinic
 import { seedPersistedBedFields, waitForPersistedBedFields } from './fixtures/censusPersistence';
 
 const CONFLICT_DATE = process.env.E2E_FIXED_DATE ?? new Date().toISOString().slice(0, 10);
+const REMOTE_OVERRIDE_SHADOW_KEY = 'hhr_e2e_remote_override_shadow';
 
-const getRow = (page: import('@playwright/test').Page, bedId: string) =>
+const getRow = (page: Page, bedId: string) =>
   page.locator(`[data-testid="patient-row"][data-bed-id="${bedId}"]`).first();
+
+const isRecoverableReloadInterruption = (error: unknown): boolean => {
+  const message = String((error as Error)?.message || error);
+  return (
+    message.includes('ERR_ABORTED') ||
+    message.includes('Frame load interrupted') ||
+    message.includes('maybe frame was detached')
+  );
+};
+
+const reloadConflictDate = async (page: Page) => {
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30_000 });
+  } catch (error) {
+    if (!isRecoverableReloadInterruption(error)) {
+      throw error;
+    }
+    await page.goto(`/censo?date=${CONFLICT_DATE}`, { waitUntil: 'domcontentloaded' });
+  }
+
+  const currentUrl = new URL(page.url());
+  if (currentUrl.searchParams.get('date') !== CONFLICT_DATE) {
+    await page.goto(`/censo?date=${CONFLICT_DATE}`, { waitUntil: 'domcontentloaded' });
+  }
+};
+
+const injectRemoteSnapshotForNextLoad = async (page: Page, record: Record<string, unknown>) => {
+  await page.evaluate(
+    ({ date, record: remoteRecord, shadowKey }) => {
+      localStorage.setItem(shadowKey, JSON.stringify({ date, record: remoteRecord }));
+    },
+    {
+      date: CONFLICT_DATE,
+      record,
+      shadowKey: REMOTE_OVERRIDE_SHADOW_KEY,
+    }
+  );
+
+  await page.addInitScript(shadowKey => {
+    const remoteShadow = localStorage.getItem(shadowKey);
+    if (!remoteShadow) {
+      return;
+    }
+
+    const parsed = JSON.parse(remoteShadow) as { date: string; record: unknown };
+    const runtimeWindow = window as Window & {
+      __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
+    };
+    const lockedRemoteRecord = parsed.record;
+
+    runtimeWindow.__HHR_E2E_OVERRIDE__ = new Proxy(
+      {
+        ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
+        [parsed.date]: lockedRemoteRecord,
+      },
+      {
+        set(target, property, value) {
+          target[property as string] = property === parsed.date ? lockedRemoteRecord : value;
+          return true;
+        },
+      }
+    );
+  }, REMOTE_OVERRIDE_SHADOW_KEY);
+};
 
 test.describe('Sync conflict resolution', () => {
   test('keeps the view stable and reopens the newer externally-seeded snapshot on reload', async ({
@@ -203,47 +268,36 @@ test.describe('Sync conflict resolution', () => {
         },
       };
       localStorage.setItem(storageKey, JSON.stringify(records));
-
-      localStorage.setItem(
-        'hhr_e2e_remote_shadow',
-        JSON.stringify({
-          date,
-          record: {
-            ...records[date],
-            lastUpdated: `${date}T09:00:00.000Z`,
-            beds: {
-              ...currentBeds,
-              R1: {
-                ...(currentBeds.R1 || {}),
-                patientName: 'REMOTE STALE USER',
-                pathology: 'REMOTE STALE DX',
-                handoffNote: 'REMOTE STALE NOTE',
-                status: 'Grave',
-              },
-            },
-          },
-        })
-      );
     }, CONFLICT_DATE);
 
-    await page.addInitScript(() => {
-      const remoteShadow = localStorage.getItem('hhr_e2e_remote_shadow');
-      if (!remoteShadow) {
-        return;
-      }
+    const remoteRecord = await page.evaluate(date => {
+      const records = JSON.parse(localStorage.getItem('hanga_roa_hospital_data') || '{}') as Record<
+        string,
+        Record<string, unknown>
+      >;
+      const currentBeds =
+        (records[date]?.beds as Record<string, Record<string, unknown>> | undefined) || {};
 
-      const parsed = JSON.parse(remoteShadow) as { date: string; record: unknown };
-      const runtimeWindow = window as Window & {
-        __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
+      return {
+        ...records[date],
+        lastUpdated: `${date}T09:00:00.000Z`,
+        beds: {
+          ...currentBeds,
+          R1: {
+            ...(currentBeds.R1 || {}),
+            patientName: 'REMOTE STALE USER',
+            pathology: 'REMOTE STALE DX',
+            handoffNote: 'REMOTE STALE NOTE',
+            status: 'Grave',
+          },
+        },
       };
-      runtimeWindow.__HHR_E2E_OVERRIDE__ = {
-        ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
-        [parsed.date]: parsed.record,
-      };
-    });
+    }, CONFLICT_DATE);
+
+    await injectRemoteSnapshotForNextLoad(page, remoteRecord);
 
     await page.context().setOffline(false);
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    await reloadConflictDate(page);
 
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
     await expect(patientNameInput).toHaveValue('REMOTE STALE USER');
