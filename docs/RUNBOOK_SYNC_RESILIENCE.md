@@ -160,6 +160,30 @@ Escalar a ingeniería si aparecen tareas `direct_queue` con edad crítica y sin
 errores recientes, porque puede indicar que el ack local o el trigger de recovery
 no se ejecutó.
 
+## Procedimiento 2.4: delete/moveToTrash y outbox
+
+Decisión actual: `deleteDay`/`moveToTrash` no usa outbox transaccional.
+
+Motivo:
+
+- Es una operación de ciclo de vida/admin destructiva, no una mutación clínica
+  offline-first como editar censo.
+- La eliminación local debe ser estricta: si IndexedDB no confirma el borrado,
+  la operación se bloquea.
+- La limpieza remota (`moveToTrash` + `deleteRemote`) sigue siendo best-effort y
+  queda registrada por soporte de lifecycle; no debe bloquear la UI local.
+
+Reabrir esta decisión solo si aparece alguno de estos requisitos:
+
+- borrado offline obligatorio;
+- el borrado pasa a ser parte de un flujo clínico visible y frecuente;
+- auditoría remota exactamente-una-vez para trash/delete;
+- soporte necesita reconciliación retryable de trash remoto.
+
+Si se reabre, implementar primero una tarea explícita tipo tombstone/delete en el
+outbox, con idempotencia propia y pruebas de carrera multitab. No reutilizar
+`UPDATE_DAILY_RECORD` para modelar un borrado.
+
 ## Procedimiento 2.1: contaminación entre sesiones locales
 
 Síntomas:
