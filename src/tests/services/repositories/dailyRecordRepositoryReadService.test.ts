@@ -12,6 +12,14 @@ vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getPreviousDayRecord: vi.fn(),
   getAllDates: vi.fn(),
   saveRecord: vi.fn(),
+  saveRecordStrict: vi.fn(record =>
+    Promise.resolve({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: [record.date],
+    })
+  ),
 }));
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
@@ -29,7 +37,7 @@ vi.mock('@/services/repositories/dailyRecordRemoteLoader', () => ({
 
 import {
   getRecordForDate as getRecordFromIndexedDB,
-  saveRecord as saveToIndexedDB,
+  saveRecordStrict as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { loadRemoteRecordWithFallback } from '@/services/repositories/dailyRecordRemoteLoader';
 import { getMonthRecordsFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';

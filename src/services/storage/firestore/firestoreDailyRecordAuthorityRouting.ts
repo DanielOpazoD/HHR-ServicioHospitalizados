@@ -26,6 +26,10 @@ export interface DailyRecordPartialWriteOptions {
   syncContract?: SyncTaskContract;
 }
 
+export interface DailyRecordSaveWriteOptions {
+  syncContract?: SyncTaskContract;
+}
+
 interface SpecialistMedicalHandoffCallablePayload {
   date: string;
   patch: Record<string, unknown>;
@@ -143,7 +147,8 @@ export const shouldRouteDailyRecordSaveViaCallable = async (): Promise<boolean> 
 
 export const tryShadowDailyRecordSaveViaCallable = async (
   record: DailyRecord,
-  expectedLastUpdated?: string
+  expectedLastUpdated?: string,
+  syncContract?: SyncTaskContract
 ): Promise<void> => {
   if (!shouldShadowDailyRecordAuthorityCallable()) {
     return;
@@ -162,6 +167,7 @@ export const tryShadowDailyRecordSaveViaCallable = async (
       expectedLastUpdated,
       mode: 'shadow',
       origin: 'shadow_save',
+      syncContract,
       dryRun: true,
     });
   } catch (error) {

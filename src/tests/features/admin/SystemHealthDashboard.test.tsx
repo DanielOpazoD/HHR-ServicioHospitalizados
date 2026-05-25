@@ -14,8 +14,8 @@ const mocks = vi.hoisted(() => ({
   authRole: vi.fn(() => 'admin'),
 }));
 
-const recentIncidentTimestamp = '2026-05-23T17:00:00.000Z';
-const recentLastSeenTimestamp = '2026-05-23T17:10:00.000Z';
+const recentIncidentTimestamp = '2026-05-24T17:00:00.000Z';
+const recentLastSeenTimestamp = '2026-05-24T17:10:00.000Z';
 
 vi.mock('@/context/UIContext', () => ({
   useConfirmDialog: () => ({ confirm: mocks.confirm }),

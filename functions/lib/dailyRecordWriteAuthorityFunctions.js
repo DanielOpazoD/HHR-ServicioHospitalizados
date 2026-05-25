@@ -218,6 +218,26 @@ const resolveCurrentRevision = record => {
   return Number.isFinite(revision) && revision >= 0 ? revision : 0;
 };
 
+const resolveBaseRevision = syncContract => {
+  const revision = Number(syncContract?.baseRevision);
+  return Number.isFinite(revision) && revision >= 0 ? revision : undefined;
+};
+
+const assertExpectedRevision = ({ snapshot, syncContract }) => {
+  const baseRevision = resolveBaseRevision(syncContract);
+  if (baseRevision === undefined || !snapshot.exists) {
+    return;
+  }
+
+  const currentRevision = resolveCurrentRevision(snapshot.data());
+  if (currentRevision !== baseRevision) {
+    throw new functions.https.HttpsError(
+      'aborted',
+      `revision_mismatch: Daily record base revision ${baseRevision} does not match remote revision ${currentRevision}.`
+    );
+  }
+};
+
 const buildNextMeta = ({ remoteData, syncContract, now }) => {
   const mutationId = normalizeShortString(syncContract?.mutationId);
   const clientId = normalizeShortString(syncContract?.clientId);
@@ -259,6 +279,16 @@ const assertExpectedVersion = ({ snapshot, expectedLastUpdated }) => {
       'Daily record changed remotely before the authorized write transaction.'
     );
   }
+};
+
+const hasAlreadyAppliedMutation = ({ snapshot, syncContract }) => {
+  if (!snapshot.exists) {
+    return false;
+  }
+
+  const remoteMutationId = normalizeShortString(snapshot.data()?.meta?.lastMutationId);
+  const localMutationId = normalizeShortString(syncContract?.mutationId);
+  return Boolean(remoteMutationId && localMutationId && remoteMutationId === localMutationId);
 };
 
 const assertClinicalAuthority = record => {
@@ -324,7 +354,7 @@ const parsePatchPayload = data => {
 
 const buildAuthorityResponse = ({ date, mode, authority, coverage, revision, mutationId }) => {
   const response = {
-    success: authority.status === 'ok',
+    success: authority.status === 'ok' || authority.status === 'idempotent',
     date,
     mode,
     authorityStatus: authority.status,
@@ -355,6 +385,11 @@ const emptyCoverage = {
 
 const emptyAuthority = {
   status: 'blocked',
+  violations: [],
+};
+
+const idempotentAuthority = {
+  status: 'idempotent',
   violations: [],
 };
 
@@ -465,11 +500,23 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
 
     const db = admin.firestore();
     const docRef = db.collection('hospitals').doc(HOSPITAL_ID).collection('dailyRecords').doc(date);
+    let revision;
+    let responseAuthority = authority;
+    let responseCoverage = coverage;
 
     try {
       await db.runTransaction(async transaction => {
         const snapshot = await transaction.get(docRef);
+        if (hasAlreadyAppliedMutation({ snapshot, syncContract })) {
+          const remoteData = snapshot.data() || {};
+          responseAuthority = idempotentAuthority;
+          responseCoverage = collectClinicalEpisodeCoverage(remoteData);
+          revision = resolveCurrentRevision(remoteData);
+          return;
+        }
+
         assertExpectedVersion({ snapshot, expectedLastUpdated });
+        assertExpectedRevision({ snapshot, syncContract });
 
         if (dryRun) {
           return;
@@ -484,8 +531,15 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
           });
         }
 
+        const nextMeta = buildNextMeta({
+          remoteData: snapshot.exists ? snapshot.data() || {} : {},
+          syncContract,
+          now,
+        });
+        revision = nextMeta.revision;
         transaction.set(docRef, {
           ...record,
+          meta: nextMeta,
           lastUpdated: now,
         });
       });
@@ -496,14 +550,21 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
         mode,
         origin,
         dryRun,
-        authority,
-        coverage,
+        authority: responseAuthority,
+        coverage: responseCoverage,
         syncContract,
         status: 'success',
         startedAt,
       });
 
-      return buildAuthorityResponse({ date, mode, authority, coverage });
+      return buildAuthorityResponse({
+        date,
+        mode,
+        authority: responseAuthority,
+        coverage: responseCoverage,
+        revision,
+        mutationId: normalizeShortString(syncContract?.mutationId),
+      });
     } catch (error) {
       if (error instanceof functions.https.HttpsError) {
         await recordAuthorityTelemetry({
@@ -557,7 +618,15 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
         }
 
         const remoteData = snapshot.data() || {};
+        if (hasAlreadyAppliedMutation({ snapshot, syncContract })) {
+          authority = idempotentAuthority;
+          coverage = collectClinicalEpisodeCoverage(remoteData);
+          revision = resolveCurrentRevision(remoteData);
+          return;
+        }
+
         assertExpectedVersion({ snapshot, expectedLastUpdated });
+        assertExpectedRevision({ snapshot, syncContract });
         assertPatchTargetsCurrentClinicalEpisode({ remoteData, patch });
         const now = admin.firestore.Timestamp.now();
         const patchedRecord = applyPatchToRecord({ date, remoteData, patch });

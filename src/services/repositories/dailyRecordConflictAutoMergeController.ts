@@ -1,7 +1,6 @@
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { ConflictAutoMergeRecoveryResult } from '@/services/repositories/contracts/dailyRecordWriteRecoveryResult';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
-import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
 import { buildConflictAuditSummary } from '@/services/repositories/conflictResolutionAuditSummary';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
@@ -10,15 +9,14 @@ import {
   buildRecoveryTaskMeta,
   resolveEffectiveChangedPaths,
 } from '@/services/repositories/dailyRecordWriteRecoveryController';
-import { queueSyncTask } from '@/services/storage/sync';
+import { queueDailyRecordSyncTaskWithLocalRecord } from '@/services/storage/sync';
 
 const queueMergedRecoveryTask = async (
   record: DailyRecord,
   changedPaths: string[],
   expectedVersion?: string
 ) => {
-  const result = await queueSyncTask(
-    'UPDATE_DAILY_RECORD',
+  const result = await queueDailyRecordSyncTaskWithLocalRecord(
     record,
     buildRecoveryTaskMeta(changedPaths, 'conflict_auto_merge', expectedVersion)
   );
@@ -52,7 +50,6 @@ export const attemptConflictAutoMergeRecovery = async (
       trace.entries
     );
 
-    await saveToIndexedDB(merged);
     const queued = await queueMergedRecoveryTask(merged, changedPaths, remoteRecord.lastUpdated);
     if (!queued) {
       return { status: 'not_possible' };

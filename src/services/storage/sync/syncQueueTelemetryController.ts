@@ -17,6 +17,7 @@ export const buildSyncQueueTelemetryFromRows = (
   batchSize: number
 ): SyncQueueTelemetry => {
   const pendingRows = rows.filter(row => row.status === 'PENDING');
+  const directQueueRows = pendingRows.filter(row => row.origin === 'direct_queue');
   const pendingBudgetState = resolveSyncQueueBudgetState(
     pendingRows.length,
     SYNC_QUEUE_RUNTIME_THRESHOLDS.warningPendingTasks,
@@ -30,6 +31,14 @@ export const buildSyncQueueTelemetryFromRows = (
     Number.isFinite(oldestTimestamp) && oldestTimestamp > 0
       ? Math.max(0, now - oldestTimestamp)
       : 0;
+  const oldestDirectQueueTimestamp = directQueueRows.reduce<number>(
+    (acc, row) => (row.timestamp < acc ? row.timestamp : acc),
+    Number.POSITIVE_INFINITY
+  );
+  const oldestDirectQueueAgeMs =
+    Number.isFinite(oldestDirectQueueTimestamp) && oldestDirectQueueTimestamp > 0
+      ? Math.max(0, now - oldestDirectQueueTimestamp)
+      : 0;
   const retrying = pendingRows.filter(row => row.retryCount > 0).length;
   const oldestPendingBudgetState = resolveSyncQueueBudgetState(
     oldestPendingAgeMs,
@@ -41,6 +50,16 @@ export const buildSyncQueueTelemetryFromRows = (
     SYNC_QUEUE_RUNTIME_THRESHOLDS.warningRetryingSyncTasks,
     SYNC_QUEUE_RUNTIME_THRESHOLDS.criticalRetryingSyncTasks
   );
+  const directQueueBudgetState = resolveSyncQueueBudgetState(
+    oldestDirectQueueAgeMs,
+    SYNC_QUEUE_RUNTIME_THRESHOLDS.warningOldestPendingAgeMs,
+    SYNC_QUEUE_RUNTIME_THRESHOLDS.criticalOldestPendingAgeMs
+  );
+  const runtimeState = resolveSyncQueueRuntimeState(
+    pendingRows.length,
+    oldestPendingAgeMs,
+    retrying
+  );
 
   return {
     pending: pendingRows.length,
@@ -48,11 +67,18 @@ export const buildSyncQueueTelemetryFromRows = (
     conflict: rows.filter(row => row.status === 'CONFLICT').length,
     retrying,
     oldestPendingAgeMs,
+    oldestDirectQueueAgeMs,
     batchSize,
     pendingBudgetState,
     oldestPendingBudgetState,
+    directQueueBudgetState,
     retryingBudgetState,
-    runtimeState: resolveSyncQueueRuntimeState(pendingRows.length, oldestPendingAgeMs, retrying),
+    runtimeState:
+      directQueueBudgetState === 'critical'
+        ? 'blocked'
+        : directQueueBudgetState === 'warning' && runtimeState === 'ok'
+          ? 'degraded'
+          : runtimeState,
   };
 };
 
@@ -121,6 +147,28 @@ export const recordSyncQueueDecisionTelemetry = (
   recordSyncQueueFailureTelemetry(task, errorMessage, status, context);
 };
 
+export const recordSyncQueueStaleClaimTelemetry = (
+  task: Pick<SyncTask, 'id' | 'type' | 'key' | 'contexts' | 'leaseOwner' | 'attemptId'>,
+  action: 'update' | 'delete'
+): void => {
+  recordOperationalTelemetry({
+    category: 'sync',
+    operation: 'sync_queue_stale_claim_noop',
+    status: 'degraded',
+    runtimeState: 'recoverable',
+    issues: ['Un worker de sincronizacion intento cerrar una tarea que ya no tenia reclamada.'],
+    context: {
+      action,
+      taskId: task.id,
+      type: task.type,
+      key: task.key,
+      contexts: task.contexts,
+      leaseOwner: task.leaseOwner,
+      attemptId: task.attemptId,
+    },
+  });
+};
+
 export const recordSyncQueueBudgetTelemetry = (
   telemetry: SyncQueueTelemetry,
   context: Record<string, unknown> = {}
@@ -142,7 +190,9 @@ export const recordSyncQueueBudgetTelemetry = (
       conflict: telemetry.conflict,
       pendingBudgetState: telemetry.pendingBudgetState,
       oldestPendingAgeMs: telemetry.oldestPendingAgeMs,
+      oldestDirectQueueAgeMs: telemetry.oldestDirectQueueAgeMs,
       oldestPendingBudgetState: telemetry.oldestPendingBudgetState,
+      directQueueBudgetState: telemetry.directQueueBudgetState,
       retryingBudgetState: telemetry.retryingBudgetState,
       ...context,
     },

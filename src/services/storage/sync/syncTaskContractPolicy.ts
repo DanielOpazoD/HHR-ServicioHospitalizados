@@ -29,6 +29,11 @@ const collectPatientEpisodeKeys = (patient: PatientData | undefined): string[] =
   return keys;
 };
 
+const resolveRecordBaseRevision = (record: DailyRecord): number | undefined => {
+  const revision = Number((record as { meta?: { revision?: unknown } }).meta?.revision);
+  return Number.isFinite(revision) && revision >= 0 ? revision : undefined;
+};
+
 export const buildDailyRecordSyncContract = (
   record: DailyRecord,
   baseContract: SyncTaskContract = {}
@@ -44,6 +49,7 @@ export const buildDailyRecordSyncContract = (
   return {
     ...baseContract,
     expectedVersion: baseContract.expectedVersion || record.lastUpdated,
+    baseRevision: baseContract.baseRevision ?? resolveRecordBaseRevision(record),
     recordRevision: record.lastUpdated,
     clinicalEpisodeKeys,
     changedPaths: baseContract.changedPaths?.length ? baseContract.changedPaths : undefined,
@@ -63,4 +69,48 @@ export const buildSyncTaskContract = (
   }
 
   return buildDailyRecordSyncContract(payload as DailyRecord, baseContract);
+};
+
+const mergeUnique = (
+  left: string[] | undefined,
+  right: string[] | undefined
+): string[] | undefined => {
+  const values = [...(left || []), ...(right || [])].filter(Boolean);
+  if (values.includes('*')) {
+    return ['*'];
+  }
+  const merged = Array.from(new Set(values));
+  return merged.length > 0 ? merged : undefined;
+};
+
+const mergeMutationIds = (
+  existing: SyncTaskContract | undefined,
+  next: SyncTaskContract | undefined
+): string[] | undefined => {
+  const values = [
+    ...(existing?.mutationIds || []),
+    existing?.mutationId,
+    ...(next?.mutationIds || []),
+    next?.mutationId,
+  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+  const merged = Array.from(new Set(values));
+  return merged.length > 1 ? merged : undefined;
+};
+
+export const mergeSyncTaskContracts = (
+  existing: SyncTaskContract | undefined,
+  next: SyncTaskContract | undefined
+): SyncTaskContract | undefined => {
+  if (!existing) return next;
+  if (!next) return existing;
+
+  return {
+    ...existing,
+    ...next,
+    expectedVersion: next.expectedVersion ?? existing.expectedVersion,
+    baseRevision: next.baseRevision ?? existing.baseRevision,
+    changedPaths: mergeUnique(existing.changedPaths, next.changedPaths),
+    clinicalEpisodeKeys: mergeUnique(existing.clinicalEpisodeKeys, next.clinicalEpisodeKeys),
+    mutationIds: mergeMutationIds(existing, next),
+  };
 };

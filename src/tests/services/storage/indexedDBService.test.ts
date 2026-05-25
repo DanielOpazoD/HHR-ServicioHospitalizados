@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as idbService from '@/services/storage/indexedDBService';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { AuditLogEntry } from '@/types/auditLogTypes';
@@ -29,7 +29,42 @@ describe('indexedDBService', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('Daily Records', () => {
+    it('should report the backing store used by strict record saves', async () => {
+      const result = await idbService.saveRecordStrict(mockRecord);
+
+      expect(result).toMatchObject({
+        ok: true,
+        operation: 'save',
+        store: 'indexeddb',
+        dates: ['2025-01-01'],
+      });
+      await expect(idbService.getRecordForDate('2025-01-01')).resolves.toMatchObject({
+        date: '2025-01-01',
+      });
+    });
+
+    it('should report strict record save failures without dispatching a success result', async () => {
+      const putSpy = vi
+        .spyOn(idbService.hospitalDB.dailyRecords, 'put')
+        .mockRejectedValueOnce(new Error('quota exceeded'));
+
+      const result = await idbService.saveRecordStrict(mockRecord);
+
+      expect(result).toMatchObject({
+        ok: false,
+        operation: 'save',
+        store: 'none',
+        dates: ['2025-01-01'],
+      });
+      expect(result.error).toBeInstanceOf(Error);
+      putSpy.mockRestore();
+    });
+
     it('should save and retrieve a record', async () => {
       await idbService.saveRecord(mockRecord);
       const retrieved = await idbService.getRecordForDate('2025-01-01');

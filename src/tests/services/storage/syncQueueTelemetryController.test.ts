@@ -62,6 +62,28 @@ describe('syncQueueTelemetryController', () => {
     expect(telemetry.runtimeState).toBe('blocked');
   });
 
+  it('tracks direct_queue age separately for stale pre-outbox support alerts', () => {
+    const telemetry = buildSyncQueueTelemetryFromRows(
+      [
+        baseTask({
+          origin: 'direct_queue',
+          timestamp: Date.parse('2026-03-22T09:40:00.000Z'),
+        }),
+        baseTask({
+          opId: 'task-2',
+          origin: 'partial_update_retry',
+          timestamp: Date.parse('2026-03-22T09:59:00.000Z'),
+        }),
+      ],
+      Date.parse('2026-03-22T10:00:00.000Z'),
+      25
+    );
+
+    expect(telemetry.oldestDirectQueueAgeMs).toBe(1_200_000);
+    expect(telemetry.directQueueBudgetState).toBe('critical');
+    expect(telemetry.runtimeState).toBe('blocked');
+  });
+
   it('records budget telemetry only when queue exceeds operational thresholds', () => {
     recordSyncQueueBudgetTelemetry({
       pending: 1,

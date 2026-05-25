@@ -7,11 +7,14 @@ vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
 
 vi.mock('@/services/storage/sync', () => ({
   isRetryableSyncError: vi.fn(),
-  queueSyncTask: vi.fn(),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn(),
 }));
 
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
-import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
+import {
+  isRetryableSyncError,
+  queueDailyRecordSyncTaskWithLocalRecord,
+} from '@/services/storage/sync';
 import {
   assertRemoteSaveCompatibility,
   resolveRemoteWriteRecovery,
@@ -51,7 +54,7 @@ describe('dailyRecordRemoteWriteController', () => {
 
   it('queues retry recovery with retry metadata when the remote error is retryable', async () => {
     vi.mocked(isRetryableSyncError).mockReturnValue(true);
-    vi.mocked(queueSyncTask).mockResolvedValueOnce({
+    vi.mocked(queueDailyRecordSyncTaskWithLocalRecord).mockResolvedValueOnce({
       accepted: true,
       mode: 'created',
       pendingTasks: 1,
@@ -66,8 +69,7 @@ describe('dailyRecordRemoteWriteController', () => {
     );
 
     expect(result.status).toBe('queued_for_retry');
-    expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
+    expect(queueDailyRecordSyncTaskWithLocalRecord).toHaveBeenCalledWith(
       expect.objectContaining({ date: '2026-04-16' }),
       expect.objectContaining({
         origin: 'partial_update_retry',

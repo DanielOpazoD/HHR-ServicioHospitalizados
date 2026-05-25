@@ -2,7 +2,7 @@ import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import {
   getRecordForDate as getRecordFromIndexedDB,
-  saveRecord as saveToIndexedDB,
+  saveRecordStrict as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
 import {
   saveRecordToFirestore,
@@ -15,6 +15,7 @@ import {
   createSaveDailyRecordCommand,
 } from '@/services/repositories/contracts/dailyRecordCommands';
 import { buildDailyRecordSyncContract } from '@/services/storage/sync/syncTaskContractPolicy';
+import { queueDailyRecordSyncTaskWithLocalRecord } from '@/services/storage/sync';
 import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordPersistencePreparation';
 import { preparePatchedRecordForPersistence } from '@/services/repositories/dailyRecordPatchPreparation';
@@ -32,9 +33,12 @@ import {
   type RemoteWriteState,
 } from '@/services/repositories/dailyRecordWriteState';
 import { persistLocalAndAttemptRemoteSync } from '@/services/repositories/dailyRecordRemotePersistenceController';
+import { buildPreOutboxRemoteAckOptions } from '@/services/repositories/dailyRecordPreOutboxRemoteAckPolicy';
+import { buildPreOutboxRemoteAckCallbacks } from '@/services/repositories/dailyRecordPreOutboxRemoteAckCallbacks';
 import { dailyRecordWriteLogger } from '@/services/repositories/repositoryLoggers';
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
+import { classifyConflictChangedContexts } from '@/services/repositories/conflictResolutionDomainPolicy';
 
 const runRemoteSaveIntegrityCheck = async (date: string, record: DailyRecord): Promise<void> => {
   if (!isFirestoreEnabled()) return;
@@ -99,7 +103,12 @@ const resolvePartialUpdateBaseRecord = async (date: string): Promise<DailyRecord
       return null;
     }
 
-    await saveToIndexedDB(remoteRecord);
+    const localResult = await saveToIndexedDB(remoteRecord);
+    if (!localResult.ok) {
+      throw localResult.error instanceof Error
+        ? localResult.error
+        : new Error(localResult.userSafeMessage || 'No fue posible guardar la base remota local.');
+    }
     return remoteRecord;
   } catch (error) {
     dailyRecordWriteLogger.warn(
@@ -181,12 +190,28 @@ export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: st
     throw err;
   }
 
+  const syncContract = buildDailyRecordSyncContract(validatedRecord, {
+    expectedVersion: command.expectedLastUpdated,
+    changedPaths: ['*'],
+  });
   const nextAction = await persistLocalAndAttemptRemoteSync({
     date: command.date,
     record: validatedRecord,
     changedPaths: ['*'],
     remoteState,
-    remoteWrite: () => saveRecordToFirestore(validatedRecord, command.expectedLastUpdated),
+    remoteWrite: () =>
+      saveRecordToFirestore(validatedRecord, command.expectedLastUpdated, { syncContract }),
+    queueLocalBeforeRemote: () =>
+      queueDailyRecordSyncTaskWithLocalRecord(
+        validatedRecord,
+        {
+          contexts: ['clinical', 'staffing', 'movements', 'handoff', 'metadata'],
+          origin: 'direct_queue',
+          syncContract,
+        },
+        buildPreOutboxRemoteAckOptions(syncContract)
+      ),
+    ...buildPreOutboxRemoteAckCallbacks(validatedRecord, syncContract),
     onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(
         `Firestore sync failed for ${command.date}; data persisted in IndexedDB`,
@@ -326,6 +351,17 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
       updateRecordPartialToFirestore(command.date, mergedPatches, current.lastUpdated, {
         syncContract,
       }),
+    queueLocalBeforeRemote: () =>
+      queueDailyRecordSyncTaskWithLocalRecord(
+        validatedRecord,
+        {
+          contexts: classifyConflictChangedContexts(semanticChangedPaths),
+          origin: 'direct_queue',
+          syncContract,
+        },
+        buildPreOutboxRemoteAckOptions(syncContract)
+      ),
+    ...buildPreOutboxRemoteAckCallbacks(validatedRecord, syncContract),
     onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(`Firestore partial update failed for ${command.date}`, err);
     },

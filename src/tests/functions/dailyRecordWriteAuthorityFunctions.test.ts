@@ -56,19 +56,21 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
         lastUpdated: expect.anything(),
       })
     );
-    expect(result).toEqual({
-      success: true,
-      date: '2026-05-13',
-      mode: 'enforced',
-      authorityStatus: 'ok',
-      coverage: {
-        activePatients: 1,
-        canonicalEpisodeIds: 1,
-        fallbackEpisodeKeys: 0,
-        degenerateFallbackEpisodeKeys: 0,
-      },
-      violations: [],
-    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        success: true,
+        date: '2026-05-13',
+        mode: 'enforced',
+        authorityStatus: 'ok',
+        coverage: {
+          activePatients: 1,
+          canonicalEpisodeIds: 1,
+          fallbackEpisodeKeys: 0,
+          degenerateFallbackEpisodeKeys: 0,
+        },
+        violations: [],
+      })
+    );
     expect(telemetryAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         service: 'dailyRecordWriteAuthority',
@@ -342,6 +344,48 @@ describe('dailyRecordWriteAuthorityFunctions', () => {
       )
     ).rejects.toMatchObject({
       code: 'aborted',
+    });
+
+    expect(set).not.toHaveBeenCalled();
+  });
+
+  it('rejects partial authority patches when baseRevision is stale', async () => {
+    const { admin, set } = createAdminMock({
+      remoteData: {
+        ...makeRecord(),
+        lastUpdated: '2026-05-13T10:00:00.000Z',
+        meta: {
+          revision: 8,
+        },
+      },
+    });
+    const functionsApi = createDailyRecordWriteAuthorityFunctions({
+      admin,
+      resolveRoleForEmail: vi.fn().mockResolvedValue('nurse_hospital'),
+    });
+
+    await expect(
+      functionsApi.patchDailyRecordWithClinicalAuthority.run(
+        {
+          date: '2026-05-13',
+          expectedLastUpdated: '2026-05-13T10:00:00.000Z',
+          mode: 'enforced',
+          origin: 'direct_partial_update',
+          syncContract: {
+            expectedVersion: '2026-05-13T10:00:00.000Z',
+            baseRevision: 7,
+            changedPaths: ['beds.R1.pathology'],
+            mutationId: 'stale-revision-mutation',
+          },
+          patch: {
+            'beds.R1.pathology': 'Diagnostico con revision obsoleta',
+          },
+        },
+        makeContext()
+      )
+    ).rejects.toMatchObject({
+      code: 'aborted',
+      message: expect.stringContaining('revision_mismatch'),
     });
 
     expect(set).not.toHaveBeenCalled();

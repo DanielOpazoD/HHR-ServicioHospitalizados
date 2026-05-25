@@ -47,6 +47,49 @@ const getRemoteLastUpdated = (remoteData: Record<string, unknown>): string | und
       ? remoteData.lastUpdated
       : undefined;
 
+const normalizeChangedPaths = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((path): path is string => typeof path === 'string' && path.trim().length > 0)
+    : [];
+
+const pathsOverlap = (left: string, right: string): boolean =>
+  left === right || left.startsWith(`${right}.`) || right.startsWith(`${left}.`);
+
+const hasOverlappingChangedPath = (left: string[], right: string[]): boolean =>
+  left.some(leftPath => right.some(rightPath => pathsOverlap(leftPath, rightPath)));
+
+const assertNoSamePathRemoteMutation = (
+  task: SyncTask,
+  remoteData: Record<string, unknown>
+): void => {
+  const remoteMeta = remoteData.meta as Record<string, unknown> | undefined;
+  if (hasRemoteAppliedMutation(task, remoteMeta)) {
+    return;
+  }
+
+  const remoteChangedPaths = normalizeChangedPaths(remoteMeta?.lastChangedPaths);
+  const localChangedPaths = normalizeChangedPaths(task.syncContract?.changedPaths);
+  if (
+    remoteChangedPaths.length > 0 &&
+    localChangedPaths.length > 0 &&
+    hasOverlappingChangedPath(remoteChangedPaths, localChangedPaths)
+  ) {
+    throw new ConcurrencyError(
+      `Sync queue: remote mutation changed the same changed path for ${String(task.key || 'daily record')}.`
+    );
+  }
+};
+
+const hasRemoteAppliedMutation = (
+  task: SyncTask,
+  remoteMeta: Record<string, unknown> | undefined
+): boolean => {
+  const remoteMutationId =
+    typeof remoteMeta?.lastMutationId === 'string' ? remoteMeta.lastMutationId : undefined;
+  const localMutationId = task.syncContract?.mutationId;
+  return Boolean(remoteMutationId && localMutationId && remoteMutationId === localMutationId);
+};
+
 const assertSyncQueueConcurrency = (
   record: DailyRecord,
   remoteLastUpdated: string | undefined
@@ -77,7 +120,7 @@ const resolveRecordForSyncTask = async (
   task: SyncTask,
   record: DailyRecord,
   runtime: FirestoreServiceRuntimePort
-): Promise<DailyRecord> => {
+): Promise<DailyRecord | null> => {
   const docRef = getRecordDocRef(record.date, runtime);
   const remoteSnap = await getDoc(docRef);
   if (!remoteSnap.exists()) {
@@ -85,6 +128,10 @@ const resolveRecordForSyncTask = async (
   }
 
   const remoteData = remoteSnap.data() as Record<string, unknown>;
+  if (hasRemoteAppliedMutation(task, remoteData.meta as Record<string, unknown> | undefined)) {
+    return null;
+  }
+
   const remoteLastUpdated = getRemoteLastUpdated(remoteData);
 
   if (!shouldRevalidateAgainstRemote(remoteLastUpdated, task.syncContract?.expectedVersion)) {
@@ -92,6 +139,7 @@ const resolveRecordForSyncTask = async (
     return record;
   }
 
+  assertNoSamePathRemoteMutation(task, remoteData);
   const remoteRecord = docToRecord(remoteData, record.date);
   const mergedRecord = resolveDailyRecordConflict(remoteRecord, record, {
     changedPaths: task.syncContract?.changedPaths,
@@ -120,6 +168,10 @@ const syncDailyRecord = async (
     'syncQueue.writeDailyRecord',
     async () => {
       const recordToWrite = await resolveRecordForSyncTask(task, record, runtime);
+      if (!recordToWrite) {
+        return;
+      }
+
       const authority = evaluateDailyRecordClinicalAuthority(recordToWrite, {
         date: recordToWrite.date,
         phase: 'sync_publish',

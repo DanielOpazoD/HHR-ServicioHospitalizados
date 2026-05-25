@@ -1,12 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { PatientData } from '@/types/domain/patient';
-import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 import { restoreConsole, suppressConsole } from '@/tests/utils/consoleTestUtils';
+import {
+  buildPatient,
+  buildRecord,
+} from '@/tests/services/repositories/dailyRecordRepositoryWriteServiceFixtures';
 
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
   saveRecord: vi.fn(),
+  saveRecordStrict: vi.fn(record =>
+    Promise.resolve({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: [record.date],
+    })
+  ),
 }));
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
@@ -19,8 +29,12 @@ vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
 }));
 
 vi.mock('@/services/storage/sync', () => ({
+  ackDailyRecordSyncTask: vi.fn(),
   isRetryableSyncError: vi.fn(),
   queueSyncTask: vi.fn(),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn(),
+  releaseDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
+  renewDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
@@ -57,43 +71,18 @@ import {
 } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import {
   getRecordForDate as getRecordFromIndexedDB,
-  saveRecord as saveToIndexedDB,
+  saveRecordStrict as saveToIndexedDB,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import {
   saveRecordToFirestore,
   updateRecordPartial as updateRecordPartialToFirestore,
 } from '@/services/storage/firestore/firestoreRecordWrites';
-import { isRetryableSyncError, queueSyncTask } from '@/services/storage/sync';
-
-const buildRecord = (date: string): DailyRecord => ({
-  date,
-  beds: {},
-  discharges: [],
-  transfers: [],
-  cma: [],
-  lastUpdated: '2026-02-19T00:00:00.000Z',
-  nurses: [],
-  activeExtraBeds: [],
-});
-
-const buildPatient = (bedId: string, patientName: string): PatientData => ({
-  bedId,
-  isBlocked: false,
-  bedMode: 'Cama',
-  hasCompanionCrib: false,
-  patientName,
-  rut: '11.111.111-1',
-  age: '40a',
-  pathology: 'Diagnostico',
-  specialty: Specialty.MEDICINA,
-  status: PatientStatus.ESTABLE,
-  admissionDate: '2026-02-18',
-  hasWristband: false,
-  devices: [],
-  surgicalComplication: false,
-  isUPC: false,
-});
+import {
+  ackDailyRecordSyncTask,
+  isRetryableSyncError,
+  queueDailyRecordSyncTaskWithLocalRecord as queueSyncTask,
+} from '@/services/storage/sync';
 
 const expectSyncContract = (expectedVersion: string, changedPaths: string[]) =>
   expect.objectContaining({
@@ -113,6 +102,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
       pendingTasks: 1,
       maxPendingTasks: 192,
     });
+    vi.mocked(ackDailyRecordSyncTask).mockResolvedValue(true);
   });
 
   it('queues full record when save to Firestore fails with retryable error', async () => {
@@ -122,9 +112,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     const record = buildRecord('2026-02-19');
     await save(record);
 
-    expect(saveToIndexedDB).toHaveBeenCalled();
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({ date: '2026-02-19' }),
       expect.objectContaining({
         contexts: ['clinical', 'staffing', 'movements', 'handoff', 'metadata'],
@@ -196,7 +184,6 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     });
 
     expect(queueSyncTask).toHaveBeenCalledWith(
-      'UPDATE_DAILY_RECORD',
       expect.objectContaining({
         date: '2026-02-18',
         beds: expect.objectContaining({
@@ -248,12 +235,19 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     expect(result.savedLocally).toBe(true);
     expect(result.updatedRemotely).toBe(true);
     expect(saveToIndexedDB).toHaveBeenCalledWith(remote);
-    expect(saveToIndexedDB).toHaveBeenCalledWith(
+    expect(queueSyncTask).toHaveBeenCalledWith(
       expect.objectContaining({
+        date: '2026-02-18',
         beds: expect.objectContaining({
           R2: expect.objectContaining({ patientName: 'Paciente Nuevo' }),
         }),
-      })
+      }),
+      expect.objectContaining({
+        contexts: ['clinical'],
+        origin: 'direct_queue',
+        syncContract: expect.objectContaining({ changedPaths: ['beds.R2.patientName'] }),
+      }),
+      expect.objectContaining({ deferProcessing: true, holdForMs: expect.any(Number) })
     );
     expect(updateRecordPartialToFirestore).toHaveBeenCalledWith(
       '2026-02-18',
@@ -373,7 +367,7 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     );
   });
 
-  it('does not queue task when Firestore error is non-retryable', async () => {
+  it('does not add a retry queue task when Firestore error is non-retryable', async () => {
     vi.mocked(saveRecordToFirestore).mockRejectedValueOnce({
       code: 'permission-denied',
       message: 'Missing or insufficient permissions',
@@ -382,7 +376,10 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
 
     await save(buildRecord('2026-02-17'));
 
-    expect(queueSyncTask).not.toHaveBeenCalled();
+    expect(queueSyncTask).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(queueSyncTask).mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ origin: 'direct_queue' })
+    );
   });
 
   it('passes local lastUpdated as concurrency base for partial remote update', async () => {

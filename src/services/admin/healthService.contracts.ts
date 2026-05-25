@@ -53,6 +53,7 @@ export interface UserHealthStatus {
   retryingSyncTasks: number;
   syncOrphanedTasks?: number;
   oldestPendingAgeMs: number;
+  oldestDirectQueueAgeMs?: number;
   remoteSyncReason?: FirestoreSyncReason;
   versionUpdateReason?: VersionUpdateReason;
   localErrorCount: number;

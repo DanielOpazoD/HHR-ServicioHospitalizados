@@ -6,6 +6,14 @@ import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
   saveRecord: vi.fn(),
+  saveRecordStrict: vi.fn(record =>
+    Promise.resolve({
+      ok: true,
+      operation: 'save',
+      store: 'indexeddb',
+      dates: [record.date],
+    })
+  ),
 }));
 
 vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
@@ -18,8 +26,22 @@ vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
 }));
 
 vi.mock('@/services/storage/sync', () => ({
+  ackDailyRecordSyncTask: vi.fn().mockResolvedValue(true),
   isRetryableSyncError: vi.fn(),
-  queueSyncTask: vi.fn(),
+  queueSyncTask: vi.fn().mockResolvedValue({
+    accepted: true,
+    mode: 'created',
+    pendingTasks: 1,
+    maxPendingTasks: 1000,
+  }),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn().mockResolvedValue({
+    accepted: true,
+    mode: 'created',
+    pendingTasks: 1,
+    maxPendingTasks: 1000,
+  }),
+  releaseDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
+  renewDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
@@ -50,10 +72,11 @@ vi.mock('@/services/repositories/repositoryLoggers', () => ({
 
 import { updatePartialDetailed } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { getRecordForDate as getRecordFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
-import { saveRecord as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
+import { saveRecordStrict as saveToIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { updateRecordPartial as updateRecordPartialToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
+import { queueDailyRecordSyncTaskWithLocalRecord as queueSyncTask } from '@/services/storage/sync';
 
 const longText = (chars: number) => 'a'.repeat(chars);
 
@@ -109,7 +132,11 @@ describe('dailyRecordRepositoryWriteService field shrinkage telemetry', () => {
     });
 
     expect(result.outcome).toBe('clean');
-    expect(saveToIndexedDB).toHaveBeenCalled();
+    expect(queueSyncTask).toHaveBeenCalledWith(
+      expect.objectContaining({ date: '2026-02-11' }),
+      expect.objectContaining({ origin: 'direct_queue' }),
+      expect.objectContaining({ preOutboxHoldReason: 'awaiting_remote_ack' })
+    );
     expect(updateRecordPartialToFirestore).toHaveBeenCalled();
   });
 
