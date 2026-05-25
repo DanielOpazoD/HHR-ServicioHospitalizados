@@ -22,6 +22,7 @@ import {
 import {
   buildSyncQueueTelemetryFromRows,
   recordSyncQueueDecisionTelemetry,
+  recordSyncQueueStaleClaimTelemetry,
 } from '@/services/storage/sync/syncQueueTelemetryController';
 import { buildSyncTaskContract } from '@/services/storage/sync/syncTaskContractPolicy';
 import {
@@ -91,7 +92,10 @@ export const createSyncQueueEngine = ({
     if (!task.id) return;
     const claim = buildTaskClaim(task);
     if (!claim) return;
-    await store.updateClaimed(task.id, patch, claim);
+    const updated = await store.updateClaimed(task.id, patch, claim);
+    if (!updated) {
+      recordSyncQueueStaleClaimTelemetry(task, 'update');
+    }
   };
 
   const handleTaskFailure = async (task: SyncTask, error: unknown): Promise<void> => {
@@ -334,7 +338,10 @@ export const createSyncQueueEngine = ({
                 await transport.run(task);
                 const claim = buildTaskClaim(task);
                 if (claim) {
-                  await store.deleteClaimed(task.id, claim);
+                  const deleted = await store.deleteClaimed(task.id, claim);
+                  if (!deleted) {
+                    recordSyncQueueStaleClaimTelemetry(task, 'delete');
+                  }
                 }
               } catch (error) {
                 await handleTaskFailure(task, error);

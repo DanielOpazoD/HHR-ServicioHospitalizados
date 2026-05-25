@@ -121,6 +121,28 @@ export const recordSyncQueueDecisionTelemetry = (
   recordSyncQueueFailureTelemetry(task, errorMessage, status, context);
 };
 
+export const recordSyncQueueStaleClaimTelemetry = (
+  task: Pick<SyncTask, 'id' | 'type' | 'key' | 'contexts' | 'leaseOwner' | 'attemptId'>,
+  action: 'update' | 'delete'
+): void => {
+  recordOperationalTelemetry({
+    category: 'sync',
+    operation: 'sync_queue_stale_claim_noop',
+    status: 'degraded',
+    runtimeState: 'recoverable',
+    issues: ['Un worker de sincronizacion intento cerrar una tarea que ya no tenia reclamada.'],
+    context: {
+      action,
+      taskId: task.id,
+      type: task.type,
+      key: task.key,
+      contexts: task.contexts,
+      leaseOwner: task.leaseOwner,
+      attemptId: task.attemptId,
+    },
+  });
+};
+
 export const recordSyncQueueBudgetTelemetry = (
   telemetry: SyncQueueTelemetry,
   context: Record<string, unknown> = {}

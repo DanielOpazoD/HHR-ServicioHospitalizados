@@ -165,6 +165,7 @@
       { "id": "check:compatibility-import-governance", "group": "governance" },
       { "id": "check:schema-governance", "group": "governance" },
       { "id": "check:runtime-contracts", "group": "governance" },
+      { "id": "check:sync-invariants", "group": "governance" },
       { "id": "check:serverless-runtime-governance", "group": "governance" },
       { "id": "check:serverless-sensitive-coverage", "group": "governance" },
       { "id": "check:docs-drift", "group": "governance" },

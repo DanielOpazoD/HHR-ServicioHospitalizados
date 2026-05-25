@@ -12,7 +12,6 @@ export interface SyncQueueLeaseClaim {
 export interface SyncQueueStorePort {
   listAll(ownerKey?: string | null): Promise<SyncTask[]>;
   listRecent(limit: number, ownerKey?: string | null): Promise<SyncTask[]>;
-  listReadyPending(now: number, limit: number, ownerKey?: string | null): Promise<SyncTask[]>;
   claimReadyPending(
     now: number,
     limit: number,

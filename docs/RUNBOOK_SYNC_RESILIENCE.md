@@ -127,6 +127,12 @@ Regla de seguridad: nunca borrar tareas `PENDING`/`PROCESSING` desde soporte si 
 hay confirmación explícita de que la mutación ya está reflejada en Firestore y en
 la UI del usuario. Un lease vencido debe reintentarse; no es señal de descarte.
 
+Señal avanzada: `sync_queue_stale_claim_noop` indica que un worker intentó
+actualizar o cerrar una tarea que ya no tenía reclamada. Es recuperable y suele
+aparecer durante carreras multitab o recuperación de leases vencidos. Si se
+repite junto a `oldestPendingAgeMs` crítico, escalar con las operaciones recientes
+del outbox antes de limpiar cache local.
+
 ## Procedimiento 2.1: contaminación entre sesiones locales
 
 Síntomas:

@@ -40,4 +40,20 @@ describe('critical daily-record sync outbox contract', () => {
 
     expect(offenders.map(filePath => path.relative(process.cwd(), filePath))).toEqual([]);
   });
+
+  it('keeps the sync queue store port on atomic claim APIs only', () => {
+    const portSource = fs.readFileSync(
+      path.join(SERVICES_ROOT, 'storage/sync/syncQueuePorts.ts'),
+      'utf8'
+    );
+    const storeSource = fs.readFileSync(
+      path.join(SERVICES_ROOT, 'storage/sync/dexieSyncQueueStore.ts'),
+      'utf8'
+    );
+
+    expect(portSource).not.toContain('listReadyPending');
+    expect(storeSource).not.toContain('listReadyPending');
+    expect(portSource).toContain('claimReadyPending');
+    expect(storeSource).toContain('claimReadyPending');
+  });
 });

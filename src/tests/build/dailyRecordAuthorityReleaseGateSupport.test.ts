@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import { evaluateDailyRecordAuthorityReleaseGate } from '../../../scripts/dailyRecordAuthorityReleaseGateSupport.mjs';
 
 describe('daily record authority release gate support', () => {
@@ -38,5 +40,12 @@ describe('daily record authority release gate support', () => {
       ok: false,
       mode: 'client_only',
     });
+  });
+
+  it('documents the release-safe authority mode in the environment template', () => {
+    const envExample = fs.readFileSync(path.join(process.cwd(), '.env.example'), 'utf8');
+
+    expect(envExample).toContain('VITE_DAILY_RECORD_AUTHORITY_MODE=client_only');
+    expect(envExample).toContain('Release must use VITE_DAILY_RECORD_AUTHORITY_MODE=enforced');
   });
 });

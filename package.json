@@ -84,6 +84,7 @@
     "check:operational-runbooks": "node scripts/check-operational-runbooks.mjs",
     "check:runtime-contracts": "node scripts/check-runtime-contracts.mjs",
     "check:daily-record-authority-release-gate": "node scripts/check-daily-record-authority-release-gate.mjs",
+    "check:sync-invariants": "node scripts/check-sync-invariants.mjs",
     "check:serverless-runtime-governance": "node scripts/check-serverless-runtime-governance.mjs",
     "check:serverless-sensitive-coverage": "node scripts/check-serverless-sensitive-coverage.mjs",
     "check:netlify-functions-bundle": "node scripts/check-netlify-functions-bundle.mjs",

@@ -39,12 +39,6 @@ export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
     const tasks = await hospitalDB.syncQueue.orderBy('timestamp').reverse().toArray();
     return tasks.filter(task => matchesOwner(ownerKey, task.ownerKey)).slice(0, limit);
   },
-  async listReadyPending(now, limit, ownerKey) {
-    const tasks = await hospitalDB.syncQueue.where('status').equals('PENDING').sortBy('timestamp');
-    return tasks
-      .filter(task => matchesOwner(ownerKey, task.ownerKey) && (task.nextAttemptAt || 0) <= now)
-      .slice(0, limit);
-  },
   async claimReadyPending(
     now: number,
     limit: number,

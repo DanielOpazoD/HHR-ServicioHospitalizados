@@ -20,8 +20,13 @@ vi.mock('@/services/storage/firestore/firestoreShared', async importOriginal => 
   };
 });
 
+vi.mock('@/services/observability/operationalTelemetryRecorder', () => ({
+  recordOperationalTelemetry: vi.fn(),
+}));
+
 import { getDoc, setDoc } from 'firebase/firestore';
 import { hospitalDB } from '@/services/storage/indexedDBService';
+import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import {
   processSyncQueue,
   queueDailyRecordSyncTaskWithLocalRecord,
@@ -45,7 +50,7 @@ describe('sync queue transactional outbox and leases', () => {
   beforeEach(async () => {
     await hospitalDB.dailyRecords.clear();
     await hospitalDB.syncQueue.clear();
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
     vi.mocked(getDoc).mockResolvedValue({
       exists: () => false,
       data: () => undefined,
@@ -79,9 +84,9 @@ describe('sync queue transactional outbox and leases', () => {
   it('rolls back the outbox task when the local record write fails', async () => {
     const record = makeRecord('2025-01-17', '2025-01-17T10:00:00.000Z');
     const store = createDexieSyncQueueStore();
-    vi.spyOn(hospitalDB.dailyRecords, 'put').mockRejectedValueOnce(
-      new Error('record write failed')
-    );
+    const putSpy = vi
+      .spyOn(hospitalDB.dailyRecords, 'put')
+      .mockRejectedValueOnce(new Error('record write failed'));
 
     await expect(
       store.saveDailyRecordWithTask(record, {
@@ -97,12 +102,15 @@ describe('sync queue transactional outbox and leases', () => {
 
     await expect(hospitalDB.dailyRecords.get('2025-01-17')).resolves.toBeUndefined();
     await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
+    putSpy.mockRestore();
   });
 
   it('rolls back the local record when the outbox task write fails', async () => {
     const record = makeRecord('2025-01-18', '2025-01-18T10:00:00.000Z');
     const store = createDexieSyncQueueStore();
-    vi.spyOn(hospitalDB.syncQueue, 'add').mockRejectedValueOnce(new Error('queue write failed'));
+    const addSpy = vi
+      .spyOn(hospitalDB.syncQueue, 'add')
+      .mockRejectedValueOnce(new Error('queue write failed'));
 
     await expect(
       store.saveDailyRecordWithTask(record, {
@@ -118,6 +126,7 @@ describe('sync queue transactional outbox and leases', () => {
 
     await expect(hospitalDB.dailyRecords.get('2025-01-18')).resolves.toBeUndefined();
     await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
+    addSpy.mockRestore();
   });
 
   it('claims ready pending tasks with a durable lease so another worker cannot claim them', async () => {
@@ -215,5 +224,80 @@ describe('sync queue transactional outbox and leases', () => {
       attemptId: undefined,
     });
     expect((tasks[0].payload as DailyRecord).lastUpdated).toBe('v2');
+  });
+
+  it('records telemetry when a worker completion no longer owns the claimed task', async () => {
+    await queueSyncTask('UPDATE_DAILY_RECORD', makeRecord('2025-01-24', 'v1'));
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    vi.mocked(setDoc).mockImplementationOnce(async () => {
+      const [processingTask] = await hospitalDB.syncQueue
+        .where('status')
+        .equals('PROCESSING')
+        .toArray();
+      if (!processingTask?.id) {
+        throw new Error('Expected a processing task to be claimed before transport completes.');
+      }
+      await hospitalDB.syncQueue.update(processingTask.id, { leaseUntil: 1 });
+      await createDexieSyncQueueStore().claimReadyPending(Date.now(), 1, null, {
+        leaseOwner: 'worker-fresh',
+        leaseUntil: Date.now() + 30_000,
+        attemptId: 'attempt-fresh',
+      });
+    });
+
+    await processSyncQueue();
+
+    const [task] = await hospitalDB.syncQueue.toArray();
+    expect(task).toMatchObject({
+      status: 'PROCESSING',
+      leaseOwner: 'worker-fresh',
+      attemptId: 'attempt-fresh',
+    });
+    expect(recordOperationalTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: 'sync',
+        operation: 'sync_queue_stale_claim_noop',
+        status: 'degraded',
+        runtimeState: 'recoverable',
+        context: expect.objectContaining({
+          action: 'delete',
+          type: 'UPDATE_DAILY_RECORD',
+          key: 'daily:2025-01-24',
+        }),
+      })
+    );
+  });
+
+  it('processes an expired older lease before a newer pending mutation for the same record key', async () => {
+    await hospitalDB.syncQueue.add({
+      opId: 'old-expired',
+      type: 'UPDATE_DAILY_RECORD',
+      payload: makeRecord('2025-01-25', 'v1'),
+      timestamp: 1760000000000,
+      retryCount: 0,
+      status: 'PROCESSING',
+      key: 'daily:2025-01-25',
+      leaseOwner: 'stale-worker',
+      leaseUntil: 1760000000000 - 1,
+      attemptId: 'stale-attempt',
+    });
+    await hospitalDB.syncQueue.add({
+      opId: 'new-pending',
+      type: 'UPDATE_DAILY_RECORD',
+      payload: makeRecord('2025-01-25', 'v2'),
+      timestamp: 1760000000001,
+      retryCount: 0,
+      status: 'PENDING',
+      key: 'daily:2025-01-25',
+    });
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+
+    await processSyncQueue();
+
+    expect(vi.mocked(setDoc).mock.calls.map(call => (call[1] as DailyRecord).lastUpdated)).toEqual([
+      'v1',
+      'v2',
+    ]);
+    await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
   });
 });
