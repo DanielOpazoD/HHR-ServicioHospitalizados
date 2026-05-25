@@ -26,6 +26,7 @@ vi.mock('@/services/storage/sync', () => ({
   ackDailyRecordSyncTask: vi.fn(),
   isRetryableSyncError: vi.fn(),
   queueDailyRecordSyncTaskWithLocalRecord: vi.fn(),
+  releaseDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({

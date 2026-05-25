@@ -226,6 +226,7 @@ export const normalizeUserHealthStatus = (raw: Partial<UserHealthStatus>): UserH
   retryingSyncTasks: toNumber(raw.retryingSyncTasks),
   syncOrphanedTasks: toNumber(raw.syncOrphanedTasks),
   oldestPendingAgeMs: toNumber(raw.oldestPendingAgeMs),
+  oldestDirectQueueAgeMs: toNumber(raw.oldestDirectQueueAgeMs),
   remoteSyncReason: validRemoteSyncReasons.has(raw.remoteSyncReason as FirestoreSyncReason)
     ? raw.remoteSyncReason
     : undefined,

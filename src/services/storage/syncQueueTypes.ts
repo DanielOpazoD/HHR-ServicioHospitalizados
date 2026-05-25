@@ -27,6 +27,9 @@ export interface SyncTask {
   leaseUntil?: number;
   attemptId?: string;
   processingStartedAt?: number;
+  preOutboxHoldOwner?: string;
+  preOutboxHoldUntil?: number;
+  preOutboxHoldReason?: 'awaiting_remote_ack';
   contexts?: SyncDomainContext[];
   origin?: SyncTaskOrigin;
   recoveryPolicy?: string;
@@ -40,6 +43,7 @@ export interface SyncTaskContract {
   clinicalEpisodeKeys?: string[];
   changedPaths?: string[];
   mutationId?: string;
+  mutationIds?: string[];
   clientId?: string;
   tabId?: string;
 }

@@ -105,6 +105,7 @@ export const persistLocalAndAttemptRemoteSync = async ({
   expectedVersion,
   queueLocalBeforeRemote,
   ackLocalAfterRemote,
+  releaseLocalPreOutboxHold,
 }: {
   date: string;
   record: DailyRecord;
@@ -115,6 +116,7 @@ export const persistLocalAndAttemptRemoteSync = async ({
   expectedVersion?: string;
   queueLocalBeforeRemote?: () => Promise<SyncQueueEnqueueResult>;
   ackLocalAfterRemote?: () => Promise<void>;
+  releaseLocalPreOutboxHold?: () => Promise<void>;
 }): Promise<'continue' | 'return'> => {
   if (queueLocalBeforeRemote) {
     const outboxResult = await queueLocalBeforeRemote();
@@ -146,6 +148,7 @@ export const persistLocalAndAttemptRemoteSync = async ({
     return 'continue';
   } catch (err) {
     onRemoteFailure(err);
+    await releaseLocalPreOutboxHold?.();
     return applyRemoteRecovery(date, record, changedPaths, err, remoteState, expectedVersion);
   }
 };

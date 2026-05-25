@@ -4,10 +4,9 @@ import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts
 import { createBrowserSyncRuntime } from '@/services/storage/sync/browserSyncRuntime';
 import { createDexieSyncQueueStore } from '@/services/storage/sync/dexieSyncQueueStore';
 import { createFirestoreSyncTransport } from '@/services/storage/sync/firestoreSyncTransport';
-import {
-  createSyncQueueEngine,
-  type SyncQueueEnqueueResult,
-} from '@/services/storage/sync/syncQueueEngine';
+import { createDailyRecordSyncQueueActions } from '@/services/storage/sync/publicDailyRecordSyncQueueActions';
+import { createSyncQueueEngine } from '@/services/storage/sync/syncQueueEngine';
+import type { SyncQueueEnqueueResult } from '@/services/storage/sync/syncQueueEngineContracts';
 import type { SyncQueueEnqueueOptions } from '@/services/storage/sync/syncQueueEnqueuePolicy';
 import type { SyncQueueOperationSnapshot } from '@/services/storage/sync/syncQueueOperationSnapshot';
 import type { SyncQueueDomainMetrics } from '@/services/storage/sync/syncDomainPolicy';
@@ -15,7 +14,6 @@ import type { SyncQueueTelemetry } from '@/services/storage/sync/syncQueueTeleme
 import { classifySyncError } from '@/services/storage/syncErrorCatalog';
 import { createDomainObservability } from '@/services/observability/domainObservability';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
-import { recordSyncQueueAckFailure } from '@/services/storage/sync/syncQueueAckTelemetry';
 import {
   BASE_RETRY_DELAY_MS,
   MAX_RETRIES,
@@ -24,7 +22,6 @@ import {
   SYNC_QUEUE_MAX_PENDING_TASKS,
 } from '@/services/storage/sync/syncQueueOperationalBudgets';
 import { recordSyncQueueBudgetTelemetry } from '@/services/storage/sync/syncQueueTelemetryController';
-import { getSyncTaskKey } from '@/services/storage/sync/syncQueueTaskFactory';
 
 const syncObservability = createDomainObservability('sync', 'SyncQueue');
 const syncQueueStore = createDexieSyncQueueStore();
@@ -62,9 +59,11 @@ const buildUnavailableSyncQueueTelemetry = (error: unknown): SyncQueueTelemetry 
   retrying: 0,
   orphanedTasks: 0,
   oldestPendingAgeMs: 0,
+  oldestDirectQueueAgeMs: 0,
   batchSize: SYNC_QUEUE_BATCH_SIZE,
   pendingBudgetState: 'ok',
   oldestPendingBudgetState: 'ok',
+  directQueueBudgetState: 'ok',
   retryingBudgetState: 'ok',
   runtimeState: 'blocked',
   readState: 'unavailable',
@@ -82,6 +81,14 @@ const syncQueueEngine = createSyncQueueEngine({
   baseRetryDelayMs: BASE_RETRY_DELAY_MS,
   maxRetryDelayMs: MAX_RETRY_DELAY_MS,
 });
+
+export const { ackDailyRecordSyncTask, releaseDailyRecordPreOutboxHold } =
+  createDailyRecordSyncQueueActions({
+    ensureReady: ensureDbReady,
+    store: syncQueueStore,
+    getOwnerKey: getSyncOwnerKey,
+    logger: syncObservability.logger,
+  });
 
 export const recordSyncQueueOwnershipTelemetry = (
   operation: 'session_owner_changed' | 'session_owner_cleared',
@@ -302,28 +309,6 @@ export const queueDailyRecordSyncTaskWithLocalRecord = async (
       pendingTasks: 0,
       maxPendingTasks: SYNC_QUEUE_MAX_PENDING_TASKS,
     };
-  }
-};
-
-export const ackDailyRecordSyncTask = async (
-  record: DailyRecord,
-  syncContract?: SyncTask['syncContract']
-): Promise<boolean> => {
-  try {
-    await ensureDbReady();
-    const key = getSyncTaskKey('UPDATE_DAILY_RECORD', record);
-    return key
-      ? syncQueueStore.deletePendingByKey(
-          'UPDATE_DAILY_RECORD',
-          key,
-          getSyncOwnerKey(),
-          syncContract?.mutationId
-        )
-      : false;
-  } catch (error) {
-    syncObservability.logger.warn('Failed to ack daily record sync task', error);
-    recordSyncQueueAckFailure(record, syncContract, error);
-    return false;
   }
 };
 

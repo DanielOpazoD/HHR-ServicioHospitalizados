@@ -3,12 +3,11 @@ import type { ErrorSeverity } from '@/services/logging/errorLogTypes';
 import { logError } from '@/services/utils/errorService';
 import type { SyncTask } from '@/services/storage/syncQueueTypes';
 import type { SyncErrorCategory } from '@/services/storage/syncErrorCatalog';
+import type { SyncQueueLeaseClaim } from '@/services/storage/sync/syncQueuePorts';
 import type {
-  SyncQueueLeaseClaim,
-  SyncQueueStorePort,
-  SyncRuntimePort,
-  SyncTransportPort,
-} from '@/services/storage/sync/syncQueuePorts';
+  CreateSyncQueueEngineOptions,
+  SyncQueueEnqueueResult,
+} from '@/services/storage/sync/syncQueueEngineContracts';
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 import {
   buildSyncQueueDomainMetrics,
@@ -40,29 +39,12 @@ import {
 } from '@/services/storage/sync/syncQueueOperationSnapshot';
 import {
   countActiveSyncTasks,
+  resolvePreOutboxHoldState,
   resolveSyncTaskNextAttemptAt,
   type SyncQueueEnqueueOptions,
 } from '@/services/storage/sync/syncQueueEnqueuePolicy';
 
 const SYNC_QUEUE_LEASE_MS = 30_000;
-
-interface CreateSyncQueueEngineOptions {
-  store: SyncQueueStorePort;
-  runtime: SyncRuntimePort;
-  transport: SyncTransportPort;
-  batchSize: number;
-  maxPendingTasks: number;
-  maxRetries: number;
-  baseRetryDelayMs: number;
-  maxRetryDelayMs: number;
-}
-
-export interface SyncQueueEnqueueResult {
-  accepted: boolean;
-  mode: 'created' | 'reused' | 'rejected_backpressure' | 'enqueue_failed';
-  pendingTasks: number;
-  maxPendingTasks: number;
-}
 
 export const createSyncQueueEngine = ({
   store,
@@ -195,6 +177,7 @@ export const createSyncQueueEngine = ({
           syncContract: mergedSyncContract,
           ...clearSyncTaskRuntimeState(),
           nextAttemptAt: resolveSyncTaskNextAttemptAt(now, options),
+          ...resolvePreOutboxHoldState(now, options),
         });
         if (!options.deferProcessing) {
           triggerProcessing();
@@ -233,6 +216,7 @@ export const createSyncQueueEngine = ({
       syncContract,
       ...clearSyncTaskRuntimeState(),
       nextAttemptAt: resolveSyncTaskNextAttemptAt(now, options),
+      ...resolvePreOutboxHoldState(now, options),
     });
     if (!options.deferProcessing) {
       triggerProcessing();
@@ -289,6 +273,7 @@ export const createSyncQueueEngine = ({
       syncContract,
       ...clearSyncTaskRuntimeState(),
       nextAttemptAt: resolveSyncTaskNextAttemptAt(now, options),
+      ...resolvePreOutboxHoldState(now, options),
     });
 
     if (!options.deferProcessing) {

@@ -18,6 +18,7 @@ import { buildDailyRecordSyncContract } from '@/services/storage/sync/syncTaskCo
 import {
   ackDailyRecordSyncTask,
   queueDailyRecordSyncTaskWithLocalRecord,
+  releaseDailyRecordPreOutboxHold,
 } from '@/services/storage/sync';
 import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordPersistencePreparation';
@@ -36,12 +37,11 @@ import {
   type RemoteWriteState,
 } from '@/services/repositories/dailyRecordWriteState';
 import { persistLocalAndAttemptRemoteSync } from '@/services/repositories/dailyRecordRemotePersistenceController';
+import { buildPreOutboxRemoteAckOptions } from '@/services/repositories/dailyRecordPreOutboxRemoteAckPolicy';
 import { dailyRecordWriteLogger } from '@/services/repositories/repositoryLoggers';
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
 import { classifyConflictChangedContexts } from '@/services/repositories/conflictResolutionDomainPolicy';
-
-const PRE_OUTBOX_DIRECT_WRITE_HOLD_MS = 5_000;
 
 const runRemoteSaveIntegrityCheck = async (date: string, record: DailyRecord): Promise<void> => {
   if (!isFirestoreEnabled()) return;
@@ -212,9 +212,11 @@ export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: st
           origin: 'direct_queue',
           syncContract,
         },
-        { deferProcessing: true, holdForMs: PRE_OUTBOX_DIRECT_WRITE_HOLD_MS }
+        buildPreOutboxRemoteAckOptions(syncContract)
       ),
     ackLocalAfterRemote: () => ackDailyRecordSyncTask(validatedRecord, syncContract).then(() => {}),
+    releaseLocalPreOutboxHold: () =>
+      releaseDailyRecordPreOutboxHold(validatedRecord, syncContract).then(() => {}),
     onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(
         `Firestore sync failed for ${command.date}; data persisted in IndexedDB`,
@@ -362,9 +364,11 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
           origin: 'direct_queue',
           syncContract,
         },
-        { deferProcessing: true, holdForMs: PRE_OUTBOX_DIRECT_WRITE_HOLD_MS }
+        buildPreOutboxRemoteAckOptions(syncContract)
       ),
     ackLocalAfterRemote: () => ackDailyRecordSyncTask(validatedRecord, syncContract).then(() => {}),
+    releaseLocalPreOutboxHold: () =>
+      releaseDailyRecordPreOutboxHold(validatedRecord, syncContract).then(() => {}),
     onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(`Firestore partial update failed for ${command.date}`, err);
     },

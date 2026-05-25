@@ -358,6 +358,7 @@ export const buildUserHealthStatus = (options: BuildUserHealthStatusOptions): Us
   retryingSyncTasks: options.syncTelemetry.retrying,
   syncOrphanedTasks: options.syncTelemetry.orphanedTasks || 0,
   oldestPendingAgeMs: options.syncTelemetry.oldestPendingAgeMs,
+  oldestDirectQueueAgeMs: options.syncTelemetry.oldestDirectQueueAgeMs || 0,
   remoteSyncReason: options.remoteSyncReason,
   versionUpdateReason: options.versionUpdateReason,
   localErrorCount: options.localErrorCount,

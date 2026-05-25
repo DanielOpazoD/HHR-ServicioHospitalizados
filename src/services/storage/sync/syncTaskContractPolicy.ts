@@ -83,6 +83,20 @@ const mergeUnique = (
   return merged.length > 0 ? merged : undefined;
 };
 
+const mergeMutationIds = (
+  existing: SyncTaskContract | undefined,
+  next: SyncTaskContract | undefined
+): string[] | undefined => {
+  const values = [
+    ...(existing?.mutationIds || []),
+    existing?.mutationId,
+    ...(next?.mutationIds || []),
+    next?.mutationId,
+  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+  const merged = Array.from(new Set(values));
+  return merged.length > 1 ? merged : undefined;
+};
+
 export const mergeSyncTaskContracts = (
   existing: SyncTaskContract | undefined,
   next: SyncTaskContract | undefined
@@ -97,5 +111,6 @@ export const mergeSyncTaskContracts = (
     baseRevision: next.baseRevision ?? existing.baseRevision,
     changedPaths: mergeUnique(existing.changedPaths, next.changedPaths),
     clinicalEpisodeKeys: mergeUnique(existing.clinicalEpisodeKeys, next.clinicalEpisodeKeys),
+    mutationIds: mergeMutationIds(existing, next),
   };
 };

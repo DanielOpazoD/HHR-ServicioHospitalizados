@@ -11,6 +11,10 @@ const matchesOwner = (ownerKey: string | null | undefined, taskOwnerKey?: string
   ownerKey ? taskOwnerKey === ownerKey || !taskOwnerKey : !taskOwnerKey;
 
 const isReadyForClaim = (task: SyncTask, now: number): boolean => {
+  if ((task.preOutboxHoldUntil || 0) > now) {
+    return false;
+  }
+
   if ((task.nextAttemptAt || 0) > now) {
     return false;
   }
@@ -124,6 +128,27 @@ export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
         return false;
       }
       await hospitalDB.syncQueue.delete(existing.id);
+      return true;
+    });
+  },
+  async releasePreOutboxHoldByKey(type, key, ownerKey, mutationId) {
+    return hospitalDB.transaction('rw', hospitalDB.syncQueue, async () => {
+      const existing = (await hospitalDB.syncQueue.where('type').equals(type).toArray()).find(
+        task =>
+          matchesOwner(ownerKey, task.ownerKey) &&
+          task.key === key &&
+          task.status === 'PENDING' &&
+          matchesMutation(task, mutationId)
+      );
+      if (!existing?.id) {
+        return false;
+      }
+      await hospitalDB.syncQueue.update(existing.id, {
+        nextAttemptAt: 0,
+        preOutboxHoldOwner: undefined,
+        preOutboxHoldUntil: undefined,
+        preOutboxHoldReason: undefined,
+      });
       return true;
     });
   },

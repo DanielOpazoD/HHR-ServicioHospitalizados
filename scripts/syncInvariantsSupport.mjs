@@ -42,6 +42,10 @@ export const evaluateSyncInvariants = root => {
     root,
     'src/services/repositories/dailyRecordRepositoryWriteService.ts'
   );
+  const preOutboxRemoteAckPolicy = readText(
+    root,
+    'src/services/repositories/dailyRecordPreOutboxRemoteAckPolicy.ts'
+  );
   const firestoreWrites = readText(root, 'src/services/storage/firestore/firestoreRecordWrites.ts');
   const telemetry = readText(root, 'src/services/storage/sync/syncQueueTelemetryController.ts');
   const envExample = readText(root, '.env.example');
@@ -104,14 +108,18 @@ export const evaluateSyncInvariants = root => {
       'pre-outbox-direct-write-ack',
       repositoryWrite.includes('queueLocalBeforeRemote') &&
         repositoryWrite.includes('ackLocalAfterRemote') &&
+        repositoryWrite.includes('releaseLocalPreOutboxHold') &&
         publicQueue.includes('ackDailyRecordSyncTask') &&
+        publicQueue.includes('releaseDailyRecordPreOutboxHold') &&
         engine.includes('deferProcessing') &&
         engine.includes('resolveSyncTaskNextAttemptAt') &&
         enqueuePolicy.includes('holdForMs') &&
-        repositoryWrite.includes('PRE_OUTBOX_DIRECT_WRITE_HOLD_MS'),
+        preOutboxRemoteAckPolicy.includes('PRE_OUTBOX_DIRECT_WRITE_HOLD_MS') &&
+        preOutboxRemoteAckPolicy.includes("preOutboxHoldReason: 'awaiting_remote_ack'"),
       'Repository writes must prequeue local outbox tasks transactionally, hold/defer processing, and ack them after confirmed remote success.',
       [
         'src/services/repositories/dailyRecordRepositoryWriteService.ts',
+        'src/services/repositories/dailyRecordPreOutboxRemoteAckPolicy.ts',
         'src/services/storage/sync/publicSyncQueue.ts',
         'src/services/storage/sync/syncQueueEngine.ts',
       ]

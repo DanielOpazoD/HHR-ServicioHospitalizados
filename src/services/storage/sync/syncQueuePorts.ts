@@ -31,6 +31,12 @@ export interface SyncQueueStorePort {
     ownerKey?: string | null,
     mutationId?: string
   ): Promise<boolean>;
+  releasePreOutboxHoldByKey(
+    type: SyncTask['type'],
+    key: string,
+    ownerKey?: string | null,
+    mutationId?: string
+  ): Promise<boolean>;
   update(taskId: number, patch: Partial<SyncTask>): Promise<void>;
   updateClaimed(
     taskId: number,

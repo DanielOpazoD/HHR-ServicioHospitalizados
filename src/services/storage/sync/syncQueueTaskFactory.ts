@@ -20,6 +20,9 @@ export const clearSyncTaskRuntimeState = () => ({
   leaseUntil: undefined,
   attemptId: undefined,
   processingStartedAt: undefined,
+  preOutboxHoldOwner: undefined,
+  preOutboxHoldUntil: undefined,
+  preOutboxHoldReason: undefined,
 });
 
 export const getSyncTaskKey = (type: SyncTask['type'], payload: unknown): string | undefined => {
@@ -41,6 +44,7 @@ export const sanitizeSyncContractForOperationalSnapshot = (
     baseRevision: syncContract.baseRevision,
     changedPaths: syncContract.changedPaths,
     mutationId: syncContract.mutationId,
+    mutationIds: syncContract.mutationIds,
     clientId: syncContract.clientId,
     tabId: syncContract.tabId,
   };
