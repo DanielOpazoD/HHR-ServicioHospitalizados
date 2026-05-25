@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { PatientData } from '@/types/domain/patient';
-import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+import { PatientStatus } from '@/types/domain/patientClassification';
+import {
+  buildPatient,
+  buildRecord,
+} from '@/tests/services/repositories/dailyRecordRepositoryWriteServiceFixtures';
 
 vi.mock('@/services/storage/indexeddb/indexedDbRecordService', () => ({
   getRecordForDate: vi.fn(),
@@ -83,35 +86,6 @@ import {
 } from '@/services/storage/firestore/firestoreRecordWrites';
 import { queueDailyRecordSyncTaskWithLocalRecord as queueSyncTask } from '@/services/storage/sync';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
-
-const buildRecord = (date: string): DailyRecord => ({
-  date,
-  beds: {},
-  discharges: [],
-  transfers: [],
-  cma: [],
-  lastUpdated: '2026-02-19T00:00:00.000Z',
-  nurses: [],
-  activeExtraBeds: [],
-});
-
-const buildPatient = (bedId: string, patientName: string): PatientData => ({
-  bedId,
-  isBlocked: false,
-  bedMode: 'Cama',
-  hasCompanionCrib: false,
-  patientName,
-  rut: '11.111.111-1',
-  age: '40a',
-  pathology: 'Diagnostico',
-  specialty: Specialty.MEDICINA,
-  status: PatientStatus.ESTABLE,
-  admissionDate: '2026-02-18',
-  hasWristband: false,
-  devices: [],
-  surgicalComplication: false,
-  isUPC: false,
-});
 
 describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
   beforeEach(() => {
