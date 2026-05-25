@@ -27,7 +27,10 @@ import {
   queueDailyRecordSyncTaskWithLocalRecord,
   queueSyncTask,
   releaseDailyRecordPreOutboxHold,
+  renewDailyRecordPreOutboxHold,
 } from '@/services/storage/sync';
+import { DAILY_RECORD_STORE_CHANGED_EVENT } from '@/services/storage/indexeddb/indexedDbRecordEvents';
+import { STORAGE_KEY } from '@/services/storage/localstorage/localStorageCore';
 import { resetSyncMutationIdentityForTests } from '@/services/storage/sync/syncMutationIdentity';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
@@ -45,6 +48,9 @@ const makeRecord = (date: string, marker: string): DailyRecord => ({
 describe('storage/sync pre-outbox guarantees', () => {
   beforeEach(async () => {
     await hospitalDB.syncQueue.clear();
+    await hospitalDB.dailyRecords.clear();
+    localStorage.clear();
+    window.__HHR_E2E_OVERRIDE__ = {};
     resetSyncMutationIdentityForTests();
     vi.clearAllMocks();
     Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
@@ -196,6 +202,86 @@ describe('storage/sync pre-outbox guarantees', () => {
     await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
   });
 
+  it('renews an active pre-outbox remote-ack hold only for the owning mutation', async () => {
+    const record = makeRecord('2025-01-22', '2025-01-22T10:00:00.000Z');
+    const syncContract = {
+      expectedVersion: '2025-01-22T09:55:00.000Z',
+      changedPaths: ['beds.R1.pathology'],
+      mutationId: 'mutation-renewable-hold',
+      tabId: 'tab-direct-writer',
+    };
+    const nowSpy = vi.spyOn(Date, 'now');
+    nowSpy.mockReturnValue(1_000);
+
+    await queueDailyRecordSyncTaskWithLocalRecord(
+      record,
+      {
+        contexts: ['clinical'],
+        origin: 'direct_queue',
+        syncContract,
+      },
+      {
+        deferProcessing: true,
+        holdForMs: 5_000,
+        preOutboxHoldOwner: 'tab-direct-writer',
+        preOutboxHoldReason: 'awaiting_remote_ack',
+      }
+    );
+
+    nowSpy.mockReturnValue(2_000);
+    await expect(renewDailyRecordPreOutboxHold(record, syncContract, 5_000)).resolves.toBe(true);
+
+    const [renewedTask] = await hospitalDB.syncQueue.toArray();
+    expect(renewedTask).toMatchObject({
+      preOutboxHoldState: 'AWAITING_REMOTE_ACK',
+      preOutboxHoldOwner: 'tab-direct-writer',
+      preOutboxHoldHeartbeatAt: 2_000,
+      preOutboxHoldUntil: 7_000,
+      nextAttemptAt: 7_000,
+    });
+
+    nowSpy.mockRestore();
+  });
+
+  it('does not renew an expired pre-outbox hold so normal recovery can claim it', async () => {
+    const record = makeRecord('2025-01-23', '2025-01-23T10:00:00.000Z');
+    const syncContract = {
+      expectedVersion: '2025-01-23T09:55:00.000Z',
+      changedPaths: ['beds.R1.pathology'],
+      mutationId: 'mutation-expired-hold',
+      tabId: 'tab-direct-writer',
+    };
+    const nowSpy = vi.spyOn(Date, 'now');
+    nowSpy.mockReturnValue(1_000);
+
+    await queueDailyRecordSyncTaskWithLocalRecord(
+      record,
+      {
+        contexts: ['clinical'],
+        origin: 'direct_queue',
+        syncContract,
+      },
+      {
+        deferProcessing: true,
+        holdForMs: 5_000,
+        preOutboxHoldOwner: 'tab-direct-writer',
+        preOutboxHoldReason: 'awaiting_remote_ack',
+      }
+    );
+
+    nowSpy.mockReturnValue(10_000);
+    await expect(renewDailyRecordPreOutboxHold(record, syncContract, 5_000)).resolves.toBe(false);
+
+    nowSpy.mockRestore();
+
+    const { processSyncQueue } = await import('@/services/storage/sync');
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    await processSyncQueue();
+
+    expect(setDoc).toHaveBeenCalledTimes(1);
+    await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
+  });
+
   it('drains the outbox without rewriting when remote already has the same mutationId', async () => {
     const record = makeRecord('2025-01-19', '2025-01-19T10:00:00.000Z');
     vi.mocked(getDoc).mockResolvedValue({
@@ -227,5 +313,41 @@ describe('storage/sync pre-outbox guarantees', () => {
 
     expect(setDoc).not.toHaveBeenCalled();
     await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
+  });
+
+  it('emits the same local persistence signals as strict record saves', async () => {
+    const record = makeRecord('2025-01-21', '2025-01-21T10:00:00.000Z');
+    const storeChanges: Array<{ operation: string; dates?: string[] }> = [];
+    const onStoreChange = (event: Event) => {
+      storeChanges.push((event as CustomEvent<{ operation: string; dates?: string[] }>).detail);
+    };
+
+    window.addEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, onStoreChange);
+    try {
+      const result = await queueDailyRecordSyncTaskWithLocalRecord(
+        record,
+        {
+          contexts: ['clinical'],
+          origin: 'direct_queue',
+          syncContract: {
+            expectedVersion: '2025-01-21T09:55:00.000Z',
+            changedPaths: ['beds.R1.pathology'],
+            mutationId: 'mutation-local-signals',
+          },
+        },
+        { deferProcessing: true }
+      );
+
+      expect(result).toMatchObject({ accepted: true, mode: 'created' });
+      expect(storeChanges).toContainEqual({ operation: 'save', dates: ['2025-01-21'] });
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')).toMatchObject({
+        '2025-01-21': { lastUpdated: '2025-01-21T10:00:00.000Z' },
+      });
+      expect(window.__HHR_E2E_OVERRIDE__?.['2025-01-21']).toMatchObject({
+        lastUpdated: '2025-01-21T10:00:00.000Z',
+      });
+    } finally {
+      window.removeEventListener(DAILY_RECORD_STORE_CHANGED_EVENT, onStoreChange);
+    }
   });
 });

@@ -24,8 +24,10 @@ export const resolvePreOutboxHoldState = (
   }
 
   return {
+    preOutboxHoldState: 'AWAITING_REMOTE_ACK',
     preOutboxHoldOwner: options.preOutboxHoldOwner,
     preOutboxHoldReason: options.preOutboxHoldReason,
     preOutboxHoldUntil: now + options.holdForMs,
+    preOutboxHoldHeartbeatAt: now,
   };
 };

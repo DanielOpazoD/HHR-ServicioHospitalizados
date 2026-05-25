@@ -4,8 +4,11 @@ import type {
   SyncQueueTaskWriteMode,
 } from '@/services/storage/sync/syncQueuePorts';
 import { hospitalDB } from '@/services/storage/indexeddb/indexedDbCore';
+import { dispatchDailyRecordStoreChanged } from '@/services/storage/indexeddb/indexedDbRecordEvents';
+import { localPersistence } from '@/services/storage/localpersistence/localPersistenceService';
 import type { DailyRecord } from '@/services/storage/storageDailyRecordContracts';
 import type { SyncTask } from '@/services/storage/syncQueueTypes';
+import { isE2ERuntimeEnabled } from '@/shared/runtime/e2eRuntime';
 
 const matchesOwner = (ownerKey: string | null | undefined, taskOwnerKey?: string): boolean =>
   ownerKey ? taskOwnerKey === ownerKey || !taskOwnerKey : !taskOwnerKey;
@@ -36,6 +39,17 @@ const matchesClaim = (task: SyncTask | undefined, claim: SyncQueueLeaseClaim): b
 
 const matchesMutation = (task: SyncTask, mutationId?: string): boolean =>
   !mutationId || task.syncContract?.mutationId === mutationId;
+
+const mirrorTransactionalDailyRecordWrite = (record: DailyRecord): void => {
+  if (isE2ERuntimeEnabled() && typeof window !== 'undefined') {
+    localPersistence.records.save(record);
+    if (window.__HHR_E2E_OVERRIDE__) {
+      window.__HHR_E2E_OVERRIDE__[record.date] = record;
+    }
+  }
+
+  dispatchDailyRecordStoreChanged({ operation: 'save', dates: [record.date] });
+};
 
 export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
   async listAll(ownerKey) {
@@ -92,28 +106,36 @@ export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
     record: DailyRecord,
     task: SyncTask
   ): Promise<SyncQueueTaskWriteMode> {
-    return hospitalDB.transaction('rw', hospitalDB.dailyRecords, hospitalDB.syncQueue, async () => {
-      await hospitalDB.dailyRecords.put(record);
+    const mode = await hospitalDB.transaction(
+      'rw',
+      hospitalDB.dailyRecords,
+      hospitalDB.syncQueue,
+      async () => {
+        await hospitalDB.dailyRecords.put(record);
 
-      if (task.key) {
-        const existing = (
-          await hospitalDB.syncQueue.where('type').equals(task.type).toArray()
-        ).find(
-          candidate =>
-            matchesOwner(task.ownerKey, candidate.ownerKey) &&
-            candidate.key === task.key &&
-            candidate.status === 'PENDING'
-        );
+        if (task.key) {
+          const existing = (
+            await hospitalDB.syncQueue.where('type').equals(task.type).toArray()
+          ).find(
+            candidate =>
+              matchesOwner(task.ownerKey, candidate.ownerKey) &&
+              candidate.key === task.key &&
+              candidate.status === 'PENDING'
+          );
 
-        if (existing?.id) {
-          await hospitalDB.syncQueue.put({ ...existing, ...task, id: existing.id });
-          return 'reused';
+          if (existing?.id) {
+            await hospitalDB.syncQueue.put({ ...existing, ...task, id: existing.id });
+            return 'reused';
+          }
         }
-      }
 
-      await hospitalDB.syncQueue.add(task);
-      return 'created';
-    });
+        await hospitalDB.syncQueue.add(task);
+        return 'created';
+      }
+    );
+
+    mirrorTransactionalDailyRecordWrite(record);
+    return mode;
   },
   async deletePendingByKey(type, key, ownerKey, mutationId) {
     return hospitalDB.transaction('rw', hospitalDB.syncQueue, async () => {
@@ -145,9 +167,35 @@ export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
       }
       await hospitalDB.syncQueue.update(existing.id, {
         nextAttemptAt: 0,
+        preOutboxHoldState: undefined,
         preOutboxHoldOwner: undefined,
         preOutboxHoldUntil: undefined,
         preOutboxHoldReason: undefined,
+        preOutboxHoldHeartbeatAt: undefined,
+      });
+      return true;
+    });
+  },
+  async renewPreOutboxHoldByKey(type, key, ownerKey, mutationId, holdOwner, now, holdForMs) {
+    return hospitalDB.transaction('rw', hospitalDB.syncQueue, async () => {
+      const existing = (await hospitalDB.syncQueue.where('type').equals(type).toArray()).find(
+        task =>
+          matchesOwner(ownerKey, task.ownerKey) &&
+          task.key === key &&
+          task.status === 'PENDING' &&
+          task.preOutboxHoldState === 'AWAITING_REMOTE_ACK' &&
+          task.preOutboxHoldOwner === holdOwner &&
+          (task.preOutboxHoldUntil || 0) > now &&
+          matchesMutation(task, mutationId)
+      );
+      if (!existing?.id) {
+        return false;
+      }
+      const nextHoldUntil = now + holdForMs;
+      await hospitalDB.syncQueue.update(existing.id, {
+        nextAttemptAt: nextHoldUntil,
+        preOutboxHoldUntil: nextHoldUntil,
+        preOutboxHoldHeartbeatAt: now,
       });
       return true;
     });

@@ -47,9 +47,22 @@ vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
 }));
 
 vi.mock('@/services/storage/sync', () => ({
+  ackDailyRecordSyncTask: vi.fn().mockResolvedValue(true),
   isRetryableSyncError: vi.fn(() => false),
-  queueSyncTask: vi.fn().mockResolvedValue({ accepted: true }),
-  queueDailyRecordSyncTaskWithLocalRecord: vi.fn().mockResolvedValue({ accepted: true }),
+  queueSyncTask: vi.fn().mockResolvedValue({
+    accepted: true,
+    mode: 'created',
+    pendingTasks: 1,
+    maxPendingTasks: 1000,
+  }),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn().mockResolvedValue({
+    accepted: true,
+    mode: 'created',
+    pendingTasks: 1,
+    maxPendingTasks: 1000,
+  }),
+  releaseDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
+  renewDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({

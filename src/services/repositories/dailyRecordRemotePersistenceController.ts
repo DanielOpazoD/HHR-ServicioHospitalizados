@@ -95,6 +95,27 @@ const applyRemoteRecovery = async (
   return recovery.status === 'auto_merged' ? 'return' : 'continue';
 };
 
+const runRemoteWriteWithOptionalPreOutboxRenewal = async (
+  remoteWrite: () => Promise<void>,
+  renewLocalPreOutboxHold?: () => Promise<void>,
+  renewIntervalMs?: number
+): Promise<void> => {
+  if (!renewLocalPreOutboxHold || !renewIntervalMs || renewIntervalMs <= 0) {
+    await remoteWrite();
+    return;
+  }
+
+  const intervalId = globalThis.setInterval(() => {
+    renewLocalPreOutboxHold().catch(() => undefined);
+  }, renewIntervalMs);
+
+  try {
+    await remoteWrite();
+  } finally {
+    globalThis.clearInterval(intervalId);
+  }
+};
+
 export const persistLocalAndAttemptRemoteSync = async ({
   date,
   record,
@@ -106,6 +127,8 @@ export const persistLocalAndAttemptRemoteSync = async ({
   queueLocalBeforeRemote,
   ackLocalAfterRemote,
   releaseLocalPreOutboxHold,
+  renewLocalPreOutboxHold,
+  renewLocalPreOutboxHoldEveryMs,
 }: {
   date: string;
   record: DailyRecord;
@@ -117,6 +140,8 @@ export const persistLocalAndAttemptRemoteSync = async ({
   queueLocalBeforeRemote?: () => Promise<SyncQueueEnqueueResult>;
   ackLocalAfterRemote?: () => Promise<void>;
   releaseLocalPreOutboxHold?: () => Promise<void>;
+  renewLocalPreOutboxHold?: () => Promise<void>;
+  renewLocalPreOutboxHoldEveryMs?: number;
 }): Promise<'continue' | 'return'> => {
   if (queueLocalBeforeRemote) {
     const outboxResult = await queueLocalBeforeRemote();
@@ -142,7 +167,11 @@ export const persistLocalAndAttemptRemoteSync = async ({
   }
 
   try {
-    await remoteWrite();
+    await runRemoteWriteWithOptionalPreOutboxRenewal(
+      remoteWrite,
+      renewLocalPreOutboxHold,
+      renewLocalPreOutboxHoldEveryMs
+    );
     await ackLocalAfterRemote?.();
     markRemoteWriteSucceeded(remoteState);
     return 'continue';

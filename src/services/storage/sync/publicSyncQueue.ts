@@ -82,13 +82,16 @@ const syncQueueEngine = createSyncQueueEngine({
   maxRetryDelayMs: MAX_RETRY_DELAY_MS,
 });
 
-export const { ackDailyRecordSyncTask, releaseDailyRecordPreOutboxHold } =
-  createDailyRecordSyncQueueActions({
-    ensureReady: ensureDbReady,
-    store: syncQueueStore,
-    getOwnerKey: getSyncOwnerKey,
-    logger: syncObservability.logger,
-  });
+export const {
+  ackDailyRecordSyncTask,
+  releaseDailyRecordPreOutboxHold,
+  renewDailyRecordPreOutboxHold,
+} = createDailyRecordSyncQueueActions({
+  ensureReady: ensureDbReady,
+  store: syncQueueStore,
+  getOwnerKey: getSyncOwnerKey,
+  logger: syncObservability.logger,
+});
 
 export const recordSyncQueueOwnershipTelemetry = (
   operation: 'session_owner_changed' | 'session_owner_cleared',

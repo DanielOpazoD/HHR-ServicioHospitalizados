@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { createRemoteWriteState } from '@/services/repositories/dailyRecordWriteState';
 
@@ -41,6 +41,10 @@ describe('dailyRecordRemotePersistenceController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     isFirestoreEnabledMock.mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('persists locally and skips remote write when Firestore is disabled', async () => {
@@ -129,6 +133,51 @@ describe('dailyRecordRemotePersistenceController', () => {
     expect(remoteWrite).toHaveBeenCalledTimes(1);
     expect(ackLocalAfterRemote).toHaveBeenCalledTimes(1);
     expect(state.consistencyState).toBe('persisted_and_synced');
+  });
+
+  it('renews the pre-outbox hold while a direct remote write is still in flight', async () => {
+    vi.useFakeTimers();
+    const state = createRemoteWriteState();
+    const queueLocalBeforeRemote = vi.fn().mockResolvedValue({
+      accepted: true,
+      mode: 'created',
+      pendingTasks: 1,
+      maxPendingTasks: 192,
+    });
+    const ackLocalAfterRemote = vi.fn().mockResolvedValue(undefined);
+    const renewLocalPreOutboxHold = vi.fn().mockResolvedValue(undefined);
+    let resolveRemoteWrite: (() => void) | undefined;
+    const remoteWrite = vi.fn(
+      () =>
+        new Promise<void>(resolve => {
+          resolveRemoteWrite = resolve;
+        })
+    );
+
+    const pending = persistLocalAndAttemptRemoteSync({
+      date: '2026-05-23',
+      record: buildRecord('2026-05-23'),
+      changedPaths: ['*'],
+      remoteState: state,
+      remoteWrite,
+      onRemoteFailure: vi.fn(),
+      expectedVersion: '2026-05-23T10:00:00.000Z',
+      queueLocalBeforeRemote,
+      ackLocalAfterRemote,
+      renewLocalPreOutboxHold,
+      renewLocalPreOutboxHoldEveryMs: 2_000,
+    });
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(renewLocalPreOutboxHold).toHaveBeenCalledTimes(1);
+
+    resolveRemoteWrite?.();
+    await pending;
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(remoteWrite).toHaveBeenCalledTimes(1);
+    expect(ackLocalAfterRemote).toHaveBeenCalledTimes(1);
+    expect(renewLocalPreOutboxHold).toHaveBeenCalledTimes(1);
   });
 
   it('blocks the remote write when transactional outbox preflight is rejected', async () => {

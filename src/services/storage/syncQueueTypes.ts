@@ -27,9 +27,11 @@ export interface SyncTask {
   leaseUntil?: number;
   attemptId?: string;
   processingStartedAt?: number;
+  preOutboxHoldState?: 'AWAITING_REMOTE_ACK';
   preOutboxHoldOwner?: string;
   preOutboxHoldUntil?: number;
   preOutboxHoldReason?: 'awaiting_remote_ack';
+  preOutboxHoldHeartbeatAt?: number;
   contexts?: SyncDomainContext[];
   origin?: SyncTaskOrigin;
   recoveryPolicy?: string;

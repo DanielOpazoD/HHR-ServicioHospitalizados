@@ -19,6 +19,11 @@ export interface SyncQueueOperationSnapshot {
   leaseUntil?: SyncTask['leaseUntil'];
   attemptId?: SyncTask['attemptId'];
   processingStartedAt?: SyncTask['processingStartedAt'];
+  preOutboxHoldState?: SyncTask['preOutboxHoldState'];
+  preOutboxHoldOwner?: SyncTask['preOutboxHoldOwner'];
+  preOutboxHoldUntil?: SyncTask['preOutboxHoldUntil'];
+  preOutboxHoldReason?: SyncTask['preOutboxHoldReason'];
+  preOutboxHoldHeartbeatAt?: SyncTask['preOutboxHoldHeartbeatAt'];
   contexts?: SyncTask['contexts'];
   origin?: SyncTask['origin'];
   recoveryPolicy?: SyncTask['recoveryPolicy'];
@@ -43,6 +48,11 @@ export const toSyncQueueOperationSnapshot = (row: SyncTask): SyncQueueOperationS
   leaseUntil: row.leaseUntil,
   attemptId: row.attemptId,
   processingStartedAt: row.processingStartedAt,
+  preOutboxHoldState: row.preOutboxHoldState,
+  preOutboxHoldOwner: row.preOutboxHoldOwner,
+  preOutboxHoldUntil: row.preOutboxHoldUntil,
+  preOutboxHoldReason: row.preOutboxHoldReason,
+  preOutboxHoldHeartbeatAt: row.preOutboxHoldHeartbeatAt,
   contexts: row.contexts,
   origin: row.origin,
   recoveryPolicy: row.recoveryPolicy,

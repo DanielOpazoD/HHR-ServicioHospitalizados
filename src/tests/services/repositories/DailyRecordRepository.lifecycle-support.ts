@@ -125,6 +125,27 @@ vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
   moveRecordToTrash: firestoreMock.moveRecordToTrash,
 }));
 vi.mock('@/services/storage/firestore', () => firestoreMock);
+vi.mock('@/services/storage/sync', () => ({
+  ackDailyRecordSyncTask: vi.fn().mockResolvedValue(true),
+  isRetryableSyncError: vi.fn(() => false),
+  queueSyncTask: vi.fn().mockResolvedValue({
+    accepted: true,
+    mode: 'created',
+    pendingTasks: 1,
+    maxPendingTasks: 1000,
+  }),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn(async (record: DailyRecord) => {
+    await indexedDbFacadeMock.saveRecordStrict(record);
+    return {
+      accepted: true,
+      mode: 'created',
+      pendingTasks: 1,
+      maxPendingTasks: 1000,
+    };
+  }),
+  releaseDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
+  renewDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
+}));
 
 export const Repository = {
   bridgeLegacyRecord: bridgeLegacyRecordForDate,

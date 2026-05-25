@@ -19,6 +19,7 @@ import {
   ackDailyRecordSyncTask,
   queueDailyRecordSyncTaskWithLocalRecord,
   releaseDailyRecordPreOutboxHold,
+  renewDailyRecordPreOutboxHold,
 } from '@/services/storage/sync';
 import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordPersistencePreparation';
@@ -37,7 +38,11 @@ import {
   type RemoteWriteState,
 } from '@/services/repositories/dailyRecordWriteState';
 import { persistLocalAndAttemptRemoteSync } from '@/services/repositories/dailyRecordRemotePersistenceController';
-import { buildPreOutboxRemoteAckOptions } from '@/services/repositories/dailyRecordPreOutboxRemoteAckPolicy';
+import {
+  buildPreOutboxRemoteAckOptions,
+  getPreOutboxRemoteAckHeartbeatMs,
+  getPreOutboxRemoteAckLeaseMs,
+} from '@/services/repositories/dailyRecordPreOutboxRemoteAckPolicy';
 import { dailyRecordWriteLogger } from '@/services/repositories/repositoryLoggers';
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
@@ -217,6 +222,13 @@ export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: st
     ackLocalAfterRemote: () => ackDailyRecordSyncTask(validatedRecord, syncContract).then(() => {}),
     releaseLocalPreOutboxHold: () =>
       releaseDailyRecordPreOutboxHold(validatedRecord, syncContract).then(() => {}),
+    renewLocalPreOutboxHold: () =>
+      renewDailyRecordPreOutboxHold(
+        validatedRecord,
+        syncContract,
+        getPreOutboxRemoteAckLeaseMs()
+      ).then(() => {}),
+    renewLocalPreOutboxHoldEveryMs: getPreOutboxRemoteAckHeartbeatMs(),
     onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(
         `Firestore sync failed for ${command.date}; data persisted in IndexedDB`,
@@ -369,6 +381,13 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
     ackLocalAfterRemote: () => ackDailyRecordSyncTask(validatedRecord, syncContract).then(() => {}),
     releaseLocalPreOutboxHold: () =>
       releaseDailyRecordPreOutboxHold(validatedRecord, syncContract).then(() => {}),
+    renewLocalPreOutboxHold: () =>
+      renewDailyRecordPreOutboxHold(
+        validatedRecord,
+        syncContract,
+        getPreOutboxRemoteAckLeaseMs()
+      ).then(() => {}),
+    renewLocalPreOutboxHoldEveryMs: getPreOutboxRemoteAckHeartbeatMs(),
     onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(`Firestore partial update failed for ${command.date}`, err);
     },

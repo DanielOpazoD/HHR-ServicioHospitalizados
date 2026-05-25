@@ -70,5 +70,26 @@ export const createDailyRecordSyncQueueActions = ({
       error => logger.warn('Failed to release pre-outbox hold', error)
     );
 
-  return { ackDailyRecordSyncTask, releaseDailyRecordPreOutboxHold };
+  const renewDailyRecordPreOutboxHold = (
+    record: DailyRecord,
+    syncContract: SyncTask['syncContract'] | undefined,
+    holdForMs: number
+  ): Promise<boolean> =>
+    runPendingAction(
+      record,
+      syncContract,
+      key =>
+        store.renewPreOutboxHoldByKey(
+          'UPDATE_DAILY_RECORD',
+          key,
+          getOwnerKey(),
+          syncContract?.mutationId,
+          syncContract?.tabId || syncContract?.clientId || 'unknown_direct_writer',
+          Date.now(),
+          holdForMs
+        ),
+      error => logger.warn('Failed to renew pre-outbox hold', error)
+    );
+
+  return { ackDailyRecordSyncTask, releaseDailyRecordPreOutboxHold, renewDailyRecordPreOutboxHold };
 };

@@ -26,9 +26,22 @@ vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
 }));
 
 vi.mock('@/services/storage/sync', () => ({
+  ackDailyRecordSyncTask: vi.fn().mockResolvedValue(true),
   isRetryableSyncError: vi.fn(),
-  queueSyncTask: vi.fn(),
-  queueDailyRecordSyncTaskWithLocalRecord: vi.fn(),
+  queueSyncTask: vi.fn().mockResolvedValue({
+    accepted: true,
+    mode: 'created',
+    pendingTasks: 1,
+    maxPendingTasks: 1000,
+  }),
+  queueDailyRecordSyncTaskWithLocalRecord: vi.fn().mockResolvedValue({
+    accepted: true,
+    mode: 'created',
+    pendingTasks: 1,
+    maxPendingTasks: 1000,
+  }),
+  releaseDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
+  renewDailyRecordPreOutboxHold: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('@/services/repositories/repositoryConfig', () => ({
@@ -63,6 +76,7 @@ import { saveRecordStrict as saveToIndexedDB } from '@/services/storage/indexedd
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { updateRecordPartial as updateRecordPartialToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
+import { queueDailyRecordSyncTaskWithLocalRecord as queueSyncTask } from '@/services/storage/sync';
 
 const longText = (chars: number) => 'a'.repeat(chars);
 
@@ -118,7 +132,11 @@ describe('dailyRecordRepositoryWriteService field shrinkage telemetry', () => {
     });
 
     expect(result.outcome).toBe('clean');
-    expect(saveToIndexedDB).toHaveBeenCalled();
+    expect(queueSyncTask).toHaveBeenCalledWith(
+      expect.objectContaining({ date: '2026-02-11' }),
+      expect.objectContaining({ origin: 'direct_queue' }),
+      expect.objectContaining({ preOutboxHoldReason: 'awaiting_remote_ack' })
+    );
     expect(updateRecordPartialToFirestore).toHaveBeenCalled();
   });
 
