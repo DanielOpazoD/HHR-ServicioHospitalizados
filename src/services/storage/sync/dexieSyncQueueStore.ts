@@ -30,6 +30,9 @@ const matchesClaim = (task: SyncTask | undefined, claim: SyncQueueLeaseClaim): b
     task.attemptId === claim.attemptId
   );
 
+const matchesMutation = (task: SyncTask, mutationId?: string): boolean =>
+  !mutationId || task.syncContract?.mutationId === mutationId;
+
 export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
   async listAll(ownerKey) {
     const tasks = await hospitalDB.syncQueue.toArray();
@@ -106,6 +109,22 @@ export const createDexieSyncQueueStore = (): SyncQueueStorePort => ({
 
       await hospitalDB.syncQueue.add(task);
       return 'created';
+    });
+  },
+  async deletePendingByKey(type, key, ownerKey, mutationId) {
+    return hospitalDB.transaction('rw', hospitalDB.syncQueue, async () => {
+      const existing = (await hospitalDB.syncQueue.where('type').equals(type).toArray()).find(
+        task =>
+          matchesOwner(ownerKey, task.ownerKey) &&
+          task.key === key &&
+          task.status === 'PENDING' &&
+          matchesMutation(task, mutationId)
+      );
+      if (!existing?.id) {
+        return false;
+      }
+      await hospitalDB.syncQueue.delete(existing.id);
+      return true;
     });
   },
   async update(taskId, patch) {

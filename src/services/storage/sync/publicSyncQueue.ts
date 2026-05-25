@@ -6,6 +6,7 @@ import { createDexieSyncQueueStore } from '@/services/storage/sync/dexieSyncQueu
 import { createFirestoreSyncTransport } from '@/services/storage/sync/firestoreSyncTransport';
 import {
   createSyncQueueEngine,
+  type SyncQueueEnqueueOptions,
   type SyncQueueEnqueueResult,
 } from '@/services/storage/sync/syncQueueEngine';
 import type { SyncQueueOperationSnapshot } from '@/services/storage/sync/syncQueueOperationSnapshot';
@@ -14,6 +15,7 @@ import type { SyncQueueTelemetry } from '@/services/storage/sync/syncQueueTeleme
 import { classifySyncError } from '@/services/storage/syncErrorCatalog';
 import { createDomainObservability } from '@/services/observability/domainObservability';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
+import { recordSyncQueueAckFailure } from '@/services/storage/sync/syncQueueAckTelemetry';
 import {
   BASE_RETRY_DELAY_MS,
   MAX_RETRIES,
@@ -22,6 +24,7 @@ import {
   SYNC_QUEUE_MAX_PENDING_TASKS,
 } from '@/services/storage/sync/syncQueueOperationalBudgets';
 import { recordSyncQueueBudgetTelemetry } from '@/services/storage/sync/syncQueueTelemetryController';
+import { getSyncTaskKey } from '@/services/storage/sync/syncQueueTaskFactory';
 
 const syncObservability = createDomainObservability('sync', 'SyncQueue');
 const syncQueueStore = createDexieSyncQueueStore();
@@ -194,11 +197,12 @@ export const getSyncQueueDomainMetrics = async (): Promise<SyncQueueDomainMetric
 export const queueSyncTask = async (
   type: SyncTask['type'],
   payload: unknown,
-  meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>
+  meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>,
+  options?: SyncQueueEnqueueOptions
 ): Promise<SyncQueueEnqueueResult> => {
   try {
     await ensureDbReady();
-    const result = await syncQueueEngine.queueTask(type, payload, meta);
+    const result = await syncQueueEngine.queueTask(type, payload, meta, options);
     if (!result.accepted && result.mode === 'rejected_backpressure') {
       recordOperationalTelemetry({
         category: 'sync',
@@ -245,11 +249,12 @@ export const queueSyncTask = async (
 
 export const queueDailyRecordSyncTaskWithLocalRecord = async (
   record: DailyRecord,
-  meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>
+  meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>,
+  options?: SyncQueueEnqueueOptions
 ): Promise<SyncQueueEnqueueResult> => {
   try {
     await ensureDbReady();
-    const result = await syncQueueEngine.queueDailyRecordTaskWithLocalRecord(record, meta);
+    const result = await syncQueueEngine.queueDailyRecordTaskWithLocalRecord(record, meta, options);
     if (!result.accepted && result.mode === 'rejected_backpressure') {
       recordOperationalTelemetry({
         category: 'sync',
@@ -297,6 +302,28 @@ export const queueDailyRecordSyncTaskWithLocalRecord = async (
       pendingTasks: 0,
       maxPendingTasks: SYNC_QUEUE_MAX_PENDING_TASKS,
     };
+  }
+};
+
+export const ackDailyRecordSyncTask = async (
+  record: DailyRecord,
+  syncContract?: SyncTask['syncContract']
+): Promise<boolean> => {
+  try {
+    await ensureDbReady();
+    const key = getSyncTaskKey('UPDATE_DAILY_RECORD', record);
+    return key
+      ? syncQueueStore.deletePendingByKey(
+          'UPDATE_DAILY_RECORD',
+          key,
+          getSyncOwnerKey(),
+          syncContract?.mutationId
+        )
+      : false;
+  } catch (error) {
+    syncObservability.logger.warn('Failed to ack daily record sync task', error);
+    recordSyncQueueAckFailure(record, syncContract, error);
+    return false;
   }
 };
 

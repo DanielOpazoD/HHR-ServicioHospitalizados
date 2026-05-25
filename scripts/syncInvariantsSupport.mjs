@@ -34,6 +34,13 @@ export const evaluateSyncInvariants = root => {
   const packageJson = JSON.parse(readText(root, 'package.json'));
   const ports = readText(root, 'src/services/storage/sync/syncQueuePorts.ts');
   const engine = readText(root, 'src/services/storage/sync/syncQueueEngine.ts');
+  const publicQueue = readText(root, 'src/services/storage/sync/publicSyncQueue.ts');
+  const contractPolicy = readText(root, 'src/services/storage/sync/syncTaskContractPolicy.ts');
+  const repositoryWrite = readText(
+    root,
+    'src/services/repositories/dailyRecordRepositoryWriteService.ts'
+  );
+  const firestoreWrites = readText(root, 'src/services/storage/firestore/firestoreRecordWrites.ts');
   const telemetry = readText(root, 'src/services/storage/sync/syncQueueTelemetryController.ts');
   const envExample = readText(root, '.env.example');
   const runbook = readText(root, 'docs/RUNBOOK_SYNC_RESILIENCE.md');
@@ -60,8 +67,7 @@ export const evaluateSyncInvariants = root => {
       'authority-release-gate',
       packageJson.scripts?.['ci:release-gate']?.includes(
         'check:daily-record-authority-release-gate'
-      ) &&
-        envExample.includes('Release must use VITE_DAILY_RECORD_AUTHORITY_MODE=enforced'),
+      ) && envExample.includes('Release must use VITE_DAILY_RECORD_AUTHORITY_MODE=enforced'),
       'Release writes must require daily-record authority mode and document the deploy env flag.',
       ['package.json', '.env.example']
     ),
@@ -74,9 +80,46 @@ export const evaluateSyncInvariants = root => {
     buildInvariant(
       'sync-runbook',
       runbook.includes('PROCESSING` con `leaseUntil` vencido') &&
-        runbook.includes('sync_queue_stale_claim_noop'),
-      'The sync runbook must explain expired leases and stale-claim telemetry for support.',
+        runbook.includes('sync_queue_stale_claim_noop') &&
+        runbook.includes('pre-outbox'),
+      'The sync runbook must explain expired leases, stale-claim telemetry and pre-outbox ack flow for support.',
       ['docs/RUNBOOK_SYNC_RESILIENCE.md']
+    ),
+    buildInvariant(
+      'full-save-sync-contract',
+      repositoryWrite.includes('buildDailyRecordSyncContract(validatedRecord') &&
+        repositoryWrite.includes(
+          'saveRecordToFirestore(validatedRecord, command.expectedLastUpdated, { syncContract })'
+        ) &&
+        firestoreWrites.includes('syncContract: options.syncContract'),
+      'Full daily-record saves must propagate syncContract/baseRevision to the remote authority path.',
+      [
+        'src/services/repositories/dailyRecordRepositoryWriteService.ts',
+        'src/services/storage/firestore/firestoreRecordWrites.ts',
+      ]
+    ),
+    buildInvariant(
+      'pre-outbox-direct-write-ack',
+      repositoryWrite.includes('queueLocalBeforeRemote') &&
+        repositoryWrite.includes('ackLocalAfterRemote') &&
+        publicQueue.includes('ackDailyRecordSyncTask') &&
+        engine.includes('deferProcessing'),
+      'Repository writes must prequeue local outbox tasks transactionally, defer processing, and ack them after confirmed remote success.',
+      [
+        'src/services/repositories/dailyRecordRepositoryWriteService.ts',
+        'src/services/storage/sync/publicSyncQueue.ts',
+        'src/services/storage/sync/syncQueueEngine.ts',
+      ]
+    ),
+    buildInvariant(
+      'sync-contract-coalescing',
+      contractPolicy.includes('mergeSyncTaskContracts') &&
+        engine.includes('mergeSyncTaskContracts(existing.syncContract'),
+      'Reused sync tasks must merge semantic syncContract paths instead of overwriting them.',
+      [
+        'src/services/storage/sync/syncTaskContractPolicy.ts',
+        'src/services/storage/sync/syncQueueEngine.ts',
+      ]
     ),
   ];
 
@@ -89,9 +132,7 @@ export const evaluateSyncInvariants = root => {
 export const formatSyncInvariantsReport = result => {
   const lines = ['# Sync Invariants', ''];
   for (const invariant of result.invariants) {
-    lines.push(
-      `- ${invariant.ok ? 'OK' : 'FAIL'} ${invariant.id}: ${invariant.description}`
-    );
+    lines.push(`- ${invariant.ok ? 'OK' : 'FAIL'} ${invariant.id}: ${invariant.description}`);
     if (!invariant.ok && invariant.evidence.length > 0) {
       lines.push(`  Evidence: ${invariant.evidence.join(', ')}`);
     }

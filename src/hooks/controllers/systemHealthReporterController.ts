@@ -1,8 +1,6 @@
 import type { UserHealthStatus } from '@/services/admin/healthService';
 import type { SyncQueueTelemetry } from '@/services/storage/sync';
 import type { RepositoryPerformanceSummary } from '@/services/repositories/repositoryPerformance';
-import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
-import { BACKEND_RUNTIME_CONTRACT_VERSION } from '@/constants/runtimeContracts';
 import type { UserRole } from '@/types/authRoleTypes';
 import type { OperationalTelemetrySummary } from '@/services/observability/operationalTelemetryContracts';
 import type { OperationalTelemetryEvent } from '@/services/observability/operationalTelemetryTypes';
@@ -13,6 +11,7 @@ import type {
   RemoteSyncRuntimeStatus,
 } from '@/services/repositories/repositoryConfig';
 import type { UserHealthRecentEvent, VersionUpdateReason } from '@/services/admin/healthService';
+import { buildSystemHealthAppVersion } from '@/hooks/controllers/systemHealthAppVersion';
 
 export interface BuildUserHealthStatusOptions {
   uid: string;
@@ -393,7 +392,7 @@ export const buildUserHealthStatus = (options: BuildUserHealthStatusOptions): Us
   latestOperationalRuntimeState: options.operationalTelemetry.latestRuntimeState,
   latestOperationalIssueAt: options.operationalTelemetry.latestIssueAt,
   recentEvents: options.recentEvents || [],
-  appVersion: `v${CURRENT_SCHEMA_VERSION} (sync-batch:${options.syncTelemetry.batchSize}, backend-contract:${BACKEND_RUNTIME_CONTRACT_VERSION})`,
+  appVersion: buildSystemHealthAppVersion(options.syncTelemetry.batchSize),
   platform: options.platform,
   userAgent: options.userAgent,
 });

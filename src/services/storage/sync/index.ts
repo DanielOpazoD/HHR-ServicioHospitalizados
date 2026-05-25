@@ -5,6 +5,7 @@
  */
 
 export {
+  ackDailyRecordSyncTask,
   clearAllSyncQueue,
   clearSyncQueueForOwner,
   ensureSyncQueueOnlineListener,

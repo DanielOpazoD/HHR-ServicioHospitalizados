@@ -39,6 +39,7 @@ import {
   tryShadowDailyRecordSaveViaCallable,
   updateSpecialistMedicalHandoffViaCallable,
   type DailyRecordPartialWriteOptions,
+  type DailyRecordSaveWriteOptions,
 } from '@/services/storage/firestore/firestoreDailyRecordAuthorityRouting';
 import type { SyncTaskContract } from '@/services/storage/syncQueueTypes';
 
@@ -127,7 +128,8 @@ const buildAuthorityPatchSyncContract = (
 
 export const saveRecordToFirestore = async (
   record: DailyRecord,
-  expectedLastUpdated?: string
+  expectedLastUpdated?: string,
+  options: DailyRecordSaveWriteOptions = {}
 ): Promise<void> => {
   try {
     const docRef = getRecordDocRef(record.date);
@@ -150,6 +152,7 @@ export const saveRecordToFirestore = async (
             expectedLastUpdated,
             mode: resolveDailyRecordAuthorityMode() === 'enforced' ? 'enforced' : 'shadow',
             origin: 'direct_save',
+            syncContract: options.syncContract,
           }),
         {
           onRetry: (err: unknown, attempt: number) =>
@@ -159,7 +162,7 @@ export const saveRecordToFirestore = async (
       return;
     }
 
-    await tryShadowDailyRecordSaveViaCallable(record, expectedLastUpdated);
+    await tryShadowDailyRecordSaveViaCallable(record, expectedLastUpdated, options.syncContract);
     await saveHistorySnapshot(record.date);
 
     const sanitizedRecord = sanitizeForFirestore({

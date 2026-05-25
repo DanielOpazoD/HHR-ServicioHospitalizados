@@ -70,3 +70,32 @@ export const buildSyncTaskContract = (
 
   return buildDailyRecordSyncContract(payload as DailyRecord, baseContract);
 };
+
+const mergeUnique = (
+  left: string[] | undefined,
+  right: string[] | undefined
+): string[] | undefined => {
+  const values = [...(left || []), ...(right || [])].filter(Boolean);
+  if (values.includes('*')) {
+    return ['*'];
+  }
+  const merged = Array.from(new Set(values));
+  return merged.length > 0 ? merged : undefined;
+};
+
+export const mergeSyncTaskContracts = (
+  existing: SyncTaskContract | undefined,
+  next: SyncTaskContract | undefined
+): SyncTaskContract | undefined => {
+  if (!existing) return next;
+  if (!next) return existing;
+
+  return {
+    ...existing,
+    ...next,
+    expectedVersion: next.expectedVersion ?? existing.expectedVersion,
+    baseRevision: next.baseRevision ?? existing.baseRevision,
+    changedPaths: mergeUnique(existing.changedPaths, next.changedPaths),
+    clinicalEpisodeKeys: mergeUnique(existing.clinicalEpisodeKeys, next.clinicalEpisodeKeys),
+  };
+};

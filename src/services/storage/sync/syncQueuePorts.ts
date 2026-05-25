@@ -25,6 +25,12 @@ export interface SyncQueueStorePort {
   ): Promise<SyncTask | null>;
   add(task: SyncTask): Promise<void>;
   saveDailyRecordWithTask(record: DailyRecord, task: SyncTask): Promise<SyncQueueTaskWriteMode>;
+  deletePendingByKey(
+    type: SyncTask['type'],
+    key: string,
+    ownerKey?: string | null,
+    mutationId?: string
+  ): Promise<boolean>;
   update(taskId: number, patch: Partial<SyncTask>): Promise<void>;
   updateClaimed(
     taskId: number,

@@ -9,6 +9,7 @@ import {
   applyRecoveryDecisionToState,
   type RemoteWriteState,
 } from '@/services/repositories/dailyRecordWriteState';
+import type { SyncQueueEnqueueResult } from '@/services/storage/sync';
 
 const markRemoteWriteSucceeded = (state: RemoteWriteState): void => {
   state.savedRemotely = true;
@@ -52,6 +53,24 @@ const applyLocalPersistenceFailure = (
   );
 };
 
+const toRejectedOutboxPersistenceResult = (
+  result: SyncQueueEnqueueResult
+): LocalRecordWriteResult => ({
+  ok: false,
+  operation: 'save',
+  store: 'none',
+  dates: [],
+  error: new Error(
+    result.mode === 'rejected_backpressure'
+      ? 'La cola de sincronización alcanzó su límite operativo antes de confirmar la persistencia local.'
+      : 'La cola de sincronización no pudo confirmar la persistencia local.'
+  ),
+  userSafeMessage:
+    result.mode === 'rejected_backpressure'
+      ? 'La cola de sincronización alcanzó su límite operativo. Revisa conectividad o libera tareas pendientes antes de reintentar.'
+      : 'No fue posible guardar el registro local junto a su tarea de sincronización.',
+});
+
 const applyRemoteRecovery = async (
   date: string,
   record: DailyRecord,
@@ -84,6 +103,8 @@ export const persistLocalAndAttemptRemoteSync = async ({
   remoteWrite,
   onRemoteFailure,
   expectedVersion,
+  queueLocalBeforeRemote,
+  ackLocalAfterRemote,
 }: {
   date: string;
   record: DailyRecord;
@@ -92,11 +113,26 @@ export const persistLocalAndAttemptRemoteSync = async ({
   remoteWrite: () => Promise<void>;
   onRemoteFailure: (error: unknown) => void;
   expectedVersion?: string;
+  queueLocalBeforeRemote?: () => Promise<SyncQueueEnqueueResult>;
+  ackLocalAfterRemote?: () => Promise<void>;
 }): Promise<'continue' | 'return'> => {
-  const localResult = await saveToIndexedDB(record);
-  if (!localResult.ok) {
-    applyLocalPersistenceFailure(date, changedPaths, localResult, remoteState);
-    return 'return';
+  if (queueLocalBeforeRemote) {
+    const outboxResult = await queueLocalBeforeRemote();
+    if (!outboxResult.accepted) {
+      applyLocalPersistenceFailure(
+        date,
+        changedPaths,
+        toRejectedOutboxPersistenceResult(outboxResult),
+        remoteState
+      );
+      return 'return';
+    }
+  } else {
+    const localResult = await saveToIndexedDB(record);
+    if (!localResult.ok) {
+      applyLocalPersistenceFailure(date, changedPaths, localResult, remoteState);
+      return 'return';
+    }
   }
 
   if (!isFirestoreEnabled()) {
@@ -105,6 +141,7 @@ export const persistLocalAndAttemptRemoteSync = async ({
 
   try {
     await remoteWrite();
+    await ackLocalAfterRemote?.();
     markRemoteWriteSucceeded(remoteState);
     return 'continue';
   } catch (err) {

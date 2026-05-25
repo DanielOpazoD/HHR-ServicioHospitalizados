@@ -24,7 +24,10 @@ import {
   recordSyncQueueDecisionTelemetry,
   recordSyncQueueStaleClaimTelemetry,
 } from '@/services/storage/sync/syncQueueTelemetryController';
-import { buildSyncTaskContract } from '@/services/storage/sync/syncTaskContractPolicy';
+import {
+  buildSyncTaskContract,
+  mergeSyncTaskContracts,
+} from '@/services/storage/sync/syncTaskContractPolicy';
 import {
   clearSyncTaskRuntimeState,
   createSyncQueueAttemptId,
@@ -56,6 +59,10 @@ export interface SyncQueueEnqueueResult {
   maxPendingTasks: number;
 }
 
+export interface SyncQueueEnqueueOptions {
+  deferProcessing?: boolean;
+}
+
 export const createSyncQueueEngine = ({
   store,
   runtime,
@@ -73,6 +80,11 @@ export const createSyncQueueEngine = ({
     if (!runtime.isOnline()) return;
     void processQueue();
   };
+
+  const countActiveTasks = async (ownerKey: string | null): Promise<number> =>
+    (await store.listAll(ownerKey)).filter(
+      task => task.status === 'PENDING' || task.status === 'PROCESSING'
+    ).length;
 
   const buildTaskClaim = (task: SyncTask): SyncQueueLeaseClaim | null => {
     if (!task.leaseOwner || !task.attemptId || !task.leaseUntil) {
@@ -155,7 +167,8 @@ export const createSyncQueueEngine = ({
   const queueTask = async (
     type: SyncTask['type'],
     payload: unknown,
-    meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>
+    meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>,
+    options: SyncQueueEnqueueOptions = {}
   ): Promise<SyncQueueEnqueueResult> => {
     const key = getSyncTaskKey(type, payload);
     const ownerKey = runtime.getOwnerKey();
@@ -170,6 +183,7 @@ export const createSyncQueueEngine = ({
     if (key) {
       const existing = await store.findReusableTask(type, key, ownerKey);
       if (existing?.id) {
+        const mergedSyncContract = mergeSyncTaskContracts(existing.syncContract, syncContract);
         await store.update(existing.id, {
           payload,
           timestamp: now,
@@ -179,13 +193,13 @@ export const createSyncQueueEngine = ({
           contexts: contextMeta.contexts,
           origin: meta?.origin || existing.origin || 'direct_queue',
           recoveryPolicy: contextMeta.recoveryPolicy,
-          syncContract,
+          syncContract: mergedSyncContract,
           ...clearSyncTaskRuntimeState(),
         });
-        triggerProcessing();
-        const pendingTasks = (await store.listAll(ownerKey)).filter(
-          task => task.status === 'PENDING' || task.status === 'PROCESSING'
-        ).length;
+        if (!options.deferProcessing) {
+          triggerProcessing();
+        }
+        const pendingTasks = await countActiveTasks(ownerKey);
         return {
           accepted: true,
           mode: 'reused',
@@ -195,9 +209,7 @@ export const createSyncQueueEngine = ({
       }
     }
 
-    const pendingTasks = (await store.listAll(ownerKey)).filter(
-      task => task.status === 'PENDING' || task.status === 'PROCESSING'
-    ).length;
+    const pendingTasks = await countActiveTasks(ownerKey);
     if (pendingTasks >= maxPendingTasks) {
       return {
         accepted: false,
@@ -221,7 +233,9 @@ export const createSyncQueueEngine = ({
       syncContract,
       ...clearSyncTaskRuntimeState(),
     });
-    triggerProcessing();
+    if (!options.deferProcessing) {
+      triggerProcessing();
+    }
     return {
       accepted: true,
       mode: 'created',
@@ -232,7 +246,8 @@ export const createSyncQueueEngine = ({
 
   const queueDailyRecordTaskWithLocalRecord = async (
     record: DailyRecord,
-    meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>
+    meta?: Pick<SyncTask, 'contexts' | 'origin' | 'recoveryPolicy' | 'syncContract'>,
+    options: SyncQueueEnqueueOptions = {}
   ): Promise<SyncQueueEnqueueResult> => {
     const type: SyncTask['type'] = 'UPDATE_DAILY_RECORD';
     const key = getSyncTaskKey(type, record);
@@ -243,12 +258,13 @@ export const createSyncQueueEngine = ({
       contexts: meta?.contexts,
       recoveryPolicy: meta?.recoveryPolicy,
     });
-    const syncContract = buildSyncTaskContract(type, record, meta?.syncContract);
     const existing = key ? await store.findReusableTask(type, key, ownerKey) : null;
+    const syncContract = mergeSyncTaskContracts(
+      existing?.syncContract,
+      buildSyncTaskContract(type, record, meta?.syncContract)
+    );
 
-    const pendingTasks = (await store.listAll(ownerKey)).filter(
-      task => task.status === 'PENDING' || task.status === 'PROCESSING'
-    ).length;
+    const pendingTasks = await countActiveTasks(ownerKey);
     if (!existing && pendingTasks >= maxPendingTasks) {
       return {
         accepted: false,
@@ -273,7 +289,9 @@ export const createSyncQueueEngine = ({
       ...clearSyncTaskRuntimeState(),
     });
 
-    triggerProcessing();
+    if (!options.deferProcessing) {
+      triggerProcessing();
+    }
     return {
       accepted: true,
       mode,

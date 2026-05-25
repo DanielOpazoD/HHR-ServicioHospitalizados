@@ -44,6 +44,22 @@ snapshot realtime sin `hasPendingWrites` o escritura aceptada. Durante ese inter
 se bloquean campos y acciones clinicas sensibles; lectura, navegacion de historial y
 documentos clinicos siguen disponibles.
 
+## Contrato De Revision
+
+Las escrituras completas y parches clinicos deben enviar `syncContract` al backend
+cuando usen la autoridad transaccional. Soporte/ingenieria debe revisar:
+
+- `expectedVersion`: version local usada como base de concurrencia.
+- `baseRevision`: revision remota esperada en `record.meta.revision`.
+- `recordRevision`: version del registro que se intenta publicar.
+- `mutationId`, `clientId`, `tabId`: identidad de mutacion para trazabilidad y ack
+  del outbox local.
+- `changedPaths`: rutas semanticas afectadas. En full save puede ser `*`.
+
+Un rechazo `revision_mismatch` es esperado cuando `baseRevision` no coincide con
+Firebase; no tratarlo como fallo de red. Validar la UI local contra el registro
+remoto antes de forzar un nuevo intento.
+
 Medir en telemetria:
 
 - `daily_record_resume_refresh_started`: inicio del bloqueo por inactividad.

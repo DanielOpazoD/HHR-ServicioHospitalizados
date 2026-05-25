@@ -100,6 +100,68 @@ describe('dailyRecordRemotePersistenceController', () => {
     expect(state.observabilityTags).toEqual(['daily_record', 'write', 'persisted_and_synced']);
   });
 
+  it('uses a transactional outbox preflight instead of a separate local save when provided', async () => {
+    const state = createRemoteWriteState();
+    const remoteWrite = vi.fn().mockResolvedValue(undefined);
+    const queueLocalBeforeRemote = vi.fn().mockResolvedValue({
+      accepted: true,
+      mode: 'created',
+      pendingTasks: 1,
+      maxPendingTasks: 192,
+    });
+    const ackLocalAfterRemote = vi.fn().mockResolvedValue(undefined);
+
+    const result = await persistLocalAndAttemptRemoteSync({
+      date: '2026-05-23',
+      record: buildRecord('2026-05-23'),
+      changedPaths: ['*'],
+      remoteState: state,
+      remoteWrite,
+      onRemoteFailure: vi.fn(),
+      expectedVersion: '2026-05-23T10:00:00.000Z',
+      queueLocalBeforeRemote,
+      ackLocalAfterRemote,
+    });
+
+    expect(result).toBe('continue');
+    expect(queueLocalBeforeRemote).toHaveBeenCalledTimes(1);
+    expect(saveToIndexedDBMock).not.toHaveBeenCalled();
+    expect(remoteWrite).toHaveBeenCalledTimes(1);
+    expect(ackLocalAfterRemote).toHaveBeenCalledTimes(1);
+    expect(state.consistencyState).toBe('persisted_and_synced');
+  });
+
+  it('blocks the remote write when transactional outbox preflight is rejected', async () => {
+    const state = createRemoteWriteState();
+    const remoteWrite = vi.fn().mockResolvedValue(undefined);
+    const queueLocalBeforeRemote = vi.fn().mockResolvedValue({
+      accepted: false,
+      mode: 'rejected_backpressure',
+      pendingTasks: 192,
+      maxPendingTasks: 192,
+    });
+
+    const result = await persistLocalAndAttemptRemoteSync({
+      date: '2026-05-23',
+      record: buildRecord('2026-05-23'),
+      changedPaths: ['beds.R1.patientName'],
+      remoteState: state,
+      remoteWrite,
+      onRemoteFailure: vi.fn(),
+      expectedVersion: '2026-05-23T10:00:00.000Z',
+      queueLocalBeforeRemote,
+    });
+
+    expect(result).toBe('return');
+    expect(remoteWrite).not.toHaveBeenCalled();
+    expect(state.consistencyState).toBe('unrecoverable');
+    expect(state.conflictSummary).toMatchObject({
+      kind: 'local_persistence_failed',
+      sourceOfTruth: 'none',
+      changedPaths: ['beds.R1.patientName'],
+    });
+  });
+
   it('applies recovery and returns early when remote recovery asks to throw', async () => {
     saveToIndexedDBMock.mockResolvedValue({
       ok: true,

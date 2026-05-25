@@ -15,6 +15,10 @@ import {
   createSaveDailyRecordCommand,
 } from '@/services/repositories/contracts/dailyRecordCommands';
 import { buildDailyRecordSyncContract } from '@/services/storage/sync/syncTaskContractPolicy';
+import {
+  ackDailyRecordSyncTask,
+  queueDailyRecordSyncTaskWithLocalRecord,
+} from '@/services/storage/sync';
 import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordPersistencePreparation';
 import { preparePatchedRecordForPersistence } from '@/services/repositories/dailyRecordPatchPreparation';
@@ -35,6 +39,7 @@ import { persistLocalAndAttemptRemoteSync } from '@/services/repositories/dailyR
 import { dailyRecordWriteLogger } from '@/services/repositories/repositoryLoggers';
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
+import { classifyConflictChangedContexts } from '@/services/repositories/conflictResolutionDomainPolicy';
 
 const runRemoteSaveIntegrityCheck = async (date: string, record: DailyRecord): Promise<void> => {
   if (!isFirestoreEnabled()) return;
@@ -186,12 +191,28 @@ export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: st
     throw err;
   }
 
+  const syncContract = buildDailyRecordSyncContract(validatedRecord, {
+    expectedVersion: command.expectedLastUpdated,
+    changedPaths: ['*'],
+  });
   const nextAction = await persistLocalAndAttemptRemoteSync({
     date: command.date,
     record: validatedRecord,
     changedPaths: ['*'],
     remoteState,
-    remoteWrite: () => saveRecordToFirestore(validatedRecord, command.expectedLastUpdated),
+    remoteWrite: () =>
+      saveRecordToFirestore(validatedRecord, command.expectedLastUpdated, { syncContract }),
+    queueLocalBeforeRemote: () =>
+      queueDailyRecordSyncTaskWithLocalRecord(
+        validatedRecord,
+        {
+          contexts: ['clinical', 'staffing', 'movements', 'handoff', 'metadata'],
+          origin: 'direct_queue',
+          syncContract,
+        },
+        { deferProcessing: true }
+      ),
+    ackLocalAfterRemote: () => ackDailyRecordSyncTask(validatedRecord, syncContract).then(() => {}),
     onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(
         `Firestore sync failed for ${command.date}; data persisted in IndexedDB`,
@@ -331,6 +352,17 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
       updateRecordPartialToFirestore(command.date, mergedPatches, current.lastUpdated, {
         syncContract,
       }),
+    queueLocalBeforeRemote: () =>
+      queueDailyRecordSyncTaskWithLocalRecord(
+        validatedRecord,
+        {
+          contexts: classifyConflictChangedContexts(semanticChangedPaths),
+          origin: 'direct_queue',
+          syncContract,
+        },
+        { deferProcessing: true }
+      ),
+    ackLocalAfterRemote: () => ackDailyRecordSyncTask(validatedRecord, syncContract).then(() => {}),
     onRemoteFailure: err => {
       dailyRecordWriteLogger.warn(`Firestore partial update failed for ${command.date}`, err);
     },

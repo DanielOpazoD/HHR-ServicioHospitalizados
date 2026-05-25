@@ -121,6 +121,7 @@ describe('systemHealthReporterController', () => {
     expect(status.latestOperationalOperation).toBe('backup_handoff_pdf');
     expect(status.latestOperationalRuntimeState).toBe('recoverable');
     expect(status.appVersion).toContain('sync-batch:25');
+    expect(status.appVersion).toContain('authority:client_only');
   });
 
   it('builds recent user health events with safe operational context', () => {

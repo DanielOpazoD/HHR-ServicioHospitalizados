@@ -133,6 +133,28 @@ aparecer durante carreras multitab o recuperación de leases vencidos. Si se
 repite junto a `oldestPendingAgeMs` crítico, escalar con las operaciones recientes
 del outbox antes de limpiar cache local.
 
+## Procedimiento 2.3: pre-outbox y ack de escritura directa
+
+Las escrituras críticas del censo usan flujo `pre-outbox`: primero persisten el
+registro local junto a una tarea `PENDING` en una transacción IndexedDB, luego
+intentan la escritura remota directa y finalmente hacen `ack` de la tarea local
+por `mutationId` si Firebase confirma la operación.
+
+Lectura operativa:
+
+- Si la pestaña cae después de guardar localmente y antes del remoto, la tarea
+  `PENDING` debe quedar disponible para flush posterior.
+- Si el remoto directo confirma, la tarea correspondiente debe desaparecer del
+  outbox sin pasar por `PROCESSING`.
+- Si el remoto falla, la tarea ya existe; el recovery solo debe reutilizarla,
+  actualizar contexto/origen y habilitar el procesamiento normal.
+- Si queda una tarea `direct_queue` reciente, no borrar: puede representar una
+  confirmación remota pendiente o un ack local que no alcanzó a ejecutarse.
+
+Escalar a ingeniería si aparecen tareas `direct_queue` con edad crítica y sin
+errores recientes, porque puede indicar que el ack local o el trigger de recovery
+no se ejecutó.
+
 ## Procedimiento 2.1: contaminación entre sesiones locales
 
 Síntomas:

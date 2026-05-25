@@ -229,7 +229,15 @@ describe('firestoreRecordWrites', () => {
         transfers: [],
         cma: [],
       } as never,
-      '2026-03-14T10:00:00.000Z'
+      '2026-03-14T10:00:00.000Z',
+      {
+        syncContract: {
+          expectedVersion: '2026-03-14T10:00:00.000Z',
+          baseRevision: 7,
+          changedPaths: ['*'],
+          mutationId: 'mutation-full-save-1',
+        },
+      }
     );
 
     expect(mockGetFunctions).toHaveBeenCalled();
@@ -245,6 +253,12 @@ describe('firestoreRecordWrites', () => {
         origin: 'direct_save',
         record: expect.objectContaining({
           date: '2026-03-14',
+        }),
+        syncContract: expect.objectContaining({
+          expectedVersion: '2026-03-14T10:00:00.000Z',
+          baseRevision: 7,
+          changedPaths: ['*'],
+          mutationId: 'mutation-full-save-1',
         }),
       })
     );
