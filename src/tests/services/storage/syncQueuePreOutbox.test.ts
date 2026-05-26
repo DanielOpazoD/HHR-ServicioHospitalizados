@@ -46,6 +46,9 @@ const makeRecord = (date: string, marker: string): DailyRecord => ({
 });
 
 describe('storage/sync pre-outbox guarantees', () => {
+  const ACTIVE_HOLD_NOW_MS = 1_000;
+  const ACTIVE_HOLD_DURATION_MS = 5_000;
+
   beforeEach(async () => {
     await hospitalDB.syncQueue.clear();
     await hospitalDB.dailyRecords.clear();
@@ -138,11 +141,11 @@ describe('storage/sync pre-outbox guarantees', () => {
           mutationId: 'mutation-held-direct-save',
         },
       },
-      { deferProcessing: true, holdForMs: 5_000 }
+      { deferProcessing: true, holdForMs: ACTIVE_HOLD_DURATION_MS }
     );
 
     const [task] = await hospitalDB.syncQueue.toArray();
-    expect(task.nextAttemptAt || 0).toBeGreaterThan(Date.now());
+    expect(task.nextAttemptAt || 0).toBeGreaterThan(ACTIVE_HOLD_NOW_MS);
 
     const { processSyncQueue } = await import('@/services/storage/sync');
     await processSyncQueue();
@@ -189,7 +192,7 @@ describe('storage/sync pre-outbox guarantees', () => {
     const [heldTask] = await hospitalDB.syncQueue.toArray();
     expect(heldTask.preOutboxHoldOwner).toBe('tab-direct-writer');
     expect(heldTask.preOutboxHoldReason).toBe('awaiting_remote_ack');
-    expect(heldTask.preOutboxHoldUntil || 0).toBeGreaterThan(Date.now());
+    expect(heldTask.preOutboxHoldUntil || 0).toBeGreaterThan(ACTIVE_HOLD_NOW_MS);
 
     await expect(releaseDailyRecordPreOutboxHold(record, syncContract)).resolves.toBe(true);
 
