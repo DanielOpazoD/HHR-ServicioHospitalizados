@@ -7,7 +7,11 @@
       "label": "Censo diario: recarga, cache local y reconciliacion remota",
       "riskLevel": "high",
       "matrixAreas": ["census_runtime", "sync_and_firestore"],
-      "automatedRegression": ["test:e2e:critical:ci", "test:firestore:release:ci"],
+      "automatedRegression": [
+        "test:e2e:clinical-stability:ci",
+        "test:e2e:critical:ci",
+        "test:firestore:release:ci"
+      ],
       "manualValidation": [
         "Abrir censo con datos existentes, recargar, confirmar que cama/estado/acciones siguen visibles y que banners no bloquean decisiones clinicas."
       ]
@@ -17,7 +21,11 @@
       "label": "Pending patch: mismo episodio, cambio de cama, episodio distinto y patch mixto",
       "riskLevel": "high",
       "matrixAreas": ["census_runtime", "sync_and_firestore"],
-      "automatedRegression": ["test:ci:unit", "test:e2e:critical:ci"],
+      "automatedRegression": [
+        "test:ci:unit",
+        "test:e2e:clinical-stability:ci",
+        "test:e2e:critical:ci"
+      ],
       "manualValidation": [
         "Validar que un cambio de cama conserva el patch del mismo episodio, purga episodio distinto y no borra campos clinicos no trackeados."
       ]
@@ -27,7 +35,11 @@
       "label": "Documentos clinicos: borrador, firma, PDF e impresion",
       "riskLevel": "high",
       "matrixAreas": ["clinical_documents"],
-      "automatedRegression": ["test:clinical-documents", "test:e2e:clinical-visual-release"],
+      "automatedRegression": [
+        "test:clinical-documents",
+        "test:e2e:clinical-stability:ci",
+        "test:e2e:clinical-visual-release"
+      ],
       "manualValidation": [
         "Crear/editar documento clinico, imprimir/exportar y comprobar que no se sobreescribe contenido ni se rompe el formato printable."
       ]

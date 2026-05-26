@@ -20,6 +20,7 @@ describe('clinical release validation contract', () => {
     expect(markdown).toContain('codigo_corregido');
     expect(markdown).toContain('regresion_automatizada');
     expect(markdown).toContain('flujo_clinico_validado');
+    expect(markdown).toContain('test:e2e:clinical-stability');
 
     for (const scenario of report.scenarios) {
       expect(

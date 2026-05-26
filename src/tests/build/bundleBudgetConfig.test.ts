@@ -7,6 +7,10 @@ interface BundleBudgetConfig {
     pattern: string;
     maxBytes: number;
   }>;
+  startupChunkBudgets: Array<{
+    label: string;
+    maxBytes: number;
+  }>;
   chunkPatternBudgets: Array<{
     pattern: string;
     maxBytes: number;
@@ -28,11 +32,21 @@ describe('bundle budget config', () => {
     expect(
       config.assetPatternBudgets.find(budget => budget.pattern === '^vendor/exceljs\\.min\\.js$')
     ).toMatchObject({
-      maxBytes: 1000000,
+      maxBytes: 1100000,
     });
     expect(findBudget(config, '^exceljs\\.min-.*\\.js$')).toBeUndefined();
     expect(findBudget(config, '^pdf-.*\\.js$')).toMatchObject({
       maxBytes: 560000,
+    });
+  });
+
+  it('keeps authenticated shell budget above the measured critical-runtime baseline', () => {
+    const config = readBundleBudgetConfig();
+
+    expect(
+      config.startupChunkBudgets.find(budget => budget.label === 'app-authenticated-shell')
+    ).toMatchObject({
+      maxBytes: 620000,
     });
   });
 });

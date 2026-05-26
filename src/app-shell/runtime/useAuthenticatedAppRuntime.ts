@@ -9,7 +9,7 @@ import type { UseCensusEmailReturn } from '@/hooks/useCensusEmail';
 import type { UseFileOperationsReturn } from '@/hooks/useFileOperations';
 import type { DailyRecordContextType } from '@/context/dailyRecordContextContracts';
 import { resolveShiftNurseSignature } from '@/services/staff/dailyRecordStaffing';
-import type { AuthContextType } from '@/context';
+import type { AuthContextType } from '@/context/AuthContext';
 import type { CensusContextType } from '@/context/CensusContext';
 import type { AppAuthenticatedDateNavigation } from '@/app-shell/bootstrap/useAppBootstrapState';
 import { markPerf } from '@/shared/runtime/perfAudit';

@@ -91,6 +91,18 @@ describe('chunkingPolicy', () => {
     }
   });
 
+  it('keeps authenticated shell providers off the broad context barrel', () => {
+    const guardedFiles = [
+      'src/components/AppProviders.tsx',
+      'src/app-shell/runtime/AuthenticatedAppShell.tsx',
+      'src/app-shell/runtime/useAuthenticatedAppRuntime.ts',
+    ];
+
+    for (const file of guardedFiles) {
+      expect(readSource(file), file).not.toMatch(/from ['"]@\/context['"]/);
+    }
+  });
+
   it('keeps backup export use cases out of the initial authenticated shell import graph', () => {
     const guardedFiles = ['src/hooks/useExportManager.ts', 'src/hooks/useBackupArchiveStatus.ts'];
 

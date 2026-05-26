@@ -6,6 +6,7 @@ import path from 'node:path';
 import {
   buildAuditAttemptEnv,
   classifyAuditFailure,
+  getAuditFailureGuidance,
   shouldRetryAuditWithSystemCa,
 } from './lib/dependencyAuditSupport.mjs';
 
@@ -189,6 +190,7 @@ const runAuditForWorkspace = workspace => {
     command: `npm ${auditArgs.join(' ')}`,
     status,
     failureCategory,
+    guidance: failureCategory ? getAuditFailureGuidance(failureCategory) : null,
     exitCode: result.status,
     counts,
     vulnerablePackages,
@@ -243,6 +245,7 @@ const markdown = [
     `- Working directory: \`${result.cwd}\``,
     `- Status: \`${result.status}\``,
     `- Failure category: \`${result.failureCategory || 'none'}\``,
+    `- Guidance: ${result.guidance || 'none'}`,
     `- Exit code: \`${String(result.exitCode ?? 'n/a')}\``,
     `- Counts: high=\`${result.counts.high}\`, critical=\`${result.counts.critical}\`, total=\`${result.counts.total}\``,
     ...(result.vulnerablePackages.length > 0

@@ -4,8 +4,8 @@
   "assetPatternBudgets": [
     {
       "pattern": "^vendor/exceljs\\.min\\.js$",
-      "_comment": "Browser ExcelJS is served as a runtime asset instead of a duplicated Vite chunk. Keep this explicit ceiling so dependency bumps cannot silently bloat the precache.",
-      "maxBytes": 1000000
+      "_comment": "Browser ExcelJS is served as a runtime asset instead of a duplicated Vite chunk. This ceiling keeps roughly 15% headroom over the measured ~925 KB asset so routine lockfile rebuilds do not create noisy near-limit release warnings.",
+      "maxBytes": 1100000
     }
   ],
   "startupChunkBudgets": [
@@ -25,8 +25,8 @@
     {
       "label": "app-authenticated-shell",
       "pattern": "^app-authenticated-shell-.*\\.js$",
-      "_comment": "Raised from 525000 to 560000 after the census public-split fix brought the chunk to ~483 KB. The 560 KB ceiling gives ~14% headroom for incremental post-merge growth (wound-care, new shell context providers) without another same-week refactor. Revisit if utilization exceeds 93%.",
-      "maxBytes": 560000,
+      "_comment": "Raised from 560000 to 620000 after measuring the authenticated shell at ~534 KB with ES2022 + two-pass production minification. Keep direct-import guardrails in src/tests/build/chunkingPolicy.test.ts and revisit if utilization exceeds 90%.",
+      "maxBytes": 620000,
       "severity": "error"
     }
   ],
