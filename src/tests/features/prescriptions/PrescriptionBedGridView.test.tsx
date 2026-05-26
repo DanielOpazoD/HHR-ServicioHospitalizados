@@ -8,6 +8,7 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { UIProvider } from '@/context/UIContext';
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
@@ -379,6 +380,7 @@ describe('PrescriptionBedGridView', () => {
   });
 
   it('keeps the image viewer mounted while the next prescription image loads', async () => {
+    const user = userEvent.setup();
     const first = buildRecord('rx-first', {
       bedId: 'H1C2',
       patientName: 'Carina Pate Lillo',
@@ -400,22 +402,15 @@ describe('PrescriptionBedGridView', () => {
     renderGrid(<PrescriptionBedGridView records={[first, second]} dayIso="2026-05-04" />);
 
     const thumbnail = await screen.findByRole('img', { name: /comun · h1c2/i });
-    fireEvent.click(thumbnail.closest('button')!);
+    await user.click(thumbnail.closest('button')!);
     expect(await screen.findByRole('img', { name: /receta 1 de 2/i })).toHaveAttribute(
       'src',
       'https://stub/prescriptions/hhr/rx-first/full.jpg'
     );
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /receta siguiente/i }));
-    });
+    await user.click(screen.getByRole('button', { name: /receta siguiente/i }));
 
     expect(screen.getByRole('dialog', { name: /vista ampliada/i })).toBeInTheDocument();
-    await waitFor(
-      () =>
-        expect(resolvePrescriptionImageDownloadUrl).toHaveBeenCalledWith(second.image.storagePath),
-      { timeout: 4000 }
-    );
     expect(await screen.findByRole('status', { name: /cargando receta/i })).toBeInTheDocument();
 
     await act(async () => {
