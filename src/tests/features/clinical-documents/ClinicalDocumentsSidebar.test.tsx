@@ -130,6 +130,33 @@ describe('ClinicalDocumentsSidebar', () => {
     expect(onDeleteDocument).toHaveBeenCalledWith(document);
   });
 
+  it('hides the delete action when both global and per-document guards deny it', () => {
+    const document = buildDocument();
+    const onDeleteDocument = vi.fn();
+
+    render(
+      <ClinicalDocumentsSidebar
+        canEdit={true}
+        canDelete={false}
+        canDeleteDocument={() => false}
+        readOnlyMessage={null}
+        patientName="Paciente Test"
+        templates={[{ id: 'epicrisis', name: 'Epicrisis' }]}
+        selectedTemplateId="epicrisis"
+        onSelectTemplate={() => {}}
+        onCreateDocument={() => {}}
+        documents={[document]}
+        selectedDocumentId={document.id}
+        onSelectDocument={() => {}}
+        onDuplicateDocument={() => {}}
+        onDeleteDocument={onDeleteDocument}
+      />
+    );
+
+    expect(screen.queryByTitle(/eliminar documento/i)).not.toBeInTheDocument();
+    expect(onDeleteDocument).not.toHaveBeenCalled();
+  });
+
   it('shows closed-episode notice while keeping the selected document visible', () => {
     const document = buildDocument();
 

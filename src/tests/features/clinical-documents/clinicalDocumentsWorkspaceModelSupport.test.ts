@@ -72,6 +72,18 @@ describe('clinicalDocumentsWorkspaceModelSupport', () => {
     });
   });
 
+  it('lets specialists edit drafts while routing delete through the document guard', () => {
+    expect(
+      resolveClinicalDocumentsWorkspaceAccessState(patient as never, 'doctor_specialist')
+    ).toMatchObject({
+      canRead: true,
+      canEdit: true,
+      canDelete: false,
+      canDeleteByRole: false,
+      canMutateEpisode: true,
+    });
+  });
+
   it('merges the draft into sidebar documents without changing unrelated entries', () => {
     const primary = buildDocument('primary');
     const secondary = buildDocument('secondary');

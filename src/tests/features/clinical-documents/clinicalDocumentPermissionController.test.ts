@@ -24,10 +24,10 @@ describe('clinicalDocumentPermissionController', () => {
     expect(canEditClinicalDocuments('nurse_hospital')).toBe(false);
   });
 
-  it('allows document delete for editor and clinical roles', () => {
+  it('keeps specialist delete governed by the per-document author guard', () => {
     expect(canDeleteClinicalDocuments('admin')).toBe(true);
     expect(canDeleteClinicalDocuments('doctor_urgency')).toBe(true);
-    expect(canDeleteClinicalDocuments('doctor_specialist')).toBe(true);
+    expect(canDeleteClinicalDocuments('doctor_specialist')).toBe(false);
     expect(canDeleteClinicalDocuments('nurse_hospital')).toBe(true);
     expect(canDeleteClinicalDocuments('editor')).toBe(true);
     expect(canDeleteClinicalDocuments('viewer')).toBe(false);

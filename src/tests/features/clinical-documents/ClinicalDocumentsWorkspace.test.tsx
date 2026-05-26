@@ -315,6 +315,58 @@ describe('ClinicalDocumentsWorkspace', () => {
     });
   });
 
+  it('wires specialist author delete from the workspace model into the sidebar action', async () => {
+    authState.role = 'doctor_specialist';
+    const authoredDocument: ClinicalDocumentRecord = {
+      ...clinicalDocument,
+      title: 'Evolución médica 25/05/2026',
+      isActiveEpisodeDocument: true,
+      isLocked: false,
+      audit: {
+        ...clinicalDocument.audit,
+        createdBy: {
+          uid: 'u1',
+          email: 'doctor@test.com',
+          displayName: 'Doctor Test',
+          role: 'doctor_specialist',
+        },
+      },
+    };
+    vi.mocked(ClinicalDocumentRepository.subscribeByEpisode).mockImplementation(
+      (_episodeKey, callback) => {
+        callback([authoredDocument]);
+        return vi.fn();
+      }
+    );
+    vi.mocked(ClinicalDocumentRepository.subscribeByEpisodeKeys).mockImplementation(
+      (_episodeKeys, callback) => {
+        callback([authoredDocument]);
+        return vi.fn();
+      }
+    );
+
+    render(
+      <ClinicalDocumentsWorkspace
+        patient={workspacePatient}
+        currentDateString="2026-03-06"
+        bedId="R1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Evolución médica 25/05/2026')).toHaveLength(2);
+    });
+
+    fireEvent.click(screen.getByTitle(/eliminar documento/i));
+
+    await waitFor(() => {
+      expect(clinicalDocumentUseCases.executeDeleteClinicalDocument).toHaveBeenCalledWith(
+        authoredDocument.id,
+        'hhr'
+      );
+    });
+  });
+
   it('hides the sidebar and increases the sheet zoom for editing', async () => {
     render(
       <ClinicalDocumentsWorkspace

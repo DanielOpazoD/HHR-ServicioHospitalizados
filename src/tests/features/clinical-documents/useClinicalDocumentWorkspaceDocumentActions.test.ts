@@ -370,6 +370,40 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
     );
   });
 
+  it('blocks delete when both global and per-document delete guards deny it', async () => {
+    const selectedDocument = buildRecord();
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentWorkspaceDocumentActions({
+        patient: patient as never,
+        role: 'doctor_specialist',
+        user: { uid: 'u1', email: 'doctor@test.com', displayName: 'Doctor Test' },
+        hospitalId: 'hhr',
+        episode: selectedDocument,
+        selectedTemplateId: 'epicrisis',
+        templates,
+        selectedDocumentId: selectedDocument.id,
+        canEdit: true,
+        canDelete: false,
+        canDeleteDocument: () => false,
+        notify,
+        setSelectedDocumentId,
+        setDraft,
+        lastPersistedSnapshotRef,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleDeleteDocument(selectedDocument);
+    });
+
+    expect(clinicalDocumentUseCases.executeDeleteClinicalDocument).not.toHaveBeenCalled();
+    expect(notify.warning).toHaveBeenCalledWith(
+      'Permiso insuficiente',
+      'No tienes permisos para eliminar documentos clínicos.'
+    );
+  });
+
   it('surfaces failed delete outcome messages without relying on thrown exceptions', async () => {
     const selectedDocument = buildRecord();
     vi.mocked(clinicalDocumentUseCases.executeDeleteClinicalDocument).mockResolvedValue({

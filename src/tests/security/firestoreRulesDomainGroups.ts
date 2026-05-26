@@ -13,6 +13,7 @@ export function registerFirestoreRulesDomainGroups({
   specialistWithoutClaim,
   doctorWithoutClaim,
   editor,
+  firestoreForUser,
   NOW_MS,
   setupDoc,
 }: FirestoreRulesHarness): void {
@@ -203,6 +204,65 @@ export function registerFirestoreRulesDomainGroups({
       });
 
       await assertFails(specialist().doc(clinicalDocumentPath).delete());
+    });
+
+    it('Document authors can delete by email when a legacy uid no longer matches', async () => {
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        isActiveEpisodeDocument: true,
+        isLocked: false,
+        audit: {
+          ...clinicalDocumentPayload.audit,
+          createdBy: {
+            uid: 'legacy_specialist_uid',
+            email: 'specialist@example.com',
+            displayName: 'Especialista Test',
+            role: 'doctor_specialist',
+          },
+        },
+      });
+
+      await assertSucceeds(
+        firestoreForUser('rotated_specialist_uid', {
+          email: 'specialist@example.com',
+          role: 'doctor_specialist',
+        })
+          .doc(clinicalDocumentPath)
+          .delete()
+      );
+
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        isActiveEpisodeDocument: true,
+        isLocked: false,
+        audit: {
+          ...clinicalDocumentPayload.audit,
+          createdBy: {
+            uid: 'legacy_specialist_uid',
+            email: 'unconfigured.author@example.com',
+            displayName: 'Especialista Test',
+            role: 'doctor_specialist',
+          },
+        },
+      });
+
+      await assertFails(
+        firestoreForUser('other_specialist_uid', {
+          email: 'other.specialist@example.com',
+          role: 'doctor_specialist',
+        })
+          .doc(clinicalDocumentPath)
+          .delete()
+      );
+
+      await assertFails(
+        firestoreForUser('viewer_with_author_email', {
+          email: 'unconfigured.author@example.com',
+          role: 'viewer',
+        })
+          .doc(clinicalDocumentPath)
+          .delete()
+      );
     });
   });
 
