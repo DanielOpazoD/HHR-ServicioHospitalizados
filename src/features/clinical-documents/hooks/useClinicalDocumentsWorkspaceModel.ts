@@ -20,6 +20,7 @@ import { useClinicalDocumentSignatureProfile } from '@/features/clinical-documen
 import { useClinicalDocumentsWorkspaceNotifyPort } from '@/features/clinical-documents/hooks/useClinicalDocumentsWorkspaceNotifyPort';
 import { buildClinicalDocumentSignatureProfileFromDraft } from '@/features/clinical-documents/services/clinicalDocumentSignatureProfileService';
 import {
+  canDeleteClinicalDocumentFromWorkspace,
   mergeDraftIntoClinicalDocumentsSidebar,
   resolveClinicalDocumentsWorkspaceAccessState,
 } from './clinicalDocumentsWorkspaceModelSupport';
@@ -49,10 +50,15 @@ export const useClinicalDocumentsWorkspaceModel = ({
   const { notifyPort, info, confirm } = useClinicalDocumentsWorkspaceNotifyPort();
   const [isImportingWithAi, setIsImportingWithAi] = useState(false);
 
-  const { canRead, canEdit, canDelete, readOnlyMessage, persistReason } = useMemo(
-    () => resolveClinicalDocumentsWorkspaceAccessState(patient, role),
-    [patient, role]
-  );
+  const {
+    canRead,
+    canEdit,
+    canDelete,
+    canDeleteByRole,
+    canMutateEpisode,
+    readOnlyMessage,
+    persistReason,
+  } = useMemo(() => resolveClinicalDocumentsWorkspaceAccessState(patient, role), [patient, role]);
   const hospitalId = getActiveHospitalId();
 
   const {
@@ -154,6 +160,17 @@ export const useClinicalDocumentsWorkspaceModel = ({
     () => mergeDraftIntoClinicalDocumentsSidebar(documents, draft),
     [documents, draft]
   );
+  const canDeleteDocument = useCallback(
+    (document: (typeof sidebarDocuments)[number]) =>
+      canDeleteClinicalDocumentFromWorkspace({
+        document,
+        canDeleteByRole,
+        canMutateEpisode,
+        role,
+        user,
+      }),
+    [canDeleteByRole, canMutateEpisode, role, user]
+  );
 
   const {
     indicationsCatalog,
@@ -190,6 +207,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
     selectedDocumentId,
     canEdit,
     canDelete,
+    canDeleteDocument,
     notify: notifyPort,
     setSelectedDocumentId: guardedSetSelectedDocumentId,
     setDraft,
@@ -262,6 +280,7 @@ export const useClinicalDocumentsWorkspaceModel = ({
     sidebarProps: buildClinicalDocumentsWorkspaceSidebarProps({
       canEdit,
       canDelete,
+      canDeleteDocument,
       readOnlyMessage,
       patientName: patient.patientName,
       patientRut: patient.rut,

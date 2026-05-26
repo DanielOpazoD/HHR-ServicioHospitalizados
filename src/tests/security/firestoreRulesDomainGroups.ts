@@ -13,6 +13,7 @@ export function registerFirestoreRulesDomainGroups({
   specialistWithoutClaim,
   doctorWithoutClaim,
   editor,
+  firestoreForUser,
   NOW_MS,
   setupDoc,
 }: FirestoreRulesHarness): void {
@@ -155,18 +156,133 @@ export function registerFirestoreRulesDomainGroups({
       );
     });
 
-    it('Delete is allowed for clinical editor roles and denied for viewer', async () => {
+    it('Delete is globally allowed only for admin and denied for non-author clinical roles', async () => {
       await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
-      await assertSucceeds(doctor().doc(clinicalDocumentPath).delete());
+      await assertSucceeds(admin().doc(clinicalDocumentPath).delete());
 
       await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
-      await assertSucceeds(nurse().doc(clinicalDocumentPath).delete());
+      await assertFails(doctor().doc(clinicalDocumentPath).delete());
 
       await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
-      await assertSucceeds(editor().doc(clinicalDocumentPath).delete());
+      await assertFails(nurse().doc(clinicalDocumentPath).delete());
+
+      await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
+      await assertFails(editor().doc(clinicalDocumentPath).delete());
 
       await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
       await assertFails(authed().doc(clinicalDocumentPath).delete());
+    });
+
+    it('Document authors can delete their own active unlocked clinical document', async () => {
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        isActiveEpisodeDocument: true,
+        isLocked: false,
+        audit: {
+          ...clinicalDocumentPayload.audit,
+          createdBy: {
+            uid: 'user_specialist',
+            email: 'specialist@example.com',
+            displayName: 'Especialista Test',
+            role: 'doctor_specialist',
+          },
+        },
+      });
+
+      await assertSucceeds(specialist().doc(clinicalDocumentPath).delete());
+
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        isActiveEpisodeDocument: true,
+        isLocked: true,
+        audit: {
+          ...clinicalDocumentPayload.audit,
+          createdBy: {
+            uid: 'user_specialist',
+            email: 'specialist@example.com',
+            displayName: 'Especialista Test',
+            role: 'doctor_specialist',
+          },
+        },
+      });
+
+      await assertFails(specialist().doc(clinicalDocumentPath).delete());
+
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        isActiveEpisodeDocument: true,
+        isLocked: true,
+        audit: {
+          ...clinicalDocumentPayload.audit,
+          createdBy: {
+            uid: 'user_specialist',
+            email: 'specialist@example.com',
+            displayName: 'Especialista Test',
+            role: 'doctor_specialist',
+          },
+        },
+      });
+
+      await assertSucceeds(admin().doc(clinicalDocumentPath).delete());
+    });
+
+    it('Document authors can delete by email when a legacy uid no longer matches', async () => {
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        isActiveEpisodeDocument: true,
+        isLocked: false,
+        audit: {
+          ...clinicalDocumentPayload.audit,
+          createdBy: {
+            uid: 'legacy_specialist_uid',
+            email: 'specialist@example.com',
+            displayName: 'Especialista Test',
+            role: 'doctor_specialist',
+          },
+        },
+      });
+
+      await assertSucceeds(
+        firestoreForUser('rotated_specialist_uid', {
+          email: 'specialist@example.com',
+          role: 'doctor_specialist',
+        })
+          .doc(clinicalDocumentPath)
+          .delete()
+      );
+
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        isActiveEpisodeDocument: true,
+        isLocked: false,
+        audit: {
+          ...clinicalDocumentPayload.audit,
+          createdBy: {
+            uid: 'legacy_specialist_uid',
+            email: 'unconfigured.author@example.com',
+            displayName: 'Especialista Test',
+            role: 'doctor_specialist',
+          },
+        },
+      });
+
+      await assertFails(
+        firestoreForUser('other_specialist_uid', {
+          email: 'other.specialist@example.com',
+          role: 'doctor_specialist',
+        })
+          .doc(clinicalDocumentPath)
+          .delete()
+      );
+
+      await assertFails(
+        firestoreForUser('viewer_with_author_email', {
+          email: 'unconfigured.author@example.com',
+          role: 'viewer',
+        })
+          .doc(clinicalDocumentPath)
+          .delete()
+      );
     });
   });
 

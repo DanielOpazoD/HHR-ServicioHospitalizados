@@ -217,23 +217,6 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           onClearActiveTitleTarget={() => onSetActiveTitleTarget(null)}
         />
 
-        <ClinicalAttachmentsPanel
-          canEdit={canEdit && !selectedDocument.isLocked}
-          currentDocumentId={selectedDocument.id}
-          currentEpisodeKey={selectedDocument.episodeKey}
-          attachments={attachments}
-          patientAttachments={patientAttachments}
-          isLoading={isLoadingAttachments}
-          isLoadingPatientAttachments={isLoadingPatientAttachments}
-          isUploading={isUploadingAttachment}
-          uploadStatusMessage={uploadStatusMessage}
-          onUploadAttachment={onUploadAttachment}
-          onDeleteAttachment={onDeleteAttachment}
-          onRenameAttachment={onRenameAttachment}
-          onRegenerateAttachmentAccess={onRegenerateAttachmentAccess}
-          onSuggestAttachmentName={onSuggestAttachmentName}
-        />
-
         {/* Annex page (printed as next page via CSS page-break) */}
         {selectedDocument.annexContent != null && (
           <ClinicalDocumentAnnexPage
@@ -255,6 +238,23 @@ export const ClinicalDocumentSheet: React.FC<ClinicalDocumentSheetProps> = ({
           />
         )}
       </div>
+
+      <ClinicalAttachmentsPanel
+        canEdit={canEdit && !selectedDocument.isLocked}
+        currentDocumentId={selectedDocument.id}
+        currentEpisodeKey={selectedDocument.episodeKey}
+        attachments={attachments}
+        patientAttachments={patientAttachments}
+        isLoading={isLoadingAttachments}
+        isLoadingPatientAttachments={isLoadingPatientAttachments}
+        isUploading={isUploadingAttachment}
+        uploadStatusMessage={uploadStatusMessage}
+        onUploadAttachment={onUploadAttachment}
+        onDeleteAttachment={onDeleteAttachment}
+        onRenameAttachment={onRenameAttachment}
+        onRegenerateAttachmentAccess={onRegenerateAttachmentAccess}
+        onSuggestAttachmentName={onSuggestAttachmentName}
+      />
     </div>
   );
 };

@@ -72,8 +72,10 @@ describe('ClinicalAttachmentsPanel', () => {
       />
     );
 
-    expect(screen.getByRole('heading', { name: /archivos del episodio/i })).toBeInTheDocument();
-    expect(screen.getByText(/disponible para todo el episodio clínico/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /archivos globales del episodio/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/no forman parte del documento actual/i)).toBeInTheDocument();
     expect(screen.queryByText(/adjuntos de este documento/i)).not.toBeInTheDocument();
     expect(screen.getByText('Informe externo.pdf')).toBeInTheDocument();
     expect(screen.getByText('Foto clínica.jpg')).toBeInTheDocument();

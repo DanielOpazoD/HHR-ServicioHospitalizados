@@ -52,9 +52,6 @@ service cloud.firestore {
     function hasAdminOrEffectiveRole(role) {
       return isAdmin() || hasEffectiveRole(role);
     }
-    function isNurse() {
-      return hasAdminOrEffectiveRole('nurse_hospital');
-    }
     function isDoctor() {
       return hasAdminOrEffectiveRole('doctor_urgency');
     }
@@ -259,8 +256,44 @@ service cloud.firestore {
     function canWriteClinicalDocument() {
       return isAdmin() || isDoctor() || isSpecialistClinicalDocumentDraftWrite();
     }
+    function canDeleteOwnActiveClinicalDocument() {
+      return hasAnyEffectiveRole([
+               'doctor_urgency',
+               'doctor_specialist'
+             ]);
+    }
+    function hasClinicalDocumentAuthorAudit() {
+      return resource.data.keys().hasAny(['audit']) &&
+             resource.data.audit is map &&
+             resource.data.audit.keys().hasAny(['createdBy']) &&
+             resource.data.audit.createdBy is map;
+    }
+    function isClinicalDocumentAuthorByUid() {
+      return hasClinicalDocumentAuthorAudit() &&
+             resource.data.audit.createdBy.keys().hasAny(['uid']) &&
+             resource.data.audit.createdBy.uid == request.auth.uid;
+    }
+    function isClinicalDocumentAuthorByEmail() {
+      return hasClinicalDocumentAuthorAudit() &&
+             hasEmail() &&
+             resource.data.audit.createdBy.keys().hasAny(['email']) &&
+             resource.data.audit.createdBy.email is string &&
+             normalizeEmail(resource.data.audit.createdBy.email) == getUserEmail();
+    }
+    function isClinicalDocumentAuthorForActiveEpisode() {
+      return isAuthenticated() &&
+             canDeleteOwnActiveClinicalDocument() &&
+             resource != null &&
+             resource.data.isActiveEpisodeDocument == true &&
+             resource.data.isLocked == false &&
+             (
+               isClinicalDocumentAuthorByUid() ||
+               isClinicalDocumentAuthorByEmail()
+             );
+    }
     function canDeleteClinicalDocument() {
-      return canWriteClinicalDocument() || isNurse() || isEditorRole();
+      return isAdmin() ||
+             isClinicalDocumentAuthorForActiveEpisode();
     }
     function canWriteClinicalAttachment() {
       return hasAnyEffectiveRole([

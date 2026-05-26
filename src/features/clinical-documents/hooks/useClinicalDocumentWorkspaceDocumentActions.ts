@@ -49,6 +49,7 @@ interface UseClinicalDocumentWorkspaceDocumentActionsParams {
   selectedDocumentId: string | null;
   canEdit: boolean;
   canDelete: boolean;
+  canDeleteDocument?: (document: ClinicalDocumentRecord) => boolean;
   notify: NotificationPort;
   setSelectedDocumentId: (documentId: string | null) => void;
   setDraft: React.Dispatch<React.SetStateAction<ClinicalDocumentRecord | null>>;
@@ -67,6 +68,7 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
   selectedDocumentId,
   canEdit,
   canDelete,
+  canDeleteDocument,
   notify,
   setSelectedDocumentId,
   setDraft,
@@ -165,7 +167,7 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
     (document: ClinicalDocumentRecord) =>
       deleteClinicalDocumentFromWorkspace({
         document,
-        canDelete,
+        canDelete: canDelete || Boolean(canDeleteDocument?.(document)),
         hospitalId,
         notify,
         patient,
@@ -177,6 +179,7 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
       }),
     [
       canDelete,
+      canDeleteDocument,
       hospitalId,
       lastPersistedSnapshotRef,
       notify,
