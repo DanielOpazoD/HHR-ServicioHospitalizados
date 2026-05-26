@@ -16,5 +16,4 @@ export const canEditClinicalDocuments = (role: UserRole | undefined): boolean =>
 export const canArchiveClinicalDocuments = (role: UserRole | undefined): boolean =>
   role === 'admin';
 
-export const canDeleteClinicalDocuments = (role: UserRole | undefined): boolean =>
-  role === 'admin' || role === 'doctor_urgency' || role === 'nurse_hospital' || role === 'editor';
+export const canDeleteClinicalDocuments = (role: UserRole | undefined): boolean => role === 'admin';

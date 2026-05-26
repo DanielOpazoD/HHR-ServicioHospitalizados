@@ -70,15 +70,20 @@ const isClinicalDocumentAuthor = (
   return Boolean(userEmail && authorEmail && userEmail === authorEmail);
 };
 
+const canMedicalRoleDeleteOwnActiveDocument = (role: UserRole | undefined): boolean =>
+  canEditClinicalDocuments(role);
+
 export const canDeleteClinicalDocumentFromWorkspace = ({
   document,
   canDeleteByRole,
   canMutateEpisode,
+  role,
   user,
 }: {
   document: ClinicalDocumentRecord;
   canDeleteByRole: boolean;
   canMutateEpisode: boolean;
+  role: UserRole | undefined;
   user: ClinicalDocumentDeleteWorkspaceUser | null | undefined;
 }): boolean => {
   if (!canMutateEpisode) {
@@ -90,6 +95,7 @@ export const canDeleteClinicalDocumentFromWorkspace = ({
   }
 
   return (
+    canMedicalRoleDeleteOwnActiveDocument(role) &&
     document.isActiveEpisodeDocument &&
     !document.isLocked &&
     isClinicalDocumentAuthor(document, user)

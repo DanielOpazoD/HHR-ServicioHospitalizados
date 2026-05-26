@@ -52,9 +52,6 @@ service cloud.firestore {
     function hasAdminOrEffectiveRole(role) {
       return isAdmin() || hasEffectiveRole(role);
     }
-    function isNurse() {
-      return hasAdminOrEffectiveRole('nurse_hospital');
-    }
     function isDoctor() {
       return hasAdminOrEffectiveRole('doctor_urgency');
     }
@@ -261,11 +258,8 @@ service cloud.firestore {
     }
     function canDeleteOwnActiveClinicalDocument() {
       return hasAnyEffectiveRole([
-               'admin',
                'doctor_urgency',
-               'doctor_specialist',
-               'nurse_hospital',
-               'editor'
+               'doctor_specialist'
              ]);
     }
     function hasClinicalDocumentAuthorAudit() {
@@ -299,9 +293,6 @@ service cloud.firestore {
     }
     function canDeleteClinicalDocument() {
       return isAdmin() ||
-             isDoctor() ||
-             isNurse() ||
-             isEditorRole() ||
              isClinicalDocumentAuthorForActiveEpisode();
     }
     function canWriteClinicalAttachment() {

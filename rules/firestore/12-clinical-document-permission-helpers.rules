@@ -17,11 +17,8 @@
 
     function canDeleteOwnActiveClinicalDocument() {
       return hasAnyEffectiveRole([
-               'admin',
                'doctor_urgency',
-               'doctor_specialist',
-               'nurse_hospital',
-               'editor'
+               'doctor_specialist'
              ]);
     }
 
@@ -60,9 +57,6 @@
 
     function canDeleteClinicalDocument() {
       return isAdmin() ||
-             isDoctor() ||
-             isNurse() ||
-             isEditorRole() ||
              isClinicalDocumentAuthorForActiveEpisode();
     }
 

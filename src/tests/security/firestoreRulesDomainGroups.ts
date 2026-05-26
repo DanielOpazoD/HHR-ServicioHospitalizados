@@ -156,15 +156,18 @@ export function registerFirestoreRulesDomainGroups({
       );
     });
 
-    it('Delete is allowed for clinical editor roles and denied for viewer', async () => {
+    it('Delete is globally allowed only for admin and denied for non-author clinical roles', async () => {
       await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
-      await assertSucceeds(doctor().doc(clinicalDocumentPath).delete());
+      await assertSucceeds(admin().doc(clinicalDocumentPath).delete());
 
       await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
-      await assertSucceeds(nurse().doc(clinicalDocumentPath).delete());
+      await assertFails(doctor().doc(clinicalDocumentPath).delete());
 
       await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
-      await assertSucceeds(editor().doc(clinicalDocumentPath).delete());
+      await assertFails(nurse().doc(clinicalDocumentPath).delete());
+
+      await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
+      await assertFails(editor().doc(clinicalDocumentPath).delete());
 
       await setupDoc(admin(), clinicalDocumentPath, clinicalDocumentPayload);
       await assertFails(authed().doc(clinicalDocumentPath).delete());
@@ -204,6 +207,23 @@ export function registerFirestoreRulesDomainGroups({
       });
 
       await assertFails(specialist().doc(clinicalDocumentPath).delete());
+
+      await setupDoc(admin(), clinicalDocumentPath, {
+        ...clinicalDocumentPayload,
+        isActiveEpisodeDocument: true,
+        isLocked: true,
+        audit: {
+          ...clinicalDocumentPayload.audit,
+          createdBy: {
+            uid: 'user_specialist',
+            email: 'specialist@example.com',
+            displayName: 'Especialista Test',
+            role: 'doctor_specialist',
+          },
+        },
+      });
+
+      await assertSucceeds(admin().doc(clinicalDocumentPath).delete());
     });
 
     it('Document authors can delete by email when a legacy uid no longer matches', async () => {

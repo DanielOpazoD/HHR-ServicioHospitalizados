@@ -166,9 +166,10 @@ export const useClinicalDocumentsWorkspaceModel = ({
         document,
         canDeleteByRole,
         canMutateEpisode,
+        role,
         user,
       }),
-    [canDeleteByRole, canMutateEpisode, user]
+    [canDeleteByRole, canMutateEpisode, role, user]
   );
 
   const {
