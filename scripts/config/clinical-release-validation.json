@@ -49,7 +49,11 @@
       "label": "Entrega de turno: resumen, persistencia y exportacion",
       "riskLevel": "medium",
       "matrixAreas": ["handoff", "export_and_backup"],
-      "automatedRegression": ["test:ci:unit", "test:e2e:critical:ci"],
+      "automatedRegression": [
+        "test:ci:unit",
+        "test:e2e:clinical-stability:ci",
+        "test:e2e:critical:ci"
+      ],
       "manualValidation": [
         "Generar entrega de turno desde pacientes activos y confirmar que resumen, prioridades y exportacion corresponden al censo actual."
       ]

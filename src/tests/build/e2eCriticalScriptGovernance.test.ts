@@ -41,6 +41,7 @@ describe('E2E critical script governance', () => {
     expect(clinicalStability).toContain('census-persistence-reload.spec.ts');
     expect(clinicalStability).toContain('sync-conflict-resolution.spec.ts');
     expect(clinicalStability).toContain('clinical-document-ai-import.spec.ts');
+    expect(clinicalStability).toContain('handoff-shift-export-smoke.spec.ts');
     expect(clinicalStability).toContain('reports/e2e/clinical-stability-report.json');
     expect(scripts['test:e2e:clinical-stability:ci']).toContain(
       'scripts/run-e2e-clinical-stability-ci.sh'
