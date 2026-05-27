@@ -126,6 +126,17 @@ const createMedicalHandoffEvidence = async (page: Page) => {
   await expect(handoffTextarea).toHaveValue(/smoke visual de release/i);
 };
 
+const createCudyrEvidence = async (page: Page) => {
+  await page.goto(`/cudyr?date=${E2E_DATE}`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/cudyr/, { timeout: 20_000 });
+  await expect(page.getByRole('heading', { name: /instrumento cudyr/i })).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(page.getByRole('button', { name: /excel mensual/i })).toBeVisible({
+    timeout: 10_000,
+  });
+};
+
 test.describe('Clinical release visual smoke', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -140,6 +151,10 @@ test.describe('Clinical release visual smoke', () => {
     await createClinicalDocumentEvidence(page);
     await expectNoHorizontalOverflow(page);
     await attachViewportEvidence(page, testInfo, 'clinical-release-documents');
+
+    await createCudyrEvidence(page);
+    await expectNoHorizontalOverflow(page);
+    await attachViewportEvidence(page, testInfo, 'clinical-release-cudyr');
 
     await page.goto(`/medical-handoff?date=${E2E_DATE}`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/medical-handoff/, { timeout: 20_000 });

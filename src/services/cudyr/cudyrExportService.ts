@@ -61,6 +61,20 @@ const buildMonthlyWorkbook = async (
   });
 };
 
+const serializeValidatedCudyrWorkbook = async (
+  workbook: Awaited<ReturnType<typeof buildMonthlyWorkbook>>['workbook'],
+  fileName: string
+) => {
+  const buffer = await workbook.xlsx.writeBuffer();
+  const validation = validateExcelExport(buffer, fileName);
+  if (!validation.valid) {
+    const reason = validation.error ?? 'unknown_validation_error';
+    cudyrExportLogger.error(`Excel validation failed: ${reason}`);
+    throw new Error(`Archivo Excel CUDYR invalido: ${reason}`);
+  }
+  return buffer;
+};
+
 /**
  * Outcome of a clinical export. Services no longer render UI; the caller
  * decides how to present a 'failed' outcome (typically via useNotification).
@@ -76,16 +90,15 @@ export const generateCudyrMonthlyExcel = async (
   currentRecord?: DailyRecordCudyrExportState | null
 ): Promise<CudyrExcelExportOutcome> => {
   const { workbook, fileName } = await buildMonthlyWorkbook(year, month, endDate, currentRecord);
-  const buffer = await workbook.xlsx.writeBuffer();
-
-  const validation = validateExcelExport(buffer, fileName);
-  if (!validation.valid) {
-    cudyrExportLogger.error(`Excel validation failed: ${validation.error}`);
+  let buffer: Awaited<ReturnType<typeof serializeValidatedCudyrWorkbook>>;
+  try {
+    buffer = await serializeValidatedCudyrWorkbook(workbook, fileName);
+  } catch (error) {
     return {
       outcome: 'failed',
       userSafeMessage:
         'Error al generar el archivo Excel. Por favor, recarga la página e intenta de nuevo.',
-      reason: validation.error ?? 'unknown_validation_error',
+      reason: error instanceof Error ? error.message : 'unknown_validation_error',
     };
   }
 
@@ -104,7 +117,7 @@ export const generateCudyrMonthlyExcelBlob = async (
   endDate?: string,
   currentRecord?: DailyRecordCudyrExportState | null
 ): Promise<Blob> => {
-  const { workbook } = await buildMonthlyWorkbook(year, month, endDate, currentRecord);
-  const buffer = await workbook.xlsx.writeBuffer();
+  const { workbook, fileName } = await buildMonthlyWorkbook(year, month, endDate, currentRecord);
+  const buffer = await serializeValidatedCudyrWorkbook(workbook, fileName);
   return new Blob([buffer], { type: XLSX_MIME_TYPE });
 };

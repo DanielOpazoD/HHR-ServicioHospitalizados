@@ -231,6 +231,8 @@ Salida esperada:
    - revisar si el reporte indica `Retried with system CA: yes`
    - correr `NODE_OPTIONS=--use-system-ca npm run check:dependency-vulnerabilities`
    - revisar `npm config get cafile`
+   - confirmar conectividad de audit con `npm ping --registry=https://registry.npmjs.org`
+   - revisar la sección `Reproducibility` del reporte y comparar contra el último workflow de GitHub Actions para el mismo commit
    - si la red usa CA corporativa, configurar un `cafile` confiable en npm o en el entorno local
    - no usar `npm config set strict-ssl false`
 6. si el fallo es de red o registry:
@@ -240,6 +242,8 @@ Salida esperada:
    - revisar [docs/FUNCTIONS_DEPENDENCY_ACCEPTANCE.md](./FUNCTIONS_DEPENDENCY_ACCEPTANCE.md)
    - confirmar que no aparecieron `high`, `critical` ni nuevos hallazgos directos fuera del árbol aceptado
    - tratar el estado como deuda aceptada temporalmente, no como bloqueo inmediato ni como limpieza automática vía overrides inseguros
+
+El reporte `reports/security/dependency-audit.md` debe conservar comandos de reproducción local, evidencia CI esperada y acciones prohibidas. Si el audit falla por TLS/red local, eso bloquea la afirmación de seguridad local hasta tener evidencia CI equivalente para el mismo commit.
 
 ## Qué hacer cuando falla
 

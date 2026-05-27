@@ -130,7 +130,7 @@ export const ClinicalAttachmentRow: React.FC<ClinicalAttachmentRowProps> = ({
   );
 
   return (
-    <li className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5">
+    <li className="clinical-document-attachment-row flex min-w-0 items-center gap-2 overflow-hidden rounded-md border border-slate-200 bg-white px-2 py-1.5">
       <span className="text-slate-500">{resolveAttachmentIcon(attachment)}</span>
       {isEditing ? (
         <div className="min-w-0 flex-1">

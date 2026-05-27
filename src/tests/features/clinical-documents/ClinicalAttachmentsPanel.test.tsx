@@ -80,6 +80,10 @@ describe('ClinicalAttachmentsPanel', () => {
       'w-full',
       'max-w-[900px]'
     );
+    expect(document.querySelector('.clinical-document-attachment-row')).toHaveClass(
+      'min-w-0',
+      'overflow-hidden'
+    );
     expect(screen.getByText(/no forman parte del documento actual/i)).toBeInTheDocument();
     expect(screen.queryByText(/adjuntos de este documento/i)).not.toBeInTheDocument();
     expect(screen.getByText('Informe externo.pdf')).toBeInTheDocument();

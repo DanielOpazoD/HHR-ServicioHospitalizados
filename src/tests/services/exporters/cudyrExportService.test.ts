@@ -126,6 +126,14 @@ describe('cudyrExportService', () => {
     expect(mockWorkbook.xlsx.writeBuffer).toHaveBeenCalled();
   });
 
+  it('rejects an invalid CUDYR blob before it can be uploaded as backup', async () => {
+    mockWorkbook.xlsx.writeBuffer.mockResolvedValueOnce(Buffer.from([1, 2, 3]));
+
+    await expect(generateCudyrMonthlyExcelBlob(2025, 1)).rejects.toThrow(
+      /archivo Excel CUDYR invalido/i
+    );
+  });
+
   it('hydrates the current/end date from Firestore before building the summary', async () => {
     const localRecord = {
       date: '2025-01-05',
