@@ -26,6 +26,13 @@ describe('dependency audit support', () => {
         stderr: 'curl: (60) SSL certificate problem: unable to get local issuer certificate',
       })
     ).toBe('certificate_untrusted');
+
+    expect(
+      classifyAuditFailure({
+        stdout: '',
+        stderr: 'npm ERR! code SELF_SIGNED_CERT_IN_CHAIN',
+      })
+    ).toBe('certificate_untrusted');
   });
 
   it('classifies registry policy blocks separately from generic audit failures', () => {
@@ -40,6 +47,9 @@ describe('dependency audit support', () => {
 
   it('returns operator guidance for external audit blockers', () => {
     expect(getAuditFailureGuidance('certificate_untrusted')).toContain('npm CA');
+    expect(getAuditFailureGuidance('certificate_untrusted')).toContain(
+      'docs/CI_GATES_AND_FAILURE_RUNBOOKS.md'
+    );
     expect(getAuditFailureGuidance('registry_policy_blocked')).toContain('allowlist');
   });
 
@@ -113,8 +123,22 @@ describe('dependency audit support', () => {
     expect(report.workspaces).toHaveLength(2);
     expect(
       report.workspaces.every(
-        (workspace: { retriedWithSystemCa: boolean }) => workspace.retriedWithSystemCa
+        (workspace: {
+          firstFailureCategory: string;
+          recoveryAttempted: string;
+          retriedWithSystemCa: boolean;
+        }) =>
+          workspace.firstFailureCategory === 'certificate_untrusted' &&
+          workspace.recoveryAttempted === 'system_ca_retry' &&
+          workspace.retriedWithSystemCa
       )
     ).toBe(true);
+
+    const markdown = fs.readFileSync(
+      path.join(fixtureDir, 'reports/security/dependency-audit.md'),
+      'utf8'
+    );
+    expect(markdown).toContain('- First failure category: `certificate_untrusted`');
+    expect(markdown).toContain('- Retried with system CA: `yes`');
   });
 });

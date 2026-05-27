@@ -133,7 +133,9 @@ export const buildCudyrWorkbook = async ({
   workbook.creator = 'Hospital Hanga Roa';
   workbook.created = new Date();
 
-  const dailySheetNames = addDailySheets(workbook, monthlySummary.dailySummaries);
+  const dailySheetNames = monthlySummary.dailySummaries.map(daySummary =>
+    formatDateDMY(daySummary.date)
+  );
   addMonthlySummarySheet(
     workbook,
     year,
@@ -143,6 +145,7 @@ export const buildCudyrWorkbook = async ({
     dailySheetNames,
     BORDER_THIN
   );
+  addDailySheets(workbook, monthlySummary.dailySummaries);
 
   return {
     workbook,

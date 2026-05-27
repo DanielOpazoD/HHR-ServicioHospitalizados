@@ -1,6 +1,23 @@
 {
   "entryMaxBytes": 700000,
   "chunkMaxBytes": 1250000,
+  "precacheMaxBytes": 5000000,
+  "precacheIgnoredAssetPatterns": [
+    "^docs/",
+    "^templates/",
+    "^images/forms/",
+    "^vendor/exceljs\\.min\\.js$",
+    "^assets/exceljs\\.min-.*\\.js$",
+    "^assets/pdf\\.worker-.*\\.mjs$",
+    "^assets/pdf-.*\\.js$",
+    "^assets/vendor-pdf-.*\\.js$",
+    "^assets/docxtemplater-.*\\.js$",
+    "^assets/LineChart-.*\\.js$",
+    "^assets/documentFallbacks-.*\\.js$",
+    "^assets/vendor-excel-.*\\.js$",
+    "^assets/vendor-canvas-.*\\.js$"
+  ],
+  "forbiddenAssetPatterns": ["^assets/exceljs\\.min-.*\\.js$"],
   "assetPatternBudgets": [
     {
       "pattern": "^vendor/exceljs\\.min\\.js$",

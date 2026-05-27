@@ -388,13 +388,21 @@ describe('AppContent', () => {
     );
   });
 
-  it('shows and hides global modals/panels based on UI state', () => {
+  it('shows and hides global modals/panels based on UI state', async () => {
     const uiWithModals = {
       ...mockUI,
       isTestAgentRunning: true,
     };
 
-    render(<AppContent ui={uiWithModals as unknown as AppContentUi} />);
+    const { rerender } = render(<AppContent ui={uiWithModals as unknown as AppContentUi} />);
+    await act(async () => {
+      await Promise.all(_lazyPending);
+    });
+    rerender(<AppContent ui={uiWithModals as unknown as AppContentUi} />);
+    await act(async () => {
+      await Promise.all(_lazyPending);
+    });
+    rerender(<AppContent ui={uiWithModals as unknown as AppContentUi} />);
 
     expect(screen.queryByTestId('reminder-modal')).not.toBeInTheDocument();
     expect(screen.getByTestId('test-agent')).toBeInTheDocument();
@@ -402,8 +410,11 @@ describe('AppContent', () => {
     expect(screen.getByTestId('pin-lock')).toBeInTheDocument();
   });
 
-  it('keeps SyncWatcher mounted in the main application shell', () => {
+  it('keeps SyncWatcher mounted in the main application shell', async () => {
     render(<AppContent ui={mockUI} />);
+    await act(async () => {
+      await Promise.all(_lazyPending);
+    });
 
     expect(screen.getByTestId('sync-watcher')).toBeInTheDocument();
   });

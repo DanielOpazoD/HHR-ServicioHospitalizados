@@ -20,7 +20,10 @@ export const classifyAuditFailure = ({ stderr = '', stdout = '' } = {}) => {
     combined.includes('unable to verify the first certificate') ||
     combined.includes('unable to get local issuer certificate') ||
     combined.includes('self signed certificate') ||
+    combined.includes('self_signed_cert_in_chain') ||
+    combined.includes('unable_to_get_issuer_cert_locally') ||
     combined.includes('unable_to_verify_leaf_signature') ||
+    combined.includes('depth_zero_self_signed_cert') ||
     combined.includes('certificate has expired')
   ) {
     return 'certificate_untrusted';
@@ -60,7 +63,7 @@ export const buildAuditAttemptEnv = (baseEnv = {}) => {
 export const getAuditFailureGuidance = failureCategory => {
   switch (failureCategory) {
     case 'certificate_untrusted':
-      return 'Configure npm CA trust for the registry path, then rerun with NODE_OPTIONS=--use-system-ca or an npm CA/cafile trusted by this network.';
+      return 'Configure npm CA trust for the registry path, then rerun with NODE_OPTIONS=--use-system-ca or an npm CA/cafile trusted by this network. See docs/CI_GATES_AND_FAILURE_RUNBOOKS.md for the local CA recovery runbook.';
     case 'registry_policy_blocked':
       return 'Request an allowlist for registry.npmjs.org npm audit endpoints in the network policy, then rerun the dependency audit.';
     case 'network_unavailable':

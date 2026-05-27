@@ -189,12 +189,14 @@ const runAuditForWorkspace = workspace => {
     cwd: path.relative(root, workspace.cwd) || '.',
     command: `npm ${auditArgs.join(' ')}`,
     status,
+    firstFailureCategory,
     failureCategory,
     guidance: failureCategory ? getAuditFailureGuidance(failureCategory) : null,
     exitCode: result.status,
     counts,
     vulnerablePackages,
     retriedWithSystemCa,
+    recoveryAttempted: retriedWithSystemCa ? 'system_ca_retry' : null,
     issues:
       status === 'vulnerable'
         ? [
@@ -244,7 +246,9 @@ const markdown = [
     '',
     `- Working directory: \`${result.cwd}\``,
     `- Status: \`${result.status}\``,
+    `- First failure category: \`${result.firstFailureCategory || 'none'}\``,
     `- Failure category: \`${result.failureCategory || 'none'}\``,
+    `- Retried with system CA: \`${result.retriedWithSystemCa ? 'yes' : 'no'}\``,
     `- Guidance: ${result.guidance || 'none'}`,
     `- Exit code: \`${String(result.exitCode ?? 'n/a')}\``,
     `- Counts: high=\`${result.counts.high}\`, critical=\`${result.counts.critical}\`, total=\`${result.counts.total}\``,

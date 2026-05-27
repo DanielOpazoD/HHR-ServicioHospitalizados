@@ -21,6 +21,7 @@ describe('Excel export configuration', () => {
         "typeof __ENABLE_NODE_EXCEL_LOADER__ !== 'undefined'"
       );
       expect(excelModuleLoaderSource).not.toContain("await import('exceljs')");
+      expect(excelModuleLoaderSource).not.toContain('excelJsModuleLoader.node');
       expect(nodeExcelModuleLoaderSource).toContain("await import('exceljs')");
       expect(excelUtilsSource).toContain('loadExcelJSModule');
     });

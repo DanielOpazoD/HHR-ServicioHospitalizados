@@ -3,6 +3,9 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 interface BundleBudgetConfig {
+  precacheMaxBytes: number;
+  precacheIgnoredAssetPatterns: string[];
+  forbiddenAssetPatterns: string[];
   assetPatternBudgets: Array<{
     pattern: string;
     maxBytes: number;
@@ -48,5 +51,36 @@ describe('bundle budget config', () => {
     ).toMatchObject({
       maxBytes: 590000,
     });
+  });
+
+  it('keeps the install-time precache budget focused on critical runtime files', () => {
+    const config = readBundleBudgetConfig();
+
+    expect(config.precacheMaxBytes).toBe(5000000);
+    expect(config.precacheIgnoredAssetPatterns).toEqual(
+      expect.arrayContaining([
+        '^docs/',
+        '^templates/',
+        '^images/forms/',
+        '^vendor/exceljs\\.min\\.js$',
+        '^assets/exceljs\\.min-.*\\.js$',
+        '^assets/pdf\\.worker-.*\\.mjs$',
+        '^assets/pdf-.*\\.js$',
+        '^assets/vendor-pdf-.*\\.js$',
+        '^assets/docxtemplater-.*\\.js$',
+        '^assets/LineChart-.*\\.js$',
+        '^assets/documentFallbacks-.*\\.js$',
+        '^assets/vendor-excel-.*\\.js$',
+        '^assets/vendor-canvas-.*\\.js$',
+      ])
+    );
+  });
+
+  it('blocks duplicate bundled ExcelJS runtime assets', () => {
+    const config = readBundleBudgetConfig();
+
+    expect(config.forbiddenAssetPatterns).toEqual(
+      expect.arrayContaining(['^assets/exceljs\\.min-.*\\.js$'])
+    );
   });
 });

@@ -65,6 +65,29 @@ describe('chunkingPolicy', () => {
     );
   });
 
+  it('keeps non-critical global overlays outside the authenticated shell manual chunk', () => {
+    expect(
+      chunkForModule('/repo/src/components/layout/app-content/AppContentOverlays.tsx')
+    ).toBeUndefined();
+    expect(
+      chunkForModule('/repo/src/components/layout/app-content/appContentOverlaysController.ts')
+    ).toBeUndefined();
+    expect(
+      chunkForModule('/repo/src/components/layout/app-content/usePatientSearchShortcut.ts')
+    ).toBeUndefined();
+  });
+
+  it('loads global overlays through a lazy boundary instead of the static shell graph', () => {
+    const appContentSource = readSource('src/components/layout/AppContent.tsx');
+
+    expect(appContentSource).not.toMatch(
+      /import\s+\{\s*AppContentOverlays\s*\}\s+from ['"]@\/components\/layout\/app-content\/AppContentOverlays['"]/
+    );
+    expect(appContentSource).toContain(
+      "import('@/components/layout/app-content/AppContentOverlays')"
+    );
+  });
+
   it('does not force domain providers into the authenticated shell budget', () => {
     expect(chunkForModule('/repo/src/context/ReminderCenterContext.tsx')).toBeUndefined();
   });
@@ -223,7 +246,7 @@ describe('chunkingPolicy', () => {
 
     expect(browserLoaderSource).toContain('/vendor/exceljs.min.js');
     expect(browserLoaderSource).not.toMatch(/await\s+import\(['"]exceljs['"]\)/);
-    expect(browserLoaderSource).toContain('loadNodeExcelLoader');
+    expect(browserLoaderSource).not.toContain('excelJsModuleLoader.node');
     expect(viteConfigSource).toContain('__ENABLE_NODE_EXCEL_LOADER__');
     expect(nodeLoaderSource).toContain('importExcelJsForNode');
   });
