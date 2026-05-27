@@ -10,6 +10,11 @@ const readPackageScripts = () => {
   return manifest.scripts as Record<string, string>;
 };
 
+const workflowFiles = fs
+  .readdirSync(path.join(process.cwd(), '.github', 'workflows'))
+  .filter(fileName => fileName.endsWith('.yml') || fileName.endsWith('.yaml'))
+  .map(fileName => path.join('.github', 'workflows', fileName));
+
 describe('CI workflow governance', () => {
   it('uses the logged governance snapshot runner so CI exposes long report substeps', () => {
     const scripts = readPackageScripts();
@@ -30,5 +35,37 @@ describe('CI workflow governance', () => {
     expect(workflow).not.toContain('e2e-firefox-compat');
     expect(workflow).not.toContain('E2E_CRITICAL_BROWSERS: firefox');
     expect(workflow).not.toContain('playwright install --with-deps firefox');
+  });
+
+  it('runs the dependency security workflow when the audit scripts change', () => {
+    const workflow = readText('.github/workflows/security-audit.yml');
+
+    expect(workflow).toContain('scripts/check-dependency-vulnerabilities.mjs');
+    expect(workflow).toContain('scripts/lib/dependencyAuditSupport.mjs');
+    expect(workflow).toContain('.github/workflows/security-audit.yml');
+  });
+
+  it('opts GitHub JavaScript actions into Node 24 before the runner default changes', () => {
+    for (const workflowFile of workflowFiles) {
+      const workflow = readText(workflowFile);
+
+      expect(workflow).toContain('FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true');
+    }
+  });
+
+  it('uses Node 24-native GitHub action majors instead of deprecated Node 20 actions', () => {
+    const deprecatedActions = [
+      'actions/checkout@v4',
+      'actions/setup-node@v4',
+      'actions/upload-artifact@v4',
+    ];
+
+    for (const workflowFile of workflowFiles) {
+      const workflow = readText(workflowFile);
+
+      for (const action of deprecatedActions) {
+        expect(workflow, `${workflowFile} should not use ${action}`).not.toContain(action);
+      }
+    }
   });
 });

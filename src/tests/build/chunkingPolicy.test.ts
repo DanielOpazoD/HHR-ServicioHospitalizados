@@ -95,12 +95,17 @@ describe('chunkingPolicy', () => {
   it('keeps the reminder center provider out of the static authenticated shell import graph', () => {
     const appContentSource = readSource('src/components/layout/AppContent.tsx');
     const reminderHookSource = readSource('src/hooks/useReminders.ts');
+    const navbarSource = readSource('src/components/layout/Navbar.tsx');
 
     expect(appContentSource).not.toMatch(
       /import\s+\{[^}]*ReminderCenterProvider[^}]*\}\s+from ['"]@\/context\/ReminderCenterContext['"]/
     );
     expect(appContentSource).toContain("import('@/context/ReminderCenterContext')");
     expect(reminderHookSource).not.toContain('@/context/ReminderCenterContext');
+    expect(navbarSource).not.toMatch(
+      /import\s+\{[^}]*ReminderBadge[^}]*\}\s+from ['"]@\/components\/reminders\/ReminderBadge['"]/
+    );
+    expect(navbarSource).toContain("import('@/components/reminders/ReminderBadge')");
   });
 
   it('keeps authenticated shell runtime off the hooks barrel to avoid pulling feature hooks into startup', () => {
@@ -244,7 +249,7 @@ describe('chunkingPolicy', () => {
     const nodeLoaderSource = readSource('src/services/exporters/excelJsModuleLoader.node.ts');
     const viteConfigSource = readSource('vite.config.ts');
 
-    expect(browserLoaderSource).toContain('/vendor/exceljs.min.js');
+    expect(browserLoaderSource).toContain('/vendor/exceljs.bare.min.js');
     expect(browserLoaderSource).not.toMatch(/await\s+import\(['"]exceljs['"]\)/);
     expect(browserLoaderSource).not.toContain('excelJsModuleLoader.node');
     expect(viteConfigSource).toContain('__ENABLE_NODE_EXCEL_LOADER__');

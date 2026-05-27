@@ -82,6 +82,7 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
             currentDate={record.date}
             updatedAt={record.cudyrUpdatedAt}
             categoryCounts={cudyrSummary?.counts}
+            currentRecord={record}
           />
         </div>
 

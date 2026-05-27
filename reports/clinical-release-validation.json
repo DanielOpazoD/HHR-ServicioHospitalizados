@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-05-16T16:55:20.113Z",
-  "gitSha": "497a0878",
+  "generatedAt": "2026-05-27T20:35:11.344Z",
+  "gitSha": "1d181dce",
   "gitDirty": false,
   "overall": "ok",
   "counts": {
     "scenarioCount": 6,
     "highRiskScenarioCount": 3
+  },
+  "runbook": {
+    "file": "docs/runbooks/deployment-checklist.md",
+    "status": "ok",
+    "missingPatterns": []
   },
   "scenarios": [
     {
@@ -17,6 +22,7 @@
         "sync_and_firestore"
       ],
       "automatedRegression": [
+        "test:e2e:clinical-stability:ci",
         "test:e2e:critical:ci",
         "test:firestore:release:ci"
       ],
@@ -41,6 +47,7 @@
       ],
       "automatedRegression": [
         "test:ci:unit",
+        "test:e2e:clinical-stability:ci",
         "test:e2e:critical:ci"
       ],
       "manualValidation": [
@@ -63,6 +70,7 @@
       ],
       "automatedRegression": [
         "test:clinical-documents",
+        "test:e2e:clinical-stability:ci",
         "test:e2e:clinical-visual-release"
       ],
       "manualValidation": [
@@ -86,6 +94,7 @@
       ],
       "automatedRegression": [
         "test:ci:unit",
+        "test:e2e:clinical-stability:ci",
         "test:e2e:critical:ci"
       ],
       "manualValidation": [
@@ -132,6 +141,7 @@
       ],
       "automatedRegression": [
         "test:platform-resilience",
+        "test:e2e:clinical-stability:ci",
         "test:e2e:critical:ci"
       ],
       "manualValidation": [

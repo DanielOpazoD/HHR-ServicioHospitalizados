@@ -110,10 +110,10 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
 
   return (
     <section className="clinical-document-attachments-panel mx-auto w-full max-w-[900px] rounded-lg border border-slate-200 bg-slate-50/80 p-3 print:hidden">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <FolderOpen size={15} className="text-slate-500" />
-          <h2 className="text-xs font-black uppercase tracking-[0.16em] text-slate-600">
+      <div className="clinical-document-attachments-header flex flex-wrap items-center justify-between gap-2">
+        <div className="clinical-document-attachments-title flex min-w-0 items-center gap-2">
+          <FolderOpen size={15} className="shrink-0 text-slate-500" />
+          <h2 className="min-w-0 text-xs font-black uppercase tracking-[0.16em] text-slate-600">
             Archivos globales del episodio
           </h2>
         </div>
@@ -131,7 +131,7 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="inline-flex h-7 items-center rounded-md border border-medical-200 bg-white px-2 text-[10px] font-bold uppercase tracking-[0.12em] text-medical-700 transition-colors hover:bg-medical-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-7 shrink-0 items-center rounded-md border border-medical-200 bg-white px-2 text-[10px] font-bold uppercase tracking-[0.12em] text-medical-700 transition-colors hover:bg-medical-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Upload size={12} className="mr-1" />
               Adjuntar

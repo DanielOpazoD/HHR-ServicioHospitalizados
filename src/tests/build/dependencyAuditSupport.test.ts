@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   buildAuditAttemptEnv,
+  buildAuditReproducibilityMetadata,
   classifyAuditFailure,
   getAuditFailureGuidance,
   shouldRetryAuditWithSystemCa,
@@ -51,6 +52,21 @@ describe('dependency audit support', () => {
       'docs/CI_GATES_AND_FAILURE_RUNBOOKS.md'
     );
     expect(getAuditFailureGuidance('registry_policy_blocked')).toContain('allowlist');
+  });
+
+  it('builds exact local and CI repro steps for dependency audit blockers', () => {
+    const metadata = buildAuditReproducibilityMetadata({
+      failureCategories: ['certificate_untrusted', 'network_unavailable'],
+    });
+
+    expect(metadata.status).toBe('external_blocker');
+    expect(metadata.localCommands).toEqual([
+      'NODE_OPTIONS=--use-system-ca npm run check:dependency-vulnerabilities',
+      'npm config get cafile',
+      'npm ping --registry=https://registry.npmjs.org',
+    ]);
+    expect(metadata.ciEvidence).toContain('GitHub Actions');
+    expect(metadata.mustNotDo).toContain('npm config set strict-ssl false');
   });
 
   it('retries certificate failures with the system CA option exactly once', () => {
@@ -140,5 +156,7 @@ describe('dependency audit support', () => {
     );
     expect(markdown).toContain('- First failure category: `certificate_untrusted`');
     expect(markdown).toContain('- Retried with system CA: `yes`');
+    expect(markdown).toContain('## Reproducibility');
+    expect(markdown).toContain('npm ping --registry=https://registry.npmjs.org');
   });
 });

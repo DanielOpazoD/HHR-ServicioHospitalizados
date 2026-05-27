@@ -60,6 +60,39 @@ export const buildAuditAttemptEnv = (baseEnv = {}) => {
   };
 };
 
+const EXTERNAL_BLOCKER_CATEGORIES = new Set([
+  'certificate_untrusted',
+  'registry_policy_blocked',
+  'network_unavailable',
+]);
+
+/**
+ * @param {{ failureCategories?: string[] }} [options]
+ */
+export const buildAuditReproducibilityMetadata = ({ failureCategories = [] } = {}) => {
+  const normalizedCategories = [...new Set(failureCategories.filter(Boolean))];
+  const hasExternalBlocker = normalizedCategories.some(category =>
+    EXTERNAL_BLOCKER_CATEGORIES.has(category)
+  );
+
+  return {
+    status: hasExternalBlocker ? 'external_blocker' : 'direct_audit_result',
+    failureCategories: normalizedCategories,
+    localCommands: [
+      'NODE_OPTIONS=--use-system-ca npm run check:dependency-vulnerabilities',
+      'npm config get cafile',
+      'npm ping --registry=https://registry.npmjs.org',
+    ],
+    ciEvidence:
+      'Confirm the latest GitHub Actions security/dependency audit run against the same commit before treating local TLS or registry failures as environmental.',
+    mustNotDo: [
+      'npm config set strict-ssl false',
+      'NODE_TLS_REJECT_UNAUTHORIZED=0',
+      'Downgrade production dependencies only to silence npm audit without a compatibility reason.',
+    ],
+  };
+};
+
 export const getAuditFailureGuidance = failureCategory => {
   switch (failureCategory) {
     case 'certificate_untrusted':

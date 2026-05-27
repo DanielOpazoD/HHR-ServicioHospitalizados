@@ -113,6 +113,7 @@ Estos scripts siguen soportados, pero no forman parte de la superficie pública 
 - `dev`, `typecheck`, `lint`, `test:ci:unit`, `check:quality` y `ci:*` son la superficie pública recomendada.
 - `check:*`, `report:*` y `test:*` más específicos deben tratarse como herramientas de diagnóstico o validación focalizada.
 - Si aparece un script nuevo que debería usar casi todo el equipo, debe entrar a esta lista oficial o no vale la pena publicitarlo.
+- `npm run test:e2e` corre Chromium por defecto para mantener el ciclo local rápido. Para una revisión cross-browser puntual usa `E2E_BROWSERS=chromium,firefox,webkit npm run test:e2e`; no lo promuevas a gate diario sin una señal real de compatibilidad.
 
 ## Higiene mínima de commits
 

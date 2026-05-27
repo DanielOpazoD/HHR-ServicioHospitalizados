@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   buildAuditAttemptEnv,
+  buildAuditReproducibilityMetadata,
   classifyAuditFailure,
   getAuditFailureGuidance,
   shouldRetryAuditWithSystemCa,
@@ -212,6 +213,11 @@ const runAuditForWorkspace = workspace => {
 
 const workspaceResults = workspaceConfigs.map(runAuditForWorkspace);
 const overallStatus = workspaceResults.every(result => result.status === 'ok') ? 'ok' : 'failed';
+const reproducibility = buildAuditReproducibilityMetadata({
+  failureCategories: workspaceResults.flatMap(result =>
+    [result.firstFailureCategory, result.failureCategory].filter(Boolean)
+  ),
+});
 
 const summary = {
   generatedAt: new Date().toISOString(),
@@ -222,6 +228,7 @@ const summary = {
     blockingSeverities: ['high', 'critical'],
     workspaces: workspaceConfigs.map(workspace => workspace.id),
   },
+  reproducibility,
   workspaces: workspaceResults,
 };
 
@@ -266,6 +273,16 @@ const markdown = [
     ...(result.issues.length > 0 ? ['- Notes:', ...result.issues.map(issue => `  - ${issue}`)] : ['- Notes: none']),
     '',
   ]),
+  '## Reproducibility',
+  '',
+  `- Status: \`${reproducibility.status}\``,
+  `- Failure categories: \`${reproducibility.failureCategories.join(', ') || 'none'}\``,
+  `- CI evidence: ${reproducibility.ciEvidence}`,
+  '- Local repro commands:',
+  ...reproducibility.localCommands.map(command => `  - \`${command}\``),
+  '- Do not use:',
+  ...reproducibility.mustNotDo.map(command => `  - \`${command}\``),
+  '',
 ].join('\n');
 
 fs.writeFileSync(outputJsonPath, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');

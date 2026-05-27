@@ -35,9 +35,9 @@ function excelJsRuntimeAssetPlugin(): Plugin {
     'node_modules',
     'exceljs',
     'dist',
-    'exceljs.min.js'
+    'exceljs.bare.min.js'
   );
-  const runtimeAssetRoute = '/vendor/exceljs.min.js';
+  const runtimeAssetRoute = '/vendor/exceljs.bare.min.js';
 
   return {
     name: 'exceljs-runtime-asset',
@@ -55,7 +55,7 @@ function excelJsRuntimeAssetPlugin(): Plugin {
     generateBundle() {
       this.emitFile({
         type: 'asset',
-        fileName: 'vendor/exceljs.min.js',
+        fileName: 'vendor/exceljs.bare.min.js',
         source: fs.readFileSync(runtimeAssetPath, 'utf8'),
       });
     },
@@ -116,7 +116,7 @@ export default defineConfig(({ mode }) => {
             '**/docs/**',
             '**/templates/**',
             '**/images/forms/**',
-            '**/vendor/exceljs.min.js',
+            '**/vendor/exceljs.bare.min.js',
             '**/assets/exceljs.min-*.js',
             '**/assets/pdf.worker-*.mjs',
             '**/assets/pdf-*.js',
@@ -126,6 +126,9 @@ export default defineConfig(({ mode }) => {
             '**/assets/documentFallbacks-*.js',
             '**/assets/vendor-excel-*.js',
             '**/assets/vendor-canvas-*.js',
+            '**/assets/terminologyService-*.js',
+            '**/assets/fonasaDatabase-*.js',
+            '**/assets/clinicalDocumentTemplateEditorController-*.js',
           ],
         },
         registerType: 'autoUpdate',

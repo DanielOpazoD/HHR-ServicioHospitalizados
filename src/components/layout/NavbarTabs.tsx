@@ -102,7 +102,7 @@ export const NavbarTabs: React.FC<NavbarTabsProps> = ({
   };
 
   return (
-    <div className="flex gap-1 items-center">
+    <div className="flex max-w-full items-center gap-1 overflow-x-auto">
       {/* Clinical Modules - Prominent tabs */}
       {clinicalTabs.map(item => (
         <NavTab

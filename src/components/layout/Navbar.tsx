@@ -11,11 +11,23 @@ import { NavbarMenu } from './NavbarMenu';
 import { NavbarTabs } from './NavbarTabs';
 import { UserMenu } from './UserMenu';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
-import { ReminderBadge } from '@/components/reminders/ReminderBadge';
 import { getVisibleAppModules } from '@/shared/access/operationalAccessPolicy';
 
 import { ModuleType } from '@/constants/navigationConfig';
 type ViewMode = 'REGISTER' | 'ANALYTICS';
+
+const ReminderBadge = React.lazy(() =>
+  import('@/components/reminders/ReminderBadge').then(module => ({
+    default: module.ReminderBadge,
+  }))
+);
+
+const ReminderBadgeFallback = () => (
+  <div
+    className="h-8 w-[58px] rounded-full border border-white/10 bg-white/10"
+    aria-hidden="true"
+  />
+);
 
 export interface NavbarProps {
   currentModule: ModuleType;
@@ -54,7 +66,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   ) : (
     <div className="flex items-center gap-3">
       <SyncStatusIndicator />
-      <ReminderBadge />
+      <React.Suspense fallback={<ReminderBadgeFallback />}>
+        <ReminderBadge />
+      </React.Suspense>
 
       {!isFirebaseConnected && <WifiOff size={14} className="text-red-200/80" aria-hidden="true" />}
     </div>

@@ -349,6 +349,7 @@ describe('PrescriptionBedGridView', () => {
   });
 
   it('navigates between prescriptions for the same patient in the image viewer', async () => {
+    const user = userEvent.setup();
     const first = buildRecord('rx-first', {
       bedId: 'H1C2',
       patientName: 'Carina Pate Lillo',
@@ -365,14 +366,12 @@ describe('PrescriptionBedGridView', () => {
     renderGrid(<PrescriptionBedGridView records={[first, second]} dayIso="2026-05-04" />);
 
     const thumbnail = await screen.findByRole('img', { name: /comun · h1c2/i });
-    fireEvent.click(thumbnail.closest('button')!);
+    await user.click(thumbnail.closest('button')!);
 
     const dialogImage = await screen.findByRole('img', { name: /receta 1 de 2/i });
     expect(dialogImage).toHaveAttribute('src', 'https://stub/prescriptions/hhr/rx-first/full.jpg');
 
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /receta siguiente/i }));
-    });
+    await user.click(screen.getByRole('button', { name: /receta siguiente/i }));
 
     expect(
       await screen.findByRole('img', { name: /receta 2 de 2/i }, { timeout: 4000 })

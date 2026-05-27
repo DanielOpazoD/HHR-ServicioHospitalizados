@@ -36,11 +36,11 @@ El audit (PDF P1-2) marca como críticos los siguientes flujos que aún no tiene
 
 Además del VRT con baselines versionados, el release puede ejecutar un smoke visual sin snapshots:
 
-| Comando                                    | Qué cubre                                                                                                                                                              |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run test:e2e:clinical-visual-release` | Censo autenticado, creación de documento clínico y creación de entrega médica con datos determinísticos. Adjunta capturas Playwright y falla ante overflow horizontal. |
+| Comando                                    | Qué cubre                                                                                                                                                                                                |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run test:e2e:clinical-visual-release` | Censo autenticado, creación de documento clínico, CUDYR con acceso a Excel mensual y creación de entrega médica con datos determinísticos. Adjunta capturas Playwright y falla ante overflow horizontal. |
 
-Este smoke vive en [clinical-release-visual-smoke.spec.ts](../../e2e/clinical-release-visual-smoke.spec.ts). No reemplaza `test:vrt`: su objetivo es aportar evidencia visual operativa rápida para release sin exigir regenerar PNGs de referencia. El flujo no solo abre superficies: deja evidencia de que el usuario puede iniciar un documento clínico editable y una entrega médica mínima. Está conectado al perfil `full` de `test:release-confidence` como paso `extended`, no al perfil `blocking`.
+Este smoke vive en [clinical-release-visual-smoke.spec.ts](../../e2e/clinical-release-visual-smoke.spec.ts). No reemplaza `test:vrt`: su objetivo es aportar evidencia visual operativa rápida para release sin exigir regenerar PNGs de referencia. El flujo no solo abre superficies: deja evidencia de que el usuario puede iniciar un documento clínico editable, abrir CUDYR con su entrada de Excel mensual y crear una entrega médica mínima. Está conectado al perfil `full` de `test:release-confidence` como paso `extended`, no al perfil `blocking`.
 
 ## Política de baselines
 

@@ -80,6 +80,15 @@ describe('CudyrHeader', () => {
     expect(screen.getByText('77%')).toBeInTheDocument();
   });
 
+  it('keeps header controls wrapped and bounded for narrow clinical workspaces', () => {
+    render(<CudyrHeader occupiedCount={13} categorizedCount={10} currentDate="2026-03-07" />);
+
+    expect(screen.getByTestId('cudyr-title-row')).toHaveClass('flex-wrap');
+    expect(screen.getByTestId('cudyr-stats-actions-bar')).toHaveClass('overflow-hidden');
+    expect(screen.getByTestId('cudyr-metrics')).toHaveClass('min-w-0', 'flex-wrap');
+    expect(screen.getByTestId('cudyr-actions')).toHaveClass('flex-wrap', 'justify-end');
+  });
+
   it('shows only non-zero category pills when counts are provided', () => {
     const counts = {
       uti: { A1: 1, A2: 0, A3: 0, B1: 0, B2: 2, B3: 0, C1: 0, C2: 0, C3: 0, D1: 0, D2: 0, D3: 0 },

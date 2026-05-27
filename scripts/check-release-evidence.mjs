@@ -23,7 +23,13 @@ const clinicalVisualReleaseTest =
   'creates release-critical clinical surfaces without layout overflow';
 const clinicalVisualReleaseAttachments = [
   'clinical-release-census.png',
+  'clinical-release-census-after-refresh.png',
+  'clinical-release-census-excel-download.json',
   'clinical-release-documents.png',
+  'clinical-release-documents-mobile.png',
+  'clinical-release-cudyr.png',
+  'clinical-release-cudyr-mobile.png',
+  'clinical-release-cudyr-excel-download.json',
   'clinical-release-medical-handoff.png',
 ];
 

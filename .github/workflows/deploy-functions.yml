@@ -1,5 +1,8 @@
 name: Deploy Firebase Functions
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 # Deploys the Firebase Cloud Functions in `functions/` to the
 # `hhr-serviciohospitalizados` project on every push to `main` that touches
 # function-relevant code. Manual `workflow_dispatch` is also available for
@@ -44,10 +47,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js (functions runtime)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           # Matches `functions/package.json` engines.node — keep these in sync.
           node-version: '20'

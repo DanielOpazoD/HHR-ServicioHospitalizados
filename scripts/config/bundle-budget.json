@@ -1,12 +1,12 @@
 {
   "entryMaxBytes": 700000,
   "chunkMaxBytes": 1250000,
-  "precacheMaxBytes": 5000000,
+  "precacheMaxBytes": 4700000,
   "precacheIgnoredAssetPatterns": [
     "^docs/",
     "^templates/",
     "^images/forms/",
-    "^vendor/exceljs\\.min\\.js$",
+    "^vendor/exceljs\\.bare\\.min\\.js$",
     "^assets/exceljs\\.min-.*\\.js$",
     "^assets/pdf\\.worker-.*\\.mjs$",
     "^assets/pdf-.*\\.js$",
@@ -15,14 +15,17 @@
     "^assets/LineChart-.*\\.js$",
     "^assets/documentFallbacks-.*\\.js$",
     "^assets/vendor-excel-.*\\.js$",
-    "^assets/vendor-canvas-.*\\.js$"
+    "^assets/vendor-canvas-.*\\.js$",
+    "^assets/terminologyService-.*\\.js$",
+    "^assets/fonasaDatabase-.*\\.js$",
+    "^assets/clinicalDocumentTemplateEditorController-.*\\.js$"
   ],
   "forbiddenAssetPatterns": ["^assets/exceljs\\.min-.*\\.js$"],
   "assetPatternBudgets": [
     {
-      "pattern": "^vendor/exceljs\\.min\\.js$",
-      "_comment": "Browser ExcelJS is served as a runtime asset instead of a duplicated Vite chunk. This ceiling keeps the measured ~925 KB asset near the warning band so payload drift stays visible without blocking the current release.",
-      "maxBytes": 1000000
+      "pattern": "^vendor/exceljs\\.bare\\.min\\.js$",
+      "_comment": "Browser ExcelJS is served as a runtime asset instead of a duplicated Vite chunk. This ceiling keeps the measured ~948 KB asset near the warning band so payload drift stays visible without blocking the current release.",
+      "maxBytes": 960000
     }
   ],
   "startupChunkBudgets": [
@@ -42,8 +45,8 @@
     {
       "label": "app-authenticated-shell",
       "pattern": "^app-authenticated-shell-.*\\.js$",
-      "_comment": "Measured at ~534 KB with ES2022 + two-pass production minification. Keep this close enough to warn on drift while direct-import guardrails protect the startup graph.",
-      "maxBytes": 590000,
+      "_comment": "Measured at ~533 KB with ES2022 + two-pass production minification. The remaining shell graph is the authenticated census runtime; direct-import guardrails protect growth, while this ceiling keeps roughly 11% headroom without creating a permanent false near-limit warning.",
+      "maxBytes": 600000,
       "severity": "error"
     }
   ],
