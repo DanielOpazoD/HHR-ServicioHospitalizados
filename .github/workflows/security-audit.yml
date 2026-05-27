@@ -10,6 +10,9 @@ on:
       - 'package-lock.json'
       - 'functions/package.json'
       - 'functions/package-lock.json'
+      - 'scripts/check-dependency-vulnerabilities.mjs'
+      - 'scripts/lib/dependencyAuditSupport.mjs'
+      - '.github/workflows/security-audit.yml'
   push:
     branches: [ main, develop ]
     paths:
@@ -17,6 +20,9 @@ on:
       - 'package-lock.json'
       - 'functions/package.json'
       - 'functions/package-lock.json'
+      - 'scripts/check-dependency-vulnerabilities.mjs'
+      - 'scripts/lib/dependencyAuditSupport.mjs'
+      - '.github/workflows/security-audit.yml'
 
 jobs:
   dependency-vulnerabilities:

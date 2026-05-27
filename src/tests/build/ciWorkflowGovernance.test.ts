@@ -31,4 +31,12 @@ describe('CI workflow governance', () => {
     expect(workflow).not.toContain('E2E_CRITICAL_BROWSERS: firefox');
     expect(workflow).not.toContain('playwright install --with-deps firefox');
   });
+
+  it('runs the dependency security workflow when the audit scripts change', () => {
+    const workflow = readText('.github/workflows/security-audit.yml');
+
+    expect(workflow).toContain('scripts/check-dependency-vulnerabilities.mjs');
+    expect(workflow).toContain('scripts/lib/dependencyAuditSupport.mjs');
+    expect(workflow).toContain('.github/workflows/security-audit.yml');
+  });
 });
