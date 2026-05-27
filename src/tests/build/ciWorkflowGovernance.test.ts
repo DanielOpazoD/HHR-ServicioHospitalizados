@@ -52,4 +52,20 @@ describe('CI workflow governance', () => {
       expect(workflow).toContain('FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true');
     }
   });
+
+  it('uses Node 24-native GitHub action majors instead of deprecated Node 20 actions', () => {
+    const deprecatedActions = [
+      'actions/checkout@v4',
+      'actions/setup-node@v4',
+      'actions/upload-artifact@v4',
+    ];
+
+    for (const workflowFile of workflowFiles) {
+      const workflow = readText(workflowFile);
+
+      for (const action of deprecatedActions) {
+        expect(workflow, `${workflowFile} should not use ${action}`).not.toContain(action);
+      }
+    }
+  });
 });
