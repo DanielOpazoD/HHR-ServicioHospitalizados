@@ -10,6 +10,11 @@ const readPackageScripts = () => {
   return manifest.scripts as Record<string, string>;
 };
 
+const workflowFiles = fs
+  .readdirSync(path.join(process.cwd(), '.github', 'workflows'))
+  .filter(fileName => fileName.endsWith('.yml') || fileName.endsWith('.yaml'))
+  .map(fileName => path.join('.github', 'workflows', fileName));
+
 describe('CI workflow governance', () => {
   it('uses the logged governance snapshot runner so CI exposes long report substeps', () => {
     const scripts = readPackageScripts();
@@ -38,5 +43,13 @@ describe('CI workflow governance', () => {
     expect(workflow).toContain('scripts/check-dependency-vulnerabilities.mjs');
     expect(workflow).toContain('scripts/lib/dependencyAuditSupport.mjs');
     expect(workflow).toContain('.github/workflows/security-audit.yml');
+  });
+
+  it('opts GitHub JavaScript actions into Node 24 before the runner default changes', () => {
+    for (const workflowFile of workflowFiles) {
+      const workflow = readText(workflowFile);
+
+      expect(workflow).toContain('FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true');
+    }
   });
 });

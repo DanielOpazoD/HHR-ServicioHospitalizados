@@ -249,7 +249,7 @@ describe('chunkingPolicy', () => {
     const nodeLoaderSource = readSource('src/services/exporters/excelJsModuleLoader.node.ts');
     const viteConfigSource = readSource('vite.config.ts');
 
-    expect(browserLoaderSource).toContain('/vendor/exceljs.min.js');
+    expect(browserLoaderSource).toContain('/vendor/exceljs.bare.min.js');
     expect(browserLoaderSource).not.toMatch(/await\s+import\(['"]exceljs['"]\)/);
     expect(browserLoaderSource).not.toContain('excelJsModuleLoader.node');
     expect(viteConfigSource).toContain('__ENABLE_NODE_EXCEL_LOADER__');

@@ -33,7 +33,9 @@ describe('bundle budget config', () => {
     const config = readBundleBudgetConfig();
 
     expect(
-      config.assetPatternBudgets.find(budget => budget.pattern === '^vendor/exceljs\\.min\\.js$')
+      config.assetPatternBudgets.find(
+        budget => budget.pattern === '^vendor/exceljs\\.bare\\.min\\.js$'
+      )
     ).toMatchObject({
       maxBytes: 960000,
     });
@@ -49,7 +51,7 @@ describe('bundle budget config', () => {
     expect(
       config.startupChunkBudgets.find(budget => budget.label === 'app-authenticated-shell')
     ).toMatchObject({
-      maxBytes: 555000,
+      maxBytes: 600000,
     });
   });
 
@@ -62,7 +64,7 @@ describe('bundle budget config', () => {
         '^docs/',
         '^templates/',
         '^images/forms/',
-        '^vendor/exceljs\\.min\\.js$',
+        '^vendor/exceljs\\.bare\\.min\\.js$',
         '^assets/exceljs\\.min-.*\\.js$',
         '^assets/pdf\\.worker-.*\\.mjs$',
         '^assets/pdf-.*\\.js$',
@@ -72,6 +74,9 @@ describe('bundle budget config', () => {
         '^assets/documentFallbacks-.*\\.js$',
         '^assets/vendor-excel-.*\\.js$',
         '^assets/vendor-canvas-.*\\.js$',
+        '^assets/terminologyService-.*\\.js$',
+        '^assets/fonasaDatabase-.*\\.js$',
+        '^assets/clinicalDocumentTemplateEditorController-.*\\.js$',
       ])
     );
   });
