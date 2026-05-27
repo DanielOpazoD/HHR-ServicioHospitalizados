@@ -7,6 +7,13 @@ import {
 } from './fixtures/auth';
 
 const E2E_DATE = process.env.E2E_FIXED_DATE ?? '2026-02-20';
+const EXCEL_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+interface CapturedDownload {
+  blobSize: number;
+  blobType: string;
+  filename: string;
+}
 
 const buildVisualReleaseRecord = (date: string) => {
   const canonical = buildCanonicalE2ERecord(date);
@@ -66,6 +73,74 @@ const expectNoHorizontalOverflow = async (page: Page) => {
   ).toBeLessThanOrEqual(layout.clientWidth + 2);
 };
 
+const expectClinicalDocumentsAttachmentsContainment = async (page: Page) => {
+  const attachmentsPanel = page.locator('.clinical-document-attachments-panel').first();
+  await expect(attachmentsPanel).toBeVisible({ timeout: 15_000 });
+
+  const panelBounds = await attachmentsPanel.boundingBox();
+  const viewportSize = page.viewportSize();
+
+  expect(panelBounds, 'clinical episode attachment panel must render').not.toBeNull();
+  expect(viewportSize, 'visual smoke viewport must be defined').not.toBeNull();
+  if (!panelBounds || !viewportSize) return;
+
+  expect(
+    panelBounds.width,
+    'clinical episode attachment panel width must stay narrower than the viewport'
+  ).toBeLessThanOrEqual(viewportSize.width - 48);
+  expect(
+    panelBounds.x,
+    'clinical episode attachment panel must keep a left margin'
+  ).toBeGreaterThan(24);
+  expect(
+    viewportSize.width - (panelBounds.x + panelBounds.width),
+    'clinical episode attachment panel must keep a right margin'
+  ).toBeGreaterThan(24);
+};
+
+const clearCapturedDownload = async (page: Page) => {
+  await page.evaluate(() => {
+    const captureWindow = window as Window & {
+      __HHR_DOWNLOAD_CAPTURE__?: CapturedDownload | null;
+    };
+    captureWindow.__HHR_DOWNLOAD_CAPTURE__ = null;
+    window.localStorage.removeItem('hhr_e2e_last_download');
+  });
+};
+
+const readCapturedDownload = async (page: Page): Promise<CapturedDownload | null> =>
+  page.evaluate(() => {
+    const captureWindow = window as Window & {
+      __HHR_DOWNLOAD_CAPTURE__?: CapturedDownload | null;
+    };
+    return (
+      captureWindow.__HHR_DOWNLOAD_CAPTURE__ ??
+      (JSON.parse(
+        window.localStorage.getItem('hhr_e2e_last_download') || 'null'
+      ) as CapturedDownload | null)
+    );
+  });
+
+const expectCapturedExcelDownload = async (
+  page: Page,
+  testInfo: TestInfo,
+  evidenceName: string,
+  filenamePattern: RegExp
+) => {
+  await expect.poll(() => readCapturedDownload(page), { timeout: 20_000 }).toBeTruthy();
+  const downloadMeta = await readCapturedDownload(page);
+
+  expect(downloadMeta?.filename).toMatch(filenamePattern);
+  expect(downloadMeta?.filename).toMatch(/\.xlsx$/i);
+  expect(downloadMeta?.blobType).toContain(EXCEL_MIME_TYPE);
+  expect(downloadMeta?.blobSize ?? 0).toBeGreaterThan(5_000);
+
+  await testInfo.attach(`${evidenceName}.json`, {
+    body: JSON.stringify(downloadMeta, null, 2),
+    contentType: 'application/json',
+  });
+};
+
 const openVisualCensus = async (page: Page) => {
   await bootstrapSeededRecord(page, {
     role: 'admin',
@@ -82,6 +157,34 @@ const openVisualCensus = async (page: Page) => {
   await expect(page.locator('[data-testid="patient-row"][data-bed-id="R1"]')).toBeVisible({
     timeout: 10_000,
   });
+};
+
+const verifyRefreshLoginResilience = async (page: Page) => {
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await ensureAuthenticated(page);
+  await expect(page.getByTestId('authenticated-user-menu-button')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('[data-testid="patient-row"][data-bed-id="R1"]')).toBeVisible({
+    timeout: 10_000,
+  });
+};
+
+const verifyCensusExcelDownload = async (page: Page, testInfo: TestInfo) => {
+  await clearCapturedDownload(page);
+
+  const saveButton = page.getByRole('button', { name: /Guardar|Guardado|Archivado/i }).first();
+  await expect(saveButton).toBeVisible({ timeout: 10_000 });
+  await saveButton.evaluate((element: HTMLElement) => element.click());
+  await page.getByRole('button', { name: /Descargar Excel/i }).click();
+
+  await expectCapturedExcelDownload(
+    page,
+    testInfo,
+    'clinical-release-census-excel-download',
+    [/censo/i, /\d{2}-\d{2}-\d{4}/].reduce(
+      (pattern, next) => new RegExp(`${pattern.source}|${next.source}`, 'i')
+    )
+  );
 };
 
 const openClinicalDocumentsFromR1 = async (page: Page) => {
@@ -137,6 +240,18 @@ const createCudyrEvidence = async (page: Page) => {
   });
 };
 
+const verifyCudyrExcelDownload = async (page: Page, testInfo: TestInfo) => {
+  await clearCapturedDownload(page);
+  await page.getByRole('button', { name: /excel mensual/i }).click();
+
+  await expectCapturedExcelDownload(
+    page,
+    testInfo,
+    'clinical-release-cudyr-excel-download',
+    /CUDYR_Mensual|cudyr/i
+  );
+};
+
 test.describe('Clinical release visual smoke', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -146,15 +261,21 @@ test.describe('Clinical release visual smoke', () => {
     await openVisualCensus(page);
     await expectNoHorizontalOverflow(page);
     await attachViewportEvidence(page, testInfo, 'clinical-release-census');
+    await verifyRefreshLoginResilience(page);
+    await expectNoHorizontalOverflow(page);
+    await attachViewportEvidence(page, testInfo, 'clinical-release-census-after-refresh');
+    await verifyCensusExcelDownload(page, testInfo);
 
     await openClinicalDocumentsFromR1(page);
     await createClinicalDocumentEvidence(page);
     await expectNoHorizontalOverflow(page);
+    await expectClinicalDocumentsAttachmentsContainment(page);
     await attachViewportEvidence(page, testInfo, 'clinical-release-documents');
 
     await createCudyrEvidence(page);
     await expectNoHorizontalOverflow(page);
     await attachViewportEvidence(page, testInfo, 'clinical-release-cudyr');
+    await verifyCudyrExcelDownload(page, testInfo);
 
     await page.goto(`/medical-handoff?date=${E2E_DATE}`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/medical-handoff/, { timeout: 20_000 });

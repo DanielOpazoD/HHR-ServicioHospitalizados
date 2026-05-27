@@ -1,7 +1,7 @@
 {
   "entryMaxBytes": 700000,
   "chunkMaxBytes": 1250000,
-  "precacheMaxBytes": 4850000,
+  "precacheMaxBytes": 4700000,
   "precacheIgnoredAssetPatterns": [
     "^docs/",
     "^templates/",
@@ -21,8 +21,8 @@
   "assetPatternBudgets": [
     {
       "pattern": "^vendor/exceljs\\.min\\.js$",
-      "_comment": "Browser ExcelJS is served as a runtime asset instead of a duplicated Vite chunk. This ceiling keeps the measured ~925 KB asset near the warning band so payload drift stays visible without blocking the current release.",
-      "maxBytes": 980000
+      "_comment": "Browser ExcelJS is served as a runtime asset instead of a duplicated Vite chunk. This ceiling keeps the measured ~948 KB asset near the warning band so payload drift stays visible without blocking the current release.",
+      "maxBytes": 960000
     }
   ],
   "startupChunkBudgets": [
@@ -42,8 +42,8 @@
     {
       "label": "app-authenticated-shell",
       "pattern": "^app-authenticated-shell-.*\\.js$",
-      "_comment": "Measured at ~534 KB with ES2022 + two-pass production minification. Keep this close enough to warn on drift while direct-import guardrails protect the startup graph.",
-      "maxBytes": 570000,
+      "_comment": "Measured at ~533 KB with ES2022 + two-pass production minification after deferring reminder UI. Keep this close enough to warn on drift while direct-import guardrails protect the startup graph.",
+      "maxBytes": 555000,
       "severity": "error"
     }
   ],

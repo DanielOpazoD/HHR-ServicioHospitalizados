@@ -14,6 +14,7 @@ import { formatTimeHHMM } from '@/utils/dateDisplayUtils';
 import { cudyrExportLogger } from '@/services/cudyr/cudyrLoggers';
 import { useNotification } from '@/context/UIContext';
 import type { CategoryCounts, CudyrCategory } from '@/services/cudyr/cudyrSummary';
+import type { DailyRecordCudyrExportState } from '@/services/contracts/dailyRecordServiceContracts';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -54,6 +55,7 @@ interface CudyrHeaderProps {
   updatedAt?: string;
   /** Category counts by bed type (UTI + Media combined for display). */
   categoryCounts?: CategoryCounts;
+  currentRecord?: DailyRecordCudyrExportState | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,6 +79,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
   currentDate,
   updatedAt,
   categoryCounts,
+  currentRecord,
 }) => {
   const { error: notifyError } = useNotification();
   const [isExporting, setIsExporting] = useState(false);
@@ -91,7 +94,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
     try {
       const [year, month] = currentDate.split('-').map(Number);
       const { generateCudyrMonthlyExcel } = await import('@/services/cudyr/cudyrExportService');
-      const result = await generateCudyrMonthlyExcel(year, month, currentDate);
+      const result = await generateCudyrMonthlyExcel(year, month, currentDate, currentRecord);
       if (result.outcome === 'failed') {
         cudyrExportLogger.error(`Monthly CUDYR Excel rejected by validation: ${result.reason}`);
         notifyError('No se pudo generar el Excel CUDYR', result.userSafeMessage);

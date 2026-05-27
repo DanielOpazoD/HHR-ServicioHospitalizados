@@ -35,7 +35,7 @@ describe('bundle budget config', () => {
     expect(
       config.assetPatternBudgets.find(budget => budget.pattern === '^vendor/exceljs\\.min\\.js$')
     ).toMatchObject({
-      maxBytes: 980000,
+      maxBytes: 960000,
     });
     expect(findBudget(config, '^exceljs\\.min-.*\\.js$')).toBeUndefined();
     expect(findBudget(config, '^pdf-.*\\.js$')).toMatchObject({
@@ -49,14 +49,14 @@ describe('bundle budget config', () => {
     expect(
       config.startupChunkBudgets.find(budget => budget.label === 'app-authenticated-shell')
     ).toMatchObject({
-      maxBytes: 570000,
+      maxBytes: 555000,
     });
   });
 
   it('keeps the install-time precache budget focused on critical runtime files', () => {
     const config = readBundleBudgetConfig();
 
-    expect(config.precacheMaxBytes).toBe(4850000);
+    expect(config.precacheMaxBytes).toBe(4700000);
     expect(config.precacheIgnoredAssetPatterns).toEqual(
       expect.arrayContaining([
         '^docs/',

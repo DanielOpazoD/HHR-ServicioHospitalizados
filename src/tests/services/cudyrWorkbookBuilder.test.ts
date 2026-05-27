@@ -125,4 +125,42 @@ describe('cudyrWorkbookBuilder', () => {
       result: 2,
     });
   });
+
+  it('keeps the monthly summary navigable and explicit when the selected period has no CUDYR data', async () => {
+    const monthlySummary: CudyrMonthlySummary = {
+      year: 2025,
+      month: 1,
+      totals: {
+        uti: emptyCategoryCounts(),
+        media: emptyCategoryCounts(),
+      },
+      utiTotal: 0,
+      mediaTotal: 0,
+      totalOccupied: 0,
+      totalCategorized: 0,
+      dailySummaries: [],
+    };
+
+    const { workbook } = await buildCudyrWorkbook({
+      year: 2025,
+      month: 1,
+      endDate: '2025-01-31',
+      monthlySummary,
+    });
+    const summarySheet = workbook.getWorksheet('Resumen CUDYR Mensual');
+
+    expect(workbook.worksheets.map(sheet => sheet.name)).toEqual(['Resumen CUDYR Mensual']);
+    expect(summarySheet?.views[0]).toMatchObject({ state: 'frozen', ySplit: 2 });
+    expect(summarySheet?.getCell('A1').value).toContain('Resumen CUDYR mensual');
+    expect(summarySheet?.getCell('A3').value).toBe('No hay datos para el periodo seleccionado.');
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const reopened = new ExcelJS.Workbook();
+    await reopened.xlsx.load(buffer);
+
+    expect(reopened.worksheets.map(sheet => sheet.name)).toEqual(['Resumen CUDYR Mensual']);
+    expect(reopened.getWorksheet('Resumen CUDYR Mensual')?.getCell('A3').value).toBe(
+      'No hay datos para el periodo seleccionado.'
+    );
+  });
 });

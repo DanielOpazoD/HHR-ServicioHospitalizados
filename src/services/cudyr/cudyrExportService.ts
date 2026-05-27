@@ -11,8 +11,22 @@ import { getRecordFromFirestore } from '@/services/storage/firestore';
 import { resolvePreferredDailyRecord } from '@/services/repositories/dailyRecordSyncCompatibility';
 import { cudyrExportLogger } from '@/services/cudyr/cudyrLoggers';
 import type { DailyRecordCudyrExportState } from '@/services/contracts/dailyRecordServiceContracts';
+import { recordE2EDownloadArtifact } from '@/shared/runtime/e2eRuntime';
+
+const getE2EOverrideRecord = (dateStr: string): DailyRecordCudyrExportState | null => {
+  if (typeof window === 'undefined' || !window.__HHR_E2E_OVERRIDE__) {
+    return null;
+  }
+
+  return (window.__HHR_E2E_OVERRIDE__[dateStr] as DailyRecordCudyrExportState | undefined) ?? null;
+};
 
 const fetchDailyRecord = async (dateStr: string): Promise<DailyRecordCudyrExportState | null> => {
+  const e2eOverride = getE2EOverrideRecord(dateStr);
+  if (e2eOverride || (typeof window !== 'undefined' && window.__HHR_E2E_OVERRIDE__)) {
+    return e2eOverride;
+  }
+
   try {
     return await getRecordFromFirestore(dateStr);
   } catch (error) {
@@ -103,6 +117,11 @@ export const generateCudyrMonthlyExcel = async (
   }
 
   const blob = new Blob([buffer], { type: XLSX_MIME_TYPE });
+  recordE2EDownloadArtifact({
+    filename: fileName,
+    blobSize: blob.size,
+    blobType: blob.type,
+  });
   const { saveAs } = await import('file-saver');
   saveAs(blob, fileName);
   cudyrExportLogger.warn(

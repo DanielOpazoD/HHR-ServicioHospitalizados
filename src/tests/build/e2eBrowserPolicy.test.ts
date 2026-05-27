@@ -26,11 +26,16 @@ describe('e2e browser policy', () => {
     );
   });
 
-  it('keeps the clinical visual release smoke covering CUDYR and export entrypoints', () => {
+  it('keeps the clinical visual release smoke covering refresh/login and Excel export entrypoints', () => {
     const visualSmokeSource = readSource('e2e/clinical-release-visual-smoke.spec.ts');
 
     expect(visualSmokeSource).toContain('clinical-release-cudyr');
+    expect(visualSmokeSource).toContain('clinical-release-census-after-refresh');
     expect(visualSmokeSource).toContain('/cudyr?date=');
+    expect(visualSmokeSource).toContain('verifyCensusExcelDownload');
+    expect(visualSmokeSource).toContain('verifyCudyrExcelDownload');
+    expect(visualSmokeSource).toContain('__HHR_DOWNLOAD_CAPTURE__');
+    expect(visualSmokeSource).toMatch(/page\.reload/);
     expect(visualSmokeSource).toMatch(/excel mensual/i);
   });
 });

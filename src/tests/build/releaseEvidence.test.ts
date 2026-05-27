@@ -50,7 +50,11 @@ const clinicalVisualReleaseReport = {
                       status: 'passed',
                       attachments: [
                         { name: 'clinical-release-census.png' },
+                        { name: 'clinical-release-census-after-refresh.png' },
+                        { name: 'clinical-release-census-excel-download.json' },
                         { name: 'clinical-release-documents.png' },
+                        { name: 'clinical-release-cudyr.png' },
+                        { name: 'clinical-release-cudyr-excel-download.json' },
                         { name: 'clinical-release-medical-handoff.png' },
                       ],
                     },
