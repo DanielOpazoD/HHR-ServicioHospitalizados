@@ -2,12 +2,18 @@ import React from 'react';
 import { AppProviders } from '@/components/AppProviders';
 import { UseUIStateReturn } from '@/hooks/useUIState';
 import { AppContentChrome } from '@/components/layout/app-content/AppContentChrome';
-import { AppContentOverlays } from '@/components/layout/app-content/AppContentOverlays';
 import { useAppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import { useAppContentShellEffects } from '@/components/layout/app-content/useAppContentShellEffects';
 import { buildOpenCensusDateHandler } from '@/components/layout/app-content/appContentCensusDateController';
 import { resolveModuleTheme } from '@/components/layout/app-content/moduleThemeController';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
+
+const AppContentOverlays = lazyWithRetry(() =>
+  import('@/components/layout/app-content/AppContentOverlays').then(module => ({
+    default: module.AppContentOverlays,
+  }))
+);
 
 interface AppContentProps {
   ui: UseUIStateReturn;
@@ -86,7 +92,9 @@ export const AppContent: React.FC<AppContentProps> = ({ ui, renderFeatureQuickAc
             onOpenCensusDate={openCensusDate}
             renderFeatureQuickActions={renderFeatureQuickActions}
           />
-          <AppContentOverlays ui={ui} runtime={runtime} onOpenCensusDate={openCensusDate} />
+          <React.Suspense fallback={null}>
+            <AppContentOverlays ui={ui} runtime={runtime} onOpenCensusDate={openCensusDate} />
+          </React.Suspense>
         </div>
       </DeferredReminderCenterProvider>
     </AppProviders>

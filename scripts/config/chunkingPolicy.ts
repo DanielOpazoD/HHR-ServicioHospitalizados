@@ -4,6 +4,14 @@ export const chunkForModule = (moduleId: string): string | undefined => {
   const has = (fragment: string): boolean => normalizedId.includes(fragment);
 
   if (
+    has('/src/components/layout/app-content/AppContentOverlays.tsx') ||
+    has('/src/components/layout/app-content/appContentOverlaysController.ts') ||
+    has('/src/components/layout/app-content/usePatientSearchShortcut.ts')
+  ) {
+    return undefined;
+  }
+
+  if (
     has('/src/app-shell/runtime/AuthenticatedAppShell.tsx') ||
     has('/src/app-shell/runtime/useAuthenticatedAppRuntime.ts') ||
     has('/src/components/layout/AppContent.tsx') ||
