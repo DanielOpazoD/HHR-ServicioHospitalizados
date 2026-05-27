@@ -80,6 +80,11 @@ describe('ClinicalAttachmentsPanel', () => {
       'w-full',
       'max-w-[900px]'
     );
+    expect(document.querySelector('.clinical-document-attachments-header')).toHaveClass(
+      'flex-wrap'
+    );
+    expect(document.querySelector('.clinical-document-attachments-title')).toHaveClass('min-w-0');
+    expect(screen.getByRole('button', { name: /adjuntar/i })).toHaveClass('shrink-0');
     expect(document.querySelector('.clinical-document-attachment-row')).toHaveClass(
       'min-w-0',
       'overflow-hidden'

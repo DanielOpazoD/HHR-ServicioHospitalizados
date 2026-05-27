@@ -144,7 +144,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
       style={{ transform: 'translateZ(0)' }}
     >
       <div className="max-w-screen-2xl mx-auto px-2 py-0.5 w-full">
-        <div className="flex items-center justify-center gap-2 w-full">
+        <div className="flex w-full items-center justify-center gap-2 max-md:justify-start max-md:overflow-x-auto">
           <div className="flex items-center gap-1 shrink-0 min-w-0">
             {!isGuest && onToggleBookmarks && (
               <DateStripBookmarkToggle
@@ -222,7 +222,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
 
           <div className="h-4 w-px bg-slate-200/70" />
 
-          <div className="flex items-center justify-end gap-1 min-w-0 shrink-0">
+          <div className="flex min-w-0 shrink-0 items-center justify-end gap-1 overflow-x-auto">
             {!isHandoffModule && onOpenPatientSearch && (
               <button
                 onClick={onOpenPatientSearch}

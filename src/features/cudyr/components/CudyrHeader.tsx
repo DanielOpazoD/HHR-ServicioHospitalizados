@@ -134,8 +134,11 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
       {/* ================================================================= */}
       {/* Row 1 — Title + Back button                                       */}
       {/* ================================================================= */}
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-lg font-bold text-slate-800">
+      <div
+        className="mb-3 flex flex-wrap items-center justify-between gap-3"
+        data-testid="cudyr-title-row"
+      >
+        <h2 className="min-w-0 text-lg font-bold text-slate-800">
           Instrumento CUDYR
           {currentDate && (
             <span className="ml-2 text-slate-500 font-semibold">
@@ -146,7 +149,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
 
         <button
           onClick={handleBackToNightShift}
-          className="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
           title="Volver a Entrega de Turno Noche"
         >
           <ArrowLeft size={14} />
@@ -157,9 +160,15 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
       {/* ================================================================= */}
       {/* Row 2 — Stats + Categories + Actions (compact single bar)         */}
       {/* ================================================================= */}
-      <div className="flex flex-wrap items-center gap-2 mb-4 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2">
+      <div
+        className="mb-4 flex flex-wrap items-center gap-2 overflow-hidden rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2"
+        data-testid="cudyr-stats-actions-bar"
+      >
         {/* Metrics */}
-        <div className="flex items-center gap-3 text-xs">
+        <div
+          className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs"
+          data-testid="cudyr-metrics"
+        >
           <span className="text-slate-600">
             Ocupadas <b className="text-sm text-slate-800">{occupiedCount}</b>
           </span>
@@ -185,7 +194,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
         {nonZeroCategories.length > 0 && mergedCategoryCounts && (
           <>
             <span className="text-slate-300">|</span>
-            <div className="flex items-center gap-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-1">
               {nonZeroCategories.map(cat => (
                 <span
                   key={cat}
@@ -205,50 +214,52 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Last modified */}
-        {updatedAt && (
-          <span className="text-[10px] text-slate-400" title={`Última modificación CUDYR`}>
-            Últ. mod. {formatTimeHHMM(updatedAt)}
-          </span>
-        )}
+        <div className="flex flex-wrap items-center justify-end gap-2" data-testid="cudyr-actions">
+          {/* Last modified */}
+          {updatedAt && (
+            <span className="text-[10px] text-slate-400" title={`Última modificación CUDYR`}>
+              Últ. mod. {formatTimeHHMM(updatedAt)}
+            </span>
+          )}
 
-        {/* View instrument button */}
-        <button
-          type="button"
-          onClick={() => setIsInstrumentOpen(true)}
-          className="flex items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 transition-colors hover:bg-sky-100"
-          title="Ver Instrumento CUDYR (PDF)"
-        >
-          <FileText size={13} />
-          Ver Instrumento
-        </button>
-
-        {/* Excel export */}
-        {currentDate && (
+          {/* View instrument button */}
           <button
-            onClick={handleExportExcel}
-            disabled={isExporting}
-            className={clsx(
-              'flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold transition-all',
-              isExporting
-                ? 'bg-slate-100 text-slate-400 cursor-wait'
-                : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
-            )}
-            title="Exportar resumen mensual CUDYR"
+            type="button"
+            onClick={() => setIsInstrumentOpen(true)}
+            className="flex shrink-0 items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 transition-colors hover:bg-sky-100"
+            title="Ver Instrumento CUDYR (PDF)"
           >
-            {isExporting ? (
-              <>
-                <Loader2 size={13} className="animate-spin" />
-                Exportando...
-              </>
-            ) : (
-              <>
-                <FileSpreadsheet size={13} />
-                Excel mensual
-              </>
-            )}
+            <FileText size={13} />
+            Ver Instrumento
           </button>
-        )}
+
+          {/* Excel export */}
+          {currentDate && (
+            <button
+              onClick={handleExportExcel}
+              disabled={isExporting}
+              className={clsx(
+                'flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold transition-all',
+                isExporting
+                  ? 'bg-slate-100 text-slate-400 cursor-wait'
+                  : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+              )}
+              title="Exportar resumen mensual CUDYR"
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  Exportando...
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet size={13} />
+                  Excel mensual
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* PDF viewer modal */}

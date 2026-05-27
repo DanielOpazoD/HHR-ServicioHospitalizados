@@ -73,7 +73,7 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
   );
 
   return (
-    <div className="flex items-center justify-end gap-1 min-h-[30px] min-w-0">
+    <div className="flex min-h-[30px] min-w-0 items-center justify-end gap-1 overflow-x-auto">
       {onOpenBedManager && (
         <button
           onClick={onOpenBedManager}
@@ -85,7 +85,7 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
         </button>
       )}
 
-      <div className="flex items-center gap-1">
+      <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
         {!hideClinicalQuickActions &&
           (radiologyPatients.length > 0 ? (
             <>

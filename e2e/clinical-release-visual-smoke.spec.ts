@@ -61,16 +61,80 @@ const attachViewportEvidence = async (page: Page, testInfo: TestInfo, name: stri
   });
 };
 
-const expectNoHorizontalOverflow = async (page: Page) => {
-  const layout = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
+const verifyMobileViewportEvidence = async (
+  page: Page,
+  testInfo: TestInfo,
+  name: string,
+  overflowScopes = ['html']
+) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  for (const scope of overflowScopes) {
+    await expectNoHorizontalOverflow(page, scope);
+  }
+  await attachViewportEvidence(page, testInfo, name);
+  await page.setViewportSize({ width: 1440, height: 900 });
+};
+
+const expectNoHorizontalOverflow = async (page: Page, selector = 'html') => {
+  const layout = await page
+    .locator(selector)
+    .first()
+    .evaluate(element => {
+      const isDocumentRoot = element === document.documentElement;
+      const scopeRect = element.getBoundingClientRect();
+      const leftBoundary = isDocumentRoot ? 0 : scopeRect.left;
+      const rightBoundary = isDocumentRoot ? document.documentElement.clientWidth : scopeRect.right;
+      const clientWidth = isDocumentRoot
+        ? document.documentElement.clientWidth
+        : Math.round(scopeRect.width);
+      const isContainedByHorizontalScroller = (node: HTMLElement) => {
+        let current: HTMLElement | null = node;
+        while (current && current !== element) {
+          const overflowX = window.getComputedStyle(current).overflowX;
+          if (['auto', 'clip', 'hidden', 'scroll'].includes(overflowX)) {
+            return true;
+          }
+          current = current.parentElement;
+        }
+        return false;
+      };
+      const offenders = Array.from(element.querySelectorAll<HTMLElement>('*'))
+        .map(element => {
+          const rect = element.getBoundingClientRect();
+          return {
+            className: String(element.className || ''),
+            element,
+            tagName: element.tagName.toLowerCase(),
+            text: String(element.textContent || '')
+              .replace(/\s+/g, ' ')
+              .trim()
+              .slice(0, 80),
+            width: Math.round(rect.width),
+            x: Math.round(rect.x),
+            right: Math.round(rect.right),
+          };
+        })
+        .filter(
+          item =>
+            item.right > rightBoundary + 2 ||
+            item.x < leftBoundary - 2 ||
+            item.width > clientWidth + 2
+        )
+        .filter(item => !isContainedByHorizontalScroller(item.element))
+        .sort((left, right) => right.width - left.width)
+        .slice(0, 5)
+        .map(({ element: _element, ...item }) => item);
+
+      return {
+        clientWidth,
+        offenders,
+      };
+    });
 
   expect(
-    layout.scrollWidth,
-    'release visual viewport must not introduce page overflow'
-  ).toBeLessThanOrEqual(layout.clientWidth + 2);
+    layout.offenders,
+    `release visual viewport must not introduce page overflow: ${JSON.stringify(layout.offenders)}`
+  ).toEqual([]);
 };
 
 const expectClinicalDocumentsAttachmentsContainment = async (page: Page) => {
@@ -268,13 +332,18 @@ test.describe('Clinical release visual smoke', () => {
 
     await openClinicalDocumentsFromR1(page);
     await createClinicalDocumentEvidence(page);
-    await expectNoHorizontalOverflow(page);
+    await expectNoHorizontalOverflow(page, '[role="dialog"]');
     await expectClinicalDocumentsAttachmentsContainment(page);
     await attachViewportEvidence(page, testInfo, 'clinical-release-documents');
+    await verifyMobileViewportEvidence(page, testInfo, 'clinical-release-documents-mobile', [
+      '[role="dialog"]',
+    ]);
+    await expectClinicalDocumentsAttachmentsContainment(page);
 
     await createCudyrEvidence(page);
     await expectNoHorizontalOverflow(page);
     await attachViewportEvidence(page, testInfo, 'clinical-release-cudyr');
+    await verifyMobileViewportEvidence(page, testInfo, 'clinical-release-cudyr-mobile');
     await verifyCudyrExcelDownload(page, testInfo);
 
     await page.goto(`/medical-handoff?date=${E2E_DATE}`, { waitUntil: 'domcontentloaded' });
