@@ -7,6 +7,7 @@ const rootDir = process.cwd();
 const distDir = path.join(rootDir, 'dist');
 const assetsDir = path.join(distDir, 'assets');
 const indexHtmlPath = path.join(distDir, 'index.html');
+const serviceWorkerPath = path.join(distDir, 'service-worker.js');
 const configPath = path.join(rootDir, 'scripts', 'config', 'bundle-budget.json');
 
 const fail = message => {
@@ -35,6 +36,10 @@ try {
 
 const entryMaxBytes = Number(parsedConfig?.entryMaxBytes || 0);
 const chunkMaxBytes = Number(parsedConfig?.chunkMaxBytes || 0);
+const precacheMaxBytes = Number(parsedConfig?.precacheMaxBytes || 0);
+const precacheIgnoredAssetPatterns = Array.isArray(parsedConfig?.precacheIgnoredAssetPatterns)
+  ? parsedConfig.precacheIgnoredAssetPatterns
+  : [];
 const startupChunkBudgets = Array.isArray(parsedConfig?.startupChunkBudgets)
   ? parsedConfig.startupChunkBudgets
   : [];
@@ -48,6 +53,20 @@ const chunkPatternBudgets = Array.isArray(parsedConfig?.chunkPatternBudgets)
 if (!entryMaxBytes || !chunkMaxBytes) {
   fail('Config must include positive entryMaxBytes and chunkMaxBytes');
 }
+
+if (!precacheMaxBytes || precacheIgnoredAssetPatterns.length === 0) {
+  fail('Config must include positive precacheMaxBytes and precacheIgnoredAssetPatterns');
+}
+
+const buildRegex = (pattern, label) => {
+  try {
+    return new RegExp(pattern);
+  } catch (error) {
+    fail(
+      `Invalid ${label} regex "${pattern}": ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+};
 
 const html = fs.readFileSync(indexHtmlPath, 'utf8');
 const entryScriptMatches = [...html.matchAll(/<script[^>]+src="([^"]+\.js)"/g)];
@@ -105,6 +124,67 @@ const distAssets = collectDistAssets(distDir);
 const violations = [];
 const nearLimitWarnings = [];
 
+const ignoredPrecacheRegexes = precacheIgnoredAssetPatterns
+  .filter(pattern => typeof pattern === 'string' && pattern.length > 0)
+  .map(pattern => buildRegex(pattern, 'precache ignore'));
+
+if (!fs.existsSync(serviceWorkerPath)) {
+  fail('dist/service-worker.js not found. Run "npm run build" before checking bundle budgets.');
+}
+
+const serviceWorker = fs.readFileSync(serviceWorkerPath, 'utf8');
+const precacheAssetNames = [
+  ...new Set([...serviceWorker.matchAll(/"url":"([^"]+)"/g)].map(match => match[1])),
+]
+  .map(assetName => assetName.replace(/^\//, '').split('?')[0])
+  .filter(assetName => assetName.length > 0);
+
+const precacheAssets = precacheAssetNames
+  .map(assetName => {
+    const filePath = path.join(distDir, assetName);
+    if (!fs.existsSync(filePath)) return null;
+    return {
+      name: assetName,
+      filePath,
+      size: fs.statSync(filePath).size,
+    };
+  })
+  .filter(Boolean);
+
+const missingPrecacheAssets = precacheAssetNames.filter(
+  assetName => !fs.existsSync(path.join(distDir, assetName))
+);
+if (missingPrecacheAssets.length > 0) {
+  violations.push(
+    `Service worker precaches files that are not present in dist: ${missingPrecacheAssets
+      .slice(0, 5)
+      .join(', ')}${missingPrecacheAssets.length > 5 ? ', ...' : ''}`
+  );
+}
+
+const ignoredPrecacheAssets = precacheAssets.filter(asset =>
+  ignoredPrecacheRegexes.some(regex => regex.test(asset.name))
+);
+if (ignoredPrecacheAssets.length > 0) {
+  violations.push(
+    `Service worker precaches ignored assets: ${ignoredPrecacheAssets
+      .map(asset => asset.name)
+      .slice(0, 5)
+      .join(', ')}${ignoredPrecacheAssets.length > 5 ? ', ...' : ''}`
+  );
+}
+
+const precacheTotalBytes = precacheAssets.reduce((total, asset) => total + asset.size, 0);
+if (precacheTotalBytes > precacheMaxBytes) {
+  violations.push(
+    `Precache payload is ${toKb(precacheTotalBytes)} (limit ${toKb(precacheMaxBytes)})`
+  );
+} else if (precacheTotalBytes / precacheMaxBytes >= nearLimitThresholdRatio) {
+  nearLimitWarnings.push(
+    `Precache payload is near limit: ${toKb(precacheTotalBytes)} (${toPct(precacheTotalBytes, precacheMaxBytes)} of ${toKb(precacheMaxBytes)})`
+  );
+}
+
 for (const entryFile of entryFiles) {
   if (entryFile.size > entryMaxBytes) {
     violations.push(
@@ -134,14 +214,7 @@ for (const patternBudget of chunkPatternBudgets) {
   const maxBytes = Number(patternBudget?.maxBytes || 0);
   if (!pattern || !maxBytes) continue;
 
-  let regex;
-  try {
-    regex = new RegExp(pattern);
-  } catch (error) {
-    fail(
-      `Invalid regex "${pattern}" in config: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
+  const regex = buildRegex(pattern, 'chunk budget');
 
   for (const asset of jsAssets.filter(candidate => regex.test(candidate.name))) {
     if (asset.size > maxBytes) {
@@ -161,14 +234,7 @@ for (const patternBudget of assetPatternBudgets) {
   const maxBytes = Number(patternBudget?.maxBytes || 0);
   if (!pattern || !maxBytes) continue;
 
-  let regex;
-  try {
-    regex = new RegExp(pattern);
-  } catch (error) {
-    fail(
-      `Invalid asset regex "${pattern}" in config: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
+  const regex = buildRegex(pattern, 'asset budget');
 
   const matchingAssets = distAssets.filter(candidate => regex.test(candidate.name));
   if (matchingAssets.length === 0) {
@@ -203,14 +269,7 @@ for (const startupBudget of startupChunkBudgets) {
   if (source === 'entry') {
     candidateAssets = entryFiles;
   } else {
-    let regex;
-    try {
-      regex = new RegExp(pattern);
-    } catch (error) {
-      fail(
-        `Invalid startup chunk regex "${pattern}" for ${label}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
+    const regex = buildRegex(pattern, `startup chunk budget for ${label}`);
 
     candidateAssets = jsAssets.filter(candidate => regex.test(candidate.name));
   }
@@ -241,6 +300,9 @@ const largestChunks = [...jsAssets].sort((a, b) => b.size - a.size).slice(0, 5);
 console.warn('[bundle-budget] OK');
 console.warn(
   `[bundle-budget] Entry budget: ${toKb(entryMaxBytes)} | Chunk budget: ${toKb(chunkMaxBytes)}`
+);
+console.warn(
+  `[bundle-budget] Precache payload: ${toKb(precacheTotalBytes)} (${precacheAssets.length} files, limit ${toKb(precacheMaxBytes)})`
 );
 entryFiles.forEach(entryFile => {
   console.warn(`[bundle-budget] Entry asset: ${entryFile.name} (${toKb(entryFile.size)})`);

@@ -109,6 +109,24 @@ export default defineConfig(({ mode }) => {
         injectManifest: {
           swSrc: 'src/service-worker.ts',
           injectionPoint: 'self.__WB_MANIFEST',
+          // Keep large optional references/runtime chunks out of install-time
+          // precache. They remain available as normal on-demand assets, while
+          // first-run PWA install stays focused on app shell/critical runtime.
+          globIgnores: [
+            '**/docs/**',
+            '**/templates/**',
+            '**/images/forms/**',
+            '**/vendor/exceljs.min.js',
+            '**/assets/exceljs.min-*.js',
+            '**/assets/pdf.worker-*.mjs',
+            '**/assets/pdf-*.js',
+            '**/assets/vendor-pdf-*.js',
+            '**/assets/docxtemplater-*.js',
+            '**/assets/LineChart-*.js',
+            '**/assets/documentFallbacks-*.js',
+            '**/assets/vendor-excel-*.js',
+            '**/assets/vendor-canvas-*.js',
+          ],
         },
         registerType: 'autoUpdate',
         injectRegister: 'script',
