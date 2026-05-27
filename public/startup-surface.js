@@ -12,7 +12,7 @@
     image: [
       'linear-gradient(115deg, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.62) 36%, rgba(15, 23, 42, 0.28) 64%, rgba(255, 255, 255, 0.08) 100%)',
       'radial-gradient(circle at top left, rgba(255, 255, 255, 0.18), transparent 32%)',
-      "url('/images/login/hhr-login-day.png')",
+      "url('/images/login/hhr-login-day.webp')",
     ].join(','),
     position: 'center, center, center',
     repeat: 'no-repeat, no-repeat, no-repeat',

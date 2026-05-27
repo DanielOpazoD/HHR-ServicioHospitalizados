@@ -49,4 +49,11 @@ describe('Startup preboot contract', () => {
     );
     expect(script).not.toContain('|| !hasAnySessionHint');
   });
+
+  it('uses the optimized login background asset in the preboot surface', () => {
+    const script = readStartupSurface();
+
+    expect(script).toContain("url('/images/login/hhr-login-day.webp')");
+    expect(script).not.toContain("url('/images/login/hhr-login-day.png')");
+  });
 });
