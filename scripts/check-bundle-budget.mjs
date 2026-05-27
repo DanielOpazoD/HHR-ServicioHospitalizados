@@ -40,6 +40,9 @@ const precacheMaxBytes = Number(parsedConfig?.precacheMaxBytes || 0);
 const precacheIgnoredAssetPatterns = Array.isArray(parsedConfig?.precacheIgnoredAssetPatterns)
   ? parsedConfig.precacheIgnoredAssetPatterns
   : [];
+const forbiddenAssetPatterns = Array.isArray(parsedConfig?.forbiddenAssetPatterns)
+  ? parsedConfig.forbiddenAssetPatterns
+  : [];
 const startupChunkBudgets = Array.isArray(parsedConfig?.startupChunkBudgets)
   ? parsedConfig.startupChunkBudgets
   : [];
@@ -56,6 +59,10 @@ if (!entryMaxBytes || !chunkMaxBytes) {
 
 if (!precacheMaxBytes || precacheIgnoredAssetPatterns.length === 0) {
   fail('Config must include positive precacheMaxBytes and precacheIgnoredAssetPatterns');
+}
+
+if (forbiddenAssetPatterns.length === 0) {
+  fail('Config must include forbiddenAssetPatterns');
 }
 
 const buildRegex = (pattern, label) => {
@@ -123,6 +130,22 @@ const distAssets = collectDistAssets(distDir);
 
 const violations = [];
 const nearLimitWarnings = [];
+
+const forbiddenAssetRegexes = forbiddenAssetPatterns
+  .filter(pattern => typeof pattern === 'string' && pattern.length > 0)
+  .map(pattern => buildRegex(pattern, 'forbidden asset'));
+
+const forbiddenAssets = distAssets.filter(asset =>
+  forbiddenAssetRegexes.some(regex => regex.test(asset.name))
+);
+if (forbiddenAssets.length > 0) {
+  violations.push(
+    `Forbidden dist assets found: ${forbiddenAssets
+      .map(asset => asset.name)
+      .slice(0, 5)
+      .join(', ')}${forbiddenAssets.length > 5 ? ', ...' : ''}`
+  );
+}
 
 const ignoredPrecacheRegexes = precacheIgnoredAssetPatterns
   .filter(pattern => typeof pattern === 'string' && pattern.length > 0)

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 interface BundleBudgetConfig {
   precacheMaxBytes: number;
   precacheIgnoredAssetPatterns: string[];
+  forbiddenAssetPatterns: string[];
   assetPatternBudgets: Array<{
     pattern: string;
     maxBytes: number;
@@ -72,6 +73,14 @@ describe('bundle budget config', () => {
         '^assets/vendor-excel-.*\\.js$',
         '^assets/vendor-canvas-.*\\.js$',
       ])
+    );
+  });
+
+  it('blocks duplicate bundled ExcelJS runtime assets', () => {
+    const config = readBundleBudgetConfig();
+
+    expect(config.forbiddenAssetPatterns).toEqual(
+      expect.arrayContaining(['^assets/exceljs\\.min-.*\\.js$'])
     );
   });
 });

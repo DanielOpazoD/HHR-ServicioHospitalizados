@@ -223,7 +223,7 @@ describe('chunkingPolicy', () => {
 
     expect(browserLoaderSource).toContain('/vendor/exceljs.min.js');
     expect(browserLoaderSource).not.toMatch(/await\s+import\(['"]exceljs['"]\)/);
-    expect(browserLoaderSource).toContain('loadNodeExcelLoader');
+    expect(browserLoaderSource).not.toContain('excelJsModuleLoader.node');
     expect(viteConfigSource).toContain('__ENABLE_NODE_EXCEL_LOADER__');
     expect(nodeLoaderSource).toContain('importExcelJsForNode');
   });

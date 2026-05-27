@@ -17,6 +17,7 @@
     "^assets/vendor-excel-.*\\.js$",
     "^assets/vendor-canvas-.*\\.js$"
   ],
+  "forbiddenAssetPatterns": ["^assets/exceljs\\.min-.*\\.js$"],
   "assetPatternBudgets": [
     {
       "pattern": "^vendor/exceljs\\.min\\.js$",
