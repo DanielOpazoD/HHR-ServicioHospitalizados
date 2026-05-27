@@ -219,16 +219,24 @@ Salida esperada:
    - ambos workspaces
 3. distinguir si la categoría es:
    - `high_or_critical_vulnerabilities`
+   - `certificate_untrusted`
+   - `registry_policy_blocked`
    - `network_unavailable`
    - `invalid_output`
    - `missing_inputs`
 4. si hay vulnerabilidades reales:
    - priorizar upgrade de dependencias productivas
    - documentar excepciones solo si el upgrade rompe compatibilidad y existe mitigación temporal explícita
-5. si el fallo es de red o registry:
+5. si el fallo es `certificate_untrusted`:
+   - revisar si el reporte indica `Retried with system CA: yes`
+   - correr `NODE_OPTIONS=--use-system-ca npm run check:dependency-vulnerabilities`
+   - revisar `npm config get cafile`
+   - si la red usa CA corporativa, configurar un `cafile` confiable en npm o en el entorno local
+   - no usar `npm config set strict-ssl false`
+6. si el fallo es de red o registry:
    - reintentar el workflow
    - no marcar la app como segura por ausencia de reporte
-6. si root app o `functions` quedan con hallazgos `low`/`moderate` pero sin `high` ni `critical`:
+7. si root app o `functions` quedan con hallazgos `low`/`moderate` pero sin `high` ni `critical`:
    - revisar [docs/FUNCTIONS_DEPENDENCY_ACCEPTANCE.md](./FUNCTIONS_DEPENDENCY_ACCEPTANCE.md)
    - confirmar que no aparecieron `high`, `critical` ni nuevos hallazgos directos fuera del árbol aceptado
    - tratar el estado como deuda aceptada temporalmente, no como bloqueo inmediato ni como limpieza automática vía overrides inseguros
