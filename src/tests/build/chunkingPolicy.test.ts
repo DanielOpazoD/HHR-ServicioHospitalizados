@@ -91,6 +91,18 @@ describe('chunkingPolicy', () => {
     }
   });
 
+  it('keeps authenticated shell providers off the broad context barrel', () => {
+    const guardedFiles = [
+      'src/components/AppProviders.tsx',
+      'src/app-shell/runtime/AuthenticatedAppShell.tsx',
+      'src/app-shell/runtime/useAuthenticatedAppRuntime.ts',
+    ];
+
+    for (const file of guardedFiles) {
+      expect(readSource(file), file).not.toMatch(/from ['"]@\/context['"]/);
+    }
+  });
+
   it('keeps backup export use cases out of the initial authenticated shell import graph', () => {
     const guardedFiles = ['src/hooks/useExportManager.ts', 'src/hooks/useBackupArchiveStatus.ts'];
 
@@ -214,6 +226,27 @@ describe('chunkingPolicy', () => {
     expect(browserLoaderSource).toContain('loadNodeExcelLoader');
     expect(viteConfigSource).toContain('__ENABLE_NODE_EXCEL_LOADER__');
     expect(nodeLoaderSource).toContain('importExcelJsForNode');
+  });
+
+  it('keeps server-only Google APIs out of browser-facing source imports', () => {
+    const sourceFiles = collectProductionSourceFiles(path.resolve(process.cwd(), 'src'));
+    const allowedGoogleApisImporters = new Set([
+      path.resolve(process.cwd(), 'src/services/email/gmailClient.ts'),
+    ]);
+
+    const offenders = sourceFiles
+      .filter(file => !allowedGoogleApisImporters.has(file))
+      .filter(file => {
+        const source = readSource(path.relative(process.cwd(), file));
+        return (
+          /from ['"]googleapis['"]/.test(source) ||
+          /import\(['"]googleapis['"]\)/.test(source) ||
+          source.includes('@/services/email/gmailClient')
+        );
+      })
+      .map(file => path.relative(process.cwd(), file));
+
+    expect(offenders).toEqual([]);
   });
 
   it('isolates shared commonjs helpers from feature-labelled vendor chunks', () => {

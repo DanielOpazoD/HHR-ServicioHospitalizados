@@ -35,6 +35,10 @@ import {
 import { createDexieSyncQueueStore } from '@/services/storage/sync/dexieSyncQueueStore';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
+const TEST_TASK_TIMESTAMP_MS = 1760000000000;
+const FRESH_WORKER_NOW_MS = 1760000060000;
+const FRESH_WORKER_LEASE_UNTIL_MS = FRESH_WORKER_NOW_MS + 30_000;
+
 const makeRecord = (date: string, marker: string): DailyRecord => ({
   date,
   beds: {},
@@ -93,7 +97,7 @@ describe('sync queue transactional outbox and leases', () => {
         opId: 'test-op',
         type: 'UPDATE_DAILY_RECORD',
         payload: record,
-        timestamp: Date.now(),
+        timestamp: TEST_TASK_TIMESTAMP_MS,
         retryCount: 0,
         status: 'PENDING',
         key: 'daily:2025-01-17',
@@ -117,7 +121,7 @@ describe('sync queue transactional outbox and leases', () => {
         opId: 'test-op',
         type: 'UPDATE_DAILY_RECORD',
         payload: record,
-        timestamp: Date.now(),
+        timestamp: TEST_TASK_TIMESTAMP_MS,
         retryCount: 0,
         status: 'PENDING',
         key: 'daily:2025-01-18',
@@ -238,9 +242,9 @@ describe('sync queue transactional outbox and leases', () => {
         throw new Error('Expected a processing task to be claimed before transport completes.');
       }
       await hospitalDB.syncQueue.update(processingTask.id, { leaseUntil: 1 });
-      await createDexieSyncQueueStore().claimReadyPending(Date.now(), 1, null, {
+      await createDexieSyncQueueStore().claimReadyPending(FRESH_WORKER_NOW_MS, 1, null, {
         leaseOwner: 'worker-fresh',
-        leaseUntil: Date.now() + 30_000,
+        leaseUntil: FRESH_WORKER_LEASE_UNTIL_MS,
         attemptId: 'attempt-fresh',
       });
     });

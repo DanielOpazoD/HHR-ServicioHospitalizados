@@ -2,7 +2,7 @@ import React from 'react';
 import { FlaskConical } from 'lucide-react';
 import { AppContent } from '@/components/layout/AppContent';
 import { CensusProvider } from '@/context/CensusContext';
-import { type AuthContextType } from '@/context';
+import type { AuthContextType } from '@/context/AuthContext';
 import { type AppAuthenticatedDateNavigation } from '@/app-shell/bootstrap/useAppBootstrapState';
 import { DeferredSystemHealthReporter } from '@/app-shell/runtime/DeferredSystemHealthReporter';
 import { useAuthenticatedAppRuntime } from '@/app-shell/runtime/useAuthenticatedAppRuntime';

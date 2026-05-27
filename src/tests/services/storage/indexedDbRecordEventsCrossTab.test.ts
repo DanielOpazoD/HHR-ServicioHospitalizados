@@ -77,7 +77,7 @@ describe('indexedDbRecordEvents cross-tab delivery', () => {
       operation: 'save',
       dates: ['2026-05-24'],
     });
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await Promise.resolve();
 
     window.removeEventListener(tabAEvents.DAILY_RECORD_STORE_CHANGED_EVENT, listener);
     expect(received).toEqual([

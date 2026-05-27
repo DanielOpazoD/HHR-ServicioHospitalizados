@@ -9,7 +9,16 @@ const hasSystemCaOption = nodeOptions =>
 export const classifyAuditFailure = ({ stderr = '', stdout = '' } = {}) => {
   const combined = `${stdout}\n${stderr}`.toLowerCase();
   if (
+    combined.includes('application blocked') ||
+    combined.includes('fortigate') ||
+    combined.includes('application control') ||
+    (combined.includes('403') && combined.includes('registry.npmjs.org'))
+  ) {
+    return 'registry_policy_blocked';
+  }
+  if (
     combined.includes('unable to verify the first certificate') ||
+    combined.includes('unable to get local issuer certificate') ||
     combined.includes('self signed certificate') ||
     combined.includes('unable_to_verify_leaf_signature') ||
     combined.includes('certificate has expired')
@@ -46,4 +55,21 @@ export const buildAuditAttemptEnv = (baseEnv = {}) => {
     ...baseEnv,
     NODE_OPTIONS: [existingNodeOptions, SYSTEM_CA_NODE_OPTION].filter(Boolean).join(' '),
   };
+};
+
+export const getAuditFailureGuidance = failureCategory => {
+  switch (failureCategory) {
+    case 'certificate_untrusted':
+      return 'Configure npm CA trust for the registry path, then rerun with NODE_OPTIONS=--use-system-ca or an npm CA/cafile trusted by this network.';
+    case 'registry_policy_blocked':
+      return 'Request an allowlist for registry.npmjs.org npm audit endpoints in the network policy, then rerun the dependency audit.';
+    case 'network_unavailable':
+      return 'Restore network access to registry.npmjs.org and rerun the dependency audit.';
+    case 'missing_inputs':
+      return 'Restore the package manifest and lockfile before running the dependency audit.';
+    case 'unsupported':
+      return 'Run the dependency audit with a supported npm/node version for npm audit JSON output.';
+    default:
+      return 'Inspect npm audit stdout/stderr and rerun after resolving the reported external blocker.';
+  }
 };

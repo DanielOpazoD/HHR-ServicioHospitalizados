@@ -49,9 +49,9 @@ test.describe('Census persistence and reload', () => {
     await expect(demographicsDialog).toBeHidden();
 
     const patientNameInput = row.locator('input[name="patientName"]').first();
+    await expect(patientNameInput).toHaveValue('Updated Patient');
     await updateClinicalDiagnosis(page, row, 'R1', 'UPDATED DX');
 
-    await expect(patientNameInput).toHaveValue('Updated Patient');
     await expectClinicalDiagnosis(row, 'UPDATED DX');
     await seedPersistedBedFields({
       page,

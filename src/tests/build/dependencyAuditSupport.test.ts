@@ -6,6 +6,7 @@ import path from 'node:path';
 import {
   buildAuditAttemptEnv,
   classifyAuditFailure,
+  getAuditFailureGuidance,
   shouldRetryAuditWithSystemCa,
 } from '../../../scripts/lib/dependencyAuditSupport.mjs';
 
@@ -18,6 +19,28 @@ describe('dependency audit support', () => {
           'request to https://registry.npmjs.org/-/npm/v1/security/advisories/bulk failed, reason: unable to verify the first certificate',
       })
     ).toBe('certificate_untrusted');
+
+    expect(
+      classifyAuditFailure({
+        stdout: '',
+        stderr: 'curl: (60) SSL certificate problem: unable to get local issuer certificate',
+      })
+    ).toBe('certificate_untrusted');
+  });
+
+  it('classifies registry policy blocks separately from generic audit failures', () => {
+    expect(
+      classifyAuditFailure({
+        stdout:
+          '<html><title>Application Blocked</title><body>FortiGate Application Control blocked Npmjs</body></html>',
+        stderr: 'npm error 403 Forbidden - registry.npmjs.org',
+      })
+    ).toBe('registry_policy_blocked');
+  });
+
+  it('returns operator guidance for external audit blockers', () => {
+    expect(getAuditFailureGuidance('certificate_untrusted')).toContain('npm CA');
+    expect(getAuditFailureGuidance('registry_policy_blocked')).toContain('allowlist');
   });
 
   it('retries certificate failures with the system CA option exactly once', () => {

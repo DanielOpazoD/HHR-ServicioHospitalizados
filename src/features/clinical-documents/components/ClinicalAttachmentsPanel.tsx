@@ -109,7 +109,7 @@ export const ClinicalAttachmentsPanel: React.FC<ClinicalAttachmentsPanelProps> =
   };
 
   return (
-    <section className="clinical-document-attachments-panel rounded-lg border border-slate-200 bg-slate-50/80 p-3 print:hidden">
+    <section className="clinical-document-attachments-panel mx-auto w-full max-w-[900px] rounded-lg border border-slate-200 bg-slate-50/80 p-3 print:hidden">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <FolderOpen size={15} className="text-slate-500" />

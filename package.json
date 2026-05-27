@@ -36,6 +36,8 @@
     "test:e2e:authenticated-clinical-smoke": "unset NO_COLOR; playwright test -c playwright.emulator-critical.config.ts e2e/authenticated-clinical-smoke.spec.ts",
     "test:e2e:clinical-document-ai-import": "unset NO_COLOR; playwright test -c playwright.emulator-critical.config.ts e2e/clinical-document-ai-import.spec.ts",
     "test:e2e:clinical-visual-release": "unset NO_COLOR; PLAYWRIGHT_JSON_OUTPUT=reports/e2e/clinical-visual-release-report.json playwright test -c playwright.emulator-critical.config.ts e2e/clinical-release-visual-smoke.spec.ts --project=chromium",
+    "test:e2e:clinical-stability": "unset NO_COLOR; PLAYWRIGHT_JSON_OUTPUT=reports/e2e/clinical-stability-report.json playwright test -c playwright.emulator-critical.config.ts e2e/authenticated-clinical-smoke.spec.ts e2e/admit-edit-discharge-smoke.spec.ts e2e/census-persistence-reload.spec.ts e2e/sync-conflict-resolution.spec.ts e2e/clinical-document-ai-import.spec.ts e2e/handoff-shift-export-smoke.spec.ts e2e/backup-restore-export-smoke.spec.ts --project=chromium",
+    "test:e2e:clinical-stability:ci": "bash scripts/run-e2e-clinical-stability-ci.sh",
     "test:e2e:laboratory-smoke": "unset NO_COLOR; playwright test -c playwright.emulator-critical.config.ts e2e/laboratory-flow-smoke.spec.ts",
     "test:e2e:critical": "unset NO_COLOR; playwright test -c playwright.emulator-critical.config.ts e2e/critical-emulator.spec.ts e2e/auth-multi-tab-lock.spec.ts e2e/pre-outbox-multitab.spec.ts e2e/auth-login-resilience.spec.ts e2e/authenticated-clinical-smoke.spec.ts e2e/release-role-smoke.spec.ts e2e/clinical-document-ai-import.spec.ts e2e/legacy-firebase-compat.spec.ts e2e/sync-conflict-resolution.spec.ts e2e/census-persistence-reload.spec.ts e2e/multiuser-offline-conflict.spec.ts e2e/admit-edit-discharge-smoke.spec.ts",
     "test:e2e:flow-performance": "unset NO_COLOR; PLAYWRIGHT_USE_PREVIEW=1 playwright test -c playwright.emulator-critical.config.ts e2e/startup-performance-budget.spec.ts",
@@ -155,7 +157,7 @@
     "report:flow-performance-budget": "node scripts/report-flow-performance-budget.mjs",
     "report:maintenance-debt-scorecard": "node scripts/report-maintenance-debt-scorecard.mjs",
     "report:schema-evolution": "node scripts/report-schema-evolution.mjs",
-    "report:governance-snapshots": "npm run report:release-readiness-scorecard && npm run report:runtime-contracts && npm run report:serverless-runtime-governance && npm run report:serverless-sensitive-coverage && npm run report:sustainable-change-policy && npm run report:maintenance-debt-scorecard",
+    "report:governance-snapshots": "node scripts/run-governance-snapshots.mjs",
     "check:quality": "node scripts/check-quality-aggregate.mjs",
     "test:unit:critical": "npm run test:risk:auth && npm run test:risk:admin-health && npm run test:risk:platform",
     "test:serverless-deploy-smoke": "npm run test:netlify-function-dev-smoke && npm run check:serverless-runtime-governance && npm run check:netlify-functions-bundle && npm run build",
@@ -183,7 +185,7 @@
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "@fontsource/outfit": "^5.2.8",
-    "@google/genai": "^1.31.0",
+    "@google/genai": "^1.52.0",
     "@tanstack/react-query": "^5.90.12",
     "@tanstack/react-virtual": "^3.13.13",
     "@types/file-saver": "^2.0.7",
@@ -194,7 +196,7 @@
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "firebase": "^12.6.0",
-    "googleapis": "^144.0.0",
+    "googleapis": "^172.0.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.2",
@@ -273,10 +275,12 @@
     "basic-ftp": "5.3.1",
     "dompurify": "3.4.0",
     "lodash": "4.18.1",
-    "qs": "6.15.0",
+    "qs": "6.15.2",
     "@isaacs/brace-expansion": "5.0.1",
     "markdown-it": "14.1.1",
-    "protobufjs": "7.5.7"
+    "protobufjs": "7.5.8",
+    "@protobufjs/utf8": "1.1.1",
+    "tmp": "0.2.6"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,css,md}": [

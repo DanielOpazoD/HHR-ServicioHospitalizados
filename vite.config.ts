@@ -183,6 +183,7 @@ export default defineConfig(({ mode }) => {
         compress: {
           drop_console: isProduction,
           drop_debugger: isProduction,
+          passes: isProduction ? 2 : 1,
           pure_funcs: isProduction ? ['console.log', 'console.debug'] : [],
         },
         mangle: {
@@ -190,7 +191,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       // Target modern browsers for smaller output
-      target: 'es2020',
+      target: 'es2022',
       // Enable source maps only in development
       sourcemap: !isProduction,
     },

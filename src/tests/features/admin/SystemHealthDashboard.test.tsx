@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   authRole: vi.fn(() => 'admin'),
 }));
 
+// @flake-safe: Date.now only keeps fixture incidents recent relative to the test run.
 const timestampMinutesAgo = (minutes: number): string =>
   new Date(Date.now() - minutes * 60 * 1000).toISOString();
 
