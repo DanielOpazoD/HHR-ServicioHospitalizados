@@ -73,7 +73,11 @@
       "label": "Respaldo y exportaciones: Excel/PDF y recuperacion operacional",
       "riskLevel": "medium",
       "matrixAreas": ["export_and_backup", "repositories"],
-      "automatedRegression": ["test:platform-resilience", "test:e2e:critical:ci"],
+      "automatedRegression": [
+        "test:platform-resilience",
+        "test:e2e:clinical-stability:ci",
+        "test:e2e:critical:ci"
+      ],
       "manualValidation": [
         "Exportar datos criticos, revisar archivo generado y comprobar que la recuperacion operacional no altera pacientes activos."
       ]

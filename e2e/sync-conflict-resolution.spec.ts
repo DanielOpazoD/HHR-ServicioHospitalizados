@@ -139,7 +139,7 @@ test.describe('Sync conflict resolution', () => {
       },
     });
 
-    await page.evaluate(date => {
+    const remoteRecord = await page.evaluate(date => {
       const storageKey = 'hanga_roa_hospital_data';
       const records = JSON.parse(localStorage.getItem(storageKey) || '{}') as Record<
         string,
@@ -150,7 +150,7 @@ test.describe('Sync conflict resolution', () => {
       };
       const currentBeds = currentRecord.beds || {};
 
-      records[date] = {
+      return {
         ...currentRecord,
         lastUpdated: `${date}T23:59:59.000Z`,
         beds: {
@@ -167,18 +167,9 @@ test.describe('Sync conflict resolution', () => {
           },
         },
       };
-
-      localStorage.setItem(storageKey, JSON.stringify(records));
-
-      const runtimeWindow = window as unknown as {
-        __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
-      };
-      runtimeWindow.__HHR_E2E_OVERRIDE__ = {
-        ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
-        [date]: records[date] as unknown,
-      };
     }, CONFLICT_DATE);
 
+    await injectRemoteSnapshotForNextLoad(page, remoteRecord);
     await page.reload();
 
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
