@@ -228,6 +228,27 @@ describe('chunkingPolicy', () => {
     expect(nodeLoaderSource).toContain('importExcelJsForNode');
   });
 
+  it('keeps server-only Google APIs out of browser-facing source imports', () => {
+    const sourceFiles = collectProductionSourceFiles(path.resolve(process.cwd(), 'src'));
+    const allowedGoogleApisImporters = new Set([
+      path.resolve(process.cwd(), 'src/services/email/gmailClient.ts'),
+    ]);
+
+    const offenders = sourceFiles
+      .filter(file => !allowedGoogleApisImporters.has(file))
+      .filter(file => {
+        const source = readSource(path.relative(process.cwd(), file));
+        return (
+          /from ['"]googleapis['"]/.test(source) ||
+          /import\(['"]googleapis['"]\)/.test(source) ||
+          source.includes('@/services/email/gmailClient')
+        );
+      })
+      .map(file => path.relative(process.cwd(), file));
+
+    expect(offenders).toEqual([]);
+  });
+
   it('isolates shared commonjs helpers from feature-labelled vendor chunks', () => {
     expect(chunkForModule('\u0000commonjsHelpers.js')).toBe('vendor-cjs-helpers');
     expect(chunkForModule('/repo/node_modules/.vite/deps/commonjsHelpers.js')).toBe(

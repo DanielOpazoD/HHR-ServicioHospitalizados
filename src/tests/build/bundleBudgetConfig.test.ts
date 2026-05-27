@@ -32,7 +32,7 @@ describe('bundle budget config', () => {
     expect(
       config.assetPatternBudgets.find(budget => budget.pattern === '^vendor/exceljs\\.min\\.js$')
     ).toMatchObject({
-      maxBytes: 1100000,
+      maxBytes: 1000000,
     });
     expect(findBudget(config, '^exceljs\\.min-.*\\.js$')).toBeUndefined();
     expect(findBudget(config, '^pdf-.*\\.js$')).toMatchObject({
@@ -46,7 +46,7 @@ describe('bundle budget config', () => {
     expect(
       config.startupChunkBudgets.find(budget => budget.label === 'app-authenticated-shell')
     ).toMatchObject({
-      maxBytes: 620000,
+      maxBytes: 590000,
     });
   });
 });
