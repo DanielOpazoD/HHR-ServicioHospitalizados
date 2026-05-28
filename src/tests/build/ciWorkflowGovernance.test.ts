@@ -45,6 +45,18 @@ describe('CI workflow governance', () => {
     expect(workflow).toContain('.github/workflows/security-audit.yml');
   });
 
+  it('deploys explicit Firebase function targets without a sweeping delete pass', () => {
+    const workflow = readText('.github/workflows/deploy-functions.yml');
+    const targetScript = readText('scripts/list-firebase-function-targets.mjs');
+
+    expect(workflow).toContain('node scripts/list-firebase-function-targets.mjs');
+    expect(workflow).toContain('--only "${FUNCTION_TARGETS}"');
+    expect(workflow).not.toContain('--only functions \\');
+    expect(workflow).toContain('--force');
+    expect(targetScript).toContain('functions:');
+    expect(targetScript).not.toContain('cleanExpiredPrescriptions');
+  });
+
   it('opts GitHub JavaScript actions into Node 24 before the runner default changes', () => {
     for (const workflowFile of workflowFiles) {
       const workflow = readText(workflowFile);
