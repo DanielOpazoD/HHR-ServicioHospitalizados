@@ -22,6 +22,10 @@ env:
 # Generate the key in GCP Console → IAM & Admin → Service Accounts → Keys → Add
 # key (JSON). Paste the entire JSON file contents (including the surrounding
 # braces) into the secret value.
+#
+# This workflow intentionally deploys the currently exported function targets
+# instead of sweeping all Functions. That avoids requiring Cloud Scheduler delete
+# permissions just to keep removed legacy scheduled functions out of new deploys.
 # ----------------------------------------------------------------------------
 
 on:
@@ -77,11 +81,12 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase/service-account.json
         run: |
+          FUNCTION_TARGETS="$(node scripts/list-firebase-function-targets.mjs)"
+          echo "Deploying Firebase function targets: ${FUNCTION_TARGETS}"
           npx --yes firebase-tools@latest deploy \
-            --only functions \
+            --only "${FUNCTION_TARGETS}" \
             --project hhr-serviciohospitalizados \
-            --non-interactive \
-            --force
+            --non-interactive
 
       - name: Cleanup credentials
         if: always()
