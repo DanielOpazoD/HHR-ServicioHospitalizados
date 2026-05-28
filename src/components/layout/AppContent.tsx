@@ -6,6 +6,10 @@ import { useAppContentRuntime } from '@/components/layout/app-content/useAppCont
 import { useAppContentShellEffects } from '@/components/layout/app-content/useAppContentShellEffects';
 import { buildOpenCensusDateHandler } from '@/components/layout/app-content/appContentCensusDateController';
 import { resolveModuleTheme } from '@/components/layout/app-content/moduleThemeController';
+import {
+  loadReminderCenterProvider,
+  type ReminderCenterProviderComponent,
+} from '@/components/layout/app-content/reminderCenterProviderLoader';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 
@@ -19,13 +23,6 @@ interface AppContentProps {
   ui: UseUIStateReturn;
   renderFeatureQuickActions?: (patients: MedicalIndicationsPatientOption[]) => React.ReactNode;
 }
-
-type ReminderCenterProviderComponent = React.FC<{ children: React.ReactNode }>;
-
-const loadReminderCenterProvider = async (): Promise<ReminderCenterProviderComponent> => {
-  const module = await import('@/context/ReminderCenterContext');
-  return module.ReminderCenterProvider;
-};
 
 const DeferredReminderCenterProvider: ReminderCenterProviderComponent = ({ children }) => {
   const [Provider, setProvider] = React.useState<ReminderCenterProviderComponent | null>(null);

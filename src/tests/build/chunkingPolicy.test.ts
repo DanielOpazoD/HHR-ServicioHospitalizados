@@ -94,13 +94,20 @@ describe('chunkingPolicy', () => {
 
   it('keeps the reminder center provider out of the static authenticated shell import graph', () => {
     const appContentSource = readSource('src/components/layout/AppContent.tsx');
+    const reminderProviderLoaderSource = readSource(
+      'src/components/layout/app-content/reminderCenterProviderLoader.ts'
+    );
     const reminderHookSource = readSource('src/hooks/useReminders.ts');
     const navbarSource = readSource('src/components/layout/Navbar.tsx');
 
     expect(appContentSource).not.toMatch(
       /import\s+\{[^}]*ReminderCenterProvider[^}]*\}\s+from ['"]@\/context\/ReminderCenterContext['"]/
     );
-    expect(appContentSource).toContain("import('@/context/ReminderCenterContext')");
+    expect(appContentSource).not.toContain("import('@/context/ReminderCenterContext')");
+    expect(appContentSource).toContain(
+      "from '@/components/layout/app-content/reminderCenterProviderLoader'"
+    );
+    expect(reminderProviderLoaderSource).toContain("import('@/context/ReminderCenterContext')");
     expect(reminderHookSource).not.toContain('@/context/ReminderCenterContext');
     expect(navbarSource).not.toMatch(
       /import\s+\{[^}]*ReminderBadge[^}]*\}\s+from ['"]@\/components\/reminders\/ReminderBadge['"]/

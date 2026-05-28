@@ -18,6 +18,10 @@ vi.mock('@/context/ReminderCenterContext', () => ({
   ReminderCenterProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+vi.mock('@/components/layout/app-content/reminderCenterProviderLoader', () => ({
+  loadReminderCenterProvider: () => new Promise(() => {}),
+}));
+
 vi.mock('@/components/layout/app-content/useAppContentRuntime', () => ({
   useAppContentRuntime: (...args: unknown[]) => mockUseAppContentRuntime(...args),
 }));

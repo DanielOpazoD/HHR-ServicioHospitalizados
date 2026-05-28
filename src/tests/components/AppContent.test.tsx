@@ -93,6 +93,12 @@ vi.mock('@/context/ReminderCenterContext', () => {
   };
 });
 
+vi.mock('@/components/layout/app-content/reminderCenterProviderLoader', () => {
+  return {
+    loadReminderCenterProvider: () => new Promise(() => {}),
+  };
+});
+
 vi.mock('@/hooks/useReminders', () => ({
   useReminderCenter: () => ({
     isOpen: false,
