@@ -92,6 +92,40 @@ describe('AuditWorkerLogic', () => {
     expect(search('Cama 4')).toHaveLength(1);
   });
 
+  it('keeps the clinical timeline searchable without restricting by audit action buckets', () => {
+    const traceLog: AuditLogEntry = {
+      id: 'timeline-1',
+      timestamp: '2026-05-28T12:00:00Z',
+      userId: 'doctor@test.com',
+      userDisplayName: 'Doctor Test',
+      ipAddress: '190.10.10.10',
+      action: 'PATIENT_MODIFIED',
+      entityType: 'patient',
+      entityId: 'Cama 4',
+      details: {
+        patientName: 'Ana Vera',
+        rut: '11222333-4',
+        movementKind: 'move',
+        sourceBed: '4',
+        targetBed: '6',
+      },
+    };
+
+    const params: WorkerFilterParams = {
+      searchTerm: 'trasladado',
+      filterAction: 'ALL',
+      startDate: '',
+      endDate: '',
+      activeSection: 'TIMELINE',
+      sectionActions: { TIMELINE: [] },
+      groupedView: false,
+    };
+
+    const filtered = filterLogs([traceLog], params);
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].id).toBe('timeline-1');
+  });
+
   it('should filter logs by action', () => {
     const params: WorkerFilterParams = {
       searchTerm: '',

@@ -1,5 +1,6 @@
 import type { AuditAction } from '@/types/auditActionTypes';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
+import { buildKnownClinicalAuditNarrative } from '@/services/admin/clinicalAuditNarratives';
 
 export type ClinicalAuditImpact =
   | 'registro'
@@ -47,7 +48,6 @@ export interface ClinicalAuditPresentation {
 }
 
 const UNKNOWN_USER = 'Usuario no identificado';
-const UNKNOWN_PATIENT = 'Paciente no identificado';
 
 const FIELD_LABELS: Record<string, string> = {
   note: 'Nota clínica',
@@ -57,15 +57,21 @@ const FIELD_LABELS: Record<string, string> = {
   diagnosis: 'Diagnóstico',
   pathology: 'Diagnóstico',
   bedId: 'Cama',
+  sourceBed: 'Cama origen',
+  targetBed: 'Cama destino',
+  restoredBed: 'Cama restaurada',
   status: 'Estado',
+  reason: 'Motivo',
+  active: 'Estado de cama extra',
+  score: 'Puntaje',
+  category: 'Categoría',
+  documentType: 'Tipo de documento',
+  documentTitle: 'Documento',
   doctorName: 'Médico responsable',
   authorName: 'Autor',
 };
 
 const asText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
-
-const getPatientName = (details: Record<string, unknown>): string =>
-  asText(details.patientName) || UNKNOWN_PATIENT;
 
 const getActorLabel = (log: AuditLogEntry): string =>
   asText(log.userDisplayName) || asText(log.userId) || asText(log.userUid) || UNKNOWN_USER;
@@ -81,11 +87,6 @@ const getActorSecondary = (log: AuditLogEntry): string | undefined => {
 
 const getOriginLabel = (log: AuditLogEntry): string =>
   asText(log.ipAddress) ? `IP ${asText(log.ipAddress)}` : 'IP no disponible';
-
-const getBedLabel = (value: unknown): string => {
-  const text = asText(value);
-  return text ? `cama ${text}` : 'cama no especificada';
-};
 
 const formatClinicalAuditTimestamp = (timestamp: unknown): string => {
   const date =
@@ -145,94 +146,9 @@ const buildImportantChanges = (details: Record<string, unknown>): ClinicalAuditC
   );
 };
 
-const buildKnownNarrative = (
-  log: AuditLogEntry,
-  details: Record<string, unknown>
-): Pick<ClinicalAuditPresentation, 'title' | 'narrative' | 'affectedSubject'> => {
-  const patientName = getPatientName(details);
-  const entityId = asText(log.entityId);
-  const bedId = asText(details.bedId) || entityId;
-
-  if (log.action === 'PATIENT_MODIFIED' && details.movementKind === 'move') {
-    return {
-      title: 'Paciente trasladado de cama',
-      narrative: `${patientName} fue trasladado desde ${getBedLabel(details.sourceBed)} a ${getBedLabel(details.targetBed)}.`,
-      affectedSubject: patientName,
-    };
-  }
-
-  if (log.action === 'PATIENT_MODIFIED' && details.movementKind === 'copy') {
-    return {
-      title: 'Paciente copiado a otra cama',
-      narrative: `${patientName} fue copiado desde ${getBedLabel(details.sourceBed)} a ${getBedLabel(details.targetBed)}.`,
-      affectedSubject: patientName,
-    };
-  }
-
-  if (log.action === 'PATIENT_ADMITTED') {
-    return {
-      title: 'Paciente ingresado',
-      narrative: `${patientName} fue ingresado en ${getBedLabel(bedId)}.`,
-      affectedSubject: patientName,
-    };
-  }
-
-  if (log.action === 'PATIENT_DISCHARGED') {
-    return {
-      title: 'Paciente dado de alta',
-      narrative: `${patientName} fue registrado como egresado.`,
-      affectedSubject: patientName,
-    };
-  }
-
-  if (log.action === 'PATIENT_TRANSFERRED') {
-    const destination = asText(details.destination) || 'destino no especificado';
-    return {
-      title: 'Paciente derivado o trasladado',
-      narrative: `${patientName} fue trasladado hacia ${destination}.`,
-      affectedSubject: patientName,
-    };
-  }
-
-  if (log.action === 'USER_LOGIN') {
-    return {
-      title: 'Inicio de sesión',
-      narrative: 'El usuario inició sesión en el sistema.',
-      affectedSubject: getActorLabel(log),
-    };
-  }
-
-  if (log.action === 'USER_LOGOUT') {
-    return {
-      title: 'Cierre de sesión',
-      narrative: 'El usuario cerró sesión en el sistema.',
-      affectedSubject: getActorLabel(log),
-    };
-  }
-
-  if (log.action === 'SYSTEM_ERROR') {
-    return {
-      title: 'Evento del sistema registrado',
-      narrative: 'Se registró un evento del sistema para revisión administrativa.',
-      affectedSubject: entityId || 'Sistema',
-    };
-  }
-
-  return {
-    title: 'Evento registrado',
-    narrative: 'Se registró una acción clínica o administrativa para trazabilidad.',
-    affectedSubject:
-      log.entityType === 'patient' ||
-      log.entityType === 'discharge' ||
-      log.entityType === 'transfer'
-        ? patientName
-        : entityId || log.entityType,
-  };
-};
-
 export const buildClinicalAuditPresentation = (log: AuditLogEntry): ClinicalAuditPresentation => {
   const details = log.details || {};
-  const narrative = buildKnownNarrative(log, details);
+  const narrative = buildKnownClinicalAuditNarrative(log, details);
 
   return {
     ...narrative,

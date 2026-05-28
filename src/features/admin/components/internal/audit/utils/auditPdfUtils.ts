@@ -1,7 +1,6 @@
 import { AuditLogEntry } from '@/types/auditLogTypes';
-import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
-import { formatTimestamp } from '../auditUIUtils';
 import { formatAuditTimestamp } from '@/services/admin/utils/auditUtils';
+import { buildClinicalAuditExportRows } from '@/services/admin/clinicalAuditExportRows';
 
 interface AuditPdfReportParams {
   filteredLogs: AuditLogEntry[];
@@ -19,12 +18,21 @@ export const generateAuditPdfHtml = ({
   startDate,
   endDate,
 }: AuditPdfReportParams): string => {
+  const rows = buildClinicalAuditExportRows(filteredLogs).slice(0, 200);
+  const escapeHtml = (value: string): string =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
   return `
         <!DOCTYPE html>
         <html>
             <head>
                 <meta charset="UTF-8">
-                <title>Reporte de Auditoría - Hospital de Hanga Roa</title>
+                <title>Reporte de Auditoría Clínica/Legal - Hospital de Hanga Roa</title>
                 <style>
                     @page {size: landscape; margin: 1.5cm; }
                     body {font-family: Arial, sans-serif; font-size: 10px; color: #333; }
@@ -46,7 +54,7 @@ export const generateAuditPdfHtml = ({
             <body>
                 <div class="header-info">
                     <div>
-                        <h1>📋 Reporte de Auditoría</h1>
+                        <h1>Reporte de Auditoría Clínica/Legal</h1>
                         <h2>Hospital de Hanga Roa - Sistema de Gestión Clínica</h2>
                     </div>
                     <div class="stats">
@@ -69,32 +77,33 @@ export const generateAuditPdfHtml = ({
                     <thead>
                         <tr>
                             <th>Fecha/Hora</th>
-                            <th>Operador</th>
-                            <th>Acción</th>
-                            <th>Resumen</th>
-                            <th>Paciente</th>
-                            <th>Cama</th>
+                            <th>Responsable</th>
+                            <th>Evento clínico</th>
+                            <th>Relato clínico</th>
+                            <th>Afectado</th>
+                            <th>Origen/IP</th>
+                            <th>Cambios relevantes</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${filteredLogs
-                          .slice(0, 200)
-                          .map(log => {
-                            const isCritical = [
-                              'PATIENT_ADMITTED',
-                              'PATIENT_DISCHARGED',
-                              'PATIENT_TRANSFERRED',
-                              'DAILY_RECORD_DELETED',
-                            ].includes(log.action);
-                            const patientName = (log.details?.patientName as string) || '-';
-                            const bedId = (log.details?.bedId as string) || '-';
+                        ${rows
+                          .map((row, index) => {
+                            const isCritical = filteredLogs[index]
+                              ? [
+                                  'PATIENT_ADMITTED',
+                                  'PATIENT_DISCHARGED',
+                                  'PATIENT_TRANSFERRED',
+                                  'DAILY_RECORD_DELETED',
+                                ].includes(filteredLogs[index].action)
+                              : false;
                             return `<tr class="${isCritical ? 'critical' : ''}">
-                                <td>${formatTimestamp(log.timestamp)}</td>
-                                <td>${log.userDisplayName || (log.userId || '-').split('@')[0]}</td>
-                                <td>${AUDIT_ACTION_LABELS[log.action] || log.action}</td>
-                                <td>${log.summary || '-'}</td>
-                                <td>${patientName}</td>
-                                <td>${bedId}</td>
+                                <td>${escapeHtml(row.timestamp)}</td>
+                                <td>${escapeHtml(row.responsible)}<br><span style="color:#64748b">${escapeHtml(row.responsibleDetail)}</span></td>
+                                <td>${escapeHtml(row.eventTitle)}</td>
+                                <td>${escapeHtml(row.narrative)}</td>
+                                <td>${escapeHtml(row.affected)}<br><span style="color:#64748b">${escapeHtml(row.patientIdentifier)}</span></td>
+                                <td>${escapeHtml(row.origin)}</td>
+                                <td>${escapeHtml(row.relevantChanges)}</td>
                             </tr>`;
                           })
                           .join('')}

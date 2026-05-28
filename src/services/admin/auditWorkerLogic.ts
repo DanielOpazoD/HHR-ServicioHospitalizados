@@ -78,7 +78,10 @@ export const filterLogs = (logs: AuditLogEntry[], params: WorkerFilterParams): A
 
     // 3. Section categorization
     const actions = sectionActions[activeSection];
-    const matchesSection = activeSection === 'ALL' || (actions && actions.includes(log.action));
+    const matchesSection =
+      activeSection === 'ALL' ||
+      activeSection === 'TIMELINE' ||
+      (actions && actions.includes(log.action));
 
     // 4. Date Filter
     const matchesDate =

@@ -1,26 +1,29 @@
 import type { Workbook } from 'exceljs';
 import { AuditLogEntry } from '@/types/auditLogTypes';
-import { AUDIT_ACTION_LABELS } from '../admin/auditConstants';
 import { createWorkbook } from './excelUtils';
-import { formatAuditTimestamp } from '@/services/admin/utils/auditUtils';
+import { buildClinicalAuditExportRows } from '@/services/admin/clinicalAuditExportRows';
 
 /**
  * Generates an Excel workbook for audit logs
  */
 export const generateAuditWorkbook = async (logs: AuditLogEntry[]): Promise<Workbook> => {
   const workbook = await createWorkbook();
-  const sheet = workbook.addWorksheet('Registros de Auditoría');
+  const sheet = workbook.addWorksheet('Auditoría Clínica Legal');
 
   // Header styling
   const headerRow = sheet.addRow([
     'ID',
     'FECHA/HORA',
-    'USUARIO',
-    'ACCIÓN',
-    'CAMA',
-    'PACIENTE',
-    'RUT',
-    'DETALLES',
+    'RESPONSABLE',
+    'IDENTIFICADOR RESPONSABLE',
+    'EVENTO CLÍNICO',
+    'RELATO CLÍNICO',
+    'AFECTADO',
+    'RUT/ID PACIENTE',
+    'ORIGEN/IP',
+    'ÁREA',
+    'IMPACTO',
+    'CAMBIOS RELEVANTES',
   ]);
 
   headerRow.eachCell(cell => {
@@ -33,25 +36,20 @@ export const generateAuditWorkbook = async (logs: AuditLogEntry[]): Promise<Work
     cell.alignment = { vertical: 'middle', horizontal: 'center' };
   });
 
-  // Add data
-  logs.forEach(log => {
-    const detailsStr = Object.entries(log.details)
-      .filter(([k]) => k !== '_metadata')
-      .map(([k, v]) => `${k}: ${v}`)
-      .join(', ');
-
-    const bedId = (log.details.bedId as string) || log.entityId;
-    const patientName = (log.details.patientName as string) || '';
-
+  buildClinicalAuditExportRows(logs).forEach(row => {
     sheet.addRow([
-      log.id,
-      formatAuditTimestamp(log.timestamp),
-      log.userId,
-      AUDIT_ACTION_LABELS[log.action] || log.action,
-      bedId && (bedId as string).length < 15 ? bedId : '-',
-      patientName || '-',
-      log.patientIdentifier || '-',
-      detailsStr,
+      row.id,
+      row.timestamp,
+      row.responsible,
+      row.responsibleDetail,
+      row.eventTitle,
+      row.narrative,
+      row.affected,
+      row.patientIdentifier,
+      row.origin,
+      row.clinicalArea,
+      row.impact,
+      row.relevantChanges,
     ]);
   });
 
