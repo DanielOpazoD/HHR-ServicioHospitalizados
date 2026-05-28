@@ -16,7 +16,6 @@ import {
 } from '@/services/repositories/contracts/dailyRecordCommands';
 import { buildDailyRecordSyncContract } from '@/services/storage/sync/syncTaskContractPolicy';
 import { queueDailyRecordSyncTaskWithLocalRecord } from '@/services/storage/sync';
-import { createUpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
 import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordPersistencePreparation';
 import { preparePatchedRecordForPersistence } from '@/services/repositories/dailyRecordPatchPreparation';
 import { assertRemoteSaveCompatibility } from '@/services/repositories/dailyRecordRemoteWriteController';
@@ -25,13 +24,17 @@ import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyR
 import { resolveBlockingFieldShrinkages } from '@/services/repositories/dailyRecordFieldShrinkageGuard';
 import {
   applyRecoveryDecisionToState,
-  buildBlockedPartialUpdateResult,
   buildBlockedSaveResult,
   buildPartialUpdateResult,
   buildSaveResult,
   createRemoteWriteState,
   type RemoteWriteState,
 } from '@/services/repositories/dailyRecordWriteState';
+import {
+  buildFieldShrinkageBlockedPartialUpdateResult,
+  buildMissingBasePartialUpdateResult,
+  buildValidationBlockedPartialUpdateResult,
+} from '@/services/repositories/dailyRecordPartialUpdateBlockingController';
 import { persistLocalAndAttemptRemoteSync } from '@/services/repositories/dailyRecordRemotePersistenceController';
 import { buildPreOutboxRemoteAckOptions } from '@/services/repositories/dailyRecordPreOutboxRemoteAckPolicy';
 import { buildPreOutboxRemoteAckCallbacks } from '@/services/repositories/dailyRecordPreOutboxRemoteAckCallbacks';
@@ -243,26 +246,10 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
 
   if (!current) {
     dailyRecordWriteLogger.warn(`No record found for ${command.date}; partial update aborted`);
-    return createUpdatePartialDailyRecordResult({
+    return buildMissingBasePartialUpdateResult({
       date: command.date,
-      outcome: 'blocked',
-      savedLocally: false,
-      updatedRemotely: false,
-      queuedForRetry: false,
-      autoMerged: false,
+      state: remoteState,
       patchedFields: Object.keys(command.patch).length,
-      consistencyState: 'unrecoverable',
-      sourceOfTruth: 'none',
-      retryability: 'manual_review',
-      recoveryAction: 'block_and_surface',
-      conflictSummary: {
-        kind: 'remote_missing',
-        sourceOfTruth: 'none',
-        message: 'No se encontró un registro local válido para aplicar el cambio.',
-      },
-      observabilityTags: ['daily_record', 'write', 'missing_local_record'],
-      userSafeMessage: 'No se encontró un registro local válido para aplicar el cambio.',
-      repairApplied: false,
     });
   }
 
@@ -276,29 +263,13 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
     ));
   } catch (err) {
     if (err instanceof AdmissionDatePolicyViolationError) {
-      applyRecoveryDecisionToState(
-        remoteState,
-        {
-          consistencyState: 'blocked_validation',
-          retryability: 'blocked',
-          recoveryAction: 'block_and_surface',
-          blockingReason: 'validation',
-          conflictSummary: {
-            kind: 'validation_blocked',
-            sourceOfTruth: 'none',
-            changedPaths: Object.keys(command.patch),
-            message: err.message,
-          },
-          observabilityTags: ['daily_record', 'write', 'validation_blocked'],
-          userSafeMessage: err.message,
-        },
-        err
-      );
-      return buildBlockedPartialUpdateResult(
-        command.date,
-        remoteState,
-        Object.keys(command.patch).length
-      );
+      return buildValidationBlockedPartialUpdateResult({
+        date: command.date,
+        state: remoteState,
+        changedPaths: Object.keys(command.patch),
+        error: err,
+        patchedFields: Object.keys(command.patch).length,
+      });
     }
     throw err;
   }
@@ -315,31 +286,12 @@ export const updatePartialDetailed = async (date: string, partialData: DailyReco
     mergedPatches
   );
   if (suspiciousShrinkages.length > 0) {
-    const firstShrinkage = suspiciousShrinkages[0];
-    const error = new DataRegressionError(
-      `Se bloqueó una reducción sospechosa de texto clínico (${firstShrinkage.prevLength} -> ${firstShrinkage.nextLength} caracteres). Recarga antes de reintentar para evitar pérdida de información.`,
-      firstShrinkage.nextLength,
-      firstShrinkage.prevLength
-    );
-    applyRecoveryDecisionToState(
-      remoteState,
-      {
-        consistencyState: 'blocked_regression',
-        retryability: 'blocked',
-        recoveryAction: 'block_and_surface',
-        blockingReason: 'regression',
-        conflictSummary: {
-          kind: 'regression_blocked',
-          sourceOfTruth: 'none',
-          changedPaths: suspiciousShrinkages.map(item => item.path),
-          message: error.message,
-        },
-        observabilityTags: ['daily_record', 'write', 'field_shrinkage_blocked'],
-        userSafeMessage: error.message,
-      },
-      error
-    );
-    return buildBlockedPartialUpdateResult(command.date, remoteState, patchedFields);
+    return buildFieldShrinkageBlockedPartialUpdateResult({
+      date: command.date,
+      state: remoteState,
+      shrinkages: suspiciousShrinkages,
+      patchedFields,
+    });
   }
 
   const nextAction = await persistLocalAndAttemptRemoteSync({
