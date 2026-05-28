@@ -43,13 +43,6 @@ const resolveEpisodeId = (log: AuditLogEntry): string | undefined => {
     asText(details.clinicalEpisodeId) || asText(details.episodeKey) || asText(details.episodeId);
   if (direct) return direct;
 
-  const originalData = asRecord(details.originalData);
-  const originalEpisode =
-    asText(originalData?.clinicalEpisodeId) ||
-    asText(originalData?.episodeKey) ||
-    asText(originalData?.episodeId);
-  if (originalEpisode) return originalEpisode;
-
   const patient = asRecord(details.patient);
   return asText(patient?.clinicalEpisodeId) || asText(patient?.episodeKey) || undefined;
 };
