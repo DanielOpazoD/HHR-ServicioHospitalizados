@@ -126,7 +126,7 @@ export const AuditView: React.FC = () => {
 
       <AuditDynamicPanels
         activeSection={activeSection}
-        logs={logs}
+        logs={filteredLogs}
         canSeeSensitivePanels={canSeeSensitivePanels}
       />
 

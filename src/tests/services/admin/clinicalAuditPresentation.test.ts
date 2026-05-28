@@ -88,4 +88,39 @@ describe('buildClinicalAuditPresentation', () => {
       { fieldLabel: 'Especialidad', oldValue: 'Medicina', newValue: 'Cirugia' },
     ]);
   });
+
+  it('uses specific clinical narratives for frequent legal audit actions', () => {
+    expect(
+      buildClinicalAuditPresentation(
+        baseLog({
+          action: 'NURSE_HANDOFF_MODIFIED',
+          entityType: 'dailyRecord',
+          entityId: '2026-05-28',
+          details: { patientName: 'Juan Perez', note: 'Turno tranquilo' },
+        })
+      ).title
+    ).toBe('Entrega de enfermería actualizada');
+
+    expect(
+      buildClinicalAuditPresentation(
+        baseLog({
+          action: 'CUDYR_MODIFIED',
+          entityType: 'patient',
+          entityId: 'Cama 4',
+          details: { patientName: 'Juan Perez' },
+        })
+      ).narrative
+    ).toContain('CUDYR');
+
+    expect(
+      buildClinicalAuditPresentation(
+        baseLog({
+          action: 'BED_BLOCKED',
+          entityType: 'dailyRecord',
+          entityId: 'Cama 8',
+          details: { bedId: '8', reason: 'Mantención' },
+        })
+      ).title
+    ).toBe('Cama bloqueada');
+  });
 });

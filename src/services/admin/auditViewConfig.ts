@@ -21,9 +21,9 @@ export const AUDIT_SYSTEM_SECTIONS: AuditSection[] = ['SESSIONS', 'EXPORT_KEYS',
 export const AUDIT_SECTIONS: Record<AuditSection, AuditSectionConfig> = {
   ALL: { label: 'Todos', color: 'bg-slate-100 text-slate-600' },
   TIMELINE: {
-    label: '📅 Timeline',
+    label: 'Timeline clínico',
     color: 'bg-violet-100 text-violet-700',
-    actions: ['USER_LOGIN', 'USER_LOGOUT'],
+    actions: [],
   },
   SESSIONS: {
     label: 'Sesiones',
