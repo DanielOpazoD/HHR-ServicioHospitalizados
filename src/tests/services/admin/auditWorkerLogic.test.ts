@@ -53,6 +53,45 @@ describe('AuditWorkerLogic', () => {
     expect(filtered.length).toBe(2);
   });
 
+  it('filters logs by legal traceability fields and clinical presentation text', () => {
+    const traceLog: AuditLogEntry = {
+      id: 'trace-1',
+      timestamp: '2026-05-28T12:00:00Z',
+      userId: 'doctor@test.com',
+      userDisplayName: 'Doctor Test',
+      userUid: 'uid-legal-123',
+      ipAddress: '190.10.10.10',
+      action: 'PATIENT_MODIFIED',
+      entityType: 'patient',
+      entityId: 'Cama 4',
+      summary: 'Movimiento de cama',
+      details: {
+        patientName: 'Ana Vera',
+        rut: '11222333-4',
+        movementKind: 'move',
+        sourceBed: '4',
+        targetBed: '6',
+      },
+    };
+
+    const baseParams: WorkerFilterParams = {
+      searchTerm: '',
+      filterAction: 'ALL',
+      startDate: '',
+      endDate: '',
+      activeSection: 'ALL',
+      sectionActions: { ALL: undefined },
+      groupedView: false,
+    };
+
+    const search = (searchTerm: string) => filterLogs([traceLog], { ...baseParams, searchTerm });
+
+    expect(search('190.10.10.10')).toHaveLength(1);
+    expect(search('uid-legal-123')).toHaveLength(1);
+    expect(search('trasladado')).toHaveLength(1);
+    expect(search('Cama 4')).toHaveLength(1);
+  });
+
   it('should filter logs by action', () => {
     const params: WorkerFilterParams = {
       searchTerm: '',

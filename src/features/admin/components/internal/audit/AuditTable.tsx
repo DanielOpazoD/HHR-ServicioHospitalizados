@@ -121,12 +121,12 @@ export const AuditTable: React.FC<AuditTableProps> = ({
           <thead className="bg-slate-50/50 border-b border-slate-100">
             <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
               <th className="px-6 py-4 text-left w-6"></th>
-              <th className="px-4 py-4 text-left">Fecha/Hora</th>
-              <th className="px-4 py-4 text-left">Operador</th>
-              {!compactView && <th className="px-4 py-4 text-left">Acción</th>}
-              <th className="px-4 py-4 text-left">Resumen</th>
-              {!compactView && <th className="px-4 py-4 text-left">Paciente</th>}
-              {!compactView && <th className="px-4 py-4 text-left">Cama</th>}
+              <th className="px-4 py-4 text-left">Momento</th>
+              <th className="px-4 py-4 text-left">Responsable</th>
+              {!compactView && <th className="px-4 py-4 text-left">Evento clínico</th>}
+              <th className="px-4 py-4 text-left">Relato clínico</th>
+              {!compactView && <th className="px-4 py-4 text-left">Afectado</th>}
+              {!compactView && <th className="px-4 py-4 text-left">Origen</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
