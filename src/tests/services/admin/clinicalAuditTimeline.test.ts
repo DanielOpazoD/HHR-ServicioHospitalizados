@@ -53,4 +53,38 @@ describe('clinicalAuditTimeline', () => {
       relevantChanges: 'Cama: 1 -> 2',
     });
   });
+
+  it('prefers canonical clinicalEpisodeId over patient identifier when grouping events', () => {
+    const groups = buildClinicalAuditTimelineGroups([
+      {
+        ...baseLog,
+        id: 'timeline-episode-1',
+        patientIdentifier: '12.345.678-9',
+        details: {
+          patientName: 'Juan Perez',
+          bedId: '1',
+          clinicalEpisodeId: 'ep_morning_admission',
+        },
+      },
+      {
+        ...baseLog,
+        id: 'timeline-episode-2',
+        timestamp: '2026-05-28T18:00:00.000Z',
+        patientIdentifier: '12.345.678-9',
+        details: {
+          patientName: 'Juan Perez',
+          bedId: '8',
+          clinicalEpisodeId: 'ep_afternoon_readmission',
+        },
+      },
+    ]);
+
+    expect(groups).toHaveLength(2);
+    expect(groups.map(group => group.episodeId)).toEqual([
+      'ep_afternoon_readmission',
+      'ep_morning_admission',
+    ]);
+    expect(groups[0].subjectDetail).toContain('Episodio ep_afternoon_readmission');
+    expect(groups[1].subjectDetail).toContain('Episodio ep_morning_admission');
+  });
 });

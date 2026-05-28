@@ -19,6 +19,7 @@ const logs: AuditLogEntry[] = [
     details: {
       patientName: 'Juan Perez',
       bedId: '1',
+      clinicalEpisodeId: 'ep_juan_2026_05_28',
     },
   },
   {
@@ -37,6 +38,7 @@ const logs: AuditLogEntry[] = [
       movementKind: 'move',
       sourceBed: '1',
       targetBed: '2',
+      clinicalEpisodeId: 'ep_juan_2026_05_28',
       changes: { bedId: { old: '1', new: '2' } },
     },
   },
@@ -46,8 +48,13 @@ describe('AuditTimeline', () => {
   it('renders clinical legal timeline events grouped by affected patient', () => {
     render(<AuditTimeline logs={logs} />);
 
-    expect(screen.getByText('Timeline clínico/legal')).toBeInTheDocument();
+    expect(screen.getByText('Expediente clínico/legal')).toBeInTheDocument();
     expect(screen.getByText('Juan Perez')).toBeInTheDocument();
+    expect(screen.getByText(/Episodio clínico/)).toBeInTheDocument();
+    expect(screen.getByText('ep_juan_2026_05_28')).toBeInTheDocument();
+    expect(screen.getByText('Eventos trazados')).toBeInTheDocument();
+    expect(screen.getByText('Cobertura origen')).toBeInTheDocument();
+    expect(screen.getAllByText('100% con IP').length).toBeGreaterThan(0);
     expect(screen.getByText(/RUT\/ID 12.345.678-9/)).toBeInTheDocument();
     expect(screen.getByText('Paciente trasladado de cama')).toBeInTheDocument();
     expect(screen.getByText('Paciente ingresado')).toBeInTheDocument();

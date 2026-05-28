@@ -15,7 +15,10 @@ export interface ClinicalAuditTimelineGroup {
   subjectKey: string;
   subjectLabel: string;
   subjectDetail: string;
+  episodeId?: string;
+  patientIdentifier: string;
   eventCount: number;
+  originCoverageLabel: string;
   latestTimestamp: string;
   events: ClinicalAuditTimelineEvent[];
 }
@@ -27,20 +30,58 @@ const normalizeSubjectKey = (value: string): string =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
+const asText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+
+const asRecord = (value: unknown): Record<string, unknown> | undefined =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+
+const resolveEpisodeId = (log: AuditLogEntry): string | undefined => {
+  const details = log.details || {};
+  const direct =
+    asText(details.clinicalEpisodeId) || asText(details.episodeKey) || asText(details.episodeId);
+  if (direct) return direct;
+
+  const originalData = asRecord(details.originalData);
+  const originalEpisode =
+    asText(originalData?.clinicalEpisodeId) ||
+    asText(originalData?.episodeKey) ||
+    asText(originalData?.episodeId);
+  if (originalEpisode) return originalEpisode;
+
+  const patient = asRecord(details.patient);
+  return asText(patient?.clinicalEpisodeId) || asText(patient?.episodeKey) || undefined;
+};
+
 const resolveSubjectKey = (log: AuditLogEntry, row: ClinicalAuditExportRow): string => {
+  const episodeId = resolveEpisodeId(log);
+  if (episodeId) return `episode:${normalizeSubjectKey(episodeId)}`;
   if (row.patientIdentifier !== '-') return `patient:${normalizeSubjectKey(row.patientIdentifier)}`;
   if (row.affected) return `subject:${normalizeSubjectKey(row.affected)}`;
   return `entity:${normalizeSubjectKey(log.entityId || log.entityType)}`;
 };
 
-const resolveSubjectDetail = (log: AuditLogEntry, row: ClinicalAuditExportRow): string => {
+const resolveSubjectDetail = (
+  log: AuditLogEntry,
+  row: ClinicalAuditExportRow,
+  episodeId?: string
+): string => {
   const pieces = [
+    episodeId ? `Episodio ${episodeId}` : '',
     row.patientIdentifier !== '-' ? `RUT/ID ${row.patientIdentifier}` : '',
     log.entityId ? `Registro ${log.entityId}` : '',
-    row.clinicalArea ? `Area ${row.clinicalArea}` : '',
+    row.clinicalArea ? `Área ${row.clinicalArea}` : '',
   ].filter(Boolean);
 
   return pieces.join(' · ') || 'Sin identificador adicional';
+};
+
+const resolveOriginCoverageLabel = (events: ClinicalAuditTimelineEvent[]): string => {
+  if (events.length === 0) return '0% con IP';
+
+  const withOrigin = events.filter(event => event.origin !== 'IP no disponible').length;
+  return `${Math.round((withOrigin / events.length) * 100)}% con IP`;
 };
 
 export const buildClinicalAuditTimelineGroups = (
@@ -52,6 +93,7 @@ export const buildClinicalAuditTimelineGroups = (
   logs.forEach((log, index) => {
     const row = rows[index];
     const subjectKey = resolveSubjectKey(log, row);
+    const episodeId = resolveEpisodeId(log);
     const sortTime = parseAuditTimestamp(log.timestamp).getTime();
     const event: ClinicalAuditTimelineEvent = {
       ...row,
@@ -70,8 +112,11 @@ export const buildClinicalAuditTimelineGroups = (
     groups.set(subjectKey, {
       subjectKey,
       subjectLabel: row.affected,
-      subjectDetail: resolveSubjectDetail(log, row),
+      subjectDetail: resolveSubjectDetail(log, row, episodeId),
+      episodeId,
+      patientIdentifier: row.patientIdentifier,
       eventCount: 1,
+      originCoverageLabel: '0% con IP',
       latestTimestamp: row.timestamp,
       events: [event],
     });
@@ -83,6 +128,7 @@ export const buildClinicalAuditTimelineGroups = (
       return {
         ...group,
         latestTimestamp: events[0]?.timestamp || group.latestTimestamp,
+        originCoverageLabel: resolveOriginCoverageLabel(events),
         events,
       };
     })
