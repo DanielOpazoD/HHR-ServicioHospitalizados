@@ -52,7 +52,7 @@ describe('CI workflow governance', () => {
     expect(workflow).toContain('node scripts/list-firebase-function-targets.mjs');
     expect(workflow).toContain('--only "${FUNCTION_TARGETS}"');
     expect(workflow).not.toContain('--only functions \\');
-    expect(workflow).not.toContain('--force');
+    expect(workflow).toContain('--force');
     expect(targetScript).toContain('functions:');
     expect(targetScript).not.toContain('cleanExpiredPrescriptions');
   });

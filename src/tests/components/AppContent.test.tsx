@@ -93,6 +93,17 @@ vi.mock('@/context/ReminderCenterContext', () => {
   };
 });
 
+vi.mock('@/hooks/useReminders', () => ({
+  useReminderCenter: () => ({
+    isOpen: false,
+    unreadCount: 0,
+    hasUrgentUnread: false,
+    loading: false,
+    openCenter: vi.fn(),
+    closeCenter: vi.fn(),
+  }),
+}));
+
 vi.mock('@/views/LazyViews', () => ({
   CensusEmailConfigModal: () => <div data-testid="email-modal">EmailModal</div>,
 }));
