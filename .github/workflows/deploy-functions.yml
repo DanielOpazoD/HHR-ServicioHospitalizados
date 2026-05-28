@@ -86,7 +86,8 @@ jobs:
           npx --yes firebase-tools@latest deploy \
             --only "${FUNCTION_TARGETS}" \
             --project hhr-serviciohospitalizados \
-            --non-interactive
+            --non-interactive \
+            --force
 
       - name: Cleanup credentials
         if: always()
