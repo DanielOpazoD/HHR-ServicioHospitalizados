@@ -3,6 +3,7 @@ import {
   executeArchiveMedicalIndicationTemplate,
   executeCreateMedicalIndicationRecord,
   executeCreateMedicalIndicationTemplate,
+  executeGetLatestMedicalIndicationRecord,
 } from '@/application/medical-indications/medicalIndicationsUseCases';
 import type {
   MedicalIndicationRecordPort,
@@ -93,6 +94,7 @@ describe('medicalIndications use cases', () => {
 
   it('persists generated indications as a shared clinical record before printing', async () => {
     const recordPort: MedicalIndicationRecordPort = {
+      listByEpisodeAndTargetDate: vi.fn(),
       create: vi.fn().mockResolvedValue(undefined),
     };
     const writeAuditEvent = vi
@@ -138,6 +140,52 @@ describe('medicalIndications use cases', () => {
         patientRut: '11.111.111-1',
         recordDate: '2026-05-31',
       })
+    );
+  });
+
+  it('loads the latest shared generated record for the patient episode and target date', async () => {
+    const recordPort: MedicalIndicationRecordPort = {
+      listByEpisodeAndTargetDate: vi.fn().mockResolvedValue([
+        {
+          id: 'record-new',
+          patientRut: '11.111.111-1',
+          patientName: 'Ana Test',
+          episodeId: 'ep_ana_20260527',
+          bedId: 'R1',
+          targetDate: '2026-05-31',
+          generatedAt: '2026-05-29T12:00:00.000Z',
+          generatedByUserId: 'user_doctor',
+          generatedByName: 'Dra. Test',
+          generatedByRole: 'doctor_specialist',
+          generatedFromTemplateIds: [],
+          admissionDate: '2026-05-27',
+          daysOfStayForTargetDate: '5',
+          treatingDoctor: 'Dra. Persistida',
+          reposo: 'Relativo',
+          regimen: 'Liviano',
+          kineType: 'respiratoria',
+          kineTimes: '3 veces/dia',
+          pendingNotes: 'Revisar gases',
+          indications: ['Control actualizado'],
+          pdfPrintedAt: null,
+        },
+      ]),
+      create: vi.fn(),
+    };
+
+    const record = await executeGetLatestMedicalIndicationRecord(
+      {
+        patient,
+        targetDate: '31-05-2026',
+      },
+      { recordPort }
+    );
+
+    expect(record?.id).toBe('record-new');
+    expect(recordPort.listByEpisodeAndTargetDate).toHaveBeenCalledWith(
+      'ep_ana_20260527',
+      '2026-05-31',
+      undefined
     );
   });
 });

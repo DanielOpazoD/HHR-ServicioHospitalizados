@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MedicalIndicationsQuickAction } from '@/components/layout/date-strip/MedicalIndicationsQuickAction';
-import { defaultMedicalIndicationTemplatePort } from '@/application/ports/medicalIndicationPort';
+import {
+  defaultMedicalIndicationRecordPort,
+  defaultMedicalIndicationTemplatePort,
+} from '@/application/ports/medicalIndicationPort';
+import { printMedicalIndicationsPdf } from '@/services/pdf/medicalIndicationsPdfService';
 
 vi.mock('@/services/pdf/medicalIndicationsPdfService', () => ({
   printMedicalIndicationsPdf: vi.fn(),
@@ -10,6 +14,10 @@ vi.mock('@/services/pdf/medicalIndicationsPdfService', () => ({
 describe('MedicalIndicationsQuickAction', () => {
   beforeEach(() => {
     vi.spyOn(defaultMedicalIndicationTemplatePort, 'listActiveByUser').mockResolvedValue([]);
+    vi.spyOn(defaultMedicalIndicationRecordPort, 'listByEpisodeAndTargetDate').mockResolvedValue(
+      []
+    );
+    vi.spyOn(defaultMedicalIndicationRecordPort, 'create').mockResolvedValue(undefined);
   });
 
   const patients = [
@@ -23,6 +31,7 @@ describe('MedicalIndicationsQuickAction', () => {
       birthDate: '1960-01-02',
       allergies: 'Ninguna',
       admissionDate: '2026-03-31',
+      clinicalEpisodeId: 'episode-juan-20260331',
       daysOfStay: '2',
       treatingDoctor: 'Dra. Rapa Nui',
     },
@@ -69,5 +78,134 @@ describe('MedicalIndicationsQuickAction', () => {
     await new Promise(resolve => setTimeout(resolve, 25));
 
     expect(listActiveByUserSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('hidrata las últimas indicaciones aplicadas compartidas al abrir el modal', async () => {
+    vi.spyOn(defaultMedicalIndicationRecordPort, 'listByEpisodeAndTargetDate').mockResolvedValue([
+      {
+        id: 'record-shared',
+        patientRut: '11.111.111-1',
+        patientName: 'Juan Pérez',
+        episodeId: 'episode-juan-20260331',
+        bedId: 'A-01',
+        targetDate: new Date().toISOString().slice(0, 10),
+        generatedAt: '2026-05-29T12:00:00.000Z',
+        generatedByUserId: 'doctor-1',
+        generatedByName: 'Dra. Test',
+        generatedByRole: 'doctor_specialist',
+        generatedFromTemplateIds: [],
+        admissionDate: '2026-03-31',
+        daysOfStayForTargetDate: '60',
+        treatingDoctor: 'Dra. Persistida',
+        reposo: 'Reposo relativo',
+        regimen: 'Régimen liviano',
+        kineType: 'respiratoria',
+        kineTimes: '3 veces/día',
+        pendingNotes: 'Revisar gases',
+        indications: ['Control de signos vitales cada 4 horas'],
+        pdfPrintedAt: null,
+      },
+    ]);
+
+    render(<MedicalIndicationsQuickAction patients={patients} />);
+
+    await openDialog();
+
+    expect(await screen.findByText('Control de signos vitales cada 4 horas')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Reposo relativo')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Régimen liviano')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Dra. Persistida')).toBeInTheDocument();
+  });
+
+  it('limpia indicaciones previas al cambiar a paciente sin registro aplicado', async () => {
+    const patientsWithTwoBeds = [
+      patients[0],
+      {
+        bedId: 'B-02',
+        label: 'B-02 · María Rapa',
+        patientName: 'María Rapa',
+        rut: '22.222.222-2',
+        diagnosis: 'Colecistitis',
+        age: '54',
+        birthDate: '1972-04-12',
+        allergies: 'Penicilina',
+        admissionDate: '2026-05-28',
+        clinicalEpisodeId: 'episode-maria-20260528',
+        daysOfStay: '1',
+        treatingDoctor: 'Dr. Tavake',
+      },
+    ];
+    vi.spyOn(defaultMedicalIndicationRecordPort, 'listByEpisodeAndTargetDate').mockImplementation(
+      episodeId =>
+        Promise.resolve(
+          episodeId === 'episode-juan-20260331'
+            ? [
+                {
+                  id: 'record-shared',
+                  patientRut: '11.111.111-1',
+                  patientName: 'Juan Pérez',
+                  episodeId: 'episode-juan-20260331',
+                  bedId: 'A-01',
+                  targetDate: new Date().toISOString().slice(0, 10),
+                  generatedAt: '2026-05-29T12:00:00.000Z',
+                  generatedByUserId: 'doctor-1',
+                  generatedByName: 'Dra. Test',
+                  generatedByRole: 'doctor_specialist',
+                  generatedFromTemplateIds: [],
+                  admissionDate: '2026-03-31',
+                  daysOfStayForTargetDate: '60',
+                  treatingDoctor: 'Dra. Persistida',
+                  reposo: 'Reposo relativo',
+                  regimen: 'Régimen liviano',
+                  kineType: 'respiratoria',
+                  kineTimes: '3 veces/día',
+                  pendingNotes: 'Revisar gases',
+                  indications: ['Control de signos vitales cada 4 horas'],
+                  pdfPrintedAt: null,
+                },
+              ]
+            : []
+        )
+    );
+
+    render(<MedicalIndicationsQuickAction patients={patientsWithTwoBeds} />);
+
+    await openDialog();
+    expect(await screen.findByText('Control de signos vitales cada 4 horas')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Seleccionar paciente'), { target: { value: 'B-02' } });
+
+    await waitFor(() =>
+      expect(screen.queryByText('Control de signos vitales cada 4 horas')).not.toBeInTheDocument()
+    );
+    expect(screen.getByDisplayValue('Dr. Tavake')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar indicaciones' })).toBeDisabled();
+  });
+
+  it('guarda indicaciones aplicadas compartidas sin imprimir PDF', async () => {
+    const createRecordSpy = vi.spyOn(defaultMedicalIndicationRecordPort, 'create');
+
+    render(<MedicalIndicationsQuickAction patients={patients} />);
+
+    await openDialog();
+
+    fireEvent.change(screen.getByPlaceholderText('Escribe una indicación y presiona Enter...'), {
+      target: { value: 'Mantener control de signos vitales cada 6 horas' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar indicaciones' }));
+
+    await waitFor(() => {
+      expect(createRecordSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          patientRut: '11.111.111-1',
+          patientName: 'Juan Pérez',
+          episodeId: 'episode-juan-20260331',
+          indications: ['Mantener control de signos vitales cada 6 horas'],
+        }),
+        undefined
+      );
+    });
+    expect(printMedicalIndicationsPdf).not.toHaveBeenCalled();
   });
 });

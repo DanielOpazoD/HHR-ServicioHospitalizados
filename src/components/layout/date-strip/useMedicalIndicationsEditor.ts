@@ -3,6 +3,7 @@ import {
   calculateMedicalIndicationsStayDays,
   formatMedicalIndicationsDate,
   normalizeMedicalIndicationsDateKey,
+  type MedicalIndicationRecord,
   type MedicalIndicationsKineType,
   type MedicalIndicationsPatientOption,
 } from '@/shared/contracts/medicalIndications';
@@ -145,6 +146,39 @@ export const useMedicalIndicationsEditor = ({
     resetEditing();
   };
 
+  const hydrateFromRecord = React.useCallback((record: MedicalIndicationRecord) => {
+    setReposo(record.reposo);
+    setRegimen(record.regimen);
+    setKineType(record.kineType);
+    setKineTimes(record.kineTimes);
+    setTreatingDoctor(record.treatingDoctor);
+    setPendingNotes(record.pendingNotes);
+    const nextIndications = record.indications.slice(0, INDICATIONS_LINES);
+    setIndications([
+      ...nextIndications,
+      ...Array.from({ length: INDICATIONS_LINES - nextIndications.length }, () => ''),
+    ]);
+    setIndicationDraft('');
+    setEditingIndex(null);
+    setEditingValue('');
+  }, []);
+
+  const resetAppliedRecordDraft = React.useCallback(
+    (patient: MedicalIndicationsPatientOption | null = selectedPatient) => {
+      setReposo('');
+      setRegimen('');
+      setKineType('ninguna');
+      setKineTimes('');
+      setTreatingDoctor(patient?.treatingDoctor || '');
+      setPendingNotes('');
+      setIndications(Array.from({ length: INDICATIONS_LINES }, () => ''));
+      setIndicationDraft('');
+      setEditingIndex(null);
+      setEditingValue('');
+    },
+    [selectedPatient]
+  );
+
   return {
     selectedBedId,
     setSelectedBedId,
@@ -185,6 +219,8 @@ export const useMedicalIndicationsEditor = ({
     startEditing,
     resetEditing,
     saveEditedIndication,
+    hydrateFromRecord,
+    resetAppliedRecordDraft,
     maxIndications: INDICATIONS_LINES,
   };
 };

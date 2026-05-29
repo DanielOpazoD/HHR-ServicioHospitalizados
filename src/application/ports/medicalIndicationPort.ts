@@ -30,6 +30,11 @@ export interface MedicalIndicationTemplatePort {
 }
 
 export interface MedicalIndicationRecordPort {
+  listByEpisodeAndTargetDate: (
+    episodeId: string,
+    targetDate: string,
+    hospitalId?: string
+  ) => Promise<MedicalIndicationRecord[]>;
   create: (record: MedicalIndicationRecord, hospitalId?: string) => Promise<void>;
 }
 

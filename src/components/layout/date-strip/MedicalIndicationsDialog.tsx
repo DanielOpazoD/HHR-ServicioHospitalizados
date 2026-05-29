@@ -1,7 +1,10 @@
 import React from 'react';
 import { AlertCircle, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { executeCreateMedicalIndicationRecord } from '@/application/medical-indications/medicalIndicationsUseCases';
+import {
+  executeCreateMedicalIndicationRecord,
+  executeGetLatestMedicalIndicationRecord,
+} from '@/application/medical-indications/medicalIndicationsUseCases';
 import { BaseModal } from '@/components/shared/BaseModal';
 import {
   formatMedicalIndicationsDate,
@@ -15,6 +18,7 @@ import { MedicalIndicationsClinicalFields } from './MedicalIndicationsClinicalFi
 import { MedicalIndicationsFooter } from './MedicalIndicationsFooter';
 import { useMedicalIndicationsEditor } from './useMedicalIndicationsEditor';
 import { useMedicalIndicationsLibrary } from './useMedicalIndicationsLibrary';
+import { useMedicalIndicationsAppliedRecordLookup } from './medicalIndicationsAppliedRecordLookup';
 
 const loadPrintMedicalIndicationsPdf = async () =>
   import('@/services/pdf/medicalIndicationsPdfService').then(
@@ -51,6 +55,8 @@ export const MedicalIndicationsDialog: React.FC<MedicalIndicationsDialogProps> =
   patients,
 }) => {
   const editor = useMedicalIndicationsEditor({ isOpen, patients });
+  const { hydrateFromRecord, resetAppliedRecordDraft, selectedPatient, targetDate } = editor;
+  const appliedRecordLookup = useMedicalIndicationsAppliedRecordLookup(selectedPatient, targetDate);
   const authContext = useAuth();
   const currentUser = authContext.currentUser ?? authContext.user ?? null;
   const currentUserId = currentUser?.uid || '';
@@ -68,48 +74,110 @@ export const MedicalIndicationsDialog: React.FC<MedicalIndicationsDialogProps> =
   const library = useMedicalIndicationsLibrary(libraryActor, isOpen);
   const [usedTemplateIds, setUsedTemplateIds] = React.useState<string[]>([]);
   const [printError, setPrintError] = React.useState('');
+  const [saveMessage, setSaveMessage] = React.useState('');
+  const [isSavingRecord, setIsSavingRecord] = React.useState(false);
 
   React.useEffect(() => {
     if (!isOpen) {
       setUsedTemplateIds([]);
       setPrintError('');
+      setSaveMessage('');
+      setIsSavingRecord(false);
     }
   }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen || !appliedRecordLookup) return;
+
+    let isCancelled = false;
+    void executeGetLatestMedicalIndicationRecord({
+      patient: appliedRecordLookup.patient,
+      targetDate: appliedRecordLookup.targetDate,
+    })
+      .then(record => {
+        if (isCancelled) return;
+        if (!record) {
+          resetAppliedRecordDraft(appliedRecordLookup.patient);
+          setUsedTemplateIds([]);
+          return;
+        }
+        hydrateFromRecord(record);
+        setUsedTemplateIds(record.generatedFromTemplateIds);
+      })
+      .catch(error => {
+        if (isCancelled) return;
+        setPrintError(
+          error instanceof Error
+            ? error.message
+            : 'No se pudieron cargar las indicaciones aplicadas.'
+        );
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [appliedRecordLookup, hydrateFromRecord, isOpen, resetAppliedRecordDraft]);
 
   if (patients.length === 0) {
     return null;
   }
 
-  const handlePrint = async () => {
-    if (!editor.selectedPatient || editor.isPrinting) return;
+  const persistMedicalIndicationRecord = async () => {
+    if (!editor.selectedPatient) return null;
     if (!currentUser || !auditLabel) {
-      setPrintError('No se puede generar el registro clínico sin usuario autenticado.');
-      return;
+      throw new Error('No se puede guardar el registro clínico sin usuario autenticado.');
     }
+
+    return executeCreateMedicalIndicationRecord({
+      patient: editor.selectedPatient,
+      targetDate: editor.targetDate,
+      generatedAt: new Date().toISOString(),
+      generatedByUserId: currentUser.uid,
+      generatedByName: currentUser.displayName || currentUser.email || currentUser.uid,
+      generatedByRole: authContext?.role,
+      generatedByAuditLabel: auditLabel,
+      generatedFromTemplateIds: usedTemplateIds,
+      content: {
+        reposo: editor.reposo,
+        regimen: editor.regimen,
+        kineType: editor.kineType,
+        kineTimes: editor.kineTimes,
+        treatingDoctor: editor.treatingDoctor,
+        pendingNotes: editor.pendingNotes,
+        indications: editor.indications,
+      },
+    });
+  };
+
+  const handleSaveRecord = async () => {
+    if (!editor.selectedPatient || isSavingRecord || editor.isPrinting) return;
+
+    setIsSavingRecord(true);
+    setPrintError('');
+    setSaveMessage('');
+    try {
+      await persistMedicalIndicationRecord();
+      setSaveMessage('Indicaciones guardadas para este paciente.');
+    } catch (error) {
+      setPrintError(
+        error instanceof Error
+          ? error.message
+          : 'No se pudieron guardar las indicaciones aplicadas.'
+      );
+    } finally {
+      setIsSavingRecord(false);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!editor.selectedPatient || editor.isPrinting || isSavingRecord) return;
 
     editor.setIsPrinting(true);
     setPrintError('');
+    setSaveMessage('');
     try {
-      const generatedAt = new Date().toISOString();
-      const record = await executeCreateMedicalIndicationRecord({
-        patient: editor.selectedPatient,
-        targetDate: editor.targetDate,
-        generatedAt,
-        generatedByUserId: currentUser.uid,
-        generatedByName: currentUser.displayName || currentUser.email || currentUser.uid,
-        generatedByRole: authContext?.role,
-        generatedByAuditLabel: auditLabel,
-        generatedFromTemplateIds: usedTemplateIds,
-        content: {
-          reposo: editor.reposo,
-          regimen: editor.regimen,
-          kineType: editor.kineType,
-          kineTimes: editor.kineTimes,
-          treatingDoctor: editor.treatingDoctor,
-          pendingNotes: editor.pendingNotes,
-          indications: editor.indications,
-        },
-      });
+      const record = await persistMedicalIndicationRecord();
+      if (!record) return;
       const printMedicalIndicationsPdf = await loadPrintMedicalIndicationsPdf();
       await printMedicalIndicationsPdf({
         paciente_nombre: editor.selectedPatient.patientName,
@@ -222,6 +290,11 @@ export const MedicalIndicationsDialog: React.FC<MedicalIndicationsDialogProps> =
               <span>{printError || library.error}</span>
             </div>
           )}
+          {saveMessage && (
+            <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[12px] font-medium text-emerald-800">
+              {saveMessage}
+            </div>
+          )}
 
           <MedicalIndicationsClinicalFields
             reposo={editor.reposo}
@@ -261,9 +334,12 @@ export const MedicalIndicationsDialog: React.FC<MedicalIndicationsDialogProps> =
           <MedicalIndicationsFooter
             treatingDoctor={editor.treatingDoctor}
             setTreatingDoctor={editor.setTreatingDoctor}
+            isSavingRecord={isSavingRecord}
             isPrinting={editor.isPrinting}
-            canPrint={Boolean(editor.selectedPatient)}
+            canSave={Boolean(editor.selectedPatient && editor.activeIndications.length > 0)}
+            canPrint={Boolean(editor.selectedPatient && editor.activeIndications.length > 0)}
             onClose={onClose}
+            onSave={() => void handleSaveRecord()}
             onPrint={() => void handlePrint()}
           />
         </div>

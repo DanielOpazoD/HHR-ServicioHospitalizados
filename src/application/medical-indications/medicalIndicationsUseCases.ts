@@ -81,6 +81,12 @@ export interface CreateMedicalIndicationRecordInput {
   hospitalId?: string;
 }
 
+export interface GetLatestMedicalIndicationRecordInput {
+  patient: MedicalIndicationsPatientOption;
+  targetDate: string;
+  hospitalId?: string;
+}
+
 const assertAuditPersisted = async (outcomePromise: ReturnType<AuditWriter>, message: string) => {
   const outcome = await outcomePromise;
   if (outcome.status === 'failed') {
@@ -222,6 +228,21 @@ export const executeMarkMedicalIndicationTemplateUsed = async (
     }),
     'Se insertó la indicación personal, pero no se pudo registrar la auditoría.'
   );
+};
+
+export const executeGetLatestMedicalIndicationRecord = async (
+  input: GetLatestMedicalIndicationRecordInput,
+  dependencies: MedicalIndicationUseCaseDeps = {}
+): Promise<MedicalIndicationRecord | null> => {
+  const targetDate = normalizeMedicalIndicationsDateKey(input.targetDate);
+  const episodeId = buildMedicalIndicationsEpisodeId(input.patient);
+  const recordPort = dependencies.recordPort || defaultMedicalIndicationRecordPort;
+  const records = await recordPort.listByEpisodeAndTargetDate(
+    episodeId,
+    targetDate,
+    input.hospitalId
+  );
+  return records[0] ?? null;
 };
 
 export const executeCreateMedicalIndicationRecord = async (

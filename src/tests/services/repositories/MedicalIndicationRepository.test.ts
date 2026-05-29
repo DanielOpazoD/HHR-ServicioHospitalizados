@@ -87,4 +87,67 @@ describe('MedicalIndication repositories', () => {
       expect.objectContaining({ episodeId: 'ep_ana', targetDate: '2026-05-31' })
     );
   });
+
+  it('lists generated records by episode and target date from the shared hospital collection', async () => {
+    vi.mocked(firestoreDb.getDocs).mockResolvedValue([
+      {
+        id: 'record-old',
+        episodeId: 'ep_ana',
+        targetDate: '2026-05-31',
+        generatedAt: '2026-05-29T10:00:00.000Z',
+        patientRut: '11.111.111-1',
+        patientName: 'Ana Test',
+        bedId: 'R1',
+        generatedByUserId: 'user_doctor',
+        generatedByName: 'Dra. Test',
+        generatedFromTemplateIds: [],
+        admissionDate: '2026-05-27',
+        daysOfStayForTargetDate: '5',
+        treatingDoctor: 'Dra. Rapa Nui',
+        reposo: 'Relativo',
+        regimen: 'Liviano',
+        kineType: 'motora',
+        kineTimes: '2 veces/dia',
+        pendingNotes: '',
+        indications: ['Control antiguo'],
+        pdfPrintedAt: null,
+      },
+      {
+        id: 'record-new',
+        episodeId: 'ep_ana',
+        targetDate: '2026-05-31',
+        generatedAt: '2026-05-29T12:00:00.000Z',
+        patientRut: '11.111.111-1',
+        patientName: 'Ana Test',
+        bedId: 'R1',
+        generatedByUserId: 'user_doctor',
+        generatedByName: 'Dra. Test',
+        generatedFromTemplateIds: [],
+        admissionDate: '2026-05-27',
+        daysOfStayForTargetDate: '5',
+        treatingDoctor: 'Dra. Rapa Nui',
+        reposo: 'Relativo',
+        regimen: 'Liviano',
+        kineType: 'motora',
+        kineTimes: '2 veces/dia',
+        pendingNotes: '',
+        indications: ['Control actualizado'],
+        pdfPrintedAt: null,
+      },
+    ]);
+
+    const result = await MedicalIndicationRecordRepository.listByEpisodeAndTargetDate(
+      'ep_ana',
+      '2026-05-31',
+      'hhr'
+    );
+
+    expect(firestoreDb.getDocs).toHaveBeenCalledWith('hospitals/hhr/medicalIndicationRecords', {
+      where: [
+        { field: 'episodeId', operator: '==', value: 'ep_ana' },
+        { field: 'targetDate', operator: '==', value: '2026-05-31' },
+      ],
+    });
+    expect(result.map(record => record.id)).toEqual(['record-new', 'record-old']);
+  });
 });
