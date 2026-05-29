@@ -4,6 +4,7 @@ import {
   buildAdminHarness,
   createValidatePinHandler,
   createListUploadPatientOptionsHandler,
+  createListUploadReadonlyRecordsHandler,
   seedPin,
   hashPin,
   hashPinLegacySha256,
@@ -22,6 +23,27 @@ describe('hashPin / computeExpiresAt', () => {
     const expiry = computeExpiresAt('comun', '2026-05-04T12:00:00.000Z');
     expect(expiry).toBe('2026-06-03T12:00:00.000Z');
   });
+});
+
+const buildPrescriptionRecord = (id: string, createdAt: string) => ({
+  id,
+  hospitalId: 'hhr',
+  prescriptionType: 'comun',
+  assignmentScope: 'patient',
+  bedId: 'H5C1',
+  patientName: `Paciente ${id}`,
+  patientRut: '11.111.111-1',
+  image: {
+    storagePath: `prescriptions/hhr/${id}/full.jpg`,
+    thumbnailStoragePath: `prescriptions/hhr/${id}/thumb.jpg`,
+    byteSize: 120000,
+    width: 1200,
+    height: 900,
+    contentType: 'image/jpeg',
+  },
+  uploader: { source: 'qr_pin', displayName: 'Farmacia' },
+  createdAt,
+  expiresAt: '2026-06-03T12:00:00.000Z',
 });
 
 describe('validatePrescriptionAccessPin', () => {
@@ -300,5 +322,62 @@ describe('listPrescriptionUploadPatientOptions', () => {
     await expect(handler({ date: '2026-05-05' }, undefined)).rejects.toMatchObject({
       code: 'invalid-argument',
     });
+  });
+});
+
+describe('listPrescriptionUploadReadonlyRecords', () => {
+  it('returns today prescription records with download URLs for a valid QR PIN', async () => {
+    const { admin, accessConfig } = buildAdminHarness({
+      prescriptionRecords: {
+        'rx-today': buildPrescriptionRecord('rx-today', '2026-05-04T10:00:00.000Z'),
+        'rx-yesterday': buildPrescriptionRecord('rx-yesterday', '2026-05-03T10:00:00.000Z'),
+      },
+    });
+    await seedPin(accessConfig, '7351');
+
+    const handler = createListUploadReadonlyRecordsHandler({
+      admin,
+      resolveRoleForEmail: vi.fn(),
+    });
+
+    const result = await handler({ pin: '7351', date: '2026-05-04' }, undefined);
+
+    expect(result.date).toBe('2026-05-04');
+    expect(result.records.map((record: { id: string }) => record.id)).toEqual(['rx-today']);
+    expect(result.records[0].image.fullDownloadUrl).toMatch(
+      /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/hhr-test\.appspot\.com\/o\//
+    );
+    expect(result.records[0].image.thumbnailDownloadUrl).toContain('alt=media');
+  });
+
+  it('limits QR readonly access to today and yesterday', async () => {
+    const { admin, accessConfig } = buildAdminHarness();
+    await seedPin(accessConfig, '7351');
+    const handler = createListUploadReadonlyRecordsHandler({
+      admin,
+      resolveRoleForEmail: vi.fn(),
+    });
+
+    await expect(handler({ pin: '7351', date: '2026-05-02' }, undefined)).rejects.toMatchObject({
+      code: 'permission-denied',
+    });
+  });
+
+  it('allows authenticated nursing callers without a PIN', async () => {
+    const { admin } = buildAdminHarness({
+      prescriptionRecords: {
+        'rx-today': buildPrescriptionRecord('rx-today', '2026-05-04T10:00:00.000Z'),
+      },
+    });
+    const resolveRoleForEmail = vi.fn().mockResolvedValue('nurse_hospital');
+    const handler = createListUploadReadonlyRecordsHandler({ admin, resolveRoleForEmail });
+
+    const result = await handler(
+      { date: '2026-05-04' },
+      { auth: { uid: 'n-1', token: { email: 'enf@h.cl' } } }
+    );
+
+    expect(result.records).toHaveLength(1);
+    expect(resolveRoleForEmail).toHaveBeenCalledWith('enf@h.cl');
   });
 });

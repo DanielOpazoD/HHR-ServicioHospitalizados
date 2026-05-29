@@ -26,15 +26,7 @@ interface PrescriptionDetailModalProps {
     clear: boolean;
   }) => Promise<void>;
   onDelete: () => Promise<void>;
-  /**
-   * Persists a new prescription type for the current record. Only invoked when `canEdit` is true.
-   */
   onUpdateType?: (nextType: PrescriptionType) => Promise<void>;
-  /**
-   * Optional ISO yyyy-mm-dd of the day whose census beds the reassign dialog
-   * should populate (e.g. the date selected in the visor strip). When omitted
-   * the dialog falls back to "today" so the user always sees a current bed list.
-   */
   selectedDate?: string | null;
 }
 
@@ -71,8 +63,10 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
   onUpdateType,
   selectedDate,
 }) => {
-  const [fullUrl, setFullUrl] = useState<string | null>(null);
-  const [imageError, setImageError] = useState(false);
+  const [resolvedFullImage, setResolvedFullImage] = useState<{ path: string; url: string } | null>(
+    null
+  );
+  const [imageErrorPath, setImageErrorPath] = useState<string | null>(null);
   const [showReassign, setShowReassign] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -82,6 +76,11 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
   const [savingType, setSavingType] = useState(false);
   const [typeError, setTypeError] = useState<string | null>(null);
   const { confirm } = useConfirmDialog();
+  const readonlyFullUrl = record.image.fullDownloadUrl;
+  const fullImagePath = record.image.storagePath;
+  const fullUrl =
+    readonlyFullUrl ?? (resolvedFullImage?.path === fullImagePath ? resolvedFullImage.url : null);
+  const imageError = !readonlyFullUrl && imageErrorPath === fullImagePath;
 
   useEffect(() => {
     setPendingType(record.prescriptionType);
@@ -89,17 +88,24 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
 
   useEffect(() => {
     let cancelled = false;
-    resolvePrescriptionImageDownloadUrl(record.image.storagePath)
+
+    if (readonlyFullUrl) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    resolvePrescriptionImageDownloadUrl(fullImagePath)
       .then(url => {
-        if (!cancelled) setFullUrl(url);
+        if (!cancelled) setResolvedFullImage({ path: fullImagePath, url });
       })
       .catch(() => {
-        if (!cancelled) setImageError(true);
+        if (!cancelled) setImageErrorPath(fullImagePath);
       });
     return () => {
       cancelled = true;
     };
-  }, [record.image.storagePath]);
+  }, [fullImagePath, readonlyFullUrl]);
 
   const handleSaveType = async () => {
     if (!onUpdateType) return;

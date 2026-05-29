@@ -73,6 +73,8 @@ export interface PrescriptionUploadControllerHandle {
   errorMessage: string | null;
   /** Result of the most recent successful upload (id + monthly review date). */
   lastResult: SubmitPrescriptionResult | null;
+  /** Validated QR/PIN token used by the readonly upload viewer. Null for authenticated flows. */
+  readonlyViewerAccessPin: string | null;
   /** Preview object URL for the currently captured image, if any. */
   previewObjectUrl: string | null;
   /** True when an image has been captured and compressed for submission. */
@@ -113,6 +115,7 @@ export const usePrescriptionUploadController = ({
   const [patientOptionsError, setPatientOptionsError] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<SubmitPrescriptionResult | null>(null);
+  const [readonlyViewerAccessPin, setReadonlyViewerAccessPin] = useState<string | null>(null);
   const compressedRef = useRef<CompressedPrescriptionImageBundle | null>(null);
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [hasCompressedImage, setHasCompressedImage] = useState(false);
@@ -187,6 +190,7 @@ export const usePrescriptionUploadController = ({
     try {
       await validatePrescriptionAccessPin({ pin });
       pinRef.current = pin;
+      setReadonlyViewerAccessPin(pin);
       setPhase('ready');
     } catch (error) {
       setErrorMessage(
@@ -289,6 +293,7 @@ export const usePrescriptionUploadController = ({
     setField,
     errorMessage,
     lastResult,
+    readonlyViewerAccessPin,
     previewObjectUrl,
     hasCompressedImage,
     submitPin,

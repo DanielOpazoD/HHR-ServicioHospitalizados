@@ -105,6 +105,10 @@ export interface PrescriptionImageMeta {
   height: number;
   /** Content type — currently always `image/jpeg` after compression. */
   contentType: 'image/jpeg';
+  /** Resolved read URL returned by trusted callable flows such as QR/PIN upload viewer. */
+  fullDownloadUrl?: string;
+  /** Resolved thumbnail URL returned by trusted callable flows such as QR/PIN upload viewer. */
+  thumbnailDownloadUrl?: string;
 }
 
 /**
