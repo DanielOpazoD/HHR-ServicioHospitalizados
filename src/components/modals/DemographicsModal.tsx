@@ -58,6 +58,7 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({
       size="2xl"
       headerIconColor="text-blue-600"
       variant="white"
+      closeOnBackdrop={false}
       bodyClassName="p-4 space-y-3 max-h-[86vh] overflow-y-auto"
     >
       <div className="space-y-3">

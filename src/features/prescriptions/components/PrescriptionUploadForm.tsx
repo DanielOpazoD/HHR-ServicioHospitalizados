@@ -107,6 +107,7 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
     patientOptionsError,
     patientOptionsSourceDate,
     isPatientOptionsFallbackFromPreviousDay,
+    readonlyViewerAccessPin,
   } = controller;
 
   const isBusy = phase === 'compressing' || phase === 'uploading';
@@ -135,6 +136,7 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
         <PrescriptionUploadReadonlyViewer
           isOpen={isReadonlyViewerOpen}
           onClose={() => setIsReadonlyViewerOpen(false)}
+          accessPin={readonlyViewerAccessPin}
         />
       </>
     );
@@ -383,6 +385,7 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
       <PrescriptionUploadReadonlyViewer
         isOpen={isReadonlyViewerOpen}
         onClose={() => setIsReadonlyViewerOpen(false)}
+        accessPin={readonlyViewerAccessPin}
       />
     </>
   );

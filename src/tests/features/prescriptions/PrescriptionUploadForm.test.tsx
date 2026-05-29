@@ -5,8 +5,18 @@ import { PrescriptionUploadForm } from '@/features/prescriptions/components/Pres
 import type { PrescriptionUploadControllerHandle } from '@/features/prescriptions/hooks/usePrescriptionUploadController';
 
 vi.mock('@/features/prescriptions/components/PrescriptionUploadReadonlyViewer', () => ({
-  PrescriptionUploadReadonlyViewer: ({ isOpen }: { isOpen: boolean }) =>
-    isOpen ? <div data-testid="prescription-upload-readonly-viewer">Visor abierto</div> : null,
+  PrescriptionUploadReadonlyViewer: ({
+    isOpen,
+    accessPin,
+  }: {
+    isOpen: boolean;
+    accessPin?: string | null;
+  }) =>
+    isOpen ? (
+      <div data-testid="prescription-upload-readonly-viewer" data-access-pin={accessPin ?? ''}>
+        Visor abierto
+      </div>
+    ) : null,
 }));
 
 const buildController = (): PrescriptionUploadControllerHandle => ({
@@ -24,6 +34,7 @@ const buildController = (): PrescriptionUploadControllerHandle => ({
   clearCompressedImage: vi.fn(),
   submitForm: vi.fn(),
   resetAfterSuccess: vi.fn(),
+  readonlyViewerAccessPin: null,
   lastResult: null,
   hasCompressedImage: false,
   patientOptions: [],
@@ -64,12 +75,23 @@ describe('PrescriptionUploadForm', () => {
   });
 
   it('opens a read-only viewer for already uploaded prescriptions from the upload form', () => {
-    render(<PrescriptionUploadForm controller={buildController()} />);
+    render(
+      <PrescriptionUploadForm
+        controller={{
+          ...buildController(),
+          readonlyViewerAccessPin: '7351',
+        }}
+      />
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /ver recetas subidas/i }));
 
     expect(screen.getByTestId('prescription-upload-readonly-viewer')).toHaveTextContent(
       'Visor abierto'
+    );
+    expect(screen.getByTestId('prescription-upload-readonly-viewer')).toHaveAttribute(
+      'data-access-pin',
+      '7351'
     );
   });
 

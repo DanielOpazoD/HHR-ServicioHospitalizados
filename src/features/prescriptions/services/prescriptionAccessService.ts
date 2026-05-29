@@ -7,7 +7,11 @@
 import { httpsCallable } from 'firebase/functions';
 import { defaultFunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
 import type { FunctionsRuntime } from '@/services/firebase-runtime/functionsRuntime';
-import type { PrescriptionAssignmentScope, PrescriptionType } from '@/types/prescriptionTypes';
+import type {
+  PrescriptionAssignmentScope,
+  PrescriptionRecord,
+  PrescriptionType,
+} from '@/types/prescriptionTypes';
 
 interface PrescriptionAccessServiceDeps {
   functionsRuntime?: Pick<FunctionsRuntime, 'getFunctions'>;
@@ -41,6 +45,18 @@ interface ListPatientOptionsResult {
   sourceDate?: string;
   isFallbackFromPreviousDay?: boolean;
   patientOptions: PrescriptionUploadPatientOption[];
+}
+
+interface ListReadonlyRecordsPayload {
+  /** Required when no authenticated clinician role is available (QR flow). */
+  pin?: string;
+  /** ISO yyyy-mm-dd. Upload viewer supports today and yesterday. */
+  date: string;
+}
+
+interface ListReadonlyRecordsResult {
+  date: string;
+  records: PrescriptionRecord[];
 }
 
 interface SubmitPrescriptionPayload {
@@ -95,6 +111,16 @@ const buildService = (
       return response.data;
     },
 
+    async listPrescriptionUploadReadonlyRecords(
+      payload: ListReadonlyRecordsPayload
+    ): Promise<ListReadonlyRecordsResult> {
+      const callable = await getCallable<ListReadonlyRecordsPayload, ListReadonlyRecordsResult>(
+        'listPrescriptionUploadReadonlyRecords'
+      );
+      const response = await callable(payload);
+      return response.data;
+    },
+
     async submitPrescriptionPhoto(
       payload: SubmitPrescriptionPayload
     ): Promise<SubmitPrescriptionResult> {
@@ -120,5 +146,7 @@ const defaultService = buildService();
 export const validatePrescriptionAccessPin = defaultService.validatePrescriptionAccessPin;
 export const listPrescriptionUploadPatientOptions =
   defaultService.listPrescriptionUploadPatientOptions;
+export const listPrescriptionUploadReadonlyRecords =
+  defaultService.listPrescriptionUploadReadonlyRecords;
 export const submitPrescriptionPhoto = defaultService.submitPrescriptionPhoto;
 export const setPrescriptionAccessPin = defaultService.setPrescriptionAccessPin;

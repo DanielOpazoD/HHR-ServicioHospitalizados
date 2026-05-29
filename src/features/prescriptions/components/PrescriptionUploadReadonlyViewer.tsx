@@ -3,8 +3,8 @@ import { CalendarDays, Eye, Loader2 } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { PrescriptionDetailModal } from '@/features/prescriptions/components/PrescriptionDetailModal';
 import { PrescriptionListItem } from '@/features/prescriptions/components/PrescriptionListItem';
-import { usePrescriptionListController } from '@/features/prescriptions/hooks/usePrescriptionListController';
 import type { PrescriptionRecord } from '@/types/prescriptionTypes';
+import { listPrescriptionUploadReadonlyRecords } from '@/features/prescriptions/services/prescriptionAccessService';
 import {
   buildPrescriptionUploadViewerDayOptions,
   type PrescriptionUploadViewerDayKey,
@@ -13,6 +13,7 @@ import {
 interface PrescriptionUploadReadonlyViewerProps {
   isOpen: boolean;
   onClose: () => void;
+  accessPin?: string | null;
 }
 
 const noopReassign = async () => undefined;
@@ -21,19 +22,48 @@ const noopDelete = async () => undefined;
 export const PrescriptionUploadReadonlyViewer: React.FC<PrescriptionUploadReadonlyViewerProps> = ({
   isOpen,
   onClose,
+  accessPin,
 }) => {
-  const controller = usePrescriptionListController();
-  const { phase, filteredRecords, setFilter } = controller;
   const [selectedDayKey, setSelectedDayKey] = useState<PrescriptionUploadViewerDayKey>('today');
   const [selectedRecord, setSelectedRecord] = useState<PrescriptionRecord | null>(null);
+  const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [records, setRecords] = useState<PrescriptionRecord[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const dayOptions = buildPrescriptionUploadViewerDayOptions();
   const selectedDay = dayOptions.find(option => option.key === selectedDayKey) ?? dayOptions[0];
 
   useEffect(() => {
     if (!isOpen) return;
-    setFilter('selectedDate', selectedDay.isoDate);
-  }, [isOpen, selectedDay.isoDate, setFilter]);
+    let cancelled = false;
+
+    void Promise.resolve().then(() => {
+      if (cancelled) return;
+      setPhase('loading');
+      setErrorMessage(null);
+    });
+
+    listPrescriptionUploadReadonlyRecords({
+      date: selectedDay.isoDate,
+      pin: accessPin ?? undefined,
+    })
+      .then(result => {
+        if (cancelled) return;
+        setRecords(result.records);
+        setPhase('ready');
+      })
+      .catch(error => {
+        if (cancelled) return;
+        setRecords([]);
+        setErrorMessage(
+          error instanceof Error ? error.message : 'No se pudieron cargar las recetas subidas.'
+        );
+        setPhase('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accessPin, isOpen, selectedDay.isoDate]);
 
   const handleClose = () => {
     setSelectedRecord(null);
@@ -77,7 +107,7 @@ export const PrescriptionUploadReadonlyViewer: React.FC<PrescriptionUploadReadon
             <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
               <CalendarDays size={14} />
               <span>
-                {filteredRecords.length} receta{filteredRecords.length === 1 ? '' : 's'} para{' '}
+                {records.length} receta{records.length === 1 ? '' : 's'} para{' '}
                 {selectedDay.displayDate}
               </span>
             </div>
@@ -89,9 +119,19 @@ export const PrescriptionUploadReadonlyViewer: React.FC<PrescriptionUploadReadon
                 <Loader2 size={18} className="animate-spin" />
                 Cargando recetas...
               </div>
-            ) : filteredRecords.length > 0 ? (
+            ) : phase === 'error' ? (
+              <div
+                role="alert"
+                className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-center"
+              >
+                <p className="text-sm font-semibold text-red-800">
+                  No se pudieron cargar las recetas
+                </p>
+                <p className="mt-1 text-xs text-red-700">{errorMessage}</p>
+              </div>
+            ) : records.length > 0 ? (
               <div className="space-y-2">
-                {filteredRecords.map(record => (
+                {records.map(record => (
                   <PrescriptionListItem
                     key={record.id}
                     record={record}

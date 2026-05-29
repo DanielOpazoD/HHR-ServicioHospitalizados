@@ -21,6 +21,7 @@ const prescriptionAccess = require('../../../functions/lib/prescriptionAccessFun
 export const {
   createValidatePinHandler,
   createListUploadPatientOptionsHandler,
+  createListUploadReadonlyRecordsHandler,
   createSubmitHandler,
   createSetPinHandler,
   hashPin,
@@ -37,10 +38,13 @@ export const buildAdminHarness = (
   harnessOptions: {
     failPrescriptionWrite?: boolean;
     dailyRecords?: Record<string, Record<string, unknown>>;
+    prescriptionRecords?: Record<string, Record<string, unknown>>;
   } = {}
 ) => {
   const accessConfig: FakeFirestoreDoc = { data: null };
-  const writtenPrescriptions: Record<string, Record<string, unknown>> = {};
+  const writtenPrescriptions: Record<string, Record<string, unknown>> = {
+    ...(harnessOptions.prescriptionRecords || {}),
+  };
   const storedBlobs: Record<string, Buffer> = {};
   const dailyRecords = harnessOptions.dailyRecords || {};
 
@@ -80,6 +84,14 @@ export const buildAdminHarness = (
       }
       return docHandle(`${collectionName}/${docId}`);
     },
+    get: async () => ({
+      forEach: (callback: (doc: { data: () => Record<string, unknown> }) => void) => {
+        if (collectionName !== 'prescriptions') return;
+        Object.values(writtenPrescriptions).forEach(record => {
+          callback({ data: () => record });
+        });
+      },
+    }),
   });
 
   const hospitalDoc = {
@@ -103,6 +115,14 @@ export const buildAdminHarness = (
           save: async (buffer: Buffer) => {
             storedBlobs[path] = buffer;
           },
+          getMetadata: async () => [
+            {
+              bucket: 'hhr-test.appspot.com',
+              metadata: {
+                firebaseStorageDownloadTokens: `token-${path.replace(/[^a-z0-9]/gi, '-')}`,
+              },
+            },
+          ],
           delete: async () => {
             delete storedBlobs[path];
           },
