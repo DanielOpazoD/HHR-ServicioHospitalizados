@@ -88,6 +88,7 @@ jobs:
           name: confidence-and-readiness
           path: |
             reports/system-confidence.*
+            reports/clinical-release-signoff.*
             reports/release-readiness-scorecard.*
             reports/release-confidence-matrix.*
             reports/maintenance-debt-scorecard.*

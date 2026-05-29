@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 
 const steps = [
   'report:release-readiness-scorecard',
+  'report:clinical-release-signoff',
   'report:runtime-contracts',
   'report:serverless-runtime-governance',
   'report:serverless-sensitive-coverage',
@@ -26,4 +27,3 @@ for (const step of steps) {
     process.exit(result.status ?? 1);
   }
 }
-

@@ -24,6 +24,7 @@ describe('CI workflow governance', () => {
       'node scripts/run-governance-snapshots.mjs'
     );
     expect(runner).toContain('report:release-readiness-scorecard');
+    expect(runner).toContain('report:clinical-release-signoff');
     expect(runner).toContain('report:runtime-contracts');
     expect(runner).toContain('report:maintenance-debt-scorecard');
     expect(runner).toContain('::group::');
