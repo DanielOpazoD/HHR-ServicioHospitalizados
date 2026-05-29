@@ -101,6 +101,10 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ logs }) => {
                       Episodio clínico
                     </span>
                   )}
+                  <span className="inline-flex items-center gap-1 rounded-md border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
+                    <ShieldCheck size={12} />
+                    {group.packageKindLabel}
+                  </span>
                   <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-medium text-slate-500">
                     <CalendarClock size={12} />
                     {group.latestTimestamp}
@@ -113,6 +117,7 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ logs }) => {
                   </p>
                 )}
                 <p className="mt-1 text-xs text-slate-500">{group.subjectDetail}</p>
+                <p className="mt-2 text-xs font-medium text-slate-700">{group.packageSummary}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-right sm:min-w-[260px]">

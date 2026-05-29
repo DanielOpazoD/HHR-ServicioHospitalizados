@@ -19,6 +19,9 @@ export interface ClinicalAuditTimelineGroup {
   patientIdentifier: string;
   eventCount: number;
   originCoverageLabel: string;
+  packageKindLabel: string;
+  packageSummary: string;
+  clinicalAreas: string[];
   latestTimestamp: string;
   events: ClinicalAuditTimelineEvent[];
 }
@@ -77,6 +80,21 @@ const resolveOriginCoverageLabel = (events: ClinicalAuditTimelineEvent[]): strin
   return `${Math.round((withOrigin / events.length) * 100)}% con IP`;
 };
 
+const resolveClinicalAreas = (events: ClinicalAuditTimelineEvent[]): string[] =>
+  [...new Set(events.map(event => event.clinicalArea).filter(Boolean))].sort();
+
+const resolvePackageKindLabel = (group: Pick<ClinicalAuditTimelineGroup, 'episodeId'>): string =>
+  group.episodeId ? 'Paquete por episodio' : 'Paquete por paciente';
+
+const resolvePackageSummary = (
+  events: ClinicalAuditTimelineEvent[],
+  originCoverageLabel: string,
+  clinicalAreas: string[]
+): string =>
+  `${events.length} evento${events.length === 1 ? '' : 's'} · ${originCoverageLabel} · Áreas: ${
+    clinicalAreas.join(', ') || 'sin área'
+  }`;
+
 export const buildClinicalAuditTimelineGroups = (
   logs: AuditLogEntry[]
 ): ClinicalAuditTimelineGroup[] => {
@@ -110,6 +128,9 @@ export const buildClinicalAuditTimelineGroups = (
       patientIdentifier: row.patientIdentifier,
       eventCount: 1,
       originCoverageLabel: '0% con IP',
+      packageKindLabel: episodeId ? 'Paquete por episodio' : 'Paquete por paciente',
+      packageSummary: '',
+      clinicalAreas: [],
       latestTimestamp: row.timestamp,
       events: [event],
     });
@@ -118,10 +139,15 @@ export const buildClinicalAuditTimelineGroups = (
   return [...groups.values()]
     .map(group => {
       const events = [...group.events].sort((a, b) => b.sortTime - a.sortTime);
+      const originCoverageLabel = resolveOriginCoverageLabel(events);
+      const clinicalAreas = resolveClinicalAreas(events);
       return {
         ...group,
         latestTimestamp: events[0]?.timestamp || group.latestTimestamp,
-        originCoverageLabel: resolveOriginCoverageLabel(events),
+        originCoverageLabel,
+        packageKindLabel: resolvePackageKindLabel(group),
+        packageSummary: resolvePackageSummary(events, originCoverageLabel, clinicalAreas),
+        clinicalAreas,
         events,
       };
     })

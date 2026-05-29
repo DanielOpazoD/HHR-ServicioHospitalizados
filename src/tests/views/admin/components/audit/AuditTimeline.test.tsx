@@ -51,6 +51,8 @@ describe('AuditTimeline', () => {
     expect(screen.getByText('Expediente clínico/legal')).toBeInTheDocument();
     expect(screen.getByText('Juan Perez')).toBeInTheDocument();
     expect(screen.getByText(/Episodio clínico/)).toBeInTheDocument();
+    expect(screen.getByText('Paquete por episodio')).toBeInTheDocument();
+    expect(screen.getByText('2 eventos · 100% con IP · Áreas: censo')).toBeInTheDocument();
     expect(screen.getByText('ep_juan_2026_05_28')).toBeInTheDocument();
     expect(screen.getByText('Eventos trazados')).toBeInTheDocument();
     expect(screen.getByText('Cobertura origen')).toBeInTheDocument();

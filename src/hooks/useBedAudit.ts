@@ -11,6 +11,8 @@ import {
   resolvePatientChangeAudit,
 } from '@/hooks/controllers/bedAuditController';
 
+export const PATIENT_CLINICAL_AUDIT_DEBOUNCE_MS = 1500;
+
 /**
  * useBedAudit Hook
  *
@@ -75,7 +77,9 @@ export const useBedAudit = (record: DailyRecord | null) => {
         bedId,
         decision.details,
         decision.patientRut,
-        currentRecord.date
+        currentRecord.date,
+        undefined,
+        PATIENT_CLINICAL_AUDIT_DEBOUNCE_MS
       );
     },
     [logDebouncedEvent, logEvent, logPatientAdmission]
