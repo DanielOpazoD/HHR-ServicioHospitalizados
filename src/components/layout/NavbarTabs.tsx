@@ -102,27 +102,29 @@ export const NavbarTabs: React.FC<NavbarTabsProps> = ({
   };
 
   return (
-    <div className="flex max-w-full items-center gap-1 overflow-x-auto">
+    <div className="flex max-w-full items-center gap-1">
       {/* Clinical Modules - Prominent tabs */}
-      {clinicalTabs.map(item => (
-        <NavTab
-          key={item.id}
-          label={item.label}
-          icon={item.icon}
-          isActive={resolveIsNavbarItemActive({
-            currentModule,
-            itemModule: item.module,
-            censusViewMode,
-            itemCensusMode: item.censusMode,
-          })}
-          onClick={() => handleItemClick(item)}
-          testId={`nav-tab-${item.id}`}
-        />
-      ))}
+      <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
+        {clinicalTabs.map(item => (
+          <NavTab
+            key={item.id}
+            label={item.label}
+            icon={item.icon}
+            isActive={resolveIsNavbarItemActive({
+              currentModule,
+              itemModule: item.module,
+              censusViewMode,
+              itemCensusMode: item.censusMode,
+            })}
+            onClick={() => handleItemClick(item)}
+            testId={`nav-tab-${item.id}`}
+          />
+        ))}
+      </div>
 
       {/* Utility Modules Dropdown - Subtle icon */}
       {utilityItems.length > 0 && (
-        <div className="relative ml-2" ref={menuRef}>
+        <div className="relative ml-2 shrink-0" ref={menuRef}>
           <button
             onClick={toggle}
             className={clsx(

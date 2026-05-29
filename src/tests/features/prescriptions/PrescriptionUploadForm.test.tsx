@@ -4,6 +4,11 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { PrescriptionUploadForm } from '@/features/prescriptions/components/PrescriptionUploadForm';
 import type { PrescriptionUploadControllerHandle } from '@/features/prescriptions/hooks/usePrescriptionUploadController';
 
+vi.mock('@/features/prescriptions/components/PrescriptionUploadReadonlyViewer', () => ({
+  PrescriptionUploadReadonlyViewer: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div data-testid="prescription-upload-readonly-viewer">Visor abierto</div> : null,
+}));
+
 const buildController = (): PrescriptionUploadControllerHandle => ({
   phase: 'ready',
   values: {
@@ -56,6 +61,35 @@ describe('PrescriptionUploadForm', () => {
     expect(screen.getByText(/respaldo mensual/i)).toBeInTheDocument();
     expect(screen.getByText(/eliminarla manualmente/i)).toBeInTheDocument();
     expect(screen.queryByText(/se eliminará automáticamente/i)).toBeNull();
+  });
+
+  it('opens a read-only viewer for already uploaded prescriptions from the upload form', () => {
+    render(<PrescriptionUploadForm controller={buildController()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /ver recetas subidas/i }));
+
+    expect(screen.getByTestId('prescription-upload-readonly-viewer')).toHaveTextContent(
+      'Visor abierto'
+    );
+  });
+
+  it('keeps the read-only viewer available after a successful upload', () => {
+    render(
+      <PrescriptionUploadForm
+        controller={{
+          ...buildController(),
+          phase: 'success',
+          lastResult: {
+            id: 'rx-1',
+            expiresAt: '2026-06-04T00:00:00.000Z',
+          },
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /ver recetas subidas/i }));
+
+    expect(screen.getByTestId('prescription-upload-readonly-viewer')).toBeInTheDocument();
   });
 
   it('shows the pharmacy prescription names with type icons', () => {
