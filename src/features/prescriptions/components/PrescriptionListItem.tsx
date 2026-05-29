@@ -42,22 +42,34 @@ const TYPE_BADGE_LABEL: Record<string, string> = {
 };
 
 export const PrescriptionListItem: React.FC<PrescriptionListItemProps> = ({ record, onSelect }) => {
-  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
-  const [thumbError, setThumbError] = useState(false);
+  const [resolvedThumb, setResolvedThumb] = useState<{ path: string; url: string } | null>(null);
+  const [thumbErrorPath, setThumbErrorPath] = useState<string | null>(null);
+  const readonlyThumbnailUrl = record.image.thumbnailDownloadUrl;
+  const thumbnailPath = record.image.thumbnailStoragePath;
+  const thumbUrl =
+    readonlyThumbnailUrl ?? (resolvedThumb?.path === thumbnailPath ? resolvedThumb.url : null);
+  const thumbError = !readonlyThumbnailUrl && thumbErrorPath === thumbnailPath;
 
   useEffect(() => {
     let cancelled = false;
-    resolvePrescriptionImageDownloadUrl(record.image.thumbnailStoragePath)
+
+    if (readonlyThumbnailUrl) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    resolvePrescriptionImageDownloadUrl(thumbnailPath)
       .then(url => {
-        if (!cancelled) setThumbUrl(url);
+        if (!cancelled) setResolvedThumb({ path: thumbnailPath, url });
       })
       .catch(() => {
-        if (!cancelled) setThumbError(true);
+        if (!cancelled) setThumbErrorPath(thumbnailPath);
       });
     return () => {
       cancelled = true;
     };
-  }, [record.image.thumbnailStoragePath]);
+  }, [readonlyThumbnailUrl, thumbnailPath]);
 
   const assignmentScope = resolvePrescriptionAssignmentScope(record);
   const isUnassigned = assignmentScope === 'unassigned';

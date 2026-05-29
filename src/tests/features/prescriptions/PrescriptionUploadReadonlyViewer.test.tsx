@@ -3,14 +3,13 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { PrescriptionUploadReadonlyViewer } from '@/features/prescriptions/components/PrescriptionUploadReadonlyViewer';
 import { buildPrescriptionUploadViewerDayOptions } from '@/features/prescriptions/components/prescriptionUploadReadonlyViewerSupport';
-import type { PrescriptionListControllerHandle } from '@/features/prescriptions/hooks/usePrescriptionListController';
 import type { PrescriptionRecord } from '@/types/prescriptionTypes';
 
-let mockController: PrescriptionListControllerHandle;
-const mockSetFilter = vi.fn();
+const mockListPrescriptionUploadReadonlyRecords = vi.fn();
 
-vi.mock('@/features/prescriptions/hooks/usePrescriptionListController', () => ({
-  usePrescriptionListController: () => mockController,
+vi.mock('@/features/prescriptions/services/prescriptionAccessService', () => ({
+  listPrescriptionUploadReadonlyRecords: (payload: unknown) =>
+    mockListPrescriptionUploadReadonlyRecords(payload),
 }));
 
 vi.mock('@/features/prescriptions/services/prescriptionStorageImageService', () => ({
@@ -80,57 +79,54 @@ const buildRecord = (overrides: Partial<PrescriptionRecord> = {}): PrescriptionR
   ...overrides,
 });
 
-const buildController = (
-  overrides: Partial<PrescriptionListControllerHandle> = {}
-): PrescriptionListControllerHandle => {
-  const records = overrides.records ?? [buildRecord()];
-  return {
-    phase: 'ready',
-    records,
-    filteredRecords: overrides.filteredRecords ?? records,
-    filters: {
-      type: 'all',
-      patient: 'all',
-      search: '',
-      selectedDate: '2026-05-29',
-    },
-    setFilter: mockSetFilter,
-    resetFilters: vi.fn(),
-    prescriptionTypes: ['comun', 'psicotropicos', 'benzodiazepinas'],
-    totalCount: records.length,
-    ...overrides,
-  };
-};
-
 describe('PrescriptionUploadReadonlyViewer', () => {
   beforeEach(() => {
-    mockSetFilter.mockReset();
-    mockController = buildController();
+    mockListPrescriptionUploadReadonlyRecords.mockReset();
+    mockListPrescriptionUploadReadonlyRecords.mockResolvedValue({
+      date: '2026-05-29',
+      records: [buildRecord()],
+    });
   });
 
-  it('shows today and yesterday with day-month-year dates', () => {
+  it('shows today and yesterday with day-month-year dates', async () => {
     render(<PrescriptionUploadReadonlyViewer isOpen onClose={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: /hoy.*\d{2}-\d{2}-\d{4}/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /ayer.*\d{2}-\d{2}-\d{4}/i })).toBeInTheDocument();
+    expect(await screen.findByTestId('prescription-row-rx-today')).toBeInTheDocument();
   });
 
   it('switches the clinical day filter to yesterday', async () => {
     const yesterday = buildPrescriptionUploadViewerDayOptions()[1];
     render(<PrescriptionUploadReadonlyViewer isOpen onClose={vi.fn()} />);
-    mockSetFilter.mockClear();
+    mockListPrescriptionUploadReadonlyRecords.mockClear();
 
     fireEvent.click(screen.getByRole('button', { name: /ayer/i }));
 
     await waitFor(() =>
-      expect(mockSetFilter).toHaveBeenCalledWith('selectedDate', yesterday.isoDate)
+      expect(mockListPrescriptionUploadReadonlyRecords).toHaveBeenCalledWith({
+        date: yesterday.isoDate,
+        pin: undefined,
+      })
     );
   });
 
-  it('opens uploaded prescriptions in a read-only detail modal', () => {
+  it('passes the QR PIN to the readonly callable', async () => {
+    const today = buildPrescriptionUploadViewerDayOptions()[0];
+    render(<PrescriptionUploadReadonlyViewer isOpen onClose={vi.fn()} accessPin="7351" />);
+
+    await waitFor(() =>
+      expect(mockListPrescriptionUploadReadonlyRecords).toHaveBeenCalledWith({
+        date: today.isoDate,
+        pin: '7351',
+      })
+    );
+  });
+
+  it('opens uploaded prescriptions in a read-only detail modal', async () => {
     render(<PrescriptionUploadReadonlyViewer isOpen onClose={vi.fn()} />);
 
-    fireEvent.click(screen.getByTestId('prescription-row-rx-today'));
+    fireEvent.click(await screen.findByTestId('prescription-row-rx-today'));
 
     expect(screen.getByTestId('prescription-detail-modal')).toHaveAttribute(
       'data-record-id',
@@ -146,15 +142,24 @@ describe('PrescriptionUploadReadonlyViewer', () => {
     );
   });
 
-  it('uses a dated empty state when there are no uploads for the selected day', () => {
-    mockController = buildController({
+  it('uses a dated empty state when there are no uploads for the selected day', async () => {
+    mockListPrescriptionUploadReadonlyRecords.mockResolvedValue({
+      date: '2026-05-29',
       records: [],
-      filteredRecords: [],
-      totalCount: 0,
     });
 
     render(<PrescriptionUploadReadonlyViewer isOpen onClose={vi.fn()} />);
 
-    expect(screen.getByText(/sin recetas subidas el \d{2}-\d{2}-\d{4}/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/sin recetas subidas el \d{2}-\d{2}-\d{4}/i)
+    ).toBeInTheDocument();
+  });
+
+  it('shows a readable error when the mobile readonly callable fails', async () => {
+    mockListPrescriptionUploadReadonlyRecords.mockRejectedValue(new Error('PIN inválido.'));
+
+    render(<PrescriptionUploadReadonlyViewer isOpen onClose={vi.fn()} />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('PIN inválido.');
   });
 });

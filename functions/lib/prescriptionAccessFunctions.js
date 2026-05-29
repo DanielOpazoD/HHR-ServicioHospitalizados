@@ -22,6 +22,11 @@
  *       QR + valid PIN. It deliberately returns only bedId, patientName,
  *       and patientRut.
  *
+ *   - `listPrescriptionUploadReadonlyRecords({ pin?, date? })`
+ *       Returns read-only prescription records for the upload viewer. QR/PIN
+ *       access is limited to today/yesterday and receives temporary image URLs
+ *       so mobile phones do not need direct Firestore/Storage permissions.
+ *
  *   - `setPrescriptionAccessPin({ newPin })`
  *       Admin-only PIN rotation. Hashes with scrypt + per-record salt.
  */
@@ -377,6 +382,103 @@ const resolveUploadPatientOptionsForDate = async (admin, date) => {
   return { sourceDate: date, isFallbackFromPreviousDay: false, patientOptions };
 };
 
+const assertReadonlyUploadDateAllowed = date => {
+  const today = todayIso();
+  const yesterday = previousIsoDay(today);
+  if (date !== today && date !== yesterday) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'El visor de carga solo permite revisar recetas de hoy y ayer.'
+    );
+  }
+};
+
+const createdAtMatchesIsoDate = (createdAt, isoDate) => {
+  const created = new Date(createdAt);
+  if (Number.isNaN(created.getTime())) return false;
+  const recordDate = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}-${String(
+    created.getDate()
+  ).padStart(2, '0')}`;
+  return recordDate === isoDate;
+};
+
+const buildFirebaseStorageDownloadUrl = (bucketName, storagePath, token) =>
+  `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(bucketName)}/o/${encodeURIComponent(
+    storagePath
+  )}?alt=media&token=${encodeURIComponent(token)}`;
+
+const resolveDownloadUrlForStoragePath = async (admin, storagePath) => {
+  if (!storagePath) return null;
+  const bucket = admin.storage().bucket();
+  const file = bucket.file(storagePath);
+
+  try {
+    const [metadata] = await file.getMetadata();
+    const tokenValue = metadata?.metadata?.firebaseStorageDownloadTokens;
+    const token = String(tokenValue || '')
+      .split(',')
+      .find(Boolean);
+    const bucketName = bucket.name || metadata?.bucket;
+    if (token && bucketName) {
+      return buildFirebaseStorageDownloadUrl(bucketName, storagePath, token);
+    }
+  } catch (error) {
+    console.error(
+      `[prescriptions/readonly] failed to resolve metadata for ${storagePath}:`,
+      error.message
+    );
+  }
+
+  if (typeof file.getSignedUrl === 'function') {
+    try {
+      const [signedUrl] = await file.getSignedUrl({
+        action: 'read',
+        expires: Date.now() + 15 * 60 * 1000,
+      });
+      return signedUrl;
+    } catch (error) {
+      console.error(
+        `[prescriptions/readonly] failed to sign URL for ${storagePath}:`,
+        error.message
+      );
+    }
+  }
+
+  return null;
+};
+
+const attachReadonlyImageUrls = async (admin, record) => {
+  const fullDownloadUrl = await resolveDownloadUrlForStoragePath(admin, record?.image?.storagePath);
+  const thumbnailDownloadUrl = await resolveDownloadUrlForStoragePath(
+    admin,
+    record?.image?.thumbnailStoragePath
+  );
+
+  return omitUndefined({
+    ...record,
+    image: {
+      ...(record?.image || {}),
+      fullDownloadUrl,
+      thumbnailDownloadUrl,
+    },
+  });
+};
+
+const listPrescriptionRecordsForDate = async (admin, date) => {
+  const snapshot = await getPrescriptionsRef(admin).get();
+  const records = [];
+  snapshot.forEach(doc => {
+    const record = doc.data() || {};
+    if (createdAtMatchesIsoDate(record.createdAt, date)) {
+      records.push(record);
+    }
+  });
+  records.sort((left, right) =>
+    String(right.createdAt || '').localeCompare(String(left.createdAt || ''))
+  );
+  return Promise.all(records.map(record => attachReadonlyImageUrls(admin, record)));
+};
+
 const createListUploadPatientOptionsHandler =
   ({ admin, resolveRoleForEmail }) =>
   async (data, context) => {
@@ -389,6 +491,18 @@ const createListUploadPatientOptionsHandler =
       date,
       ...optionsResult,
     };
+  };
+
+const createListUploadReadonlyRecordsHandler =
+  ({ admin, resolveRoleForEmail }) =>
+  async (data, context) => {
+    const payload = data || {};
+    await resolveUploadPickerAccess({ admin, context, payload, resolveRoleForEmail });
+
+    const date = resolveIsoDate(payload.date);
+    assertReadonlyUploadDateAllowed(date);
+    const records = await listPrescriptionRecordsForDate(admin, date);
+    return { date, records };
   };
 
 /**
@@ -589,6 +703,9 @@ const createPrescriptionAccessFunctions = ({ admin, resolveRoleForEmail }) => ({
   listPrescriptionUploadPatientOptions: functions.https.onCall(
     createListUploadPatientOptionsHandler({ admin, resolveRoleForEmail })
   ),
+  listPrescriptionUploadReadonlyRecords: functions.https.onCall(
+    createListUploadReadonlyRecordsHandler({ admin, resolveRoleForEmail })
+  ),
   submitPrescriptionPhoto: functions.https.onCall(
     createSubmitHandler({ admin, resolveRoleForEmail })
   ),
@@ -602,6 +719,7 @@ module.exports = {
   // Direct handler factories for tests (avoid functions.https.onCall wrapping).
   createValidatePinHandler,
   createListUploadPatientOptionsHandler,
+  createListUploadReadonlyRecordsHandler,
   createSubmitHandler,
   createSetPinHandler,
   // Pure helpers exposed for unit testing.

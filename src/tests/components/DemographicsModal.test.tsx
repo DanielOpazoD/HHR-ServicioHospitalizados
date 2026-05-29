@@ -29,6 +29,38 @@ const createEmptyDemographics = (): DemographicSubset =>
   });
 
 describe('DemographicsModal', () => {
+  it('does not close a new patient admission when the backdrop is clicked', () => {
+    const onClose = vi.fn();
+    const onCancel = vi.fn();
+
+    render(
+      <DemographicsModal
+        isOpen
+        onClose={onClose}
+        onCancel={onCancel}
+        data={createEmptyDemographics()}
+        onSave={vi.fn()}
+        bedId="R1"
+        recordDate="2026-05-01"
+        requiresCompleteDemographics
+      />
+    );
+
+    const dialog = screen.getByRole('dialog', { name: /datos demográficos/i });
+    const backdrop = dialog.closest('.fixed.inset-0');
+    expect(backdrop).toBeTruthy();
+
+    fireEvent.click(backdrop!);
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('blocks saving a new census patient until required demographics are complete', () => {
     const onSave = vi.fn();
 
