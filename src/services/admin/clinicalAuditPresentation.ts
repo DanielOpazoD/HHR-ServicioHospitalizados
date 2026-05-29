@@ -15,6 +15,7 @@ export type ClinicalAuditArea =
   | 'censo'
   | 'entrega'
   | 'documentos'
+  | 'indicaciones'
   | 'recetas'
   | 'cudyr'
   | 'heridas'
@@ -125,6 +126,7 @@ const classifyArea = (action: AuditAction): ClinicalAuditArea => {
   if (action.includes('LOGIN') || action.includes('LOGOUT')) return 'sesion';
   if (action.includes('HANDOFF')) return 'entrega';
   if (action.includes('CLINICAL_DOCUMENT')) return 'documentos';
+  if (action.includes('MEDICAL_INDICATION')) return 'indicaciones';
   if (action.includes('PRESCRIPTION')) return 'recetas';
   if (action.includes('CUDYR')) return 'cudyr';
   if (action.includes('WOUND_CARE')) return 'heridas';

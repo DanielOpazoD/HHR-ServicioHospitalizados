@@ -21,6 +21,10 @@
       return canCreateReadableClinicalDocument();
     }
 
+    function canWriteMedicalIndicationRecord() {
+      return isAdmin() || isDoctor() || isDoctorSpecialist();
+    }
+
     function canManageCensusAccess() {
       return hasAnyEffectiveRole(['admin', 'editor']);
     }

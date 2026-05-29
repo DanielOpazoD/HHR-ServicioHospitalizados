@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MedicalIndicationsQuickAction } from '@/components/layout/date-strip/MedicalIndicationsQuickAction';
 
 vi.mock('@/services/pdf/medicalIndicationsPdfService', () => ({
@@ -23,10 +23,16 @@ describe('MedicalIndicationsQuickAction', () => {
     },
   ];
 
-  it('habilita edición de indicaciones por defecto', () => {
+  const openDialog = async () => {
+    fireEvent.click(screen.getByTitle('Indicaciones médicas'));
+    await screen.findByText('Mis indicaciones');
+    await waitFor(() => expect(screen.queryByText('Cargando...')).not.toBeInTheDocument());
+  };
+
+  it('habilita edición de indicaciones por defecto', async () => {
     render(<MedicalIndicationsQuickAction patients={patients} />);
 
-    fireEvent.click(screen.getByTitle('Indicaciones médicas'));
+    await openDialog();
 
     expect(screen.getByRole('button', { name: 'Editando' })).toBeInTheDocument();
 
@@ -34,10 +40,10 @@ describe('MedicalIndicationsQuickAction', () => {
     expect(draftInput).toBeEnabled();
   });
 
-  it('muestra acciones con iconos para editar y quitar indicaciones', () => {
+  it('muestra acciones con iconos para editar y quitar indicaciones', async () => {
     render(<MedicalIndicationsQuickAction patients={patients} />);
 
-    fireEvent.click(screen.getByTitle('Indicaciones médicas'));
+    await openDialog();
 
     fireEvent.change(screen.getByPlaceholderText('Escribe una indicación y presiona Enter...'), {
       target: { value: 'Control de signos vitales cada 6 horas' },

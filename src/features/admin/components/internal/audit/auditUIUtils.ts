@@ -21,6 +21,8 @@ import {
   Search,
   Camera,
   Lock,
+  Plus,
+  ClipboardList,
 } from 'lucide-react';
 import { AuditAction } from '@/types/auditActionTypes';
 import { AuditLogEntry } from '@/types/auditLogTypes';
@@ -83,6 +85,11 @@ export const actionIcons: Record<AuditAction, React.ReactNode> = {
   CLINICAL_DOCUMENT_LOCKED: React.createElement(Lock, { size: 14 }),
   PRESCRIPTION_MANUAL_DELETED: React.createElement(Trash2, { size: 14 }),
   PRESCRIPTION_RETENTION_DELETED: React.createElement(Trash2, { size: 14 }),
+  MEDICAL_INDICATION_RECORD_CREATED: React.createElement(ClipboardList, { size: 14 }),
+  MEDICAL_INDICATION_TEMPLATE_CREATED: React.createElement(FileText, { size: 14 }),
+  MEDICAL_INDICATION_TEMPLATE_UPDATED: React.createElement(Activity, { size: 14 }),
+  MEDICAL_INDICATION_TEMPLATE_ARCHIVED: React.createElement(Trash2, { size: 14 }),
+  MEDICAL_INDICATION_TEMPLATE_USED: React.createElement(Plus, { size: 14 }),
   WOUND_CARE_PHOTO_UPLOADED: React.createElement(Camera, { size: 14 }),
   SYSTEM_ERROR: React.createElement(AlertCircle, { size: 14 }),
 };
@@ -128,6 +135,11 @@ export const actionColors: Record<AuditAction, string> = {
   CLINICAL_DOCUMENT_LOCKED: 'bg-slate-50 text-slate-700 border-slate-100',
   PRESCRIPTION_MANUAL_DELETED: 'bg-rose-50 text-rose-700 border-rose-100',
   PRESCRIPTION_RETENTION_DELETED: 'bg-slate-50 text-slate-700 border-slate-100',
+  MEDICAL_INDICATION_RECORD_CREATED: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+  MEDICAL_INDICATION_TEMPLATE_CREATED: 'bg-cyan-50 text-cyan-700 border-cyan-100',
+  MEDICAL_INDICATION_TEMPLATE_UPDATED: 'bg-amber-50 text-amber-700 border-amber-100',
+  MEDICAL_INDICATION_TEMPLATE_ARCHIVED: 'bg-slate-50 text-slate-700 border-slate-100',
+  MEDICAL_INDICATION_TEMPLATE_USED: 'bg-blue-50 text-blue-700 border-blue-100',
   WOUND_CARE_PHOTO_UPLOADED: 'bg-sky-50 text-sky-700 border-sky-100',
   SYSTEM_ERROR: 'bg-red-50 text-red-700 border-red-100',
 };
@@ -204,6 +216,16 @@ export const renderHumanDetails = (log: AuditLogEntry) => {
       return `Se eliminó manualmente el respaldo de receta ${details.prescriptionId || log.entityId}${details.patientName ? ` de ${details.patientName}` : ''}.`;
     case 'PRESCRIPTION_RETENTION_DELETED':
       return `Se eliminó por un proceso automático histórico el respaldo de receta ${details.prescriptionId || log.entityId}${details.patientName ? ` de ${details.patientName}` : ''}.`;
+    case 'MEDICAL_INDICATION_RECORD_CREATED':
+      return `Se generaron indicaciones médicas para ${details.patientName || 'paciente'} con fecha objetivo ${details.targetDate || log.recordDate || 'no registrada'}.`;
+    case 'MEDICAL_INDICATION_TEMPLATE_CREATED':
+      return `Se guardó una indicación personal: ${details.textPreview || log.entityId}.`;
+    case 'MEDICAL_INDICATION_TEMPLATE_UPDATED':
+      return `Se editó una indicación personal: ${details.textPreview || log.entityId}.`;
+    case 'MEDICAL_INDICATION_TEMPLATE_ARCHIVED':
+      return `Se archivó una indicación personal (${log.entityId}).`;
+    case 'MEDICAL_INDICATION_TEMPLATE_USED':
+      return `Se reutilizó una indicación personal: ${details.textPreview || log.entityId}.`;
     case 'WOUND_CARE_PHOTO_UPLOADED':
       return `Se subió foto clínica por QR para ${details.patientName || 'paciente'}${details.bodyLocation ? ` (${details.bodyLocation})` : ''}.`;
     default:

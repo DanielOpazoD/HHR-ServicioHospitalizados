@@ -9,6 +9,11 @@ import type { UseUIStateReturn } from '@/hooks/useUIState';
 import type { AppContentRuntime } from '@/components/layout/app-content/useAppContentRuntime';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 
+interface MedicalIndicationsPatientSourceExtras {
+  admissionTime?: string;
+  clinicalEpisodeId?: string;
+}
+
 const calculateDaysOfStay = (admissionDate?: string): string => {
   if (!admissionDate) return '';
   const parsed = new Date(formatDateToCL(admissionDate).split('-').reverse().join('-'));
@@ -25,19 +30,25 @@ export const buildMedicalIndicationsPatientOptions = (
 
   return Object.entries(record?.beds || {})
     .filter(([, patient]) => Boolean(patient.patientName?.trim()))
-    .map(([bedId, patient]) => ({
-      bedId,
-      label: `${bedsById.get(bedId)?.name || bedId} · ${patient.patientName}`,
-      patientName: patient.patientName || '',
-      rut: patient.rut || '',
-      diagnosis: patient.cie10Description || patient.pathology || '',
-      age: patient.age || '',
-      birthDate: formatDateToCL(patient.birthDate || ''),
-      allergies: '',
-      admissionDate: formatDateToCL(patient.admissionDate || ''),
-      daysOfStay: calculateDaysOfStay(patient.admissionDate),
-      treatingDoctor: '',
-    }));
+    .map(([bedId, patient]) => {
+      const extras = patient as MedicalIndicationsPatientSourceExtras;
+      return {
+        bedId,
+        label: `${bedsById.get(bedId)?.name || bedId} · ${patient.patientName}`,
+        patientName: patient.patientName || '',
+        rut: patient.rut || '',
+        diagnosis: patient.cie10Description || patient.pathology || '',
+        age: patient.age || '',
+        birthDate: formatDateToCL(patient.birthDate || ''),
+        allergies: '',
+        admissionDate: formatDateToCL(patient.admissionDate || ''),
+        admissionTime: extras.admissionTime,
+        clinicalEpisodeId: extras.clinicalEpisodeId,
+        sourceDailyRecordDate: record?.date,
+        daysOfStay: calculateDaysOfStay(patient.admissionDate),
+        treatingDoctor: '',
+      };
+    });
 };
 
 export const canUseCensusDateStripActions = (
