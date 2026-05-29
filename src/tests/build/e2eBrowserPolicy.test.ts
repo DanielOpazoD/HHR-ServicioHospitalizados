@@ -38,4 +38,15 @@ describe('e2e browser policy', () => {
     expect(visualSmokeSource).toMatch(/page\.reload/);
     expect(visualSmokeSource).toMatch(/excel mensual/i);
   });
+
+  it('keeps the clinical visual release smoke covering authenticated utility and prescription surfaces', () => {
+    const visualSmokeSource = readSource('e2e/clinical-release-visual-smoke.spec.ts');
+
+    expect(visualSmokeSource).toContain('verifyUtilityMenuVisualSmoke');
+    expect(visualSmokeSource).toContain('verifyAuditVisualSmoke');
+    expect(visualSmokeSource).toContain('verifyPrescriptionUploadMobileVisualSmoke');
+    expect(visualSmokeSource).toContain('clinical-release-utility-menu');
+    expect(visualSmokeSource).toContain('clinical-release-audit');
+    expect(visualSmokeSource).toContain('clinical-release-prescription-upload-mobile');
+  });
 });

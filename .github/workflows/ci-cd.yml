@@ -44,7 +44,7 @@ jobs:
         # `system-confidence` and friends only ever show "degraded" for
         # substantive reasons (real indicator failures), never because
         # the artifact itself was stale.
-        run: npm run check:report-freshness
+        run: npm run check:report-freshness:strict
 
       - name: Run architecture and security quality checks
         run: npm run check:quality

@@ -74,6 +74,11 @@
       "maxBytes": 560000
     },
     {
+      "pattern": "^vendor-pdf-.*\\.js$",
+      "_comment": "PDF vendor chunks are async but among the largest payloads; keep a dedicated ceiling so PDF library drift stays visible before it reaches the global chunk budget.",
+      "maxBytes": 430000
+    },
+    {
       "pattern": "^TransferManagementView-.*\\.js$",
       "maxBytes": 750000
     }

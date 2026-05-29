@@ -251,6 +251,49 @@ const verifyCensusExcelDownload = async (page: Page, testInfo: TestInfo) => {
   );
 };
 
+const verifyUtilityMenuVisualSmoke = async (page: Page, testInfo: TestInfo) => {
+  const utilityMenuButton = page.getByTestId('navbar-utility-menu-button');
+  await expect(utilityMenuButton).toBeVisible({ timeout: 10_000 });
+  await utilityMenuButton.click();
+
+  const utilityMenu = page.getByTestId('navbar-utility-menu');
+  await expect(utilityMenu).toBeVisible({ timeout: 10_000 });
+  await expect(utilityMenu.getByText('Estadísticas')).toBeVisible();
+  await expect(utilityMenu.getByText('Archivos')).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await attachViewportEvidence(page, testInfo, 'clinical-release-utility-menu');
+};
+
+const verifyAuditVisualSmoke = async (page: Page, testInfo: TestInfo) => {
+  await page.goto('/audit', { waitUntil: 'domcontentloaded' });
+  await ensureAuthenticated(page);
+  await expect(page).toHaveURL(/\/audit/, { timeout: 20_000 });
+  await expect(page.getByRole('heading', { name: /registro de auditoría/i })).toBeVisible({
+    timeout: 20_000,
+  });
+  await expectNoHorizontalOverflow(page);
+  await attachViewportEvidence(page, testInfo, 'clinical-release-audit');
+  await verifyMobileViewportEvidence(page, testInfo, 'clinical-release-audit-mobile');
+};
+
+const verifyPrescriptionUploadMobileVisualSmoke = async (page: Page, testInfo: TestInfo) => {
+  await page.setViewportSize({ width: 390, height: 780 });
+  await page.goto('/recetas/upload', { waitUntil: 'domcontentloaded' });
+
+  await expect(page.getByRole('heading', { name: /respaldo de receta/i })).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(page.getByRole('textbox', { name: /pin de acceso/i })).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(page.getByRole('button', { name: /continuar/i })).toBeVisible({
+    timeout: 10_000,
+  });
+  await expectNoHorizontalOverflow(page);
+  await attachViewportEvidence(page, testInfo, 'clinical-release-prescription-upload-mobile');
+  await page.setViewportSize({ width: 1440, height: 900 });
+};
+
 const openClinicalDocumentsFromR1 = async (page: Page) => {
   const patientRow = page.locator('[data-testid="patient-row"][data-bed-id="R1"]').first();
   await expect(patientRow).toBeVisible({ timeout: 10_000 });
@@ -329,6 +372,10 @@ test.describe('Clinical release visual smoke', () => {
     await expectNoHorizontalOverflow(page);
     await attachViewportEvidence(page, testInfo, 'clinical-release-census-after-refresh');
     await verifyCensusExcelDownload(page, testInfo);
+    await verifyUtilityMenuVisualSmoke(page, testInfo);
+    await verifyAuditVisualSmoke(page, testInfo);
+    await verifyPrescriptionUploadMobileVisualSmoke(page, testInfo);
+    await openVisualCensus(page);
 
     await openClinicalDocumentsFromR1(page);
     await createClinicalDocumentEvidence(page);

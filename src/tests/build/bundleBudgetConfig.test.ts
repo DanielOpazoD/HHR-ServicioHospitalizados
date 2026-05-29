@@ -43,6 +43,9 @@ describe('bundle budget config', () => {
     expect(findBudget(config, '^pdf-.*\\.js$')).toMatchObject({
       maxBytes: 560000,
     });
+    expect(findBudget(config, '^vendor-pdf-.*\\.js$')).toMatchObject({
+      maxBytes: 430000,
+    });
   });
 
   it('keeps authenticated shell budget above the measured critical-runtime baseline', () => {

@@ -29,6 +29,15 @@ describe('CI workflow governance', () => {
     expect(runner).toContain('::group::');
   });
 
+  it('enforces strict report freshness immediately after regenerating governance snapshots', () => {
+    const workflow = readText('.github/workflows/ci-cd.yml');
+    const snapshotStep = workflow.indexOf('npm run report:governance-snapshots');
+    const freshnessStep = workflow.indexOf('npm run check:report-freshness:strict');
+
+    expect(snapshotStep).toBeGreaterThanOrEqual(0);
+    expect(freshnessStep).toBeGreaterThan(snapshotStep);
+  });
+
   it('keeps Firefox compatibility out of PR CI unless Firefox becomes a supported browser', () => {
     const workflow = readText('.github/workflows/ci-cd.yml');
 
