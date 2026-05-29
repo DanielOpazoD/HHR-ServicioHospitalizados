@@ -42,6 +42,9 @@ describe('clinicalAuditTimeline', () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].subjectLabel).toBe('Juan Perez');
     expect(groups[0].subjectDetail).toContain('12.345.678-9');
+    expect(groups[0].packageKindLabel).toBe('Paquete por paciente');
+    expect(groups[0].packageSummary).toBe('2 eventos · 100% con IP · Áreas: censo');
+    expect(groups[0].clinicalAreas).toEqual(['censo']);
     expect(groups[0].events.map(event => event.title)).toEqual([
       'Paciente trasladado de cama',
       'Paciente ingresado',
@@ -83,6 +86,10 @@ describe('clinicalAuditTimeline', () => {
     expect(groups.map(group => group.episodeId)).toEqual([
       'ep_afternoon_readmission',
       'ep_morning_admission',
+    ]);
+    expect(groups.map(group => group.packageKindLabel)).toEqual([
+      'Paquete por episodio',
+      'Paquete por episodio',
     ]);
     expect(groups[0].subjectDetail).toContain('Episodio ep_afternoon_readmission');
     expect(groups[1].subjectDetail).toContain('Episodio ep_morning_admission');

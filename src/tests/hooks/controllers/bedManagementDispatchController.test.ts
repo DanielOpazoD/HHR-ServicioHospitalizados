@@ -118,6 +118,98 @@ describe('bedManagementDispatchController', () => {
     });
   });
 
+  it('audits patient creation when demographics are saved as a multiple update', () => {
+    const record = buildRecord();
+    record.beds.R1 = {
+      ...record.beds.R1,
+      patientName: '',
+      rut: '',
+      pathology: '',
+      age: '',
+      admissionDate: '',
+    };
+    const patchRecord = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    const auditPatientChange = vi.fn();
+    const action: BedAction = {
+      type: 'UPDATE_PATIENT_MULTIPLE',
+      bedId: 'R1',
+      fields: {
+        pathology: 'Neumonia',
+        rut: '22.222.222-2',
+        patientName: 'Paciente Nuevo',
+      },
+    };
+    const validation: BedManagementValidationPort = {
+      processFieldValue: vi.fn((_field, value) => ({ valid: true, value })),
+    };
+    const bedAudit: BedManagementAuditPort = {
+      auditPatientChange,
+      auditCudyrChange: vi.fn(),
+      auditCribCudyrChange: vi.fn(),
+      auditPatientCleared: vi.fn(),
+      auditPatientModified: vi.fn(),
+      auditPatientMovement: vi.fn(),
+    };
+
+    executeBedManagementAction({
+      currentRecord: record,
+      action,
+      validation,
+      bedAudit,
+      patchRecord,
+    });
+
+    expect(auditPatientChange).toHaveBeenNthCalledWith(
+      2,
+      'R1',
+      'patientName',
+      expect.objectContaining({
+        patientName: '',
+        rut: '22.222.222-2',
+      }),
+      'Paciente Nuevo'
+    );
+  });
+
+  it('audits diagnosis changes when they are saved as a multiple update', () => {
+    const patchRecord = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    const auditPatientChange = vi.fn();
+    const action: BedAction = {
+      type: 'UPDATE_PATIENT_MULTIPLE',
+      bedId: 'R1',
+      fields: {
+        pathology: 'Diagnostico actualizado',
+      },
+    };
+    const validation: BedManagementValidationPort = {
+      processFieldValue: vi.fn((_field, value) => ({ valid: true, value })),
+    };
+    const bedAudit: BedManagementAuditPort = {
+      auditPatientChange,
+      auditCudyrChange: vi.fn(),
+      auditCribCudyrChange: vi.fn(),
+      auditPatientCleared: vi.fn(),
+      auditPatientModified: vi.fn(),
+      auditPatientMovement: vi.fn(),
+    };
+
+    const record = buildRecord();
+    executeBedManagementAction({
+      currentRecord: record,
+      action,
+      validation,
+      bedAudit,
+      patchRecord,
+    });
+
+    expect(auditPatientChange).toHaveBeenCalledWith(
+      'R1',
+      'pathology',
+      record.beds.R1,
+      'Diagnostico actualizado'
+    );
+  });
+
   it('captures asynchronous patch failures from fire-and-forget bed actions', async () => {
     const patchError = new Error('freshness gate blocked');
     const patchRecord = vi.fn<() => Promise<void>>().mockRejectedValueOnce(patchError);

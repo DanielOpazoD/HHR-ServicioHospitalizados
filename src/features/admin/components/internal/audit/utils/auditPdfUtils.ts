@@ -48,6 +48,7 @@ export const generateAuditPdfHtml = ({
                     .stat {text-align: center; }
                     .stat-value {font-size: 18px; font-weight: bold; color: #4f46e5; }
                     .stat-label {font-size: 9px; color: #64748b; }
+                    .legal-summary {font-size: 9px; color: #475569; line-height: 1.35; }
                     .footer {margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 8px; color: #94a3b8; text-align: center; }
                 </style>
             </head>
@@ -77,6 +78,7 @@ export const generateAuditPdfHtml = ({
                     <thead>
                         <tr>
                             <th>Fecha/Hora</th>
+                            <th>Paquete clínico/legal</th>
                             <th>Responsable</th>
                             <th>Evento clínico</th>
                             <th>Relato clínico</th>
@@ -98,12 +100,13 @@ export const generateAuditPdfHtml = ({
                               : false;
                             return `<tr class="${isCritical ? 'critical' : ''}">
                                 <td>${escapeHtml(row.timestamp)}</td>
+                                <td>${escapeHtml(row.packageKindLabel)}<br><span style="color:#64748b">${escapeHtml(row.episodeId || row.packageSubject)}</span></td>
                                 <td>${escapeHtml(row.responsible)}<br><span style="color:#64748b">${escapeHtml(row.responsibleDetail)}</span></td>
                                 <td>${escapeHtml(row.eventTitle)}</td>
                                 <td>${escapeHtml(row.narrative)}</td>
                                 <td>${escapeHtml(row.affected)}<br><span style="color:#64748b">${escapeHtml(row.patientIdentifier)}</span></td>
                                 <td>${escapeHtml(row.origin)}</td>
-                                <td>${escapeHtml(row.relevantChanges)}</td>
+                                <td>${escapeHtml(row.relevantChanges)}<br><span class="legal-summary"><strong>Resumen legal:</strong> ${escapeHtml(row.legalTraceSummary)}</span></td>
                             </tr>`;
                           })
                           .join('')}

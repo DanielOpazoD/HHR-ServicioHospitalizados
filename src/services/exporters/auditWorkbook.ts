@@ -13,6 +13,8 @@ export const generateAuditWorkbook = async (logs: AuditLogEntry[]): Promise<Work
   // Header styling
   const headerRow = sheet.addRow([
     'ID',
+    'PAQUETE',
+    'EPISODIO',
     'FECHA/HORA',
     'RESPONSABLE',
     'IDENTIFICADOR RESPONSABLE',
@@ -24,6 +26,7 @@ export const generateAuditWorkbook = async (logs: AuditLogEntry[]): Promise<Work
     'ÁREA',
     'IMPACTO',
     'CAMBIOS RELEVANTES',
+    'RESUMEN LEGAL',
   ]);
 
   headerRow.eachCell(cell => {
@@ -39,6 +42,8 @@ export const generateAuditWorkbook = async (logs: AuditLogEntry[]): Promise<Work
   buildClinicalAuditExportRows(logs).forEach(row => {
     sheet.addRow([
       row.id,
+      row.packageKindLabel,
+      row.episodeId || 'Sin episodio explícito',
       row.timestamp,
       row.responsible,
       row.responsibleDetail,
@@ -50,6 +55,7 @@ export const generateAuditWorkbook = async (logs: AuditLogEntry[]): Promise<Work
       row.clinicalArea,
       row.impact,
       row.relevantChanges,
+      row.legalTraceSummary,
     ]);
   });
 

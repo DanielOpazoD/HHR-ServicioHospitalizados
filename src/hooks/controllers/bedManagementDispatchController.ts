@@ -43,6 +43,22 @@ interface ExecuteBedManagementActionInput {
   patchRecord: ApplyDailyRecordPatch;
 }
 
+const MULTIPLE_PATIENT_AUDIT_FIELD_PRIORITY = ['rut', 'patientName'];
+
+const getOrderedPatientAuditFields = (
+  fields: Partial<PatientData>
+): [keyof PatientData, PatientFieldValue][] =>
+  Object.entries(fields)
+    .sort(([fieldA], [fieldB]) => {
+      const priorityA = MULTIPLE_PATIENT_AUDIT_FIELD_PRIORITY.indexOf(fieldA);
+      const priorityB = MULTIPLE_PATIENT_AUDIT_FIELD_PRIORITY.indexOf(fieldB);
+      if (priorityA === -1 && priorityB === -1) return 0;
+      if (priorityA === -1) return 1;
+      if (priorityB === -1) return -1;
+      return priorityA - priorityB;
+    })
+    .map(([field, value]) => [field as keyof PatientData, value as PatientFieldValue]);
+
 const validateAction = (
   action: BedAction,
   validation: BedManagementValidationPort
@@ -95,6 +111,20 @@ const auditActionIntent = (
         action.value
       );
       break;
+    case 'UPDATE_PATIENT_MULTIPLE': {
+      const patientSnapshot = currentRecord.beds[action.bedId];
+      if (!patientSnapshot) {
+        break;
+      }
+
+      const auditSnapshot: PatientData = { ...patientSnapshot };
+      getOrderedPatientAuditFields(action.fields).forEach(([field, value]) => {
+        const previousSnapshot: PatientData = { ...auditSnapshot };
+        bedAudit.auditPatientChange(action.bedId, field, previousSnapshot, value);
+        Object.assign(auditSnapshot, { [field]: value });
+      });
+      break;
+    }
     case 'UPDATE_CUDYR':
       bedAudit.auditCudyrChange(action.bedId, action.field, action.value);
       break;

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
+import { PATIENT_CLINICAL_AUDIT_DEBOUNCE_MS } from '@/hooks/useBedAudit';
 import { useBedManagement } from '@/hooks/useBedManagement';
 import type {
   DailyRecord,
@@ -128,7 +129,9 @@ describe('useBedManagement patient updates', () => {
         'R1',
         expect.objectContaining({ patientName: 'New Name' }),
         patient.rut,
-        record.date
+        record.date,
+        undefined,
+        PATIENT_CLINICAL_AUDIT_DEBOUNCE_MS
       );
     });
 
@@ -157,7 +160,9 @@ describe('useBedManagement patient updates', () => {
           }),
         }),
         patient.rut,
-        record.date
+        record.date,
+        undefined,
+        PATIENT_CLINICAL_AUDIT_DEBOUNCE_MS
       );
     });
 

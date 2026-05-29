@@ -3,6 +3,7 @@ import {
   buildClinicalAuditPresentation,
   type ClinicalAuditChange,
 } from '@/services/admin/clinicalAuditPresentation';
+import { resolveClinicalAuditPackageContext } from '@/services/admin/clinicalAuditPackageContext';
 
 export interface ClinicalAuditExportRow {
   id: string;
@@ -16,6 +17,11 @@ export interface ClinicalAuditExportRow {
   clinicalArea: string;
   impact: string;
   patientIdentifier: string;
+  episodeId?: string;
+  packageKindLabel: string;
+  packageKey: string;
+  packageSubject: string;
+  legalTraceSummary: string;
   relevantChanges: string;
 }
 
@@ -33,6 +39,13 @@ export const formatClinicalAuditChanges = (changes: ClinicalAuditChange[]): stri
 export const buildClinicalAuditExportRows = (logs: AuditLogEntry[]): ClinicalAuditExportRow[] =>
   logs.map(log => {
     const presentation = buildClinicalAuditPresentation(log);
+    const patientIdentifier = log.patientIdentifier || String(log.details?.rut || '-');
+    const packageContext = resolveClinicalAuditPackageContext(
+      log,
+      presentation.affectedSubject,
+      patientIdentifier,
+      presentation.originLabel
+    );
 
     return {
       id: log.id,
@@ -45,7 +58,8 @@ export const buildClinicalAuditExportRows = (logs: AuditLogEntry[]): ClinicalAud
       origin: presentation.originLabel,
       clinicalArea: presentation.clinicalArea,
       impact: presentation.impact,
-      patientIdentifier: log.patientIdentifier || String(log.details?.rut || '-'),
+      patientIdentifier,
+      ...packageContext,
       relevantChanges: formatClinicalAuditChanges(presentation.importantChanges),
     };
   });

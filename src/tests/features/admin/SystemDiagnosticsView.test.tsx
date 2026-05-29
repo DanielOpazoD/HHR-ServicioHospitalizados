@@ -17,11 +17,15 @@ vi.mock('@/features/admin/components/SystemHealthDashboard', () => ({
   SystemHealthDashboard: () => <div>System Health</div>,
 }));
 
+vi.mock('@/features/admin/components/LocalErrorLogsView', () => ({
+  LocalErrorLogsView: () => <div>Local Error Logs View</div>,
+}));
+
 describe('SystemDiagnosticsView (Observabilidad)', () => {
   it('renders the audit tab by default', () => {
     render(<SystemDiagnosticsView />);
     expect(screen.getByText('Audit View')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /errores del cliente/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /errores locales/i })).toBeInTheDocument();
   });
 
   it('switches to the services telemetry tab on click', async () => {
@@ -40,5 +44,14 @@ describe('SystemDiagnosticsView (Observabilidad)', () => {
     await user.click(screen.getByRole('button', { name: /salud de usuarios/i }));
 
     expect(screen.getByText('System Health')).toBeInTheDocument();
+  });
+
+  it('switches to the local technical error logs tab on click', async () => {
+    const user = userEvent.setup();
+    render(<SystemDiagnosticsView />);
+
+    await user.click(screen.getByRole('button', { name: /errores locales/i }));
+
+    expect(screen.getByText('Local Error Logs View')).toBeInTheDocument();
   });
 });

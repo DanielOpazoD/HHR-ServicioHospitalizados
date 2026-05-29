@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Activity, BarChart3, Radar, ShieldCheck } from 'lucide-react';
+import { Activity, AlertTriangle, BarChart3, Radar, ShieldCheck } from 'lucide-react';
 import clsx from 'clsx';
 import { AuditView } from './AuditView';
 import { FunctionsTelemetryView } from './FunctionsTelemetryView';
+import { LocalErrorLogsView } from './LocalErrorLogsView';
 import { SystemHealthDashboard } from './SystemHealthDashboard';
 
-type ObservabilityTab = 'AUDIT' | 'SERVICES' | 'USERS_HEALTH';
+type ObservabilityTab = 'AUDIT' | 'SERVICES' | 'LOCAL_ERRORS' | 'USERS_HEALTH';
 
 // Observability view — unifies what used to be split across:
 //   - "Auditoría" (audit logs)
@@ -23,6 +24,7 @@ export const SystemDiagnosticsView: React.FC = () => {
   }> = [
     { id: 'AUDIT', label: 'Auditoría clínica', icon: ShieldCheck, color: 'text-emerald-400' },
     { id: 'SERVICES', label: 'Servicios externos', icon: Radar, color: 'text-indigo-400' },
+    { id: 'LOCAL_ERRORS', label: 'Errores locales', icon: AlertTriangle, color: 'text-rose-400' },
     { id: 'USERS_HEALTH', label: 'Salud de usuarios', icon: BarChart3, color: 'text-sky-400' },
   ];
 
@@ -62,6 +64,7 @@ export const SystemDiagnosticsView: React.FC = () => {
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
         {activeTab === 'AUDIT' && <AuditView />}
         {activeTab === 'SERVICES' && <FunctionsTelemetryView />}
+        {activeTab === 'LOCAL_ERRORS' && <LocalErrorLogsView />}
         {activeTab === 'USERS_HEALTH' && <SystemHealthDashboard />}
       </div>
     </div>
