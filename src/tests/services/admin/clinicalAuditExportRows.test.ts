@@ -39,6 +39,11 @@ describe('clinicalAuditExportRows', () => {
     expect(row.origin).toBe('IP 190.10.10.10');
     expect(row.affected).toBe('Juan Perez');
     expect(row.patientIdentifier).toBe('12.345.678-9');
+    expect(row.packageKindLabel).toBe('Paquete por paciente');
+    expect(row.packageKey).toBe('patient:123456789');
+    expect(row.legalTraceSummary).toBe(
+      'Paquete por paciente · Juan Perez · RUT/ID 12.345.678-9 · IP 190.10.10.10'
+    );
     expect(row.relevantChanges).toBe('Cama: 4 -> 6');
 
     expect(Object.values(row).join(' ')).not.toContain('PATIENT_MODIFIED');
@@ -47,5 +52,24 @@ describe('clinicalAuditExportRows', () => {
 
   it('formats missing relevant changes as a clinical empty value', () => {
     expect(formatClinicalAuditChanges([])).toBe('Sin cambios detallados');
+  });
+
+  it('adds explicit episode package context when the audit log carries an episode id', () => {
+    const [row] = buildClinicalAuditExportRows([
+      {
+        ...movementLog,
+        details: {
+          ...movementLog.details,
+          clinicalEpisodeId: 'ep_juan_2026_05_28',
+        },
+      },
+    ]);
+
+    expect(row.episodeId).toBe('ep_juan_2026_05_28');
+    expect(row.packageKindLabel).toBe('Paquete por episodio');
+    expect(row.packageKey).toBe('episode:ep_juan_2026_05_28');
+    expect(row.legalTraceSummary).toBe(
+      'Paquete por episodio · Juan Perez · Episodio ep_juan_2026_05_28 · RUT/ID 12.345.678-9 · IP 190.10.10.10'
+    );
   });
 });

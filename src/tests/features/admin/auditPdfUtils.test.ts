@@ -31,6 +31,9 @@ describe('auditPdfUtils', () => {
     });
 
     expect(html).toContain('Reporte de Auditoría Clínica/Legal');
+    expect(html).toContain('Paquete clínico/legal');
+    expect(html).toContain('Resumen legal');
+    expect(html).toContain('Paquete por paciente');
     expect(html).toContain('Paciente trasladado de cama');
     expect(html).toContain('Juan Perez fue trasladado desde cama 4 a cama 6');
     expect(html).toContain('IP 190.10.10.10');

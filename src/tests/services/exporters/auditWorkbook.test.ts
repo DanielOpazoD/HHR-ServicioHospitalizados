@@ -30,10 +30,20 @@ describe('auditWorkbook', () => {
 
     expect(sheet).toBeDefined();
     expect(sheet?.getRow(1).values).toEqual(
-      expect.arrayContaining(['EVENTO CLÍNICO', 'RELATO CLÍNICO', 'AFECTADO', 'ORIGEN/IP'])
+      expect.arrayContaining([
+        'PAQUETE',
+        'EPISODIO',
+        'EVENTO CLÍNICO',
+        'RELATO CLÍNICO',
+        'AFECTADO',
+        'ORIGEN/IP',
+        'RESUMEN LEGAL',
+      ])
     );
 
     const exportedValues = JSON.stringify(sheet?.getRow(2).values);
+    expect(exportedValues).toContain('Paquete por paciente');
+    expect(exportedValues).toContain('RUT/ID 12.345.678-9');
     expect(exportedValues).toContain('Paciente trasladado de cama');
     expect(exportedValues).toContain('Juan Perez fue trasladado desde cama 4 a cama 6');
     expect(exportedValues).toContain('IP 190.10.10.10');

@@ -4,6 +4,10 @@ import {
   buildClinicalAuditExportRows,
   type ClinicalAuditExportRow,
 } from '@/services/admin/clinicalAuditExportRows';
+import {
+  normalizeAuditPackageToken,
+  resolveClinicalAuditEpisodeId,
+} from '@/services/admin/clinicalAuditPackageContext';
 
 export interface ClinicalAuditTimelineEvent extends ClinicalAuditExportRow {
   sourceLogId: string;
@@ -26,36 +30,13 @@ export interface ClinicalAuditTimelineGroup {
   events: ClinicalAuditTimelineEvent[];
 }
 
-const normalizeSubjectKey = (value: string): string =>
-  value
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-
-const asText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
-
-const asRecord = (value: unknown): Record<string, unknown> | undefined =>
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
-
-const resolveEpisodeId = (log: AuditLogEntry): string | undefined => {
-  const details = log.details || {};
-  const direct =
-    asText(details.clinicalEpisodeId) || asText(details.episodeKey) || asText(details.episodeId);
-  if (direct) return direct;
-
-  const patient = asRecord(details.patient);
-  return asText(patient?.clinicalEpisodeId) || asText(patient?.episodeKey) || undefined;
-};
-
 const resolveSubjectKey = (log: AuditLogEntry, row: ClinicalAuditExportRow): string => {
-  const episodeId = resolveEpisodeId(log);
-  if (episodeId) return `episode:${normalizeSubjectKey(episodeId)}`;
-  if (row.patientIdentifier !== '-') return `patient:${normalizeSubjectKey(row.patientIdentifier)}`;
-  if (row.affected) return `subject:${normalizeSubjectKey(row.affected)}`;
-  return `entity:${normalizeSubjectKey(log.entityId || log.entityType)}`;
+  const episodeId = resolveClinicalAuditEpisodeId(log);
+  if (episodeId) return `episode:${normalizeAuditPackageToken(episodeId)}`;
+  if (row.patientIdentifier !== '-')
+    return `patient:${normalizeAuditPackageToken(row.patientIdentifier)}`;
+  if (row.affected) return `subject:${normalizeAuditPackageToken(row.affected)}`;
+  return `entity:${normalizeAuditPackageToken(log.entityId || log.entityType)}`;
 };
 
 const resolveSubjectDetail = (
@@ -104,7 +85,7 @@ export const buildClinicalAuditTimelineGroups = (
   logs.forEach((log, index) => {
     const row = rows[index];
     const subjectKey = resolveSubjectKey(log, row);
-    const episodeId = resolveEpisodeId(log);
+    const episodeId = resolveClinicalAuditEpisodeId(log);
     const sortTime = parseAuditTimestamp(log.timestamp).getTime();
     const event: ClinicalAuditTimelineEvent = {
       ...row,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Activity,
   CalendarClock,
@@ -37,6 +37,12 @@ const timelineDotTone = (event: ClinicalAuditTimelineEvent): string => {
 
 export const AuditTimeline: React.FC<AuditTimelineProps> = ({ logs }) => {
   const timelineGroups = buildClinicalAuditTimelineGroups(logs);
+  const [selectedSubjectKey, setSelectedSubjectKey] = useState<string | null>(null);
+  const selectedGroup = useMemo(
+    () => timelineGroups.find(group => group.subjectKey === selectedSubjectKey),
+    [selectedSubjectKey, timelineGroups]
+  );
+  const visibleGroups = selectedGroup ? [selectedGroup] : timelineGroups.slice(0, 8);
   const totalEvents = timelineGroups.reduce((count, group) => count + group.eventCount, 0);
   const eventsWithOrigin = timelineGroups
     .flatMap(group => group.events)
@@ -89,8 +95,92 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ logs }) => {
         </div>
       )}
 
+      {timelineGroups.length > 1 && (
+        <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-0 border-b border-slate-200">
+          <aside className="border-b xl:border-b-0 xl:border-r border-slate-200 bg-slate-50/60 p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase text-slate-400">
+                  Paquetes clínico-legales
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedSubjectKey(null)}
+                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-100"
+              >
+                Ver todos los paquetes
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {timelineGroups.slice(0, 12).map(group => (
+                <button
+                  key={group.subjectKey}
+                  type="button"
+                  onClick={() => setSelectedSubjectKey(group.subjectKey)}
+                  className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+                    selectedSubjectKey === group.subjectKey
+                      ? 'border-indigo-200 bg-indigo-50 text-indigo-900'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="block truncate text-xs font-bold">{group.subjectLabel}</span>
+                  <span className="mt-1 block truncate text-[11px] text-slate-500">
+                    {group.eventCount} evento{group.eventCount === 1 ? '' : 's'} ·{' '}
+                    {group.latestTimestamp}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </aside>
+
+          <div className="p-5 bg-white">
+            <p className="text-[10px] font-bold uppercase text-slate-400">Paquete seleccionado</p>
+            {selectedGroup ? (
+              <div className="mt-2 grid grid-cols-1 lg:grid-cols-3 gap-3">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                  <p className="text-[10px] font-semibold uppercase text-slate-400">
+                    Detalle del paquete
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">
+                    {selectedGroup.subjectLabel}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{selectedGroup.subjectDetail}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                  <p className="text-[10px] font-semibold uppercase text-slate-400">
+                    Cadena de custodia
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">
+                    {selectedGroup.eventCount} evento{selectedGroup.eventCount === 1 ? '' : 's'} ·{' '}
+                    {selectedGroup.originCoverageLabel}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Áreas: {selectedGroup.clinicalAreas.join(', ') || 'sin área'}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                  <p className="text-[10px] font-semibold uppercase text-slate-400">
+                    Exportable legal
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">
+                    {selectedGroup.packageKindLabel}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{selectedGroup.packageSummary}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-1 text-sm font-medium text-slate-600">
+                Vista general de todos los paquetes visibles.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="divide-y divide-slate-200">
-        {timelineGroups.slice(0, 8).map(group => (
+        {visibleGroups.map(group => (
           <section key={group.subjectKey} className="px-6 py-5">
             <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 mb-5">
               <div className="min-w-0">
