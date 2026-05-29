@@ -1,3 +1,5 @@
+import { resolveClinicalEpisodeIdentifier } from '@/application/patient-flow/clinicalEpisode';
+
 export interface MedicalIndicationsPatientOption {
   bedId: string;
   label: string;
@@ -118,17 +120,19 @@ export const calculateMedicalIndicationsStayDays = (
 export const buildMedicalIndicationsEpisodeId = (
   patient: Pick<
     MedicalIndicationsPatientOption,
-    'rut' | 'admissionDate' | 'admissionTime' | 'clinicalEpisodeId'
+    'patientName' | 'rut' | 'admissionDate' | 'admissionTime' | 'clinicalEpisodeId'
   >
 ): string => {
-  const canonicalEpisodeId = String(patient.clinicalEpisodeId || '').trim();
-  if (canonicalEpisodeId) return canonicalEpisodeId;
-
-  const base = `${sanitizeRutForEpisode(patient.rut) || 'sin-rut'}__${
-    normalizeMedicalIndicationsDateKey(patient.admissionDate) || 'sin-ingreso'
-  }`;
-  const admissionTime = String(patient.admissionTime || '').trim();
-  return admissionTime ? `${base}__${admissionTime}` : base;
+  return resolveClinicalEpisodeIdentifier(
+    {
+      clinicalEpisodeId: patient.clinicalEpisodeId,
+      rut: sanitizeRutForEpisode(patient.rut),
+      patientName: patient.patientName,
+      admissionDate: normalizeMedicalIndicationsDateKey(patient.admissionDate),
+      admissionTime: patient.admissionTime,
+    },
+    { source: 'medical-indications' }
+  );
 };
 
 export const buildMedicalIndicationRecordId = ({
@@ -141,7 +145,7 @@ export const buildMedicalIndicationRecordId = ({
   generatedAt: string;
 }): string => {
   const safeGeneratedAt = generatedAt.replace(/[:.]/g, '-');
-  return `${episodeId}__${normalizeMedicalIndicationsDateKey(targetDate)}__${safeGeneratedAt}`;
+  return [episodeId, normalizeMedicalIndicationsDateKey(targetDate), safeGeneratedAt].join('__');
 };
 
 export const buildMedicalIndicationTemplateId = ({
@@ -161,5 +165,5 @@ export const buildMedicalIndicationTemplateId = ({
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 36);
-  return `${userId}__${now.replace(/[:.]/g, '-')}__${readableText || 'indicacion'}`;
+  return [userId, now.replace(/[:.]/g, '-'), readableText || 'indicacion'].join('__');
 };
