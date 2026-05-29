@@ -53,13 +53,18 @@ export const MedicalIndicationsDialog: React.FC<MedicalIndicationsDialogProps> =
   const editor = useMedicalIndicationsEditor({ isOpen, patients });
   const authContext = useAuth();
   const currentUser = authContext.currentUser ?? authContext.user ?? null;
-  const auditLabel = currentUser?.email || currentUser?.uid || '';
-  const libraryActor = currentUser
-    ? {
-        userId: currentUser.uid,
-        auditLabel,
-      }
-    : null;
+  const currentUserId = currentUser?.uid || '';
+  const auditLabel = currentUser?.email || currentUserId;
+  const libraryActor = React.useMemo(
+    () =>
+      currentUserId
+        ? {
+            userId: currentUserId,
+            auditLabel,
+          }
+        : null,
+    [auditLabel, currentUserId]
+  );
   const library = useMedicalIndicationsLibrary(libraryActor, isOpen);
   const [usedTemplateIds, setUsedTemplateIds] = React.useState<string[]>([]);
   const [printError, setPrintError] = React.useState('');

@@ -1,12 +1,17 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MedicalIndicationsQuickAction } from '@/components/layout/date-strip/MedicalIndicationsQuickAction';
+import { defaultMedicalIndicationTemplatePort } from '@/application/ports/medicalIndicationPort';
 
 vi.mock('@/services/pdf/medicalIndicationsPdfService', () => ({
   printMedicalIndicationsPdf: vi.fn(),
 }));
 
 describe('MedicalIndicationsQuickAction', () => {
+  beforeEach(() => {
+    vi.spyOn(defaultMedicalIndicationTemplatePort, 'listActiveByUser').mockResolvedValue([]);
+  });
+
   const patients = [
     {
       bedId: 'A-01',
@@ -52,5 +57,17 @@ describe('MedicalIndicationsQuickAction', () => {
 
     expect(screen.getByTitle('Editar indicación #1')).toBeInTheDocument();
     expect(screen.getByTitle('Quitar indicación #1')).toBeInTheDocument();
+  });
+
+  it('carga la biblioteca personal una sola vez al abrir el modal', async () => {
+    const listActiveByUserSpy = vi.spyOn(defaultMedicalIndicationTemplatePort, 'listActiveByUser');
+    listActiveByUserSpy.mockClear();
+
+    render(<MedicalIndicationsQuickAction patients={patients} />);
+
+    await openDialog();
+    await new Promise(resolve => setTimeout(resolve, 25));
+
+    expect(listActiveByUserSpy).toHaveBeenCalledTimes(1);
   });
 });
