@@ -1,5 +1,5 @@
 import React from 'react';
-import { MinsalStatistics, SpecialtyStats } from '@/types/minsalTypes';
+import { MinsalStatistics, PatientTraceability, SpecialtyStats } from '@/types/minsalTypes';
 import { DailyRecord } from '@/features/analytics/contracts/analyticsDailyRecordContracts';
 import {
   buildSpecialtyTraceability,
@@ -24,6 +24,17 @@ interface SpecialtyBreakdownTableProps {
   onOpenCensusDate?: (date: string) => void;
 }
 
+const TRACEABILITY_TITLE_BY_TYPE: Record<SpecialtyTraceabilityType, string> = {
+  'dias-cama': 'Días Cama',
+  egresos: 'Egresos',
+  fallecidos: 'Fallecidos',
+  traslados: 'Traslados',
+  cma: 'CMA/PMA',
+  aerocardal: 'Aerocardal',
+  fach: 'FACH',
+  estada: 'Estada de egresos',
+};
+
 export const SpecialtyBreakdownTable: React.FC<SpecialtyBreakdownTableProps> = ({
   data = [],
   records = [],
@@ -33,7 +44,7 @@ export const SpecialtyBreakdownTable: React.FC<SpecialtyBreakdownTableProps> = (
   const [modalConfig, setModalConfig] = React.useState<{
     isOpen: boolean;
     title: string;
-    patients: import('@/types/minsalTypes').PatientTraceability[];
+    patients: PatientTraceability[];
     type: SpecialtyTraceabilityType;
   }>({
     isOpen: false,
@@ -48,39 +59,13 @@ export const SpecialtyBreakdownTable: React.FC<SpecialtyBreakdownTableProps> = (
   const handleOpenTraceability = (
     specialty: string,
     type: SpecialtyTraceabilityType,
-    patients: import('@/types/minsalTypes').PatientTraceability[] = []
+    patients: PatientTraceability[] = []
   ) => {
     const resolvedPatients =
       patients.length > 0 ? patients : buildSpecialtyTraceability(records, specialty, type);
-
-    let titleType = '';
-    switch (type) {
-      case 'dias-cama':
-        titleType = 'Días Cama';
-        break;
-      case 'egresos':
-        titleType = 'Egresos';
-        break;
-      case 'fallecidos':
-        titleType = 'Fallecidos';
-        break;
-      case 'traslados':
-        titleType = 'Traslados';
-        break;
-      case 'aerocardal':
-        titleType = 'Aerocardal';
-        break;
-      case 'fach':
-        titleType = 'FACH';
-        break;
-      case 'estada':
-        titleType = 'Estada de egresos';
-        break;
-    }
-
     setModalConfig({
       isOpen: true,
-      title: `Detalle: ${titleType} - ${specialty}`,
+      title: `Detalle: ${TRACEABILITY_TITLE_BY_TYPE[type]} - ${specialty}`,
       patients: resolvedPatients,
       type,
     });
@@ -387,7 +372,6 @@ export const SpecialtyBreakdownTable: React.FC<SpecialtyBreakdownTableProps> = (
         </table>
       </div>
 
-      {/* Traceability Modal */}
       <TraceabilityModal
         isOpen={modalConfig.isOpen}
         onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
