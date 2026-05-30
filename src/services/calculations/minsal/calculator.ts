@@ -1,8 +1,13 @@
 import { Specialty } from '@/types/domain/patientClassification';
 import { HOSPITAL_CAPACITY } from '@/constants/beds';
 import { EVACUATION_METHOD_AEROCARDAL } from '@/constants/clinicalMovementConstants';
-import { MinsalStatistics, SpecialtyStats, PatientTraceability } from '@/types/minsalTypes';
-import { normalizeSpecialty, isFachEvacuationMethod } from './normalization';
+import {
+  MinsalCalculationOptions,
+  MinsalStatistics,
+  PatientTraceability,
+  SpecialtyStats,
+} from '@/types/minsalTypes';
+import { isFachEvacuationMethod } from './normalization';
 import { countOccupiedBeds, countBlockedBeds, calculateDailySnapshot } from './snapshot';
 import { getPatientsBySpecialty } from './specialty';
 import { calculateDischargeStayDays } from '@/utils/clinicalDayUtils';
@@ -13,15 +18,17 @@ import {
   getActiveDischarges,
   getActiveTransfers,
 } from '@/application/census/movementTombstonePolicy';
+import {
+  buildReportingSpecialtyTraceFields,
+  resolveReportingSpecialty,
+} from './specialtyReporting';
+import { buildCmaStatistics, collectCmaStats, createCmaStatsAccumulator } from './cmaStats';
 
 const resolveTraceabilityDiagnosis = (value: unknown): string | undefined => {
   if (typeof value !== 'string') return undefined;
   const diagnosis = value.trim();
   return diagnosis || undefined;
 };
-
-const resolveMovementSpecialty = (movement: { specialty?: string }): string =>
-  normalizeSpecialty(movement.specialty);
 
 const resolveMovementAdmissionDate = (
   movement: {
@@ -71,7 +78,8 @@ export function filterRecordsByDateRange(
 export function calculateMinsalStats(
   records: MinsalDailyRecord[],
   startDate: string,
-  endDate: string
+  endDate: string,
+  options: MinsalCalculationOptions = {}
 ): MinsalStatistics {
   // Filter records in range
   const filteredRecords = filterRecordsByDateRange(records, startDate, endDate);
@@ -130,6 +138,7 @@ export function calculateMinsalStats(
   });
 
   const specialtyData = new Map<string, SpecialtyBucket>();
+  const cmaAccumulator = createCmaStatsAccumulator();
 
   // Pre-calculate discharge/transfer dates
   const dischargeDates = new Map<string, string>();
@@ -165,12 +174,16 @@ export function calculateMinsalStats(
 
     totalEgresosTraslados += activeTransfers.length;
 
-    const patientsBySpecialty = getPatientsBySpecialty(record.beds);
+    const patientsBySpecialty = getPatientsBySpecialty(record.beds, options);
     patientsBySpecialty.forEach((patients, specialty) => {
       const existing = specialtyData.get(specialty) || createSpecialtyBucket();
       existing.diasOcupados += patients.length;
 
       patients.forEach(p => {
+        const specialtyResolution = resolveReportingSpecialty({
+          specialty: p.specialty,
+          options,
+        });
         existing.diasOcupadosList.push({
           name: p.patientName,
           rut: p.rut,
@@ -179,6 +192,7 @@ export function calculateMinsalStats(
           bedName: p.bedName,
           admissionDate: episodeTracker.resolveAdmissionDate(p, p.admissionDate),
           dischargeDate: dischargeDates.get(p.rut),
+          ...buildReportingSpecialtyTraceFields(specialtyResolution),
         });
       });
       specialtyData.set(specialty, existing);
@@ -186,7 +200,14 @@ export function calculateMinsalStats(
 
     activeDischarges.forEach(d => {
       const discharge = normalizeMovementReportingSnapshot(d);
-      const specialty = resolveMovementSpecialty(discharge);
+      const specialtyResolution = resolveReportingSpecialty({
+        specialty: discharge.specialty,
+        movementKind: 'discharge',
+        movementId: d.id,
+        date: record.date,
+        options,
+      });
+      const specialty = specialtyResolution.reportingSpecialty;
       const existing = specialtyData.get(specialty) || createSpecialtyBucket();
       existing.egresos++;
 
@@ -205,6 +226,10 @@ export function calculateMinsalStats(
         bedName: d.bedName,
         admissionDate: resolvedAdmissionDate,
         dischargeDate: record.date,
+        movementKind: 'discharge' as const,
+        movementId: d.id,
+        eventTime: d.time,
+        ...buildReportingSpecialtyTraceFields(specialtyResolution),
       };
 
       existing.egresosList.push(traceData);
@@ -220,7 +245,14 @@ export function calculateMinsalStats(
 
     activeTransfers.forEach(t => {
       const transfer = normalizeMovementReportingSnapshot(t);
-      const specialty = resolveMovementSpecialty(transfer);
+      const specialtyResolution = resolveReportingSpecialty({
+        specialty: transfer.specialty,
+        movementKind: 'transfer',
+        movementId: t.id,
+        date: record.date,
+        options,
+      });
+      const specialty = specialtyResolution.reportingSpecialty;
       const existing = specialtyData.get(specialty) || createSpecialtyBucket();
       existing.traslados++;
 
@@ -239,6 +271,10 @@ export function calculateMinsalStats(
         bedName: t.bedName,
         admissionDate: resolvedAdmissionDate,
         dischargeDate: record.date,
+        movementKind: 'transfer' as const,
+        movementId: t.id,
+        eventTime: t.time,
+        ...buildReportingSpecialtyTraceFields(specialtyResolution),
       };
 
       existing.egresosList.push(traceData);
@@ -256,6 +292,8 @@ export function calculateMinsalStats(
       }
       specialtyData.set(specialty, existing);
     });
+
+    collectCmaStats(record, options, cmaAccumulator);
 
     closedEpisodes.forEach(episode => episodeTracker.closeEpisode(episode));
   });
@@ -287,6 +325,8 @@ export function calculateMinsalStats(
   );
   const totalStaySummary = buildStaySummary(totalStayDurations);
 
+  const cma = buildCmaStatistics(cmaAccumulator);
+
   const porEspecialidad: SpecialtyStats[] = Array.from(specialtyData.entries())
     .map(([specialty, data]) => {
       const egresosEspecialidad = data.egresos + data.traslados;
@@ -295,7 +335,7 @@ export function calculateMinsalStats(
       return {
         specialty: specialty as Specialty,
         pacientesActuales: latestRecord
-          ? getPatientsBySpecialty(latestRecord.beds).get(specialty)?.length || 0
+          ? getPatientsBySpecialty(latestRecord.beds, options).get(specialty)?.length || 0
           : 0,
         egresos: data.egresos,
         fallecidos: data.fallecidos,
@@ -343,5 +383,6 @@ export function calculateMinsalStats(
     camasLibres: Math.max(0, currentSnapshot.disponibles - currentSnapshot.ocupadas),
     tasaOcupacionActual: currentSnapshot.tasaOcupacion,
     porEspecialidad,
+    cma,
   };
 }

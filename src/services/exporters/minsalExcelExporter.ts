@@ -149,7 +149,44 @@ export async function exportMinsalToExcel(
     { width: 22 },
   ];
 
-  // ===== Sheet 3: Serie Temporal =====
+  // ===== Sheet 3: CMA / Hospitalización Diurna =====
+  const cmaSheet = workbook.addWorksheet('CMA');
+  const cmaHeaders = [
+    'Especialidad',
+    'Total CMA/PMA',
+    'Cirugía Mayor Ambulatoria',
+    'Procedimiento Médico Ambulatorio',
+  ];
+  const cmaHeaderRow = cmaSheet.addRow(cmaHeaders);
+  cmaHeaderRow.eachCell(cell => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF0F766E' },
+    };
+    cell.alignment = { horizontal: 'center' };
+  });
+
+  stats.cma?.porEspecialidad.forEach(row => {
+    cmaSheet.addRow([
+      row.specialty,
+      row.total,
+      row.cirugiaMayorAmbulatoria,
+      row.procedimientoMedicoAmbulatorio,
+    ]);
+  });
+
+  cmaSheet.addRow([
+    'Total',
+    stats.cma?.total ?? 0,
+    stats.cma?.cirugiaMayorAmbulatoria ?? 0,
+    stats.cma?.procedimientoMedicoAmbulatorio ?? 0,
+  ]);
+
+  cmaSheet.columns = [{ width: 22 }, { width: 16 }, { width: 28 }, { width: 34 }];
+
+  // ===== Sheet 4: Serie Temporal =====
   const trendSheet = workbook.addWorksheet('Serie Temporal');
 
   const trendHeaders = [
