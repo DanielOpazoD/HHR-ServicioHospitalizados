@@ -31,8 +31,38 @@ describe('patientMovementMutationController', () => {
 
     expect(updated.discharges[0].status).toBe('Fallecido');
     expect(updated.discharges[0].dischargeType).toBeUndefined();
-    expect(updated.discharges[0].dischargeTypeOther).toBe('Detalle');
+    expect(updated.discharges[0].dischargeTypeOther).toBeUndefined();
     expect(updated.discharges[0].time).toBe('10:00');
+  });
+
+  it('updates discharge diagnosis without losing existing discharge metadata', () => {
+    const record = DataFactory.createMockDailyRecord('2025-01-01', {
+      discharges: [
+        DataFactory.createMockDischarge({
+          id: 'd-1',
+          status: 'Vivo',
+          diagnosis: 'Neumonia',
+          dischargeType: 'Domicilio (Habitual)',
+          time: '08:00',
+          movementDate: '2025-01-01',
+        }),
+      ],
+    });
+
+    const updated = resolveUpdateDischargeMovement({
+      record,
+      id: 'd-1',
+      status: 'Vivo',
+      diagnosis: 'Neumonia resuelta',
+    });
+
+    expect(updated.discharges[0]).toMatchObject({
+      id: 'd-1',
+      diagnosis: 'Neumonia resuelta',
+      dischargeType: 'Domicilio (Habitual)',
+      time: '08:00',
+      movementDate: '2025-01-01',
+    });
   });
 
   it('tombstones discharge by id without removing the persisted movement', () => {
@@ -71,6 +101,33 @@ describe('patientMovementMutationController', () => {
 
     expect(updated.transfers[0].receivingCenter).toBe('Centro B');
     expect(updated.transfers[0].time).toBe('11:00');
+  });
+
+  it('updates transfer diagnosis by id without changing destination fields', () => {
+    const record = DataFactory.createMockDailyRecord('2025-01-01', {
+      transfers: [
+        DataFactory.createMockTransfer({
+          id: 't-1',
+          diagnosis: 'Apendicitis',
+          receivingCenter: 'Centro A',
+          time: '09:00',
+        }),
+      ],
+    });
+
+    const updated = resolveUpdateTransferMovement({
+      record,
+      id: 't-1',
+      updates: {
+        diagnosis: 'Postoperatorio estable',
+      },
+    });
+
+    expect(updated.transfers[0]).toMatchObject({
+      diagnosis: 'Postoperatorio estable',
+      receivingCenter: 'Centro A',
+      time: '09:00',
+    });
   });
 
   it('tombstones transfer by id without removing the persisted movement', () => {

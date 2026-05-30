@@ -4,11 +4,14 @@ export const CRITICAL_ACTIONS: AuditAction[] = [
   'PATIENT_ADMITTED',
   'PATIENT_DISCHARGED',
   'PATIENT_TRANSFERRED',
+  'PATIENT_DISCHARGE_DIAGNOSIS_CHANGED',
+  'PATIENT_BED_CHANGED',
   'DAILY_RECORD_DELETED',
 ];
 
 export const IMPORTANT_ACTIONS: AuditAction[] = [
   'PATIENT_MODIFIED',
+  'PATIENT_DIAGNOSIS_CHANGED',
   'CUDYR_MODIFIED',
   'NURSE_HANDOFF_MODIFIED',
   'MEDICAL_HANDOFF_MODIFIED',
@@ -21,6 +24,9 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   PATIENT_DISCHARGED: 'Alta de Paciente',
   PATIENT_TRANSFERRED: 'Traslado de Paciente',
   PATIENT_MODIFIED: 'Modificación de Datos',
+  PATIENT_BED_CHANGED: 'Cambio de Cama',
+  PATIENT_DIAGNOSIS_CHANGED: 'Cambio de Diagnóstico',
+  PATIENT_DISCHARGE_DIAGNOSIS_CHANGED: 'Cambio de Diagnóstico de Egreso',
   PATIENT_CLEARED: 'Limpieza de Cama',
   DAILY_RECORD_DELETED: 'Eliminación de Registro',
   DAILY_RECORD_CREATED: 'Creación de Registro',
@@ -57,5 +63,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   CONFLICT_AUTO_MERGED: 'Conflicto Auto-Resuelto',
   DATA_ADMISSION_DATES_BACKFILLED: 'Corrección Fechas de Ingreso',
   WOUND_CARE_PHOTO_UPLOADED: 'Foto clínica subida',
+  CLINICAL_DOCUMENT_EXPORTED: 'Documento clínico exportado',
+  CLINICAL_DOCUMENT_PRINTED: 'Documento clínico impreso',
   SYSTEM_ERROR: 'Error del Sistema',
 };

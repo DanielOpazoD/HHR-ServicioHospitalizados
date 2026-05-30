@@ -68,7 +68,7 @@ describe('CmaSectionRow', () => {
     fireEvent.change(screen.getByDisplayValue('11:00'), {
       target: { value: '12:15' },
     });
-    expect(onUpdate).toHaveBeenCalledWith('cma-1', 'dischargeTime', '12:15');
+    expect(onUpdate).toHaveBeenCalledWith('cma-1', { dischargeTime: '12:15' });
   });
 
   it('uses fallback undo title when record has no original bed', () => {

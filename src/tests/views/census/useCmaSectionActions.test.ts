@@ -37,7 +37,7 @@ describe('useCmaSectionActions', () => {
     const { result } = renderActions();
 
     act(() => {
-      result.current.handleUpdate('cma-1', 'dischargeTime', '10:20');
+      result.current.handleUpdate('cma-1', { dischargeTime: '10:20' });
     });
 
     expect(updateCMA).toHaveBeenCalledWith('cma-1', { dischargeTime: '10:20' });

@@ -15,9 +15,14 @@ import { convertCmaToHomeDischargeRecord } from '@/application/census/movementTy
 import { buildCmaEpisodeMovementFields } from '@/application/census/cmaEpisodeMovementFields';
 import { ensurePatientClinicalEpisodeId } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
 import { patientMovementRuntimeLogger } from '@/hooks/controllers/hookControllerLoggers';
+import { usePatientMovementAudit } from '@/hooks/usePatientMovementAudit';
 
 const logCmaPersistenceFailure = (action: string, error: unknown): void => {
   patientMovementRuntimeLogger.warn(`CMA ${action} persistence failed`, error);
+};
+
+const logCmaAuditFailure = (action: string, error: unknown): void => {
+  patientMovementRuntimeLogger.warn(`CMA ${action} audit failed`, error);
 };
 
 /**
@@ -51,6 +56,7 @@ export const useCMA = (
   patchRecord: ApplyDailyRecordPatch
 ) => {
   const recordRef = useRef(record);
+  const { logDischargeDiagnosisChange } = usePatientMovementAudit();
   useEffect(() => {
     recordRef.current = record;
   }, [record]);
@@ -130,15 +136,42 @@ export const useCMA = (
       const normalizedUpdates = normalizePatientData(updates);
 
       const currentList = currentRecord.cma || [];
+      const previous = currentList.find(item => item.id === id);
       void Promise.resolve(
         patchRecord({
           cma: currentList.map(item => (item.id === id ? { ...item, ...normalizedUpdates } : item)),
         })
-      ).catch(error => {
-        logCmaPersistenceFailure('update', error);
-      });
+      )
+        .then(() => {
+          if (
+            previous &&
+            normalizedUpdates.diagnosis !== undefined &&
+            previous.diagnosis !== normalizedUpdates.diagnosis
+          ) {
+            try {
+              logDischargeDiagnosisChange(
+                {
+                  movementId: previous.id,
+                  entityType: 'discharge',
+                  patientName: previous.patientName,
+                  rut: previous.rut,
+                  movementLabel: 'CMA',
+                  previousDiagnosis: previous.diagnosis,
+                  nextDiagnosis: normalizedUpdates.diagnosis,
+                  clinicalEpisodeId: previous.clinicalEpisodeId,
+                },
+                currentRecord.date
+              );
+            } catch (error) {
+              logCmaAuditFailure('diagnosis_change', error);
+            }
+          }
+        })
+        .catch(error => {
+          logCmaPersistenceFailure('update', error);
+        });
     },
-    [patchRecord]
+    [logDischargeDiagnosisChange, patchRecord]
   );
 
   const undoCMA = useCallback(

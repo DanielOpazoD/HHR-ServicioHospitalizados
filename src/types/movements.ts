@@ -22,7 +22,8 @@ export type UpdateDischargeAction = (
   dischargeTypeOther?: string,
   time?: string,
   movementDate?: string,
-  ieehData?: IeehData
+  ieehData?: IeehData,
+  diagnosis?: string
 ) => void;
 
 export type DeleteDischargeAction = (id: string) => void;
@@ -66,6 +67,7 @@ export interface DischargeUpdateCommandPayload {
   typeOther?: string;
   time: string;
   movementDate?: string;
+  diagnosis?: string;
 }
 
 export interface DischargeAddCommandPayload extends DischargeUpdateCommandPayload {
@@ -80,6 +82,7 @@ export interface TransferCommandPayload {
   transferEscort: string;
   time: string;
   movementDate?: string;
+  diagnosis?: string;
 }
 
 export interface MovementDateTimeCommandPayload {
@@ -92,6 +95,9 @@ export interface DischargeModalConfirmPayload extends MovementDateTimeCommandPay
   type?: string;
   typeOther?: string;
   dischargeTarget?: DischargeTarget;
+  diagnosis?: string;
 }
 
-export type TransferModalConfirmPayload = MovementDateTimeCommandPayload;
+export interface TransferModalConfirmPayload extends MovementDateTimeCommandPayload {
+  diagnosis?: string;
+}

@@ -117,6 +117,39 @@ describe('CMASection', () => {
     });
   });
 
+  it('saves CMA edit dialog changes in one atomic update', async () => {
+    vi.mocked(useDailyRecordMovements).mockReturnValue({
+      discharges: [],
+      transfers: [],
+      cma: [
+        {
+          ...cmaItem,
+          diagnosis: 'Diagnóstico original',
+          interventionType: 'Cirugía Mayor Ambulatoria',
+          dischargeTime: '12:00',
+        },
+      ],
+    } as unknown as MovementsValue);
+
+    render(<CMASection />);
+
+    fireEvent.click(screen.getByTitle('Abrir menú de acciones'));
+    fireEvent.click(screen.getByRole('menuitem', { name: /editar datos cma/i }));
+    fireEvent.change(screen.getByLabelText(/Diagnóstico de egreso/i), {
+      target: { value: 'Diagnóstico actualizado CMA' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
+
+    await waitFor(() => {
+      expect(updateCMA).toHaveBeenCalledTimes(1);
+      expect(updateCMA).toHaveBeenCalledWith('cma-1', {
+        interventionType: 'Cirugía Mayor Ambulatoria',
+        dischargeTime: '12:00',
+        diagnosis: 'Diagnóstico actualizado CMA',
+      });
+    });
+  });
+
   it('restores and deletes CMA entry when undo is confirmed', async () => {
     confirm.mockResolvedValue(true);
     vi.mocked(useDailyRecordMovements).mockReturnValue({

@@ -96,7 +96,7 @@ describe('useBedManagement operations', () => {
         })
       );
       expect(mockAuditContextValue.logEvent).toHaveBeenCalledWith(
-        'PATIENT_MODIFIED',
+        'PATIENT_BED_CHANGED',
         'patient',
         'R2',
         expect.objectContaining({

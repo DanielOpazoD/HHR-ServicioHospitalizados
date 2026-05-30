@@ -119,6 +119,7 @@ const classifyImpact = (action: AuditAction): ClinicalAuditImpact => {
   if (action.includes('MODIFIED') || action.includes('UPDATED') || action.includes('RESTORED')) {
     return 'modificacion';
   }
+  if (action.includes('CHANGED')) return 'modificacion';
   return 'registro';
 };
 
