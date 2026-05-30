@@ -96,6 +96,7 @@ describe('medicalIndications use cases', () => {
     const recordPort: MedicalIndicationRecordPort = {
       listByEpisodeAndTargetDate: vi.fn(),
       create: vi.fn().mockResolvedValue(undefined),
+      createWithAuditEvent: vi.fn().mockResolvedValue(undefined),
     };
     const writeAuditEvent = vi
       .fn()
@@ -131,16 +132,20 @@ describe('medicalIndications use cases', () => {
       daysOfStayForTargetDate: '5',
       generatedFromTemplateIds: ['tpl-1'],
     });
-    expect(recordPort.create).toHaveBeenCalledWith(record, undefined);
-    expect(writeAuditEvent).toHaveBeenCalledWith(
+    expect(recordPort.createWithAuditEvent).toHaveBeenCalledWith(
+      record,
       expect.objectContaining({
+        userId: 'doctor@example.com',
         action: 'MEDICAL_INDICATION_RECORD_CREATED',
         entityType: 'medicalIndicationRecord',
         entityId: record.id,
         patientRut: '11.111.111-1',
         recordDate: '2026-05-31',
-      })
+      }),
+      undefined
     );
+    expect(recordPort.create).not.toHaveBeenCalled();
+    expect(writeAuditEvent).not.toHaveBeenCalled();
   });
 
   it('loads the latest shared generated record for the patient episode and target date', async () => {
@@ -171,6 +176,7 @@ describe('medicalIndications use cases', () => {
         },
       ]),
       create: vi.fn(),
+      createWithAuditEvent: vi.fn(),
     };
 
     const record = await executeGetLatestMedicalIndicationRecord(

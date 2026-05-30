@@ -1,4 +1,6 @@
 import { resolveClinicalEpisodeIdentifier } from '@/application/patient-flow/clinicalEpisode';
+import type { AuditAction } from '@/types/auditActionTypes';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 export interface MedicalIndicationsPatientOption {
   bedId: string;
@@ -56,6 +58,17 @@ export interface MedicalIndicationRecord extends MedicalIndicationRecordContent 
   admissionDate: string;
   daysOfStayForTargetDate: string;
   pdfPrintedAt: string | null;
+}
+
+export interface MedicalIndicationRecordAuditEvent {
+  userId: string;
+  action: AuditAction;
+  entityType: AuditLogEntry['entityType'];
+  entityId: string;
+  details: Record<string, unknown>;
+  patientRut?: string;
+  recordDate?: string;
+  authors?: string;
 }
 
 const DATE_KEY_MATCH = /^(\d{4})-(\d{2})-(\d{2})$/;

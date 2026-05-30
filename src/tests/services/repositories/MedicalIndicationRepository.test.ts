@@ -8,6 +8,7 @@ vi.mock('@/services/storage/firestore', () => ({
     getDocs: vi.fn(),
     setDoc: vi.fn(),
     updateDoc: vi.fn(),
+    runBatch: vi.fn(),
   },
 }));
 
@@ -85,6 +86,71 @@ describe('MedicalIndication repositories', () => {
       'hospitals/hhr/medicalIndicationRecords',
       'record-1',
       expect.objectContaining({ episodeId: 'ep_ana', targetDate: '2026-05-31' })
+    );
+  });
+
+  it('stores generated records and audit logs in one Firestore batch', async () => {
+    const batch = { set: vi.fn() };
+    vi.mocked(firestoreDb.runBatch).mockImplementation(async operation => {
+      operation(batch as never);
+    });
+
+    await MedicalIndicationRecordRepository.createWithAuditEvent(
+      {
+        id: 'record-1',
+        patientRut: '11.111.111-1',
+        patientName: 'Ana Test',
+        episodeId: 'ep_ana',
+        bedId: 'R1',
+        targetDate: '2026-05-31',
+        generatedAt: '2026-05-29T10:42:00.000Z',
+        generatedByUserId: 'user_doctor',
+        generatedByName: 'Dra. Test',
+        generatedByRole: 'doctor_specialist',
+        generatedFromTemplateIds: [],
+        admissionDate: '2026-05-27',
+        daysOfStayForTargetDate: '5',
+        treatingDoctor: 'Dra. Rapa Nui',
+        reposo: 'Relativo',
+        regimen: 'Liviano',
+        kineType: 'motora',
+        kineTimes: '2 veces/dia',
+        pendingNotes: '',
+        indications: ['Control'],
+        pdfPrintedAt: null,
+      },
+      {
+        userId: 'doctor@example.com',
+        action: 'MEDICAL_INDICATION_RECORD_CREATED',
+        entityType: 'medicalIndicationRecord',
+        entityId: 'record-1',
+        patientRut: '11.111.111-1',
+        recordDate: '2026-05-31',
+        authors: 'Dra. Test',
+        details: {
+          patientName: 'Ana Test',
+          bedId: 'R1',
+        },
+      },
+      'hhr'
+    );
+
+    expect(firestoreDb.runBatch).toHaveBeenCalledTimes(1);
+    expect(batch.set).toHaveBeenCalledWith(
+      'hospitals/hhr/medicalIndicationRecords',
+      'record-1',
+      expect.objectContaining({ episodeId: 'ep_ana', targetDate: '2026-05-31' })
+    );
+    expect(batch.set).toHaveBeenCalledWith(
+      'hospitals/hhr/auditLogs',
+      expect.stringContaining('audit_medical_indication_record-1'),
+      expect.objectContaining({
+        action: 'MEDICAL_INDICATION_RECORD_CREATED',
+        entityType: 'medicalIndicationRecord',
+        userId: 'doctor@example.com',
+        userUid: 'user_doctor',
+        patientIdentifier: '11.111.***-*',
+      })
     );
   });
 

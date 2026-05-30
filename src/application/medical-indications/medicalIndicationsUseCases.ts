@@ -285,11 +285,9 @@ export const executeCreateMedicalIndicationRecord = async (
   };
 
   const recordPort = dependencies.recordPort || defaultMedicalIndicationRecordPort;
-  await recordPort.create(record, input.hospitalId);
-
-  const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
-  await assertAuditPersisted(
-    writeAuditEvent({
+  await recordPort.createWithAuditEvent(
+    record,
+    {
       userId: input.generatedByAuditLabel,
       action: 'MEDICAL_INDICATION_RECORD_CREATED',
       entityType: 'medicalIndicationRecord',
@@ -309,8 +307,8 @@ export const executeCreateMedicalIndicationRecord = async (
         indicationsCount: record.indications.length,
         generatedFromTemplateIds: record.generatedFromTemplateIds,
       },
-    }),
-    'Se guardó el registro clínico, pero no se pudo registrar la auditoría.'
+    },
+    input.hospitalId
   );
 
   return record;

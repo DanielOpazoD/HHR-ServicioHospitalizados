@@ -18,6 +18,9 @@ describe('MedicalIndicationsQuickAction', () => {
       []
     );
     vi.spyOn(defaultMedicalIndicationRecordPort, 'create').mockResolvedValue(undefined);
+    vi.spyOn(defaultMedicalIndicationRecordPort, 'createWithAuditEvent').mockResolvedValue(
+      undefined
+    );
   });
 
   const patients = [
@@ -183,7 +186,7 @@ describe('MedicalIndicationsQuickAction', () => {
   });
 
   it('guarda indicaciones aplicadas compartidas sin imprimir PDF', async () => {
-    const createRecordSpy = vi.spyOn(defaultMedicalIndicationRecordPort, 'create');
+    const createRecordSpy = vi.spyOn(defaultMedicalIndicationRecordPort, 'createWithAuditEvent');
 
     render(<MedicalIndicationsQuickAction patients={patients} />);
 
@@ -203,9 +206,24 @@ describe('MedicalIndicationsQuickAction', () => {
           episodeId: 'episode-juan-20260331',
           indications: ['Mantener control de signos vitales cada 6 horas'],
         }),
+        expect.objectContaining({
+          action: 'MEDICAL_INDICATION_RECORD_CREATED',
+          entityType: 'medicalIndicationRecord',
+          patientRut: '11.111.111-1',
+        }),
         undefined
       );
     });
     expect(printMedicalIndicationsPdf).not.toHaveBeenCalled();
+  });
+
+  it('explica que la generación se registra al guardar o imprimir', async () => {
+    render(<MedicalIndicationsQuickAction patients={patients} />);
+
+    await openDialog();
+
+    expect(
+      screen.getByText(/La generación quedará registrada al guardar o imprimir/i)
+    ).toBeInTheDocument();
   });
 });

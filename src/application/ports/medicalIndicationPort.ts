@@ -1,5 +1,6 @@
 import type {
   MedicalIndicationRecord,
+  MedicalIndicationRecordAuditEvent,
   MedicalIndicationTemplate,
 } from '@/shared/contracts/medicalIndications';
 import { MedicalIndicationRecordRepository } from '@/services/repositories/MedicalIndicationRecordRepository';
@@ -36,6 +37,11 @@ export interface MedicalIndicationRecordPort {
     hospitalId?: string
   ) => Promise<MedicalIndicationRecord[]>;
   create: (record: MedicalIndicationRecord, hospitalId?: string) => Promise<void>;
+  createWithAuditEvent: (
+    record: MedicalIndicationRecord,
+    auditEvent: MedicalIndicationRecordAuditEvent,
+    hospitalId?: string
+  ) => Promise<void>;
 }
 
 export const defaultMedicalIndicationTemplatePort: MedicalIndicationTemplatePort =

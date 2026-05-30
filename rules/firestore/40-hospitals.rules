@@ -50,7 +50,7 @@
 
       match /medicalIndicationRecords/{recordId} {
         allow read: if canReadClinicalData();
-        allow create: if canWriteMedicalIndicationRecord();
+        allow create: if isValidMedicalIndicationRecordCreate();
         allow update, delete: if false;
       }
 

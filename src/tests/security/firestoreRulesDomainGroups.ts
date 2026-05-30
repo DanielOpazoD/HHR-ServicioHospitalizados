@@ -581,12 +581,48 @@ export function registerFirestoreRulesDomainGroups({
           })
       );
       await assertSucceeds(
-        admin().doc('hospitals/H1/medicalIndicationRecords/record-admin').set(recordPayload)
+        admin()
+          .doc('hospitals/H1/medicalIndicationRecords/record-admin')
+          .set({
+            ...recordPayload,
+            id: 'record-admin',
+            generatedByUserId: 'user_admin',
+            generatedByRole: 'admin',
+          })
+      );
+    });
+
+    it('rejects generated medical indication records with forged author identity or malformed payloads', async () => {
+      await assertFails(
+        doctor()
+          .doc('hospitals/H1/medicalIndicationRecords/record-forged')
+          .set({
+            ...recordPayload,
+            id: 'record-forged',
+            generatedByUserId: 'user_specialist',
+            generatedByName: 'Especialista Falso',
+          })
+      );
+      await assertFails(
+        doctor()
+          .doc('hospitals/H1/medicalIndicationRecords/record-malformed')
+          .set({
+            ...recordPayload,
+            id: 'record-malformed',
+            generatedByUserId: 'user_doctor',
+            generatedAt: NOW_MS,
+            indications: [],
+            extraDebugField: 'no debería persistir',
+          })
       );
     });
 
     it('generated medical indication records are readable but append-only', async () => {
-      await setupDoc(admin(), recordPath, recordPayload);
+      await setupDoc(admin(), recordPath, {
+        ...recordPayload,
+        generatedByUserId: 'user_admin',
+        generatedByRole: 'admin',
+      });
 
       await assertSucceeds(nurse().doc(recordPath).get());
       await assertSucceeds(authed().doc(recordPath).get());

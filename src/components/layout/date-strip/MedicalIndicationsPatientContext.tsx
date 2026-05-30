@@ -62,7 +62,7 @@ export const MedicalIndicationsPatientContext: React.FC<MedicalIndicationsPatien
           Indicaciones para {targetDateLabel || 'fecha no definida'}
         </p>
         <p className="text-[11px] text-slate-400">
-          La fecha de generación quedará registrada al imprimir el PDF.
+          La generación quedará registrada al guardar o imprimir el PDF.
         </p>
       </div>
     </div>
