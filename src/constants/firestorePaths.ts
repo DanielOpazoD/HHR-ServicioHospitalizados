@@ -71,6 +71,8 @@ export const HOSPITAL_COLLECTIONS = {
   MEDICAL_INDICATION_TEMPLATES: 'medicalIndicationTemplates',
   /** Shared generated medical indication records by patient episode and day */
   MEDICAL_INDICATION_RECORDS: 'medicalIndicationRecords',
+  /** Server-owned statistical specialty reclassifications for analytics reporting */
+  ANALYTICS_SPECIALTY_RECLASSIFICATIONS: 'analyticsSpecialtyReclassifications',
 } as const;
 
 // ============================================================================
@@ -158,6 +160,11 @@ export const getMedicalIndicationTemplateItemsPath = (
 
 export const getMedicalIndicationRecordsPath = (hospitalId: string = getActiveHospitalId()) =>
   `${COLLECTIONS.HOSPITALS}/${hospitalId}/${HOSPITAL_COLLECTIONS.MEDICAL_INDICATION_RECORDS}` as const;
+
+export const getAnalyticsSpecialtyReclassificationsPath = (
+  hospitalId: string = getActiveHospitalId()
+) =>
+  `${COLLECTIONS.HOSPITALS}/${hospitalId}/${HOSPITAL_COLLECTIONS.ANALYTICS_SPECIALTY_RECLASSIFICATIONS}` as const;
 
 // ============================================================================
 // Type Exports

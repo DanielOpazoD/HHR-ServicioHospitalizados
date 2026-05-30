@@ -19,7 +19,8 @@ export interface AuditLogEntry {
     | 'clinicalDocument'
     | 'prescription'
     | 'medicalIndicationRecord'
-    | 'medicalIndicationTemplate';
+    | 'medicalIndicationTemplate'
+    | 'statistics';
   entityId: string;
   summary?: string;
   details: AuditDetails;

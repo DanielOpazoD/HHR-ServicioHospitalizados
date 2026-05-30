@@ -4,8 +4,8 @@ import { BEDS } from '@/constants/beds';
 import type { ShiftType } from '@/types/domain/shift';
 import type { HandoffPdfPatientTableRecord } from '@/services/pdf/contracts/handoffPdfContracts';
 import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
+import { calculateOperationalHospitalizedDays } from '@/utils/clinicalDayUtils';
 
-import { calculateHospitalizedDays } from './handoffPdfUtils';
 import type { CellHookData, AutoTableFunction, JsPDFWithAutoTable } from './handoffPdfTypes';
 import type { HandoffPdfTableRow } from './handoffPdfSectionTypes';
 import {
@@ -30,8 +30,8 @@ export const buildPatientTableBody = (
     if (!patient || !patient.patientName) return;
 
     const admission = patient.admissionDate ? formatDateDDMMYYYY(patient.admissionDate) : '';
-    const daysHosp = calculateHospitalizedDays(patient.admissionDate, record.date);
-    const daysStr = daysHosp ? `${daysHosp}d` : '';
+    const daysHosp = calculateOperationalHospitalizedDays(patient.admissionDate, record.date);
+    const daysStr = daysHosp !== null ? `${daysHosp}d` : '';
 
     const row: HandoffPdfTableRow = [
       { content: bedDef.name, styles: { halign: 'center', fontStyle: 'bold', valign: 'top' } },

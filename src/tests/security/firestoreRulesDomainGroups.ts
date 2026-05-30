@@ -17,6 +17,7 @@ export function registerFirestoreRulesDomainGroups({
   NOW_MS,
   CURRENT_RECORD_DATE,
   setupDoc,
+  setupDocBypass,
 }: FirestoreRulesHarness): void {
   describe('Clinical Documents Collection', () => {
     const clinicalDocumentPath = 'hospitals/H1/clinicalDocuments/doc-1';
@@ -631,6 +632,38 @@ export function registerFirestoreRulesDomainGroups({
       );
       await assertFails(doctor().doc(recordPath).update({ pendingNotes: 'Cambio posterior' }));
       await assertFails(admin().doc(recordPath).delete());
+    });
+  });
+
+  describe('Analytics Specialty Reclassifications', () => {
+    const reclassificationPath =
+      'hospitals/H1/analyticsSpecialtyReclassifications/2026-03-05_discharge_d-1';
+    const reclassificationPayload = {
+      date: CURRENT_RECORD_DATE,
+      movementKind: 'discharge',
+      movementId: 'd-1',
+      originalSpecialty: 'Oftalmología',
+      reportingSpecialty: 'Cirugía',
+      active: true,
+      updatedAt: new Date(NOW_MS).toISOString(),
+      updatedByUid: 'user_admin',
+      updatedByEmail: 'admin@example.com',
+    };
+
+    it('clinical users can read official statistical specialty reclassifications', async () => {
+      await setupDocBypass(reclassificationPath, reclassificationPayload);
+
+      await assertSucceeds(nurse().doc(reclassificationPath).get());
+      await assertSucceeds(specialist().doc(reclassificationPath).get());
+    });
+
+    it('clients cannot write statistical specialty reclassifications directly', async () => {
+      await assertFails(admin().doc(reclassificationPath).set(reclassificationPayload));
+      await assertFails(nurse().doc(reclassificationPath).set(reclassificationPayload));
+
+      await setupDocBypass(reclassificationPath, reclassificationPayload);
+      await assertFails(admin().doc(reclassificationPath).update({ reportingSpecialty: 'Otro' }));
+      await assertFails(admin().doc(reclassificationPath).delete());
     });
   });
 }

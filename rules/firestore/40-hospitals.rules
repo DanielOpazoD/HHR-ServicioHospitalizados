@@ -54,6 +54,15 @@
         allow update, delete: if false;
       }
 
+      // Server-owned statistical reporting layer. Clients can inspect the
+      // official reclassification applied to analytics, but writes must go
+      // through setMinsalSpecialtyReclassification so admin role, IP and audit
+      // metadata are captured consistently.
+      match /analyticsSpecialtyReclassifications/{reclassificationId} {
+        allow read: if canReadClinicalData();
+        allow create, update, delete: if false;
+      }
+
       match /settings/{settingId} {
         allow read: if canReadClinicalData();
         allow write: if settingId == 'aiProviderRouting' ? isAdmin() : canEdit();

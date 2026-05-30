@@ -730,6 +730,10 @@ service cloud.firestore {
         allow create: if isValidMedicalIndicationRecordCreate();
         allow update, delete: if false;
       }
+      match /analyticsSpecialtyReclassifications/{reclassificationId} {
+        allow read: if canReadClinicalData();
+        allow create, update, delete: if false;
+      }
       match /settings/{settingId} {
         allow read: if canReadClinicalData();
         allow write: if settingId == 'aiProviderRouting' ? isAdmin() : canEdit();

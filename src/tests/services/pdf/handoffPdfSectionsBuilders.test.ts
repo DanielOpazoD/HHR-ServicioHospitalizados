@@ -96,7 +96,26 @@ describe('handoffPdf section builders', () => {
     expect(rows[0][1]).toMatchObject({ content: expect.stringContaining('Juan Perez') });
     expect(rows[0][4]).toBe('VVP (3d)');
     expect(rows[0][5]).toBe('Observacion dia');
-    expect(rows[0]._daysStr).toBe('6d');
+    expect(rows[0]._daysStr).toBe('5d');
+  });
+
+  it('mantiene 0d en pacientes ingresados el mismo dia para coincidir con censo', () => {
+    const rows = buildPatientTableBody(
+      {
+        ...baseRecord,
+        beds: {
+          ...baseRecord.beds,
+          H1C1: {
+            ...baseRecord.beds.H1C1,
+            admissionDate: baseRecord.date,
+          },
+        },
+      },
+      false,
+      'day'
+    );
+
+    expect(rows[0]._daysStr).toBe('0d');
   });
 
   it('resuelve estilos por estado clinico', () => {
