@@ -28,6 +28,9 @@ const buildMedicalIndicationsPatientOption = ({
     birthDate: data.birthDate || '',
     allergies: '',
     admissionDate: data.admissionDate || '',
+    admissionTime: data.admissionTime,
+    clinicalEpisodeId: data.clinicalEpisodeId,
+    sourceDailyRecordDate: currentDateString,
     daysOfStay: String(daysHospitalized ?? ''),
     treatingDoctor: '',
   };

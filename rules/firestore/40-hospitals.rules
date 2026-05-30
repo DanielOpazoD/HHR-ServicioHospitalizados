@@ -38,6 +38,22 @@
         allow write: if isAdmin();
       }
 
+      match /medicalIndicationTemplates/{userId} {
+        allow read, write: if isCurrentUser(userId);
+
+        match /items/{templateId} {
+          allow read: if isCurrentUser(userId);
+          allow create, update, delete: if isCurrentUser(userId) &&
+            request.resource.data.userId == userId;
+        }
+      }
+
+      match /medicalIndicationRecords/{recordId} {
+        allow read: if canReadClinicalData();
+        allow create: if isValidMedicalIndicationRecordCreate();
+        allow update, delete: if false;
+      }
+
       match /settings/{settingId} {
         allow read: if canReadClinicalData();
         allow write: if settingId == 'aiProviderRouting' ? isAdmin() : canEdit();

@@ -27,6 +27,7 @@ export interface MedicalIndicationsPdfData {
   medicotratante: string;
   fecha_ingreso: string;
   fecha_actual: string;
+  fecha_generacion?: string;
   diasEstada: string;
   Reposoindicacion: string;
   Regimenindicacion: string;
@@ -152,6 +153,16 @@ export const fillMedicalIndicationsPdf = async (
   drawFieldText(page, font, 'Kinerespiratoria', data.Kinerespiratoria);
   drawFieldText(page, font, 'Kinecantidadvecesdia', data.Kinecantidadvecesdia);
   drawFieldText(page, font, 'Pendientes', data.Pendientes);
+
+  if (data.fecha_generacion?.trim()) {
+    page.drawText(`Generado el ${data.fecha_generacion.trim()}`, {
+      x: 305,
+      y: 399,
+      size: 8,
+      font,
+      maxWidth: 210,
+    });
+  }
 
   drawIndications(page, font, data.indicaciones);
 

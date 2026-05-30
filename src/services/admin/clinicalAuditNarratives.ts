@@ -1,4 +1,5 @@
 import type { AuditLogEntry } from '@/types/auditLogTypes';
+import { buildMedicalIndicationAuditNarrative } from '@/services/admin/medicalIndicationAuditNarratives';
 
 const UNKNOWN_PATIENT = 'Paciente no identificado';
 
@@ -338,6 +339,16 @@ export const buildKnownClinicalAuditNarrative = (
       narrative: `Se eliminó una receta por política de retención histórica en ${getRecordLabel(log)}.`,
       affectedSubject: getEntityLabel(log, details),
     };
+  }
+
+  const medicalIndicationNarrative = buildMedicalIndicationAuditNarrative({
+    log,
+    details,
+    entityLabel: getEntityLabel(log, details),
+    recordLabel: getRecordLabel(log),
+  });
+  if (medicalIndicationNarrative) {
+    return medicalIndicationNarrative;
   }
 
   if (log.action === 'WOUND_CARE_PHOTO_UPLOADED') {
