@@ -158,6 +158,7 @@
     "report:maintenance-debt-scorecard": "node scripts/report-maintenance-debt-scorecard.mjs",
     "report:schema-evolution": "node scripts/report-schema-evolution.mjs",
     "report:governance-snapshots": "node scripts/run-governance-snapshots.mjs",
+    "postmerge:evidence": "node scripts/run-postmerge-evidence.mjs",
     "check:quality": "node scripts/check-quality-aggregate.mjs",
     "test:unit:critical": "npm run test:risk:auth && npm run test:risk:admin-health && npm run test:risk:platform",
     "test:serverless-deploy-smoke": "npm run test:netlify-function-dev-smoke && npm run check:serverless-runtime-governance && npm run check:netlify-functions-bundle && npm run build",
