@@ -17,6 +17,10 @@ service firebase.storage {
       return isAuthenticated() && normalizedRole() in roles;
     }
 
+    function isCurrentUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
     function hasClinicalReadRole() {
       // Storage covers exports, templates, backups and reminder assets.
       // `doctor_specialist` keeps access to clinical data via Firestore rules,

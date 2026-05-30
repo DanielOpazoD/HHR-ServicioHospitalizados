@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { LogOut } from 'lucide-react';
+import { Camera, LogOut } from 'lucide-react';
 import { UserRole } from '@/hooks/useAuthState';
 import type { AuthContextType } from '@/context/AuthContext';
 import { getRoleDisplayLabel } from '@/shared/access/operationalAccessPolicy';
@@ -15,6 +15,8 @@ interface UserMenuProps {
   role: UserRole;
   isFirebaseConnected?: boolean;
   remoteSyncStatus?: AuthContextType['remoteSyncStatus'];
+  avatarUrl?: string | null;
+  onOpenAvatarSettings?: () => void;
   onLogout: () => void;
 }
 
@@ -23,6 +25,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   role,
   isFirebaseConnected = false,
   remoteSyncStatus,
+  avatarUrl,
+  onOpenAvatarSettings,
   onLogout,
 }) => {
   const { isOpen, menuRef, toggle, close } = useDropdownMenu();
@@ -46,7 +50,15 @@ export const UserMenu: React.FC<UserMenuProps> = ({
         aria-label={`Usuario ${userEmail}. Rol ${roleLabel}. Firebase ${connectionLabel}`}
         data-testid="authenticated-user-menu-button"
       >
-        {userEmail.charAt(0)}
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={`Foto de perfil de ${userEmail}`}
+            className="h-full w-full rounded-full object-cover"
+          />
+        ) : (
+          userEmail.charAt(0)
+        )}
         <span
           className={`absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border border-[#0a1628] ${isRemoteReady ? 'bg-emerald-400' : 'bg-rose-400'}`}
           aria-hidden="true"
@@ -54,7 +66,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200/80 ring-1 ring-black/[0.04] z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-52 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200/80 ring-1 ring-black/[0.04] z-50 overflow-hidden">
           <div className="px-3 py-2.5 border-b border-slate-100">
             <p className="text-[10px] font-medium text-slate-400 truncate">{userEmail}</p>
             <div className="mt-1 flex items-center gap-2">
@@ -68,6 +80,19 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             </div>
           </div>
           <div className="p-1">
+            {onOpenAvatarSettings && (
+              <button
+                onClick={() => {
+                  onOpenAvatarSettings();
+                  close();
+                }}
+                className="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                aria-label="Cambiar foto de perfil"
+              >
+                <Camera size={12} />
+                Cambiar foto
+              </button>
+            )}
             <button
               onClick={() => {
                 onLogout();

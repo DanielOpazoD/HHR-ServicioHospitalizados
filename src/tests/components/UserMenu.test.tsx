@@ -13,6 +13,7 @@ describe('UserMenu', () => {
     role: 'editor' as const,
     isFirebaseConnected: true,
     onLogout: vi.fn(),
+    onOpenAvatarSettings: vi.fn(),
   };
 
   beforeEach(() => {
@@ -85,6 +86,26 @@ describe('UserMenu', () => {
 
     const button = screen.getByRole('button');
     expect(button.textContent).toBe('A');
+  });
+
+  it('shows the saved avatar image instead of the user initial', () => {
+    render(<UserMenu {...defaultProps} avatarUrl="https://storage.test/avatar.png" />);
+
+    expect(screen.getByAltText('Foto de perfil de doctor@hospital.cl')).toHaveAttribute(
+      'src',
+      'https://storage.test/avatar.png'
+    );
+    expect(screen.getByRole('button').textContent).not.toContain('d');
+  });
+
+  it('opens avatar settings from the user dropdown', () => {
+    render(<UserMenu {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar foto de perfil' }));
+
+    expect(defaultProps.onOpenAvatarSettings).toHaveBeenCalled();
+    expect(screen.queryByText('doctor@hospital.cl')).not.toBeInTheDocument();
   });
 
   it('shows offline state in dropdown when not connected', () => {
