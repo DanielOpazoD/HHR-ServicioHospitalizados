@@ -31,11 +31,13 @@ describe('usePatientTransfers', () => {
   let mockRecord: DailyRecord;
   let mockSaveAndUpdate: PersistDailyRecord;
   let mockPatchRecord: ApplyDailyRecordPatch;
+  const mockLogEvent = vi.fn();
   const mockLogPatientTransfer = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useAuditContext).mockReturnValue({
+      logEvent: mockLogEvent,
       logPatientTransfer: mockLogPatientTransfer,
     } as unknown as ReturnType<typeof useAuditContext>);
     mockSaveAndUpdate = vi.fn().mockResolvedValue(undefined) as PersistDailyRecord;
@@ -175,6 +177,65 @@ describe('usePatientTransfers', () => {
           }),
         ],
       })
+    );
+    expect(mockSaveAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('persists transfer diagnosis updates and logs the clinical diagnosis change', async () => {
+    const recordWithTransfer = {
+      ...mockRecord,
+      transfers: [
+        {
+          id: 'transfer-1',
+          patientName: 'Test Patient',
+          rut: '12345678-9',
+          diagnosis: 'Diagnóstico previo',
+          time: '',
+          clinicalEpisodeId: 'episode-1',
+        },
+      ],
+    } as unknown as DailyRecord;
+
+    const { result } = renderHook(() =>
+      usePatientTransfers(recordWithTransfer, mockSaveAndUpdate, undefined, mockPatchRecord)
+    );
+
+    act(() => {
+      result.current.updateTransfer('transfer-1', {
+        diagnosis: 'Diagnóstico actualizado',
+        time: '10:00',
+      });
+    });
+
+    expect(mockPatchRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transfers: [
+          expect.objectContaining({
+            id: 'transfer-1',
+            diagnosis: 'Diagnóstico actualizado',
+            time: '10:00',
+          }),
+        ],
+      })
+    );
+    await waitFor(() => expect(mockLogEvent).toHaveBeenCalledTimes(1));
+    expect(mockLogEvent).toHaveBeenCalledWith(
+      'PATIENT_DISCHARGE_DIAGNOSIS_CHANGED',
+      'transfer',
+      'transfer-1',
+      expect.objectContaining({
+        clinicalEvent: 'Actualización de diagnóstico de egreso',
+        movementLabel: 'Traslado',
+        clinicalEpisodeId: 'episode-1',
+        changes: {
+          diagnosis: {
+            old: 'Diagnóstico previo',
+            new: 'Diagnóstico actualizado',
+          },
+        },
+      }),
+      '12345678-9',
+      '2024-12-28'
     );
     expect(mockSaveAndUpdate).not.toHaveBeenCalled();
   });

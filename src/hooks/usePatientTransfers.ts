@@ -38,6 +38,10 @@ const logTransferPersistenceFailure = (action: string, error: unknown): void => 
   patientMovementRuntimeLogger.warn(`Transfer ${action} persistence failed`, error);
 };
 
+const logTransferAuditFailure = (action: string, error: unknown): void => {
+  patientMovementRuntimeLogger.warn(`Transfer ${action} audit failed`, error);
+};
+
 export const usePatientTransfers = (
   record: DailyRecord | null,
   saveAndUpdate: PersistDailyRecord,
@@ -46,7 +50,7 @@ export const usePatientTransfers = (
 ): TransferMovementActions => {
   const recordRef = useLatestRef(record);
   const { notifyCreationError, notifyUndoError } = usePatientMovementFeedback(runtime);
-  const { logTransferEntry } = usePatientMovementAudit();
+  const { logDischargeDiagnosisChange, logTransferEntry } = usePatientMovementAudit();
   const executeMovementCreation = usePatientMovementCreationExecutor({
     saveAndUpdate,
     patchRecord,
@@ -108,19 +112,48 @@ export const usePatientTransfers = (
 
   const updateTransfer: UpdateTransferAction = useCallback(
     (id, updates) => {
-      void executeTransferMutation(
-        (record, movementId) =>
-          resolveUpdateTransferMovement({
-            record,
-            id: movementId,
-            updates,
-          }),
-        id
-      ).catch(error => {
-        logTransferPersistenceFailure('update', error);
+      withCurrentRecord(currentRecord => {
+        const previous = currentRecord.transfers.find(transfer => transfer.id === id);
+        void executeTransferMutation(
+          (record, movementId) =>
+            resolveUpdateTransferMovement({
+              record,
+              id: movementId,
+              updates,
+            }),
+          id
+        )
+          .then(() => {
+            if (
+              previous &&
+              updates.diagnosis !== undefined &&
+              previous.diagnosis !== updates.diagnosis
+            ) {
+              try {
+                logDischargeDiagnosisChange(
+                  {
+                    movementId: previous.id,
+                    entityType: 'transfer',
+                    patientName: previous.patientName,
+                    rut: previous.rut,
+                    movementLabel: 'Traslado',
+                    previousDiagnosis: previous.diagnosis,
+                    nextDiagnosis: updates.diagnosis,
+                    clinicalEpisodeId: previous.clinicalEpisodeId,
+                  },
+                  currentRecord.date
+                );
+              } catch (error) {
+                logTransferAuditFailure('diagnosis_change', error);
+              }
+            }
+          })
+          .catch(error => {
+            logTransferPersistenceFailure('update', error);
+          });
       });
     },
-    [executeTransferMutation]
+    [executeTransferMutation, logDischargeDiagnosisChange, withCurrentRecord]
   );
 
   const deleteTransfer: DeleteTransferAction = useCallback(

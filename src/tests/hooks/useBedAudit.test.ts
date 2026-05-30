@@ -168,7 +168,7 @@ describe('useBedAudit', () => {
     );
   });
 
-  it('should log diagnosis changes with a short clinical debounce', () => {
+  it('should log diagnosis changes with an explicit clinical action', () => {
     const { result } = renderHook(() => useBedAudit(mockRecord));
     const oldPatient = buildPatient({
       patientName: 'John',
@@ -179,13 +179,14 @@ describe('useBedAudit', () => {
     result.current.auditPatientChange('B1', 'pathology', oldPatient, 'Diagnostico actualizado');
 
     expect(mockLogDebouncedEvent).toHaveBeenCalledWith(
-      'PATIENT_MODIFIED',
+      'PATIENT_DIAGNOSIS_CHANGED',
       'patient',
       'B1',
       expect.objectContaining({
         patientName: 'John',
+        bedId: 'B1',
         changes: {
-          pathology: {
+          diagnosis: {
             old: 'Diagnostico previo',
             new: 'Diagnostico actualizado',
           },

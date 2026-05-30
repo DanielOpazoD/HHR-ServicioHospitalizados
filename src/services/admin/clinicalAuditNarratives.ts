@@ -1,12 +1,12 @@
 import type { AuditLogEntry } from '@/types/auditLogTypes';
+import { buildClinicalDocumentAuditNarrative } from '@/services/admin/clinicalAuditDocumentNarratives';
 import { buildMedicalIndicationAuditNarrative } from '@/services/admin/medicalIndicationAuditNarratives';
-
-const UNKNOWN_PATIENT = 'Paciente no identificado';
+import { buildPatientDiagnosisAuditNarrative } from '@/services/admin/clinicalAuditPatientNarratives';
 
 const asText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
 
 const getPatientName = (details: Record<string, unknown>): string =>
-  asText(details.patientName) || UNKNOWN_PATIENT;
+  asText(details.patientName) || 'Paciente no identificado';
 
 const getActorLabel = (log: AuditLogEntry): string =>
   asText(log.userDisplayName) ||
@@ -38,7 +38,10 @@ export const buildKnownClinicalAuditNarrative = (
   const entityId = asText(log.entityId);
   const bedId = asText(details.bedId) || entityId;
 
-  if (log.action === 'PATIENT_MODIFIED' && details.movementKind === 'move') {
+  if (
+    (log.action === 'PATIENT_MODIFIED' || log.action === 'PATIENT_BED_CHANGED') &&
+    details.movementKind === 'move'
+  ) {
     return {
       title: 'Paciente trasladado de cama',
       narrative: `${patientName} fue trasladado desde ${getBedLabel(details.sourceBed)} a ${getBedLabel(details.targetBed)}.`,
@@ -69,6 +72,9 @@ export const buildKnownClinicalAuditNarrative = (
       affectedSubject: patientName,
     };
   }
+
+  const patientDiagnosisNarrative = buildPatientDiagnosisAuditNarrative(log, details);
+  if (patientDiagnosisNarrative) return patientDiagnosisNarrative;
 
   if (log.action === 'PATIENT_DISCHARGED') {
     return {
@@ -293,37 +299,11 @@ export const buildKnownClinicalAuditNarrative = (
     };
   }
 
-  if (log.action === 'CLINICAL_DOCUMENT_CREATED') {
-    return {
-      title: 'Documento clínico creado',
-      narrative: `Se creó un documento clínico asociado a ${getEntityLabel(log, details)}.`,
-      affectedSubject: getEntityLabel(log, details),
-    };
-  }
-
-  if (log.action === 'CLINICAL_DOCUMENT_EDITED') {
-    return {
-      title: 'Documento clínico editado',
-      narrative: `Se editó un documento clínico asociado a ${getEntityLabel(log, details)}.`,
-      affectedSubject: getEntityLabel(log, details),
-    };
-  }
-
-  if (log.action === 'CLINICAL_DOCUMENT_DELETED') {
-    return {
-      title: 'Documento clínico eliminado',
-      narrative: `Se eliminó un documento clínico asociado a ${getEntityLabel(log, details)}.`,
-      affectedSubject: getEntityLabel(log, details),
-    };
-  }
-
-  if (log.action === 'CLINICAL_DOCUMENT_LOCKED') {
-    return {
-      title: 'Documento clínico bloqueado',
-      narrative: `Se bloqueó un documento clínico asociado a ${getEntityLabel(log, details)}.`,
-      affectedSubject: getEntityLabel(log, details),
-    };
-  }
+  const clinicalDocumentNarrative = buildClinicalDocumentAuditNarrative({
+    log,
+    entityLabel: getEntityLabel(log, details),
+  });
+  if (clinicalDocumentNarrative) return clinicalDocumentNarrative;
 
   if (log.action === 'PRESCRIPTION_MANUAL_DELETED') {
     return {

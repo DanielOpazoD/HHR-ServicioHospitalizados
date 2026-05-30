@@ -42,6 +42,10 @@ const logDischargePersistenceFailure = (action: string, error: unknown): void =>
   patientMovementRuntimeLogger.warn(`Discharge ${action} persistence failed`, error);
 };
 
+const logDischargeAuditFailure = (action: string, error: unknown): void => {
+  patientMovementRuntimeLogger.warn(`Discharge ${action} audit failed`, error);
+};
+
 export const usePatientDischarges = (
   record: DailyRecord | null,
   saveAndUpdate: PersistDailyRecord,
@@ -50,7 +54,8 @@ export const usePatientDischarges = (
 ): DischargeMovementActions => {
   const recordRef = useLatestRef(record);
   const { notifyCreationError, notifyUndoError } = usePatientMovementFeedback(runtime);
-  const { logDischargeEntries, logDischargeUndoEntry } = usePatientMovementAudit();
+  const { logDischargeEntries, logDischargeDiagnosisChange, logDischargeUndoEntry } =
+    usePatientMovementAudit();
   const executeMovementCreation = usePatientMovementCreationExecutor({
     saveAndUpdate,
     patchRecord,
@@ -121,25 +126,51 @@ export const usePatientDischarges = (
   );
 
   const updateDischarge: UpdateDischargeAction = useCallback(
-    (id, status, dischargeType, dischargeTypeOther, time, movementDate, ieehData) => {
-      void executeDischargeMutation(
-        (record, movementId) =>
-          resolveUpdateDischargeMovement({
-            record,
-            id: movementId,
-            status,
-            dischargeType,
-            dischargeTypeOther,
-            time,
-            movementDate,
-            ieehData,
-          }),
-        id
-      ).catch(error => {
-        logDischargePersistenceFailure('update', error);
+    (id, status, dischargeType, dischargeTypeOther, time, movementDate, ieehData, diagnosis) => {
+      withCurrentRecord(currentRecord => {
+        const previous = currentRecord.discharges.find(discharge => discharge.id === id);
+        void executeDischargeMutation(
+          (record, movementId) =>
+            resolveUpdateDischargeMovement({
+              record,
+              id: movementId,
+              status,
+              dischargeType,
+              dischargeTypeOther,
+              time,
+              movementDate,
+              ieehData,
+              diagnosis,
+            }),
+          id
+        )
+          .then(() => {
+            if (previous && diagnosis !== undefined && previous.diagnosis !== diagnosis) {
+              try {
+                logDischargeDiagnosisChange(
+                  {
+                    movementId: previous.id,
+                    entityType: 'discharge',
+                    patientName: previous.patientName,
+                    rut: previous.rut,
+                    movementLabel: 'Alta',
+                    previousDiagnosis: previous.diagnosis,
+                    nextDiagnosis: diagnosis,
+                    clinicalEpisodeId: previous.clinicalEpisodeId,
+                  },
+                  currentRecord.date
+                );
+              } catch (error) {
+                logDischargeAuditFailure('diagnosis_change', error);
+              }
+            }
+          })
+          .catch(error => {
+            logDischargePersistenceFailure('update', error);
+          });
       });
     },
-    [executeDischargeMutation]
+    [executeDischargeMutation, logDischargeDiagnosisChange, withCurrentRecord]
   );
 
   const deleteDischarge: DeleteDischargeAction = useCallback(

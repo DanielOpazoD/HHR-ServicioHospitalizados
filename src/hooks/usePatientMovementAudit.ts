@@ -1,6 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { useAuditContext } from '@/context/AuditContext';
-import { buildDischargeUndoAuditDetails } from '@/services/admin/auditClinicalEventCatalog';
+import {
+  buildDischargeDiagnosisChangeAuditDetails,
+  buildDischargeUndoAuditDetails,
+} from '@/services/admin/auditClinicalEventCatalog';
 import { isFeatureEnabled } from '@/services/utils/featureFlags';
 
 interface DischargeAuditEntry {
@@ -15,6 +18,17 @@ interface TransferAuditEntry {
   patientName: string;
   rut: string;
   receivingCenter: string;
+}
+
+interface DischargeDiagnosisAuditEntry {
+  movementId: string;
+  entityType: 'discharge' | 'transfer';
+  patientName: string;
+  rut?: string;
+  movementLabel: string;
+  previousDiagnosis?: string;
+  nextDiagnosis?: string;
+  clinicalEpisodeId?: string;
 }
 
 export const usePatientMovementAudit = () => {
@@ -80,12 +94,34 @@ export const usePatientMovementAudit = () => {
     [logEvent]
   );
 
+  const logDischargeDiagnosisChange = useCallback(
+    (entry: DischargeDiagnosisAuditEntry, recordDate: string) => {
+      logEvent(
+        'PATIENT_DISCHARGE_DIAGNOSIS_CHANGED',
+        entry.entityType,
+        entry.movementId,
+        buildDischargeDiagnosisChangeAuditDetails({
+          patientName: entry.patientName,
+          movementId: entry.movementId,
+          movementLabel: entry.movementLabel,
+          previousDiagnosis: entry.previousDiagnosis,
+          nextDiagnosis: entry.nextDiagnosis,
+          clinicalEpisodeId: entry.clinicalEpisodeId,
+        }),
+        entry.rut,
+        recordDate
+      );
+    },
+    [logEvent]
+  );
+
   return useMemo(
     () => ({
       logDischargeEntries,
+      logDischargeDiagnosisChange,
       logDischargeUndoEntry,
       logTransferEntry,
     }),
-    [logDischargeEntries, logDischargeUndoEntry, logTransferEntry]
+    [logDischargeEntries, logDischargeDiagnosisChange, logDischargeUndoEntry, logTransferEntry]
   );
 };

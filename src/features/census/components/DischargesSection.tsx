@@ -39,7 +39,8 @@ export const DischargesSection: React.FC = () => {
               updatedItem.dischargeTypeOther,
               updatedItem.time,
               updatedItem.movementDate,
-              updatedItem.ieehData
+              updatedItem.ieehData,
+              updatedItem.diagnosis
             );
           }}
           onDelete={sectionModel.handleDelete}

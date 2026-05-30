@@ -26,7 +26,7 @@ const LazyClinicalDocumentsModal = lazy(() =>
 interface CmaSectionRowProps {
   item: CMAData;
   recordDate: string;
-  onUpdate: (id: string, field: keyof CMAData, value: CMAData[keyof CMAData]) => void;
+  onUpdate: (id: string, updates: Partial<CMAData>) => void;
   onUndo: (item: CMAData) => Promise<void>;
   onDelete: (item: CMAData) => void | Promise<void>;
   onConvertToDischarge: (item: CMAData) => void | Promise<void>;
@@ -39,6 +39,7 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
     const [showEditDialog, setShowEditDialog] = useState(false);
     const [draftInterventionType, setDraftInterventionType] = useState(item.interventionType);
     const [draftDischargeTime, setDraftDischargeTime] = useState(item.dischargeTime || '');
+    const [draftDiagnosis, setDraftDiagnosis] = useState(item.diagnosis || '');
     const ieehPatient = useMemo(
       () => buildCmaIeehPatientSnapshot(item, recordDate),
       [item, recordDate]
@@ -50,6 +51,7 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
     const openEditDialog = () => {
       setDraftInterventionType(item.interventionType);
       setDraftDischargeTime(item.dischargeTime || '');
+      setDraftDiagnosis(item.diagnosis || '');
       setShowEditDialog(true);
     };
     const actionViewModels = useCensusMovementActionsCellModel([
@@ -86,8 +88,11 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
     ]);
 
     const saveEditDialog = () => {
-      onUpdate(item.id, 'interventionType', draftInterventionType);
-      onUpdate(item.id, 'dischargeTime', draftDischargeTime);
+      onUpdate(item.id, {
+        interventionType: draftInterventionType,
+        dischargeTime: draftDischargeTime,
+        diagnosis: draftDiagnosis,
+      });
       setShowEditDialog(false);
     };
 
@@ -101,7 +106,11 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
             <select
               className="w-full p-1 border border-slate-200 hover:border-slate-300 rounded focus:border-orange-400 focus:ring-1 focus:ring-orange-400 text-xs text-slate-600 bg-white transition-colors"
               value={item.interventionType || 'Cirugía Mayor Ambulatoria'}
-              onChange={event => onUpdate(item.id, 'interventionType', event.target.value)}
+              onChange={event =>
+                onUpdate(item.id, {
+                  interventionType: event.target.value as CMAData['interventionType'],
+                })
+              }
             >
               {CMA_INTERVENTION_TYPES.map(option => (
                 <option key={option} value={option}>
@@ -133,7 +142,7 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
               step="300"
               className="text-xs font-medium text-slate-600 bg-green-50 px-2 py-1 rounded border border-green-200 w-20 text-center"
               value={item.dischargeTime || ''}
-              onChange={event => onUpdate(item.id, 'dischargeTime', event.target.value)}
+              onChange={event => onUpdate(item.id, { dischargeTime: event.target.value })}
             />
           </td>
           <td className="p-2 text-right print:hidden">
@@ -212,6 +221,14 @@ export const CmaSectionRow: React.FC<CmaSectionRowProps> = React.memo(
                       className="mt-1 w-full rounded border border-slate-200 p-2 text-sm"
                       value={draftDischargeTime}
                       onChange={event => setDraftDischargeTime(event.target.value)}
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Diagnóstico de egreso
+                    <textarea
+                      className="mt-1 min-h-20 w-full rounded border border-slate-200 p-2 text-sm text-slate-700"
+                      value={draftDiagnosis}
+                      onChange={event => setDraftDiagnosis(event.target.value)}
                     />
                   </label>
                 </div>

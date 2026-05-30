@@ -50,6 +50,9 @@ export const actionIcons: Record<AuditAction, React.ReactNode> = {
   PATIENT_DISCHARGED: React.createElement(LogOut, { size: 14 }),
   PATIENT_TRANSFERRED: React.createElement(GitBranch, { size: 14 }),
   PATIENT_MODIFIED: React.createElement(Activity, { size: 14 }),
+  PATIENT_BED_CHANGED: React.createElement(GitBranch, { size: 14 }),
+  PATIENT_DIAGNOSIS_CHANGED: React.createElement(Stethoscope, { size: 14 }),
+  PATIENT_DISCHARGE_DIAGNOSIS_CHANGED: React.createElement(Stethoscope, { size: 14 }),
   PATIENT_CLEARED: React.createElement(Trash2, { size: 14 }),
   DAILY_RECORD_DELETED: React.createElement(Trash2, { size: 14 }),
   DAILY_RECORD_CREATED: React.createElement(FileText, { size: 14 }),
@@ -82,6 +85,8 @@ export const actionIcons: Record<AuditAction, React.ReactNode> = {
   CLINICAL_DOCUMENT_CREATED: React.createElement(FileText, { size: 14 }),
   CLINICAL_DOCUMENT_DELETED: React.createElement(Trash2, { size: 14 }),
   CLINICAL_DOCUMENT_EDITED: React.createElement(Activity, { size: 14 }),
+  CLINICAL_DOCUMENT_EXPORTED: React.createElement(Download, { size: 14 }),
+  CLINICAL_DOCUMENT_PRINTED: React.createElement(FileText, { size: 14 }),
   CLINICAL_DOCUMENT_LOCKED: React.createElement(Lock, { size: 14 }),
   PRESCRIPTION_MANUAL_DELETED: React.createElement(Trash2, { size: 14 }),
   PRESCRIPTION_RETENTION_DELETED: React.createElement(Trash2, { size: 14 }),
@@ -100,6 +105,9 @@ export const actionColors: Record<AuditAction, string> = {
   PATIENT_DISCHARGED: 'bg-blue-50 text-blue-700 border-blue-100',
   PATIENT_TRANSFERRED: 'bg-indigo-50 text-indigo-700 border-indigo-100',
   PATIENT_MODIFIED: 'bg-amber-50 text-amber-700 border-amber-100',
+  PATIENT_BED_CHANGED: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+  PATIENT_DIAGNOSIS_CHANGED: 'bg-sky-50 text-sky-700 border-sky-100',
+  PATIENT_DISCHARGE_DIAGNOSIS_CHANGED: 'bg-blue-50 text-blue-700 border-blue-100',
   PATIENT_CLEARED: 'bg-slate-50 text-slate-700 border-slate-100',
   DAILY_RECORD_DELETED: 'bg-rose-50 text-rose-700 border-rose-100',
   DAILY_RECORD_CREATED: 'bg-cyan-50 text-cyan-700 border-cyan-100',
@@ -132,6 +140,8 @@ export const actionColors: Record<AuditAction, string> = {
   CLINICAL_DOCUMENT_CREATED: 'bg-emerald-50 text-emerald-700 border-emerald-100',
   CLINICAL_DOCUMENT_DELETED: 'bg-rose-50 text-rose-700 border-rose-100',
   CLINICAL_DOCUMENT_EDITED: 'bg-amber-50 text-amber-700 border-amber-100',
+  CLINICAL_DOCUMENT_EXPORTED: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+  CLINICAL_DOCUMENT_PRINTED: 'bg-blue-50 text-blue-700 border-blue-100',
   CLINICAL_DOCUMENT_LOCKED: 'bg-slate-50 text-slate-700 border-slate-100',
   PRESCRIPTION_MANUAL_DELETED: 'bg-rose-50 text-rose-700 border-rose-100',
   PRESCRIPTION_RETENTION_DELETED: 'bg-slate-50 text-slate-700 border-slate-100',
@@ -155,6 +165,12 @@ export const renderHumanDetails = (log: AuditLogEntry) => {
       return `Se trasladó a ${details.patientName || 'ANÓNIMO'} hacia ${details.destination || 'otro centro'}.`;
     case 'PATIENT_MODIFIED':
       return `Se actualizaron los datos clínicos del paciente ${details.patientName || ''}.`;
+    case 'PATIENT_BED_CHANGED':
+      return `Se cambió de cama a ${details.patientName || 'paciente'}.`;
+    case 'PATIENT_DIAGNOSIS_CHANGED':
+      return `Se actualizó el diagnóstico de ${details.patientName || 'paciente'}.`;
+    case 'PATIENT_DISCHARGE_DIAGNOSIS_CHANGED':
+      return `Se actualizó el diagnóstico de egreso de ${details.patientName || 'paciente'}.`;
     case 'PATIENT_CLEARED':
       return `Se liberó la cama ${details.bedId || log.entityId} (Paciente: ${details.patientName || 'N/A'}).`;
     case 'DAILY_RECORD_CREATED':
@@ -210,6 +226,10 @@ export const renderHumanDetails = (log: AuditLogEntry) => {
       return `Se eliminó el documento clínico "${details.documentTitle || log.entityId}".`;
     case 'CLINICAL_DOCUMENT_EDITED':
       return `Se editó el documento clínico "${details.documentTitle || log.entityId}".`;
+    case 'CLINICAL_DOCUMENT_EXPORTED':
+      return `Se exportó el documento clínico "${details.documentTitle || log.entityId}".`;
+    case 'CLINICAL_DOCUMENT_PRINTED':
+      return `Se preparó la impresión del documento clínico "${details.documentTitle || log.entityId}".`;
     case 'CLINICAL_DOCUMENT_LOCKED':
       return `Se bloqueó el documento clínico "${details.documentTitle || log.entityId}" al cerrarse el episodio.`;
     case 'PRESCRIPTION_MANUAL_DELETED':
