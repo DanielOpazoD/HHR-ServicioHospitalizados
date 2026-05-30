@@ -87,10 +87,6 @@ export function useMinsalStats(
   const queryClient = useQueryClient();
   const hospitalId = getActiveHospitalId();
   const [dateRange, setDateRange] = useState<DateRangeConfig>({ preset: initialPreset });
-  const calculationOptionsKey = useMemo(
-    () => JSON.stringify(calculationOptions),
-    [calculationOptions]
-  );
   const safeRemoteOptions = useMemo(
     () => ({
       specialtyGroupingMode: calculationOptions.specialtyGroupingMode,
@@ -238,7 +234,7 @@ export function useMinsalStats(
       ...calculationOptions,
       specialtyReclassifications: allPeriodReclassifications,
     }),
-    [allPeriodReclassifications, calculationOptions, calculationOptionsKey]
+    [allPeriodReclassifications, calculationOptions]
   );
 
   const trendData = useMemo(() => {

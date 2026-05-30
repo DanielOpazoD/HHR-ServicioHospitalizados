@@ -14,7 +14,7 @@ const MOVEMENT_KINDS = new Set(Object.keys(MOVEMENT_COLLECTION_BY_KIND));
 const isIsoDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
 
 const buildReclassificationId = ({ date, movementKind, movementId }) =>
-  `${date}_${movementKind}_${String(movementId).replace(/[\/#?\[\]]/g, '_')}`;
+  `${date}_${movementKind}_${String(movementId).replace(/[/#?[\]]/g, '_')}`;
 
 const getHospitalCollection = (admin, hospitalId, collectionName) =>
   admin.firestore().collection('hospitals').doc(hospitalId).collection(collectionName);

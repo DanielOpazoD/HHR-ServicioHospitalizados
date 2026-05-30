@@ -80,7 +80,7 @@ const createHospitalFirestore = ({
   };
 
   const firestore = {
-    collection: (rootName: string) => ({
+    collection: (_rootName: string) => ({
       doc: (hospitalId: string) => ({
         collection: (collectionName: keyof typeof state) =>
           buildCollection(`hospitals/${hospitalId}/${collectionName}`, collectionName),
