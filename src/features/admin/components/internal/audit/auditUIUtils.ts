@@ -95,6 +95,7 @@ export const actionIcons: Record<AuditAction, React.ReactNode> = {
   MEDICAL_INDICATION_TEMPLATE_UPDATED: React.createElement(Activity, { size: 14 }),
   MEDICAL_INDICATION_TEMPLATE_ARCHIVED: React.createElement(Trash2, { size: 14 }),
   MEDICAL_INDICATION_TEMPLATE_USED: React.createElement(Plus, { size: 14 }),
+  STATISTICAL_SPECIALTY_RECLASSIFIED: React.createElement(BarChart3, { size: 14 }),
   WOUND_CARE_PHOTO_UPLOADED: React.createElement(Camera, { size: 14 }),
   SYSTEM_ERROR: React.createElement(AlertCircle, { size: 14 }),
 };
@@ -150,6 +151,7 @@ export const actionColors: Record<AuditAction, string> = {
   MEDICAL_INDICATION_TEMPLATE_UPDATED: 'bg-amber-50 text-amber-700 border-amber-100',
   MEDICAL_INDICATION_TEMPLATE_ARCHIVED: 'bg-slate-50 text-slate-700 border-slate-100',
   MEDICAL_INDICATION_TEMPLATE_USED: 'bg-blue-50 text-blue-700 border-blue-100',
+  STATISTICAL_SPECIALTY_RECLASSIFIED: 'bg-sky-50 text-sky-700 border-sky-100',
   WOUND_CARE_PHOTO_UPLOADED: 'bg-sky-50 text-sky-700 border-sky-100',
   SYSTEM_ERROR: 'bg-red-50 text-red-700 border-red-100',
 };
@@ -238,6 +240,8 @@ export const renderHumanDetails = (log: AuditLogEntry) => {
       return `Se eliminó por un proceso automático histórico el respaldo de receta ${details.prescriptionId || log.entityId}${details.patientName ? ` de ${details.patientName}` : ''}.`;
     case 'MEDICAL_INDICATION_RECORD_CREATED':
       return `Se generaron indicaciones médicas para ${details.patientName || 'paciente'} con fecha objetivo ${details.targetDate || log.recordDate || 'no registrada'}.`;
+    case 'STATISTICAL_SPECIALTY_RECLASSIFIED':
+      return `Se reclasificó una especialidad para estadística: ${details.originalSpecialty || 'sin origen'} → ${details.reportingSpecialty || 'sin cambio'}.`;
     case 'MEDICAL_INDICATION_TEMPLATE_CREATED':
       return `Se guardó una indicación personal: ${details.textPreview || log.entityId}.`;
     case 'MEDICAL_INDICATION_TEMPLATE_UPDATED':

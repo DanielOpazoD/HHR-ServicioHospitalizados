@@ -24,6 +24,7 @@ module.exports = {
     admin,
     hospitalCapacity: HOSPITAL_CAPACITY,
     hasCallableClinicalAccess: authHelpers.hasCallableClinicalAccess,
+    resolveRoleForEmail: authHelpers.resolveRoleForEmail,
   }),
   ...createAuthFunctions({
     admin,
