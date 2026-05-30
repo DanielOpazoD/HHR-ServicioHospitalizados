@@ -15,7 +15,10 @@ import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { getVisibleAppModules } from '@/shared/access/operationalAccessPolicy';
 import { useUserAvatarProfile } from '@/hooks/useUserAvatarProfile';
 import { useNotification } from '@/context/UIContext';
-import { buildUserAvatarFeedback } from '@/components/layout/userAvatarImageController';
+import {
+  buildUserAvatarFeedback,
+  resolveVisibleUserAvatarUrl,
+} from '@/components/layout/userAvatarImageController';
 
 import { ModuleType } from '@/constants/navigationConfig';
 type ViewMode = 'REGISTER' | 'ANALYTICS';
@@ -65,7 +68,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { success, error: notifyError } = useNotification();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const avatarUrl = userAvatar.profile?.photoURL || currentUser?.photoURL || null;
+  const avatarUrl = resolveVisibleUserAvatarUrl(
+    userAvatar.profile?.photoURL,
+    currentUser?.photoURL
+  );
   const runtimeIndicatorSlot = hideRuntimeIndicators ? (
     <div className="hidden sm:flex items-center gap-3 invisible" aria-hidden="true">
       <div className="h-8 w-[88px] rounded-full" />

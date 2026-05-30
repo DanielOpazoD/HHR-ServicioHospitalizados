@@ -36,6 +36,11 @@ export const buildUserAvatarFeedback = (kind: UserAvatarFeedbackKind) =>
         message: 'Se restauró la visualización por defecto.',
       };
 
+export const resolveVisibleUserAvatarUrl = (
+  inAppAvatarUrl?: string | null,
+  _providerAvatarUrl?: string | null
+): string | null => inAppAvatarUrl || null;
+
 const loadImage = async (objectUrl: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
     const image = new Image();
