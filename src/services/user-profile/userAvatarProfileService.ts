@@ -88,6 +88,8 @@ const writeLocalProfile = (profile: UserAvatarProfile | null, uid: string): void
 export const buildUserAvatarStoragePath = (uid: string): string =>
   `user-avatars/${normalizeUid(uid)}/avatar`;
 
+const buildFirestoreBackedAvatarPath = (uid: string): string => `firestore:user-avatar:${uid}`;
+
 const appendVersionToUrl = (url: string, version: string): string => {
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}v=${encodeURIComponent(version)}`;
@@ -124,6 +126,23 @@ const assertValidAvatarFile = (file: File): void => {
 const isObjectNotFoundError = (error: unknown): boolean => {
   const code = String((error as { code?: string })?.code || '');
   return code.includes('object-not-found');
+};
+
+const isStorageUnauthorizedError = (error: unknown): boolean => {
+  const code = String((error as { code?: string })?.code || '');
+  return code.includes('storage/unauthorized') || code.includes('unauthorized');
+};
+
+const isFirestoreBackedAvatarPath = (storagePath: string): boolean =>
+  storagePath.startsWith('firestore:user-avatar:');
+
+const blobToDataUrl = async (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('No se pudo preparar la foto de perfil.'));
+    reader.readAsDataURL(file);
+  });
 };
 
 export const createUserAvatarProfileService = ({
@@ -186,23 +205,39 @@ export const createUserAvatarProfileService = ({
       const storage = await storageRuntime.getStorage();
       const storagePath = buildUserAvatarStoragePath(uid);
       const storageRef = storageRuntime.ref(storage, storagePath);
-      await storageRuntime.uploadBytes(storageRef, input.file, {
-        contentType: input.file.type,
-        customMetadata: {
-          module: 'user-profile',
-          userId: uid,
-        },
-      });
-
       const updatedAt = now();
-      const downloadUrl = await storageRuntime.getDownloadURL(storageRef);
-      const profile: UserAvatarProfile = {
-        uid,
-        email: String(input.email || '').trim(),
-        photoURL: appendVersionToUrl(downloadUrl, updatedAt),
-        storagePath,
-        updatedAt,
-      };
+      let profile: UserAvatarProfile;
+
+      try {
+        await storageRuntime.uploadBytes(storageRef, input.file, {
+          contentType: input.file.type,
+          customMetadata: {
+            module: 'user-profile',
+            userId: uid,
+          },
+        });
+
+        const downloadUrl = await storageRuntime.getDownloadURL(storageRef);
+        profile = {
+          uid,
+          email: String(input.email || '').trim(),
+          photoURL: appendVersionToUrl(downloadUrl, updatedAt),
+          storagePath,
+          updatedAt,
+        };
+      } catch (error) {
+        if (!isStorageUnauthorizedError(error)) {
+          throw error;
+        }
+
+        profile = {
+          uid,
+          email: String(input.email || '').trim(),
+          photoURL: await blobToDataUrl(input.file),
+          storagePath: buildFirestoreBackedAvatarPath(uid),
+          updatedAt,
+        };
+      }
 
       if (!isFirestoreEnabled()) {
         writeLocalProfile(profile, uid);
@@ -225,7 +260,7 @@ export const createUserAvatarProfileService = ({
       }
 
       const profile = await getProfile(uid);
-      if (profile?.storagePath) {
+      if (profile?.storagePath && !isFirestoreBackedAvatarPath(profile.storagePath)) {
         const storage = await storageRuntime.getStorage();
         const storageRef = storageRuntime.ref(storage, profile.storagePath);
         try {

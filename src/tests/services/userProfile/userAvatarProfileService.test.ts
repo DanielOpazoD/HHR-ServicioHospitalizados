@@ -86,6 +86,39 @@ describe('userAvatarProfileService', () => {
     expect(repository.setDoc).not.toHaveBeenCalled();
   });
 
+  it('falls back to synchronized user settings when Storage rules deny the avatar path', async () => {
+    storageRuntime.uploadBytes.mockRejectedValueOnce({ code: 'storage/unauthorized' });
+    const service = createUserAvatarProfileService({
+      repository,
+      storageRuntime,
+      now: () => '2026-05-30T12:00:00.000Z',
+    });
+
+    const profile = await service.uploadAvatar({
+      uid: 'user-1',
+      email: 'doctor@hospital.cl',
+      file: createImageFile(),
+    });
+
+    expect(storageRuntime.getDownloadURL).not.toHaveBeenCalled();
+    expect(profile.photoURL).toMatch(/^data:image\/png;base64,/);
+    expect(profile.storagePath).toBe('firestore:user-avatar:user-1');
+    expect(repository.setDoc).toHaveBeenCalledWith(
+      'userSettings',
+      'user-1',
+      {
+        userAvatarProfile: {
+          uid: 'user-1',
+          email: 'doctor@hospital.cl',
+          photoURL: expect.stringMatching(/^data:image\/png;base64,/),
+          storagePath: 'firestore:user-avatar:user-1',
+          updatedAt: '2026-05-30T12:00:00.000Z',
+        },
+      },
+      { merge: true }
+    );
+  });
+
   it('removes the stored avatar and clears the profile metadata for the same user', async () => {
     repository.getDoc.mockResolvedValueOnce({
       userAvatarProfile: {
@@ -105,6 +138,29 @@ describe('userAvatarProfileService', () => {
       'user-avatars/user-1/avatar'
     );
     expect(storageRuntime.deleteObject).toHaveBeenCalledWith(storageRef);
+    expect(repository.setDoc).toHaveBeenCalledWith(
+      'userSettings',
+      'user-1',
+      { userAvatarProfile: null },
+      { merge: true }
+    );
+  });
+
+  it('clears a Firestore-backed fallback avatar without trying to delete a Storage object', async () => {
+    repository.getDoc.mockResolvedValueOnce({
+      userAvatarProfile: {
+        uid: 'user-1',
+        email: 'doctor@hospital.cl',
+        photoURL: 'data:image/png;base64,abc',
+        storagePath: 'firestore:user-avatar:user-1',
+        updatedAt: '2026-05-29T12:00:00.000Z',
+      },
+    });
+    const service = createUserAvatarProfileService({ repository, storageRuntime });
+
+    await service.removeAvatar('user-1');
+
+    expect(storageRuntime.deleteObject).not.toHaveBeenCalled();
     expect(repository.setDoc).toHaveBeenCalledWith(
       'userSettings',
       'user-1',

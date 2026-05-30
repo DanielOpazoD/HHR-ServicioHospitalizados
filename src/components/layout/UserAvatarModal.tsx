@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, ImagePlus, Trash2 } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
+import { createCenteredAvatarFile } from '@/components/layout/userAvatarImageController';
 
 interface UserAvatarModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const UserAvatarModal: React.FC<UserAvatarModalProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isPreparing, setIsPreparing] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -42,10 +44,30 @@ export const UserAvatarModal: React.FC<UserAvatarModalProps> = ({
     setError(null);
   };
 
-  const handleSelectFile = (file: File | null) => {
-    setSelectedFile(file);
-    setPreviewUrl(file ? URL.createObjectURL(file) : null);
+  const handleSelectFile = async (file: File | null) => {
     setError(null);
+    if (!file) {
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      return;
+    }
+
+    setIsPreparing(true);
+    try {
+      const avatarFile = await createCenteredAvatarFile(file);
+      setSelectedFile(avatarFile);
+      setPreviewUrl(URL.createObjectURL(avatarFile));
+    } catch (preparationError) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setError(
+        preparationError instanceof Error
+          ? preparationError.message
+          : 'No se pudo recortar la imagen seleccionada.'
+      );
+    } finally {
+      setIsPreparing(false);
+    }
   };
 
   const handleClose = () => {
@@ -111,7 +133,7 @@ export const UserAvatarModal: React.FC<UserAvatarModalProps> = ({
           accept="image/png,image/jpeg,image/webp,image/*"
           className="hidden"
           onChange={event => {
-            handleSelectFile(event.target.files?.[0] || null);
+            void handleSelectFile(event.target.files?.[0] || null);
           }}
         />
 
@@ -125,10 +147,11 @@ export const UserAvatarModal: React.FC<UserAvatarModalProps> = ({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
+            disabled={isPreparing || isSaving}
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
           >
             <ImagePlus size={16} />
-            Elegir imagen
+            {isPreparing ? 'Preparando...' : 'Elegir imagen'}
           </button>
           <button
             type="button"
@@ -153,7 +176,7 @@ export const UserAvatarModal: React.FC<UserAvatarModalProps> = ({
           <button
             type="button"
             onClick={handleUpload}
-            disabled={!selectedFile || isSaving}
+            disabled={!selectedFile || isSaving || isPreparing}
             className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSaving ? 'Guardando...' : 'Guardar foto'}

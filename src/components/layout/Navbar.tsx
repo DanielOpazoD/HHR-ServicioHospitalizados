@@ -14,6 +14,8 @@ import { UserAvatarModal } from './UserAvatarModal';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { getVisibleAppModules } from '@/shared/access/operationalAccessPolicy';
 import { useUserAvatarProfile } from '@/hooks/useUserAvatarProfile';
+import { useNotification } from '@/context/UIContext';
+import { buildUserAvatarFeedback } from '@/components/layout/userAvatarImageController';
 
 import { ModuleType } from '@/constants/navigationConfig';
 type ViewMode = 'REGISTER' | 'ANALYTICS';
@@ -60,6 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const visibleModules = getVisibleAppModules(role);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const userAvatar = useUserAvatarProfile(currentUser);
+  const { success, error: notifyError } = useNotification();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const avatarUrl = userAvatar.profile?.photoURL || currentUser?.photoURL || null;
@@ -176,9 +179,29 @@ export const Navbar: React.FC<NavbarProps> = ({
           isSaving={userAvatar.isSaving}
           onClose={() => setIsAvatarModalOpen(false)}
           onUpload={async file => {
-            await userAvatar.uploadAvatar(file);
+            try {
+              await userAvatar.uploadAvatar(file);
+              const feedback = buildUserAvatarFeedback('saved');
+              success(feedback.title, feedback.message);
+            } catch (error) {
+              const message =
+                error instanceof Error ? error.message : 'No se pudo guardar la foto de perfil.';
+              notifyError('No se pudo guardar la foto', message);
+              throw error;
+            }
           }}
-          onRemove={userAvatar.removeAvatar}
+          onRemove={async () => {
+            try {
+              await userAvatar.removeAvatar();
+              const feedback = buildUserAvatarFeedback('removed');
+              success(feedback.title, feedback.message);
+            } catch (error) {
+              const message =
+                error instanceof Error ? error.message : 'No se pudo eliminar la foto de perfil.';
+              notifyError('No se pudo eliminar la foto', message);
+              throw error;
+            }
+          }}
         />
       )}
     </nav>
