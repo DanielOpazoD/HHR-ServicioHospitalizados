@@ -98,7 +98,7 @@ export interface DailyRecordBedActions {
   updateClinicalCribCudyrMultiple?: (bedId: string, fields: CudyrScorePatch) => void;
   updateCudyr: (bedId: string, field: keyof CudyrScore, value: number) => void;
   updateCudyrMultiple?: (bedId: string, fields: CudyrScorePatch) => void;
-  updateCudyrBatch?: (changes: CudyrBatchUpdate) => void;
+  updateCudyrBatch?: (changes: CudyrBatchUpdate) => Promise<boolean>;
   clearPatient: (bedId: string) => void;
   clearAllBeds: () => void;
   moveOrCopyPatient: (type: 'move' | 'copy', sourceBedId: string, targetBedId: string) => void;

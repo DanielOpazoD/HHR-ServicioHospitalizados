@@ -5,8 +5,12 @@ import type { PatientFieldValue } from '@/types/valueTypes';
 import type { BedAction } from '@/hooks/contracts/bedManagementActionContracts';
 
 type BedManagementDispatch = (action: BedAction) => void;
+type BedManagementAsyncDispatch = (action: BedAction) => Promise<boolean>;
 
-export const useBedManagementActionCreators = (dispatch: BedManagementDispatch) => {
+export const useBedManagementActionCreators = (
+  dispatch: BedManagementDispatch,
+  dispatchAndWait?: BedManagementAsyncDispatch
+) => {
   const updatePatient = useCallback(
     (bedId: string, field: keyof PatientData, value: PatientFieldValue) => {
       dispatch({ type: 'UPDATE_PATIENT', bedId, field, value });
@@ -36,10 +40,16 @@ export const useBedManagementActionCreators = (dispatch: BedManagementDispatch) 
   );
 
   const updateCudyrBatch = useCallback(
-    (changes: CudyrBatchUpdate) => {
-      dispatch({ type: 'UPDATE_CUDYR_BATCH', changes });
+    (changes: CudyrBatchUpdate): Promise<boolean> => {
+      const action: BedAction = { type: 'UPDATE_CUDYR_BATCH', changes };
+      if (dispatchAndWait) {
+        return dispatchAndWait(action);
+      }
+
+      dispatch(action);
+      return Promise.resolve(true);
     },
-    [dispatch]
+    [dispatch, dispatchAndWait]
   );
 
   const updateClinicalCrib = useCallback(

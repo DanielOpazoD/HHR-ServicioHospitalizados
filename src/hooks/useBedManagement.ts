@@ -33,7 +33,7 @@ export interface BedManagementActions {
    */
   updateCudyr: (bedId: string, field: keyof CudyrScore, value: number) => void;
   updateCudyrMultiple: (bedId: string, fields: CudyrScorePatch) => void;
-  updateCudyrBatch: (changes: CudyrBatchUpdate) => void;
+  updateCudyrBatch: (changes: CudyrBatchUpdate) => Promise<boolean>;
 
   /**
    * Manages clinical crib operations (create, remove, or update fields).
@@ -115,18 +115,24 @@ export const useBedManagement = (
   // Dispatcher
   // ========================================================================
 
-  const dispatch = useCallback(
-    (action: BedAction) => {
+  const dispatchAndWait = useCallback(
+    (action: BedAction): Promise<boolean> =>
       executeBedManagementAction({
         currentRecord: recordRef.current,
         action,
         validation,
         bedAudit,
         patchRecord,
-      });
-    },
+      }),
     [validation, patchRecord, bedAudit]
   );
 
-  return useBedManagementActionCreators(dispatch);
+  const dispatch = useCallback(
+    (action: BedAction) => {
+      void dispatchAndWait(action);
+    },
+    [dispatchAndWait]
+  );
+
+  return useBedManagementActionCreators(dispatch, dispatchAndWait);
 };

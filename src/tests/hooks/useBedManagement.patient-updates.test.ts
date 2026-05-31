@@ -347,7 +347,7 @@ describe('useBedManagement patient updates', () => {
       );
     });
 
-    it('persists CUDYR changes across patients and clinical cribs in one batch patch', () => {
+    it('persists CUDYR changes across patients and clinical cribs in one batch patch', async () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-03-23T10:30:00.000Z'));
       const patient = createMockPatient('R1', {
@@ -369,8 +369,8 @@ describe('useBedManagement patient updates', () => {
         useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
       );
 
-      act(() => {
-        result.current.updateCudyrBatch({
+      await act(async () => {
+        await result.current.updateCudyrBatch({
           beds: {
             R1: { changeClothes: 2 },
             R2: { mobilization: 3 },
@@ -389,6 +389,31 @@ describe('useBedManagement patient updates', () => {
         cudyrUpdatedAt: '2026-03-23T10:30:00.000Z',
       });
       expect(mockAuditContextValue.logCudyrModified).toHaveBeenCalledTimes(3);
+    });
+
+    it('reports whether CUDYR batch persistence was confirmed', async () => {
+      const record = createMockRecord({ R1: createMockPatient('R1') });
+
+      const { result } = renderHook(() =>
+        useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
+      );
+
+      await expect(
+        result.current.updateCudyrBatch({
+          beds: { R1: { changeClothes: 2 } },
+          clinicalCribs: {},
+        })
+      ).resolves.toBe(true);
+
+      mockPatchRecord.mockRejectedValueOnce(new Error('sync failed'));
+
+      await expect(
+        result.current.updateCudyrBatch({
+          beds: { R1: { mobilization: 3 } },
+          clinicalCribs: {},
+        })
+      ).resolves.toBe(false);
+      expect(mockAuditContextValue.logCudyrModified).toHaveBeenCalledTimes(1);
     });
 
     it('ignores CUDYR updates for beds without a real patient name', () => {

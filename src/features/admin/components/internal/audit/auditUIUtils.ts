@@ -61,6 +61,7 @@ export const actionIcons: Record<AuditAction, React.ReactNode> = {
   MEDICAL_HANDOFF_MODIFIED: React.createElement(Stethoscope, { size: 14 }),
   HANDOFF_NOVEDADES_MODIFIED: React.createElement(AlertCircle, { size: 14 }),
   CUDYR_MODIFIED: React.createElement(BarChart3, { size: 14 }),
+  CUDYR_BATCH_SAVED: React.createElement(ClipboardList, { size: 14 }),
   USER_LOGIN: React.createElement(LogIn, { size: 14 }),
   USER_LOGOUT: React.createElement(LogOut, { size: 14 }),
   VIEW_CUDYR: React.createElement(Eye, { size: 14 }),
@@ -117,6 +118,7 @@ export const actionColors: Record<AuditAction, string> = {
   MEDICAL_HANDOFF_MODIFIED: 'bg-sky-50 text-sky-700 border-sky-100',
   HANDOFF_NOVEDADES_MODIFIED: 'bg-orange-50 text-orange-700 border-orange-100',
   CUDYR_MODIFIED: 'bg-yellow-50 text-yellow-700 border-yellow-100',
+  CUDYR_BATCH_SAVED: 'bg-amber-50 text-amber-700 border-amber-100',
   USER_LOGIN: 'bg-violet-50 text-violet-700 border-violet-100',
   USER_LOGOUT: 'bg-gray-50 text-gray-700 border-gray-100',
   VIEW_CUDYR: 'bg-amber-50 text-amber-700 border-amber-100',
@@ -181,6 +183,8 @@ export const renderHumanDetails = (log: AuditLogEntry) => {
       return `Se eliminó permanentemente el registro clínico del ${log.entityId}.`;
     case 'CUDYR_MODIFIED':
       return `Se actualizó la evaluación CUDYR(${details.field || 'valor'}): ${details.value || '0'}.`;
+    case 'CUDYR_BATCH_SAVED':
+      return `Se guardó CUDYR en lote: ${details.fieldCount || 0} cambio(s) en ${details.patientCount || 0} paciente(s).`;
     case 'NURSE_HANDOFF_MODIFIED':
       return `Modificación de nota de enfermería(${details.shift === 'day' ? 'Día' : 'Noche'}).`;
     case 'MEDICAL_HANDOFF_MODIFIED':

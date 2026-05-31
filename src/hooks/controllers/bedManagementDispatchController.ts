@@ -199,41 +199,57 @@ const auditActionIntent = (
   }
 };
 
-export const executeBedManagementAction = ({
+export const executeBedManagementAction = async ({
   currentRecord,
   action,
   validation,
   bedAudit,
   patchRecord,
-}: ExecuteBedManagementActionInput): void => {
+}: ExecuteBedManagementActionInput): Promise<boolean> => {
   if (!currentRecord) {
-    return;
+    return false;
   }
 
   const validatedAction = validateAction(action, validation);
   if (!validatedAction) {
-    return;
+    return false;
   }
 
   try {
     const patch = bedManagementReducer(currentRecord, validatedAction);
     if (!patch) {
-      return;
+      return false;
+    }
+
+    const shouldAuditAfterPatch = validatedAction.type === 'UPDATE_CUDYR_BATCH';
+
+    if (!shouldAuditAfterPatch) {
+      try {
+        auditActionIntent(validatedAction, currentRecord, bedAudit);
+      } catch (error) {
+        bedManagementDispatchLogger.error('Audit logging failed', error);
+      }
     }
 
     try {
-      auditActionIntent(validatedAction, currentRecord, bedAudit);
+      await patchRecord(patch);
+      if (shouldAuditAfterPatch) {
+        try {
+          auditActionIntent(validatedAction, currentRecord, bedAudit);
+        } catch (error) {
+          bedManagementDispatchLogger.error('Audit logging failed', error);
+        }
+      }
+      return true;
     } catch (error) {
-      bedManagementDispatchLogger.error('Audit logging failed', error);
-    }
-
-    void patchRecord(patch).catch(error => {
       bedManagementDispatchLogger.warn('Bed management patch failed', error);
       recordOperationalTelemetry(
         buildBedPatchFailureTelemetryEvent(currentRecord, validatedAction, error)
       );
-    });
+      return false;
+    }
   } catch (error) {
     bedManagementDispatchLogger.warn('Bed management action failed', error);
+    return false;
   }
 };

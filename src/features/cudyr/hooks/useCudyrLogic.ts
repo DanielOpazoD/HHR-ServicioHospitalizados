@@ -9,6 +9,7 @@ import { buildDailyCudyrSummary, resolveVisibleCudyrBeds } from '@/services/cudy
 import { getAttributedAuthors } from '@/services/admin/attributionService';
 import { resolveCudyrEligibility } from '@/features/cudyr/controllers/cudyrEligibilityController';
 import { canEditCudyrRecord } from '@/features/cudyr/controllers/cudyrEditAccessController';
+import { useNotification } from '@/context/UIContext';
 
 const createEmptyCudyrDraft = (): Required<CudyrBatchUpdate> => ({
   beds: {},
@@ -96,6 +97,37 @@ const applyCudyrDraftToRecord = (
   };
 };
 
+const buildCudyrBatchAuditDetails = (
+  record: DailyRecord,
+  draft: Required<CudyrBatchUpdate>
+): Record<string, unknown> => {
+  const bedIds = Object.keys(draft.beds);
+  const clinicalCribBedIds = Object.keys(draft.clinicalCribs);
+  const patientSummaries = [
+    ...bedIds.map(bedId => ({
+      bedId,
+      patientName: record.beds[bedId]?.patientName,
+      rut: record.beds[bedId]?.rut,
+      fields: Object.keys(draft.beds[bedId] ?? {}),
+    })),
+    ...clinicalCribBedIds.map(bedId => ({
+      bedId: `${bedId}-crib`,
+      patientName: record.beds[bedId]?.clinicalCrib?.patientName,
+      rut: record.beds[bedId]?.clinicalCrib?.rut,
+      fields: Object.keys(draft.clinicalCribs[bedId] ?? {}),
+    })),
+  ].filter(summary => summary.fields.length > 0);
+
+  return {
+    event: 'cudyr_batch_saved',
+    fieldCount: countDraftFields(draft),
+    bedIds,
+    clinicalCribBedIds,
+    patientCount: patientSummaries.length,
+    patients: patientSummaries,
+  };
+};
+
 export const useCudyrLogic = (readOnly: boolean) => {
   const { record } = useDailyRecordData();
   const {
@@ -105,8 +137,9 @@ export const useCudyrLogic = (readOnly: boolean) => {
     updateClinicalCribCudyr,
     updateClinicalCribCudyrMultiple,
   } = useDailyRecordCudyrActions();
-  const { logViewEvent, userId } = useAuditContext();
+  const { logEvent, logViewEvent, userId } = useAuditContext();
   const { role } = useAuth();
+  const { success, error: notifyError } = useNotification();
   const [draft, setDraft] = useState<Required<CudyrBatchUpdate>>(createEmptyCudyrDraft);
   const [isSavingCudyrChanges, setIsSavingCudyrChanges] = useState(false);
 
@@ -135,15 +168,17 @@ export const useCudyrLogic = (readOnly: boolean) => {
     [record?.beds]
   );
 
-  const saveCudyrChanges = useCallback(() => {
+  const saveCudyrChanges = useCallback(async () => {
     if (pendingCudyrChangeCount === 0 || isSavingCudyrChanges) {
       return;
     }
 
     setIsSavingCudyrChanges(true);
     try {
+      let didConfirmPersistence = false;
+
       if (updateCudyrBatch) {
-        updateCudyrBatch(draft);
+        didConfirmPersistence = await updateCudyrBatch(draft);
       } else {
         Object.entries(draft.beds).forEach(([bedId, fields]) => {
           if (updateCudyrMultiple) {
@@ -166,8 +201,33 @@ export const useCudyrLogic = (readOnly: boolean) => {
             updateClinicalCribCudyr(bedId, field as keyof CudyrScore, Number(value));
           });
         });
+
+        didConfirmPersistence = true;
       }
 
+      if (!didConfirmPersistence || !record) {
+        notifyError(
+          'CUDYR pendiente',
+          'No se pudo confirmar el guardado. Tus cambios siguen pendientes para reintentar.'
+        );
+        return;
+      }
+
+      const savedFieldCount = countDraftFields(draft);
+      const authors = getAttributedAuthors(userId, record);
+      logEvent(
+        'CUDYR_BATCH_SAVED',
+        'dailyRecord',
+        record.date,
+        buildCudyrBatchAuditDetails(record, draft),
+        undefined,
+        record.date,
+        authors
+      );
+      success(
+        'CUDYR guardado',
+        `Se guardaron ${savedFieldCount} ${savedFieldCount === 1 ? 'cambio CUDYR' : 'cambios CUDYR'}.`
+      );
       setDraft(createEmptyCudyrDraft());
     } finally {
       setIsSavingCudyrChanges(false);
@@ -176,11 +236,16 @@ export const useCudyrLogic = (readOnly: boolean) => {
     draft,
     isSavingCudyrChanges,
     pendingCudyrChangeCount,
+    record,
     updateClinicalCribCudyr,
     updateClinicalCribCudyrMultiple,
     updateCudyr,
     updateCudyrBatch,
     updateCudyrMultiple,
+    logEvent,
+    notifyError,
+    success,
+    userId,
   ]);
 
   const discardCudyrChanges = useCallback(() => {
@@ -213,6 +278,20 @@ export const useCudyrLogic = (readOnly: boolean) => {
       );
     }
   }, [record, userId, logViewEvent]);
+
+  useEffect(() => {
+    if (pendingCudyrChangeCount === 0) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [pendingCudyrChangeCount]);
 
   // Calculated Data
   const visibleBeds = useMemo(() => {

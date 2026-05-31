@@ -198,6 +198,14 @@ export const buildKnownClinicalAuditNarrative = (
     };
   }
 
+  if (log.action === 'CUDYR_BATCH_SAVED') {
+    return {
+      title: 'Guardado CUDYR confirmado',
+      narrative: `Se guardó la evaluación CUDYR del registro ${getRecordLabel(log)} con ${details.fieldCount || 0} cambios en ${details.patientCount || 0} paciente(s).`,
+      affectedSubject: getEntityLabel(log, details),
+    };
+  }
+
   if (log.action === 'VIEW_CUDYR') {
     return {
       title: 'Evaluación CUDYR visualizada',

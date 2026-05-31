@@ -169,23 +169,23 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
                         type="button"
                         onClick={discardCudyrChanges}
                         disabled={isSavingCudyrChanges}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-[13px] font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
                       >
-                        <RotateCcw size={16} />
+                        <RotateCcw size={14} />
                         Descartar
                       </button>
                       <button
                         type="button"
                         onClick={saveCudyrChanges}
                         disabled={isSavingCudyrChanges}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2 text-sm font-extrabold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-95 disabled:cursor-wait disabled:bg-slate-100 disabled:text-slate-400"
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-1.5 text-[13px] font-extrabold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-95 disabled:cursor-wait disabled:bg-slate-100 disabled:text-slate-400"
                       >
                         {isSavingCudyrChanges ? (
-                          <Loader2 size={16} className="animate-spin" />
+                          <Loader2 size={14} className="animate-spin" />
                         ) : (
-                          <Save size={16} />
+                          <Save size={14} />
                         )}
-                        Guardar CUDYR
+                        {isSavingCudyrChanges ? 'Guardando...' : 'Guardar CUDYR'}
                       </button>
                     </div>
                   </td>

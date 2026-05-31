@@ -199,11 +199,41 @@ describe('CudyrView Component', () => {
         ?.compareDocumentPosition(pendingRow)
     ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 
+    expect(screen.getByRole('button', { name: /descartar/i })).toHaveClass(
+      'px-3.5',
+      'py-1.5',
+      'text-[13px]'
+    );
+    expect(screen.getByRole('button', { name: /guardar cudyr/i })).toHaveClass(
+      'px-4',
+      'py-1.5',
+      'text-[13px]'
+    );
+
     fireEvent.click(screen.getByRole('button', { name: /guardar cudyr/i }));
     expect(saveCudyrChanges).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
     expect(discardCudyrChanges).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows explicit CUDYR saving feedback while the batch is being persisted', () => {
+    const record = DataFactory.createMockDailyRecord('2024-12-11');
+    record.beds['R1'] = DataFactory.createMockPatient('R1', {
+      patientName: 'JUAN TEST',
+    });
+
+    mockUseCudyrLogic.mockReturnValue(
+      createMockCudyrLogicReturn(record, {
+        pendingCudyrChangeCount: 2,
+        isSavingCudyrChanges: true,
+        stats: { total: 1, occupiedCount: 1, categorizedCount: 0 },
+      })
+    );
+
+    render(<CudyrView />);
+
+    expect(screen.getByRole('button', { name: /guardando/i })).toBeDisabled();
   });
 
   it('renders and manages clinical cribs in CUDYR table', () => {
