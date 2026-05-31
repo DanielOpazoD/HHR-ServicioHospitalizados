@@ -185,7 +185,20 @@ describe('CudyrView Component', () => {
 
     render(<CudyrView />);
 
-    expect(screen.getByText(/2 cambios pendientes/i)).toBeInTheDocument();
+    const pendingRow = screen.getByTestId('cudyr-pending-save-row');
+    expect(pendingRow).toHaveTextContent(/2 cambios pendientes/i);
+    expect(pendingRow.parentElement?.tagName).toBe('TBODY');
+    expect(pendingRow.parentElement?.firstElementChild).toBe(pendingRow);
+    expect(pendingRow.compareDocumentPosition(screen.getByText('R1').closest('tr')!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(
+      screen
+        .getByText(/Cuidados Cambio Ropa/i)
+        .closest('tr')
+        ?.compareDocumentPosition(pendingRow)
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
     fireEvent.click(screen.getByRole('button', { name: /guardar cudyr/i }));
     expect(saveCudyrChanges).toHaveBeenCalledTimes(1);
 

@@ -107,32 +107,11 @@ describe('CudyrHeader', () => {
     expect(screen.getByTestId('cudyr-actions')).toHaveClass('flex-wrap', 'justify-end');
   });
 
-  it('shows pending CUDYR save controls as a prominent full-width row below the metrics', () => {
-    render(
-      <CudyrHeader
-        occupiedCount={13}
-        categorizedCount={10}
-        currentDate="2026-03-07"
-        pendingCudyrChangeCount={3}
-        onSaveCudyrChanges={vi.fn()}
-        onDiscardCudyrChanges={vi.fn()}
-      />
-    );
+  it('keeps pending CUDYR save controls out of the header metrics area', () => {
+    render(<CudyrHeader occupiedCount={13} categorizedCount={10} currentDate="2026-03-07" />);
 
-    const pendingRow = screen.getByTestId('cudyr-pending-save-row');
-    expect(pendingRow).toHaveClass('w-full', 'mt-2', 'text-sm', 'border-amber-200');
-    expect(pendingRow).not.toHaveClass('border-2', 'shadow-sm');
-    expect(pendingRow.compareDocumentPosition(screen.getByTestId('cudyr-metrics'))).toBe(
-      Node.DOCUMENT_POSITION_PRECEDING
-    );
-    expect(screen.getByText(/3 cambios pendientes/i)).toHaveClass('text-sm', 'px-3', 'py-1.5');
-    expect(screen.getByRole('button', { name: /descartar/i })).toHaveClass('text-sm', 'py-2');
-    expect(screen.getByRole('button', { name: /guardar cudyr/i })).toHaveClass(
-      'text-sm',
-      'py-2',
-      'shadow-sm',
-      'bg-blue-600'
-    );
+    expect(screen.queryByTestId('cudyr-pending-save-row')).toBeNull();
+    expect(screen.queryByRole('button', { name: /guardar cudyr/i })).toBeNull();
   });
 
   it('shows only non-zero category pills when counts are provided', () => {
