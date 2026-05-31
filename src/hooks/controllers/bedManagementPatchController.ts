@@ -1,6 +1,5 @@
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
-import type { CudyrScore } from '@/types/domain/cudyr';
 import { BedType } from '@/types/domain/beds';
 import { PatientFieldValue } from '@/types/valueTypes';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
@@ -21,14 +20,9 @@ import {
 } from '@/shared/census/upcBedPolicy';
 import {
   getClearClinicalDataPatches,
-  hasDisplayablePatientName,
   shouldAnchorFirstSeenDate,
   shouldResetClinicalEpisodeOwnership,
 } from '@/hooks/controllers/bedManagementPatientIdentityPatchController';
-
-const getCudyrTimestampPatch = () => ({
-  cudyrUpdatedAt: new Date().toISOString(),
-});
 
 const resolveMotherLabel = (patient: PatientData): string => {
   const fullNameFromParts = [patient.firstName, patient.lastName, patient.secondLastName]
@@ -246,22 +240,6 @@ export const buildUpdatePatientPatches = (
     recordDate: state.date,
   }) as DailyRecordPatch;
 
-export const buildUpdateCudyrPatches = (
-  state: DailyRecord,
-  bedId: string,
-  field: keyof CudyrScore,
-  value: number
-): DailyRecordPatch | null => {
-  if (!hasDisplayablePatientName(state.beds[bedId])) {
-    return null;
-  }
-
-  return {
-    [`beds.${bedId}.cudyr.${field}`]: value,
-    ...getCudyrTimestampPatch(),
-  } as DailyRecordPatch;
-};
-
 export const buildClearPatientPatches = (state: DailyRecord, bedId: string): DailyRecordPatch =>
   ({
     [`beds.${bedId}`]: buildClearedBedPatient({
@@ -334,19 +312,3 @@ export const buildUpdateClinicalCribPatches = (
   ({
     [`beds.${bedId}.clinicalCrib.${field}`]: value,
   }) as DailyRecordPatch;
-
-export const buildUpdateClinicalCribCudyrPatches = (
-  state: DailyRecord,
-  bedId: string,
-  field: keyof CudyrScore,
-  value: number
-): DailyRecordPatch | null => {
-  if (!hasDisplayablePatientName(state.beds[bedId].clinicalCrib)) {
-    return null;
-  }
-
-  return {
-    [`beds.${bedId}.clinicalCrib.cudyr.${field}`]: value,
-    ...getCudyrTimestampPatch(),
-  } as DailyRecordPatch;
-};

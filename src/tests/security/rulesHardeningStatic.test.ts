@@ -34,6 +34,19 @@ describe('Security hardening static guards', () => {
     );
   });
 
+  it('keeps user avatars scoped to the authenticated owner and image-limited', () => {
+    const rules = readProjectFile('storage.rules');
+    expect(rules).toContain('match /user-avatars/{userId}/{fileName}');
+    expect(rules).toContain('function isCurrentUser(userId)');
+    expect(rules).toMatch(
+      /match \/user-avatars\/\{userId\}\/\{fileName\}[\s\S]*?allow read:\s*if isCurrentUser\(userId\);/m
+    );
+    expect(rules).toMatch(
+      /match \/user-avatars\/\{userId\}\/\{fileName\}[\s\S]*?allow write:\s*if isCurrentUser\(userId\)[\s\S]*request\.resource\.size < 2 \* 1024 \* 1024[\s\S]*request\.resource\.contentType\.matches\('image\/\.\*'\);/m
+    );
+    expect(rules).not.toMatch(/match \/user-avatars\/\{userId\}\/\{fileName\}[\s\S]*?if true;/m);
+  });
+
   it('keeps clinical attachment Storage scoped, authenticated, typed and size-limited', () => {
     const rules = readProjectFile('storage.rules');
     expect(rules).toContain(

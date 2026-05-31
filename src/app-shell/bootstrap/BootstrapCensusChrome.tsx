@@ -3,6 +3,7 @@ import { DateStrip } from '@/components/layout/DateStrip';
 import { Navbar } from '@/components/layout/Navbar';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import { AuthContext, type AuthContextType, type UserRole } from '@/context/AuthContext';
+import { UIProvider } from '@/context/UIContext';
 import type { ModuleType } from '@/constants/navigationConfig';
 import { CensusOperationalStateBanner, resolveCensusOperationalState } from '@/features/census';
 import {
@@ -202,58 +203,60 @@ export const BootstrapRouteChrome: React.FC = () => {
   const canUseHandoffPrintActions = shouldShowPrintButtonForModule(bootstrapModule);
 
   return (
-    <AuthContext.Provider value={authValue}>
-      <div className="min-h-screen bg-slate-100 font-sans flex flex-col print:bg-white print:p-0">
-        <Navbar
-          currentModule={bootstrapModule}
-          setModule={noop}
-          censusViewMode={BOOTSTRAP_CENSUS_VIEW_MODE}
-          setCensusViewMode={noop}
-          onOpenBedManager={noop}
-          onExportCSV={noop}
-          onImportJSON={noopImportJson}
-          userEmail={userEmail}
-          onLogout={noop}
-          isFirebaseConnected
-          hideRuntimeIndicators
-        />
-        {renderDateStrip && (
-          <DateStrip
-            selectedYear={bootstrapDate.selectedYear}
-            setSelectedYear={noopSetNumber}
-            selectedMonth={bootstrapDate.selectedMonth}
-            setSelectedMonth={noopSetNumber}
-            selectedDay={bootstrapDate.selectedDay}
-            setSelectedDay={noopSetNumber}
-            currentDateString={currentDateString}
-            daysInMonth={daysInMonth}
-            existingDaysInMonth={[]}
-            navigateDays={noop}
-            onExportPDF={canUseHandoffPrintActions ? noop : undefined}
-            onExportExcel={canUseCensusChromeActions ? noop : undefined}
-            onBackupExcel={canUseCensusChromeActions ? noopAsync : undefined}
-            onBackupPDF={canUseHandoffPrintActions ? noopAsync : undefined}
-            onConfigureEmail={canUseCensusChromeActions ? noop : undefined}
-            onSendEmail={canUseCensusChromeActions ? noop : undefined}
-            emailStatus="idle"
-            isBackingUp={false}
+    <UIProvider>
+      <AuthContext.Provider value={authValue}>
+        <div className="min-h-screen bg-slate-100 font-sans flex flex-col print:bg-white print:p-0">
+          <Navbar
             currentModule={bootstrapModule}
-            onOpenBedManager={bootstrapModule === 'CENSUS' ? noop : undefined}
-            onOpenPatientSearch={noop}
-            onToggleBookmarks={bootstrapModule === 'CENSUS' ? noop : undefined}
-            showBookmarks={false}
-            role={DEFAULT_BOOTSTRAP_ROLE}
+            setModule={noop}
+            censusViewMode={BOOTSTRAP_CENSUS_VIEW_MODE}
+            setCensusViewMode={noop}
+            onOpenBedManager={noop}
+            onExportCSV={noop}
+            onImportJSON={noopImportJson}
+            userEmail={userEmail}
+            onLogout={noop}
+            isFirebaseConnected
+            hideRuntimeIndicators
           />
-        )}
-        <main className="max-w-screen-2xl mx-auto px-4 pt-4 pb-20 flex-1 w-full print:p-0 print:pb-0 print:max-w-none">
-          {bootstrapModule === 'CENSUS' ? (
-            <CensusOperationalStateBanner state={BOOTSTRAP_CENSUS_OPERATIONAL_STATE} />
-          ) : (
-            <ViewLoader />
+          {renderDateStrip && (
+            <DateStrip
+              selectedYear={bootstrapDate.selectedYear}
+              setSelectedYear={noopSetNumber}
+              selectedMonth={bootstrapDate.selectedMonth}
+              setSelectedMonth={noopSetNumber}
+              selectedDay={bootstrapDate.selectedDay}
+              setSelectedDay={noopSetNumber}
+              currentDateString={currentDateString}
+              daysInMonth={daysInMonth}
+              existingDaysInMonth={[]}
+              navigateDays={noop}
+              onExportPDF={canUseHandoffPrintActions ? noop : undefined}
+              onExportExcel={canUseCensusChromeActions ? noop : undefined}
+              onBackupExcel={canUseCensusChromeActions ? noopAsync : undefined}
+              onBackupPDF={canUseHandoffPrintActions ? noopAsync : undefined}
+              onConfigureEmail={canUseCensusChromeActions ? noop : undefined}
+              onSendEmail={canUseCensusChromeActions ? noop : undefined}
+              emailStatus="idle"
+              isBackingUp={false}
+              currentModule={bootstrapModule}
+              onOpenBedManager={bootstrapModule === 'CENSUS' ? noop : undefined}
+              onOpenPatientSearch={noop}
+              onToggleBookmarks={bootstrapModule === 'CENSUS' ? noop : undefined}
+              showBookmarks={false}
+              role={DEFAULT_BOOTSTRAP_ROLE}
+            />
           )}
-        </main>
-      </div>
-    </AuthContext.Provider>
+          <main className="max-w-screen-2xl mx-auto px-4 pt-4 pb-20 flex-1 w-full print:p-0 print:pb-0 print:max-w-none">
+            {bootstrapModule === 'CENSUS' ? (
+              <CensusOperationalStateBanner state={BOOTSTRAP_CENSUS_OPERATIONAL_STATE} />
+            ) : (
+              <ViewLoader />
+            )}
+          </main>
+        </div>
+      </AuthContext.Provider>
+    </UIProvider>
   );
 };
 

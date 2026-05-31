@@ -49,7 +49,7 @@ export const AUDIT_SECTIONS: Record<AuditSection, AuditSectionConfig> = {
   CUDYR: {
     label: 'CUDYR',
     color: 'bg-amber-100 text-amber-700',
-    actions: ['CUDYR_MODIFIED', 'VIEW_CUDYR'],
+    actions: ['CUDYR_MODIFIED', 'CUDYR_BATCH_SAVED', 'VIEW_CUDYR'],
   },
   HANDOFF_NURSE: {
     label: 'Entrega Enfermería',

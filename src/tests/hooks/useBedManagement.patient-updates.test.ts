@@ -263,59 +263,6 @@ describe('useBedManagement patient updates', () => {
     });
   });
 
-  describe('updateCudyr', () => {
-    it('updates the Cudyr field and logs modification', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-03-23T10:15:00.000Z'));
-      const patient = createMockPatient('R1');
-      const record = createMockRecord({ R1: patient });
-
-      const { result } = renderHook(() =>
-        useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
-      );
-
-      act(() => {
-        result.current.updateCudyr('R1', 'changeClothes', 3);
-      });
-
-      expect(mockPatchRecord).toHaveBeenCalledWith({
-        'beds.R1.cudyr.changeClothes': 3,
-        cudyrUpdatedAt: '2026-03-23T10:15:00.000Z',
-      });
-      expect(mockAuditContextValue.logCudyrModified).toHaveBeenCalledWith(
-        'R1',
-        'Test Patient',
-        patient.rut,
-        'changeClothes',
-        3,
-        0,
-        record.date,
-        'Test Author'
-      );
-    });
-
-    it('ignores CUDYR updates for beds without a real patient name', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-03-23T10:20:00.000Z'));
-      const patient = createMockPatient('R1', {
-        patientName: '   ',
-        rut: '',
-      });
-      const record = createMockRecord({ R1: patient });
-
-      const { result } = renderHook(() =>
-        useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
-      );
-
-      act(() => {
-        result.current.updateCudyr('R1', 'changeClothes', 3);
-      });
-
-      expect(mockPatchRecord).not.toHaveBeenCalled();
-      expect(mockAuditContextValue.logDebouncedEvent).not.toHaveBeenCalled();
-    });
-  });
-
   describe('clinical crib helpers', () => {
     it('handles updateClinicalCrib create', () => {
       const record = createMockRecord({ R1: createMockPatient('R1') });
@@ -326,38 +273,6 @@ describe('useBedManagement patient updates', () => {
       act(() => {
         result.current.updateClinicalCrib('R1', 'create');
       });
-    });
-
-    it('updates clinical crib CUDYR', () => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-03-23T11:05:00.000Z'));
-      const patient = createMockPatient('R1', {
-        clinicalCrib: { patientName: 'Baby', rut: '1-1', cudyr: {} } as PatientData,
-      });
-      const record = createMockRecord({ R1: patient });
-
-      const { result } = renderHook(() =>
-        useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
-      );
-
-      act(() => {
-        result.current.updateClinicalCribCudyr('R1', 'feeding', 2);
-      });
-
-      expect(mockPatchRecord).toHaveBeenCalledWith({
-        'beds.R1.clinicalCrib.cudyr.feeding': 2,
-        cudyrUpdatedAt: '2026-03-23T11:05:00.000Z',
-      });
-      expect(mockAuditContextValue.logCudyrModified).toHaveBeenCalledWith(
-        'R1-crib',
-        'Baby',
-        '1-1',
-        'feeding',
-        2,
-        0,
-        record.date,
-        'Test Author'
-      );
     });
 
     it('updates multiple clinical crib fields', () => {

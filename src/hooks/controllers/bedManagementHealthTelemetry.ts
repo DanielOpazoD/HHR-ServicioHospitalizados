@@ -63,6 +63,21 @@ const getPatchFieldMetadata = (action: BedAction): BedPatchFieldMetadata => {
         fieldLabel: `CUDYR ${String(action.field)}`,
         actionLabel: 'Guardar CUDYR',
       };
+    case 'UPDATE_CUDYR_MULTIPLE': {
+      const fields = Object.keys(action.fields);
+      return {
+        bedId: action.bedId,
+        fieldKey: fields.map(field => `cudyr.${field}`).join(', '),
+        fieldLabel: `${fields.length} campos CUDYR`,
+        actionLabel: 'Guardar CUDYR',
+      };
+    }
+    case 'UPDATE_CUDYR_BATCH':
+      return {
+        fieldKey: 'cudyr.batch',
+        fieldLabel: 'CUDYR en lote',
+        actionLabel: 'Guardar CUDYR',
+      };
     case 'UPDATE_CLINICAL_CRIB':
       return {
         bedId: action.bedId,
@@ -88,6 +103,15 @@ const getPatchFieldMetadata = (action: BedAction): BedPatchFieldMetadata => {
         fieldLabel: `Cuna clinica CUDYR ${String(action.field)}`,
         actionLabel: 'Guardar CUDYR de cuna clinica',
       };
+    case 'UPDATE_CLINICAL_CRIB_CUDYR_MULTIPLE': {
+      const fields = Object.keys(action.fields);
+      return {
+        bedId: action.bedId,
+        fieldKey: fields.map(field => `clinicalCrib.cudyr.${field}`).join(', '),
+        fieldLabel: `${fields.length} campos CUDYR de cuna clinica`,
+        actionLabel: 'Guardar CUDYR de cuna clinica',
+      };
+    }
     case 'CLEAR_PATIENT':
       return {
         bedId: action.bedId,

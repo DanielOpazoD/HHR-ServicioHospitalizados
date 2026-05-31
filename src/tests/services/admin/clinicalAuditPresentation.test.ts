@@ -115,6 +115,17 @@ describe('buildClinicalAuditPresentation', () => {
     expect(
       buildClinicalAuditPresentation(
         baseLog({
+          action: 'CUDYR_BATCH_SAVED',
+          entityType: 'dailyRecord',
+          entityId: '2026-05-28',
+          details: { fieldCount: 8, patientCount: 3 },
+        })
+      ).narrative
+    ).toContain('8 cambios');
+
+    expect(
+      buildClinicalAuditPresentation(
+        baseLog({
           action: 'BED_BLOCKED',
           entityType: 'dailyRecord',
           entityId: 'Cama 8',
