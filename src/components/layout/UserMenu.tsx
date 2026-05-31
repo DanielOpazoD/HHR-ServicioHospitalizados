@@ -85,10 +85,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                 ) : (
                   userEmail.charAt(0)
                 )}
-                <span
-                  className={`absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-white ${isRemoteReady ? 'bg-emerald-500' : 'bg-rose-500'}`}
-                  aria-hidden="true"
-                />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-semibold text-slate-700">{userEmail}</p>

@@ -105,6 +105,9 @@ describe('UserMenu', () => {
 
     expect(screen.getByTestId('user-profile-menu-panel')).toHaveClass('origin-top-right');
     expect(screen.getByTestId('user-profile-menu-preview')).toHaveClass('h-16', 'w-16');
+    expect(
+      screen.getByTestId('user-profile-menu-preview').querySelector('.absolute.right-1.top-1')
+    ).toBeNull();
     expect(screen.getAllByAltText('Foto de perfil de doctor@hospital.cl')).toHaveLength(2);
     expect(screen.getByText('doctor@hospital.cl')).toBeInTheDocument();
     expect(screen.getByText('Invitado')).toBeInTheDocument();
