@@ -20,6 +20,8 @@ vi.mock('lucide-react', () => ({
   FileSpreadsheet: () => <span>XLSX</span>,
   FileText: () => <span>PDF</span>,
   Loader2: () => <span>Loading</span>,
+  RotateCcw: () => <span>Undo</span>,
+  Save: () => <span>Save</span>,
   X: () => <span>Close</span>,
 }));
 

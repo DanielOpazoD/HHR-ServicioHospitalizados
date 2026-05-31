@@ -62,8 +62,12 @@ const createMockCudyrLogicReturn = (record: DailyRecord | null, overrides = {}) 
     avgRisk: 0,
   },
   isEditingLocked: false,
+  pendingCudyrChangeCount: 0,
+  isSavingCudyrChanges: false,
   handleScoreChange: vi.fn(),
   handleCribScoreChange: vi.fn(),
+  saveCudyrChanges: vi.fn(),
+  discardCudyrChanges: vi.fn(),
   resolveCudyrEligibility: vi.fn().mockReturnValue({
     isEligible: true,
     isBlocked: false,
@@ -160,6 +164,33 @@ describe('CudyrView Component', () => {
     fireEvent.change(inputs[0], { target: { value: '1' } });
 
     expect(mockHandleScoreChange).toHaveBeenCalled();
+  });
+
+  it('shows manual CUDYR save controls when there are pending cell changes', () => {
+    const record = DataFactory.createMockDailyRecord('2024-12-11');
+    record.beds['R1'] = DataFactory.createMockPatient('R1', {
+      patientName: 'JUAN TEST',
+    });
+    const saveCudyrChanges = vi.fn();
+    const discardCudyrChanges = vi.fn();
+
+    mockUseCudyrLogic.mockReturnValue(
+      createMockCudyrLogicReturn(record, {
+        pendingCudyrChangeCount: 2,
+        saveCudyrChanges,
+        discardCudyrChanges,
+        stats: { total: 1, occupiedCount: 1, categorizedCount: 0 },
+      })
+    );
+
+    render(<CudyrView />);
+
+    expect(screen.getByText(/2 cambios pendientes/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /guardar cudyr/i }));
+    expect(saveCudyrChanges).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
+    expect(discardCudyrChanges).toHaveBeenCalledTimes(1);
   });
 
   it('renders and manages clinical cribs in CUDYR table', () => {

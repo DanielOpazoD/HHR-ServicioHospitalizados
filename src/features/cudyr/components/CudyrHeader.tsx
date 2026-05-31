@@ -7,7 +7,7 @@
  */
 
 import React, { useState } from 'react';
-import { ArrowLeft, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileSpreadsheet, FileText, Loader2, RotateCcw, Save } from 'lucide-react';
 import clsx from 'clsx';
 import { PdfViewerModal } from '@/components/shared/PdfViewerModal';
 import { formatTimeHHMM } from '@/utils/dateDisplayUtils';
@@ -56,6 +56,10 @@ interface CudyrHeaderProps {
   /** Category counts by bed type (UTI + Media combined for display). */
   categoryCounts?: CategoryCounts;
   currentRecord?: DailyRecordCudyrExportState | null;
+  pendingCudyrChangeCount?: number;
+  isSavingCudyrChanges?: boolean;
+  onSaveCudyrChanges?: () => void;
+  onDiscardCudyrChanges?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +84,10 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
   updatedAt,
   categoryCounts,
   currentRecord,
+  pendingCudyrChangeCount = 0,
+  isSavingCudyrChanges = false,
+  onSaveCudyrChanges,
+  onDiscardCudyrChanges,
 }) => {
   const { error: notifyError } = useNotification();
   const [isExporting, setIsExporting] = useState(false);
@@ -128,6 +136,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
   const nonZeroCategories = mergedCategoryCounts
     ? ALL_CATEGORIES.filter(cat => mergedCategoryCounts[cat] > 0)
     : [];
+  const hasPendingCudyrChanges = pendingCudyrChangeCount > 0;
 
   return (
     <>
@@ -215,6 +224,42 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
         <div className="flex-1" />
 
         <div className="flex flex-wrap items-center justify-end gap-2" data-testid="cudyr-actions">
+          {hasPendingCudyrChanges && (
+            <>
+              <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
+                {pendingCudyrChangeCount}{' '}
+                {pendingCudyrChangeCount === 1 ? 'cambio pendiente' : 'cambios pendientes'}
+              </span>
+              <button
+                type="button"
+                onClick={onDiscardCudyrChanges}
+                disabled={isSavingCudyrChanges}
+                className="flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+              >
+                <RotateCcw size={13} />
+                Descartar
+              </button>
+              <button
+                type="button"
+                onClick={onSaveCudyrChanges}
+                disabled={isSavingCudyrChanges}
+                className={clsx(
+                  'flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold transition-all',
+                  isSavingCudyrChanges
+                    ? 'bg-slate-100 text-slate-400 cursor-wait'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
+                )}
+              >
+                {isSavingCudyrChanges ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <Save size={13} />
+                )}
+                Guardar CUDYR
+              </button>
+            </>
+          )}
+
           {/* Last modified */}
           {updatedAt && (
             <span className="text-[10px] text-slate-400" title={`Última modificación CUDYR`}>

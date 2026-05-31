@@ -12,6 +12,7 @@ type DailyRecordCudyrActions = Pick<
   DailyRecordActionsContextType,
   | 'updateCudyr'
   | 'updateCudyrMultiple'
+  | 'updateCudyrBatch'
   | 'updateClinicalCribCudyr'
   | 'updateClinicalCribCudyrMultiple'
 >;
@@ -130,6 +131,7 @@ export const useDailyRecordCudyrActions = (): DailyRecordCudyrActions => {
     () => ({
       updateCudyr: actions.updateCudyr,
       updateCudyrMultiple: actions.updateCudyrMultiple,
+      updateCudyrBatch: actions.updateCudyrBatch,
       updateClinicalCribCudyr: actions.updateClinicalCribCudyr,
       updateClinicalCribCudyrMultiple: actions.updateClinicalCribCudyrMultiple,
     }),
@@ -137,6 +139,7 @@ export const useDailyRecordCudyrActions = (): DailyRecordCudyrActions => {
       actions.updateClinicalCribCudyr,
       actions.updateClinicalCribCudyrMultiple,
       actions.updateCudyr,
+      actions.updateCudyrBatch,
       actions.updateCudyrMultiple,
     ]
   );

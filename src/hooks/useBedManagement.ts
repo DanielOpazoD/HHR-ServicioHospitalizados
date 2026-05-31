@@ -5,7 +5,7 @@ import type {
   PersistDailyRecord,
 } from '@/application/shared/dailyRecordCoreContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
-import type { CudyrScore } from '@/types/domain/cudyr';
+import type { CudyrBatchUpdate, CudyrScore, CudyrScorePatch } from '@/types/domain/cudyr';
 import { PatientFieldValue } from '@/types/valueTypes';
 import { usePatientValidation } from './usePatientValidation';
 import { useBedAudit } from './useBedAudit';
@@ -32,6 +32,8 @@ export interface BedManagementActions {
    * Updates a specific field in the CUDYR score for a patient.
    */
   updateCudyr: (bedId: string, field: keyof CudyrScore, value: number) => void;
+  updateCudyrMultiple: (bedId: string, fields: CudyrScorePatch) => void;
+  updateCudyrBatch: (changes: CudyrBatchUpdate) => void;
 
   /**
    * Manages clinical crib operations (create, remove, or update fields).
@@ -51,6 +53,7 @@ export interface BedManagementActions {
    * Updates a specific field in the CUDYR score for a clinical crib.
    */
   updateClinicalCribCudyr: (bedId: string, field: keyof CudyrScore, value: number) => void;
+  updateClinicalCribCudyrMultiple: (bedId: string, fields: CudyrScorePatch) => void;
 
   /**
    * Clears patient data from a bed (Discharge/Cleanup).

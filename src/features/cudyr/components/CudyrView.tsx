@@ -17,8 +17,12 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
     stats,
     cudyrSummary,
     isEditingLocked,
+    pendingCudyrChangeCount,
+    isSavingCudyrChanges,
     handleScoreChange,
     handleCribScoreChange,
+    saveCudyrChanges,
+    discardCudyrChanges,
     resolveCudyrEligibility,
   } = useCudyrLogic(readOnly);
 
@@ -83,6 +87,10 @@ export const CudyrView: React.FC<CudyrViewProps> = ({ readOnly = false }) => {
             updatedAt={record.cudyrUpdatedAt}
             categoryCounts={cudyrSummary?.counts}
             currentRecord={record}
+            pendingCudyrChangeCount={pendingCudyrChangeCount}
+            isSavingCudyrChanges={isSavingCudyrChanges}
+            onSaveCudyrChanges={saveCudyrChanges}
+            onDiscardCudyrChanges={discardCudyrChanges}
           />
         </div>
 

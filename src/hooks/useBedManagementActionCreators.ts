@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import type { CudyrScore } from '@/types/domain/cudyr';
+import type { CudyrBatchUpdate, CudyrScore, CudyrScorePatch } from '@/types/domain/cudyr';
 import type { PatientData } from '@/hooks/contracts/patientHookContracts';
 import type { PatientFieldValue } from '@/types/valueTypes';
 import type { BedAction } from '@/hooks/contracts/bedManagementActionContracts';
@@ -24,6 +24,20 @@ export const useBedManagementActionCreators = (dispatch: BedManagementDispatch) 
   const updateCudyr = useCallback(
     (bedId: string, field: keyof CudyrScore, value: number) => {
       dispatch({ type: 'UPDATE_CUDYR', bedId, field, value });
+    },
+    [dispatch]
+  );
+
+  const updateCudyrMultiple = useCallback(
+    (bedId: string, fields: CudyrScorePatch) => {
+      dispatch({ type: 'UPDATE_CUDYR_MULTIPLE', bedId, fields });
+    },
+    [dispatch]
+  );
+
+  const updateCudyrBatch = useCallback(
+    (changes: CudyrBatchUpdate) => {
+      dispatch({ type: 'UPDATE_CUDYR_BATCH', changes });
     },
     [dispatch]
   );
@@ -55,6 +69,13 @@ export const useBedManagementActionCreators = (dispatch: BedManagementDispatch) 
   const updateClinicalCribCudyr = useCallback(
     (bedId: string, field: keyof CudyrScore, value: number) => {
       dispatch({ type: 'UPDATE_CLINICAL_CRIB_CUDYR', bedId, field, value });
+    },
+    [dispatch]
+  );
+
+  const updateClinicalCribCudyrMultiple = useCallback(
+    (bedId: string, fields: CudyrScorePatch) => {
+      dispatch({ type: 'UPDATE_CLINICAL_CRIB_CUDYR_MULTIPLE', bedId, fields });
     },
     [dispatch]
   );
@@ -117,7 +138,10 @@ export const useBedManagementActionCreators = (dispatch: BedManagementDispatch) 
       updateClinicalCrib,
       updateClinicalCribMultiple,
       updateClinicalCribCudyr,
+      updateClinicalCribCudyrMultiple,
       updateCudyr,
+      updateCudyrBatch,
+      updateCudyrMultiple,
       clearPatient,
       clearAllBeds,
       moveOrCopyPatient,
@@ -136,8 +160,11 @@ export const useBedManagementActionCreators = (dispatch: BedManagementDispatch) 
       updateBlockedReason,
       updateClinicalCrib,
       updateClinicalCribCudyr,
+      updateClinicalCribCudyrMultiple,
       updateClinicalCribMultiple,
       updateCudyr,
+      updateCudyrBatch,
+      updateCudyrMultiple,
       updatePatient,
       updatePatientMultiple,
     ]

@@ -1,6 +1,6 @@
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
-import type { CudyrScore } from '@/types/domain/cudyr';
+import type { CudyrBatchUpdate, CudyrScore, CudyrScorePatch } from '@/types/domain/cudyr';
 import { BedType } from '@/types/domain/beds';
 import { PatientFieldValue } from '@/types/valueTypes';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
@@ -262,6 +262,66 @@ export const buildUpdateCudyrPatches = (
   } as DailyRecordPatch;
 };
 
+export const buildUpdateCudyrMultiplePatches = (
+  state: DailyRecord,
+  bedId: string,
+  fields: CudyrScorePatch
+): DailyRecordPatch | null => {
+  if (!hasDisplayablePatientName(state.beds[bedId])) {
+    return null;
+  }
+
+  const patches: Record<string, unknown> = {};
+  Object.entries(fields).forEach(([field, value]) => {
+    patches[`beds.${bedId}.cudyr.${field}`] = value;
+  });
+
+  if (Object.keys(patches).length === 0) {
+    return null;
+  }
+
+  return {
+    ...patches,
+    ...getCudyrTimestampPatch(),
+  } as DailyRecordPatch;
+};
+
+export const buildUpdateCudyrBatchPatches = (
+  state: DailyRecord,
+  changes: CudyrBatchUpdate
+): DailyRecordPatch | null => {
+  const patches: Record<string, unknown> = {};
+
+  Object.entries(changes.beds ?? {}).forEach(([bedId, fields]) => {
+    if (!hasDisplayablePatientName(state.beds[bedId])) {
+      return;
+    }
+
+    Object.entries(fields).forEach(([field, value]) => {
+      patches[`beds.${bedId}.cudyr.${field}`] = value;
+    });
+  });
+
+  Object.entries(changes.clinicalCribs ?? {}).forEach(([bedId, fields]) => {
+    if (!hasDisplayablePatientName(state.beds[bedId]?.clinicalCrib)) {
+      return;
+    }
+
+    Object.entries(fields).forEach(([field, value]) => {
+      patches[`beds.${bedId}.clinicalCrib.cudyr.${field}`] = value;
+    });
+  });
+
+  if (Object.keys(patches).length === 0) {
+    return null;
+  }
+
+  return {
+    ...patches,
+    ...getCudyrTimestampPatch(),
+  } as DailyRecordPatch;
+};
+
 export const buildClearPatientPatches = (state: DailyRecord, bedId: string): DailyRecordPatch =>
   ({
     [`beds.${bedId}`]: buildClearedBedPatient({
@@ -347,6 +407,30 @@ export const buildUpdateClinicalCribCudyrPatches = (
 
   return {
     [`beds.${bedId}.clinicalCrib.cudyr.${field}`]: value,
+    ...getCudyrTimestampPatch(),
+  } as DailyRecordPatch;
+};
+
+export const buildUpdateClinicalCribCudyrMultiplePatches = (
+  state: DailyRecord,
+  bedId: string,
+  fields: CudyrScorePatch
+): DailyRecordPatch | null => {
+  if (!hasDisplayablePatientName(state.beds[bedId].clinicalCrib)) {
+    return null;
+  }
+
+  const patches: Record<string, unknown> = {};
+  Object.entries(fields).forEach(([field, value]) => {
+    patches[`beds.${bedId}.clinicalCrib.cudyr.${field}`] = value;
+  });
+
+  if (Object.keys(patches).length === 0) {
+    return null;
+  }
+
+  return {
+    ...patches,
     ...getCudyrTimestampPatch(),
   } as DailyRecordPatch;
 };
