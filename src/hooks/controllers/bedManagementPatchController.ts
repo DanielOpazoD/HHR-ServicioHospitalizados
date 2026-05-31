@@ -1,13 +1,11 @@
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import { PatientData } from '@/hooks/contracts/patientHookContracts';
-import type { CudyrBatchUpdate, CudyrScore, CudyrScorePatch } from '@/types/domain/cudyr';
 import { BedType } from '@/types/domain/beds';
 import { PatientFieldValue } from '@/types/valueTypes';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { BEDS } from '@/constants/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
 import { deepClone } from '@/utils/deepClone';
-import { EMPTY_CUDYR_SCORE } from '@/services/cudyr/CudyrScoreUtils';
 import {
   clearDeliveryRouteFields,
   clearGinecobstetriciaFields,
@@ -22,23 +20,9 @@ import {
 } from '@/shared/census/upcBedPolicy';
 import {
   getClearClinicalDataPatches,
-  hasDisplayablePatientName,
   shouldAnchorFirstSeenDate,
   shouldResetClinicalEpisodeOwnership,
 } from '@/hooks/controllers/bedManagementPatientIdentityPatchController';
-
-const getCudyrTimestampPatch = () => ({
-  cudyrUpdatedAt: new Date().toISOString(),
-});
-
-const buildNextCudyrScore = (
-  currentScore: CudyrScore | undefined,
-  fields: CudyrScorePatch
-): CudyrScore => ({
-  ...EMPTY_CUDYR_SCORE,
-  ...(currentScore ?? {}),
-  ...fields,
-});
 
 const resolveMotherLabel = (patient: PatientData): string => {
   const fullNameFromParts = [patient.firstName, patient.lastName, patient.secondLastName]
@@ -256,80 +240,6 @@ export const buildUpdatePatientPatches = (
     recordDate: state.date,
   }) as DailyRecordPatch;
 
-export const buildUpdateCudyrPatches = (
-  state: DailyRecord,
-  bedId: string,
-  field: keyof CudyrScore,
-  value: number
-): DailyRecordPatch | null => {
-  if (!hasDisplayablePatientName(state.beds[bedId])) {
-    return null;
-  }
-
-  return {
-    [`beds.${bedId}.cudyr.${field}`]: value,
-    ...getCudyrTimestampPatch(),
-  } as DailyRecordPatch;
-};
-
-export const buildUpdateCudyrMultiplePatches = (
-  state: DailyRecord,
-  bedId: string,
-  fields: CudyrScorePatch
-): DailyRecordPatch | null => {
-  if (!hasDisplayablePatientName(state.beds[bedId])) {
-    return null;
-  }
-
-  const patches: Record<string, unknown> = {};
-  Object.entries(fields).forEach(([field, value]) => {
-    patches[`beds.${bedId}.cudyr.${field}`] = value;
-  });
-
-  if (Object.keys(patches).length === 0) {
-    return null;
-  }
-
-  return {
-    ...patches,
-    ...getCudyrTimestampPatch(),
-  } as DailyRecordPatch;
-};
-
-export const buildUpdateCudyrBatchPatches = (
-  state: DailyRecord,
-  changes: CudyrBatchUpdate
-): DailyRecordPatch | null => {
-  const patches: Record<string, unknown> = {};
-
-  Object.entries(changes.beds ?? {}).forEach(([bedId, fields]) => {
-    const patient = state.beds[bedId];
-    if (!hasDisplayablePatientName(patient)) {
-      return;
-    }
-
-    patches[`beds.${bedId}.cudyr`] = buildNextCudyrScore(patient.cudyr, fields);
-  });
-
-  Object.entries(changes.clinicalCribs ?? {}).forEach(([bedId, fields]) => {
-    const crib = state.beds[bedId]?.clinicalCrib;
-    if (!crib || !hasDisplayablePatientName(crib)) {
-      return;
-    }
-
-    patches[`beds.${bedId}.clinicalCrib.cudyr`] = buildNextCudyrScore(crib.cudyr, fields);
-  });
-
-  if (Object.keys(patches).length === 0) {
-    return null;
-  }
-
-  return {
-    ...patches,
-    ...getCudyrTimestampPatch(),
-  } as DailyRecordPatch;
-};
-
 export const buildClearPatientPatches = (state: DailyRecord, bedId: string): DailyRecordPatch =>
   ({
     [`beds.${bedId}`]: buildClearedBedPatient({
@@ -402,43 +312,3 @@ export const buildUpdateClinicalCribPatches = (
   ({
     [`beds.${bedId}.clinicalCrib.${field}`]: value,
   }) as DailyRecordPatch;
-
-export const buildUpdateClinicalCribCudyrPatches = (
-  state: DailyRecord,
-  bedId: string,
-  field: keyof CudyrScore,
-  value: number
-): DailyRecordPatch | null => {
-  if (!hasDisplayablePatientName(state.beds[bedId].clinicalCrib)) {
-    return null;
-  }
-
-  return {
-    [`beds.${bedId}.clinicalCrib.cudyr.${field}`]: value,
-    ...getCudyrTimestampPatch(),
-  } as DailyRecordPatch;
-};
-
-export const buildUpdateClinicalCribCudyrMultiplePatches = (
-  state: DailyRecord,
-  bedId: string,
-  fields: CudyrScorePatch
-): DailyRecordPatch | null => {
-  if (!hasDisplayablePatientName(state.beds[bedId].clinicalCrib)) {
-    return null;
-  }
-
-  const patches: Record<string, unknown> = {};
-  Object.entries(fields).forEach(([field, value]) => {
-    patches[`beds.${bedId}.clinicalCrib.cudyr.${field}`] = value;
-  });
-
-  if (Object.keys(patches).length === 0) {
-    return null;
-  }
-
-  return {
-    ...patches,
-    ...getCudyrTimestampPatch(),
-  } as DailyRecordPatch;
-};

@@ -12,14 +12,16 @@ import {
   buildToggleBlockedBedPatches,
   buildToggleExtraBedPatches,
   buildUpdateBlockedReasonPatches,
+  buildUpdateClinicalCribPatches,
+  buildUpdatePatientPatches,
+} from '@/hooks/controllers/bedManagementPatchController';
+import {
   buildUpdateClinicalCribCudyrMultiplePatches,
   buildUpdateClinicalCribCudyrPatches,
-  buildUpdateClinicalCribPatches,
   buildUpdateCudyrBatchPatches,
   buildUpdateCudyrMultiplePatches,
   buildUpdateCudyrPatches,
-  buildUpdatePatientPatches,
-} from '@/hooks/controllers/bedManagementPatchController';
+} from '@/hooks/controllers/bedManagementCudyrPatchController';
 import { buildUpdatePatientActionPatch } from '@/hooks/controllers/bedManagementUpdatePatientController';
 
 export const resolveBedManagementPatch = (

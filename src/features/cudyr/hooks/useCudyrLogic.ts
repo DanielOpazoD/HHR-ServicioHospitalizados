@@ -2,7 +2,7 @@ import { useMemo, useEffect, useCallback, useState } from 'react';
 import { useDailyRecordData } from '@/context/DailyRecordContext';
 import { useDailyRecordCudyrActions } from '@/context/useDailyRecordScopedActions';
 import type { CudyrBatchUpdate, CudyrScore, CudyrScorePatch } from '@/types/domain/cudyr';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 import { useAuditContext } from '@/context/AuditContext';
 import { useAuth } from '@/context/AuthContext';
 import { buildDailyCudyrSummary, resolveVisibleCudyrBeds } from '@/services/cudyr/cudyrSummary';
