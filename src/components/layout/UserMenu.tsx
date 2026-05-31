@@ -66,30 +66,55 @@ export const UserMenu: React.FC<UserMenuProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-52 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200/80 ring-1 ring-black/[0.04] z-50 overflow-hidden">
-          <div className="px-3 py-2.5 border-b border-slate-100">
-            <p className="text-[10px] font-medium text-slate-400 truncate">{userEmail}</p>
-            <div className="mt-1 flex items-center gap-2">
-              <span className="text-[10px] font-semibold text-slate-600">{roleLabel}</span>
-              <span className="flex items-center gap-1 text-[9px] font-medium text-slate-400">
+        <div
+          className="absolute right-0 mt-2 w-64 origin-top-right bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200/80 ring-1 ring-black/[0.04] z-50 overflow-hidden"
+          data-testid="user-profile-menu-panel"
+        >
+          <div className="px-4 py-3.5 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div
+                className="relative h-16 w-16 shrink-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 shadow-inner flex items-center justify-center overflow-hidden text-xl font-bold uppercase text-slate-500"
+                data-testid="user-profile-menu-preview"
+              >
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={`Foto de perfil de ${userEmail}`}
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : (
+                  userEmail.charAt(0)
+                )}
                 <span
-                  className={`h-1.5 w-1.5 rounded-full ${isRemoteReady ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                  className={`absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-white ${isRemoteReady ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                  aria-hidden="true"
                 />
-                {connectionLabel}
-              </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-slate-700">{userEmail}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="text-[10px] font-semibold text-slate-500">{roleLabel}</span>
+                  <span className="flex items-center gap-1 text-[10px] font-medium text-slate-400">
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${isRemoteReady ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                    />
+                    {connectionLabel}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="p-1">
+          <div className="p-1.5">
             {onOpenAvatarSettings && (
               <button
                 onClick={() => {
                   onOpenAvatarSettings();
                   close();
                 }}
-                className="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
                 aria-label="Cambiar foto de perfil"
               >
-                <Camera size={12} />
+                <Camera size={14} />
                 Cambiar foto
               </button>
             )}
@@ -98,9 +123,9 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                 onLogout();
                 close();
               }}
-              className="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors"
             >
-              <LogOut size={12} />
+              <LogOut size={14} />
               Cerrar sesión
             </button>
           </div>
