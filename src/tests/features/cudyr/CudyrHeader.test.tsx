@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 
 vi.mock('@/context/UIContext', () => ({
   useNotification: () => ({
@@ -40,6 +40,22 @@ describe('CudyrHeader', () => {
       'title',
       'Exportar resumen mensual CUDYR'
     );
+  });
+
+  it('keeps instrument and Excel actions beside the title with compact neutral styling', () => {
+    render(<CudyrHeader occupiedCount={10} categorizedCount={8} currentDate="2026-03-07" />);
+
+    const titleRow = screen.getByTestId('cudyr-title-row');
+    const statsBar = screen.getByTestId('cudyr-stats-actions-bar');
+    const instrumentButton = within(titleRow).getByRole('button', { name: /ver instrumento/i });
+    const excelButton = within(titleRow).getByRole('button', { name: /excel mensual/i });
+
+    expect(instrumentButton).toHaveClass('text-[10px]', 'text-slate-600', 'bg-white');
+    expect(excelButton).toHaveClass('text-[10px]', 'text-slate-600', 'bg-white');
+    expect(instrumentButton).not.toHaveClass('text-sky-700', 'bg-sky-50');
+    expect(excelButton).not.toHaveClass('bg-emerald-600', 'text-white');
+    expect(within(statsBar).queryByRole('button', { name: /ver instrumento/i })).toBeNull();
+    expect(within(statsBar).queryByRole('button', { name: /excel mensual/i })).toBeNull();
   });
 
   it('opens the instrument pdf from the header', () => {

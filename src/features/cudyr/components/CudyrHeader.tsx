@@ -156,14 +156,52 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
           )}
         </h2>
 
-        <button
-          onClick={handleBackToNightShift}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
-          title="Volver a Entrega de Turno Noche"
-        >
-          <ArrowLeft size={14} />
-          Volver a Turno Noche
-        </button>
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={() => setIsInstrumentOpen(true)}
+            className="flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+            title="Ver Instrumento CUDYR (PDF)"
+          >
+            <FileText size={12} />
+            Ver Instrumento
+          </button>
+
+          {currentDate && (
+            <button
+              onClick={handleExportExcel}
+              disabled={isExporting}
+              className={clsx(
+                'flex shrink-0 items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[10px] font-semibold transition-colors',
+                isExporting
+                  ? 'bg-slate-100 text-slate-400 cursor-wait'
+                  : 'bg-white text-slate-600 hover:bg-slate-50'
+              )}
+              title="Exportar resumen mensual CUDYR"
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  Exportando...
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet size={12} />
+                  Excel mensual
+                </>
+              )}
+            </button>
+          )}
+
+          <button
+            onClick={handleBackToNightShift}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
+            title="Volver a Entrega de Turno Noche"
+          >
+            <ArrowLeft size={14} />
+            Volver a Turno Noche
+          </button>
+        </div>
       </div>
 
       {/* ================================================================= */}
@@ -221,11 +259,8 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
             </>
           )}
 
-          {/* Spacer */}
-          <div className="flex-1" />
-
           <div
-            className="flex flex-wrap items-center justify-end gap-2"
+            className="flex flex-1 flex-wrap items-center justify-end gap-2"
             data-testid="cudyr-actions"
           >
             {/* Last modified */}
@@ -233,44 +268,6 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
               <span className="text-[10px] text-slate-400" title={`Última modificación CUDYR`}>
                 Últ. mod. {formatTimeHHMM(updatedAt)}
               </span>
-            )}
-
-            {/* View instrument button */}
-            <button
-              type="button"
-              onClick={() => setIsInstrumentOpen(true)}
-              className="flex shrink-0 items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 transition-colors hover:bg-sky-100"
-              title="Ver Instrumento CUDYR (PDF)"
-            >
-              <FileText size={13} />
-              Ver Instrumento
-            </button>
-
-            {/* Excel export */}
-            {currentDate && (
-              <button
-                onClick={handleExportExcel}
-                disabled={isExporting}
-                className={clsx(
-                  'flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold transition-all',
-                  isExporting
-                    ? 'bg-slate-100 text-slate-400 cursor-wait'
-                    : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
-                )}
-                title="Exportar resumen mensual CUDYR"
-              >
-                {isExporting ? (
-                  <>
-                    <Loader2 size={13} className="animate-spin" />
-                    Exportando...
-                  </>
-                ) : (
-                  <>
-                    <FileSpreadsheet size={13} />
-                    Excel mensual
-                  </>
-                )}
-              </button>
             )}
           </div>
         </div>
