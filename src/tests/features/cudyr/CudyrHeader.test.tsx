@@ -104,16 +104,18 @@ describe('CudyrHeader', () => {
     );
 
     const pendingRow = screen.getByTestId('cudyr-pending-save-row');
-    expect(pendingRow).toHaveClass('w-full', 'mt-2', 'text-sm');
+    expect(pendingRow).toHaveClass('w-full', 'mt-2', 'text-sm', 'border-amber-200');
+    expect(pendingRow).not.toHaveClass('border-2', 'shadow-sm');
     expect(pendingRow.compareDocumentPosition(screen.getByTestId('cudyr-metrics'))).toBe(
       Node.DOCUMENT_POSITION_PRECEDING
     );
-    expect(screen.getByText(/3 cambios pendientes/i)).toHaveClass('text-sm', 'px-3', 'py-2');
-    expect(screen.getByRole('button', { name: /descartar/i })).toHaveClass('text-sm', 'py-2.5');
+    expect(screen.getByText(/3 cambios pendientes/i)).toHaveClass('text-sm', 'px-3', 'py-1.5');
+    expect(screen.getByRole('button', { name: /descartar/i })).toHaveClass('text-sm', 'py-2');
     expect(screen.getByRole('button', { name: /guardar cudyr/i })).toHaveClass(
       'text-sm',
-      'py-2.5',
-      'shadow-md'
+      'py-2',
+      'shadow-sm',
+      'bg-blue-600'
     );
   });
 

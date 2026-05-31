@@ -277,10 +277,10 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
 
         {hasPendingCudyrChanges && (
           <div
-            className="mt-2 flex w-full flex-wrap items-center gap-2 rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-2 text-sm shadow-sm"
+            className="mt-2 flex w-full flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm"
             data-testid="cudyr-pending-save-row"
           >
-            <span className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-bold text-amber-800 shadow-sm">
+            <span className="rounded-md border border-amber-200 bg-white/80 px-3 py-1.5 text-sm font-bold text-amber-800">
               {pendingCudyrChangeCount}{' '}
               {pendingCudyrChangeCount === 1 ? 'cambio pendiente' : 'cambios pendientes'}
             </span>
@@ -289,7 +289,7 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
               type="button"
               onClick={onDiscardCudyrChanges}
               disabled={isSavingCudyrChanges}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
             >
               <RotateCcw size={16} />
               Descartar
@@ -299,10 +299,10 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
               onClick={onSaveCudyrChanges}
               disabled={isSavingCudyrChanges}
               className={clsx(
-                'flex shrink-0 items-center gap-1.5 rounded-lg px-5 py-2.5 text-sm font-extrabold shadow-md transition-all',
+                'flex shrink-0 items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-extrabold shadow-sm transition-all',
                 isSavingCudyrChanges
                   ? 'bg-slate-100 text-slate-400 cursor-wait'
-                  : 'bg-blue-700 text-white hover:bg-blue-800 active:scale-95'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
               )}
             >
               {isSavingCudyrChanges ? (
