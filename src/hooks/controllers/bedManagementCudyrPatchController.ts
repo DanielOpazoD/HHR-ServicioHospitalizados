@@ -1,19 +1,9 @@
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import type { CudyrBatchUpdate, CudyrScore, CudyrScorePatch } from '@/types/domain/cudyr';
-import { EMPTY_CUDYR_SCORE } from '@/services/cudyr/CudyrScoreUtils';
 import { hasDisplayablePatientName } from '@/hooks/controllers/bedManagementPatientIdentityPatchController';
 
 const getCudyrTimestampPatch = () => ({
   cudyrUpdatedAt: new Date().toISOString(),
-});
-
-const buildNextCudyrScore = (
-  currentScore: CudyrScore | undefined,
-  fields: CudyrScorePatch
-): CudyrScore => ({
-  ...EMPTY_CUDYR_SCORE,
-  ...(currentScore ?? {}),
-  ...fields,
 });
 
 export const buildUpdateCudyrPatches = (
@@ -68,7 +58,9 @@ export const buildUpdateCudyrBatchPatches = (
       return;
     }
 
-    patches[`beds.${bedId}.cudyr`] = buildNextCudyrScore(patient.cudyr, fields);
+    Object.entries(fields).forEach(([field, value]) => {
+      patches[`beds.${bedId}.cudyr.${field}`] = value;
+    });
   });
 
   Object.entries(changes.clinicalCribs ?? {}).forEach(([bedId, fields]) => {
@@ -77,7 +69,9 @@ export const buildUpdateCudyrBatchPatches = (
       return;
     }
 
-    patches[`beds.${bedId}.clinicalCrib.cudyr`] = buildNextCudyrScore(crib.cudyr, fields);
+    Object.entries(fields).forEach(([field, value]) => {
+      patches[`beds.${bedId}.clinicalCrib.cudyr.${field}`] = value;
+    });
   });
 
   if (Object.keys(patches).length === 0) {

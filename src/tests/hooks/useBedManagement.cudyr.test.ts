@@ -194,18 +194,44 @@ describe('useBedManagement CUDYR updates', () => {
     });
 
     expect(mockPatchRecord).toHaveBeenCalledTimes(1);
-    expect(mockPatchRecord).toHaveBeenCalledWith(
-      expect.objectContaining({
-        'beds.R1.cudyr': expect.objectContaining({ changeClothes: 2 }),
-        'beds.R2.cudyr': expect.objectContaining({ mobilization: 3 }),
-        'beds.R1.clinicalCrib.cudyr': expect.objectContaining({ feeding: 1 }),
-        cudyrUpdatedAt: '2026-03-23T10:30:00.000Z',
-      })
-    );
+    expect(mockPatchRecord).toHaveBeenCalledWith({
+      'beds.R1.cudyr.changeClothes': 2,
+      'beds.R2.cudyr.mobilization': 3,
+      'beds.R1.clinicalCrib.cudyr.feeding': 1,
+      cudyrUpdatedAt: '2026-03-23T10:30:00.000Z',
+    });
     expect(mockAuditContextValue.logCudyrModified).toHaveBeenCalledTimes(3);
   });
 
-  it('creates a full CUDYR score when the patient had no previous CUDYR object', async () => {
+  it('writes CUDYR batch fields as granular paths to preserve concurrent cell edits', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-23T10:32:00.000Z'));
+    const record = createMockRecord({
+      R1: createMockPatient('R1', {
+        cudyr: { changeClothes: 0, mobilization: 0 } as PatientData['cudyr'],
+      }),
+    });
+
+    const { result } = renderHook(() =>
+      useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
+    );
+
+    await act(async () => {
+      await result.current.updateCudyrBatch({
+        beds: {
+          R1: { changeClothes: 2, mobilization: 3 },
+        },
+      });
+    });
+
+    expect(mockPatchRecord).toHaveBeenCalledWith({
+      'beds.R1.cudyr.changeClothes': 2,
+      'beds.R1.cudyr.mobilization': 3,
+      cudyrUpdatedAt: '2026-03-23T10:32:00.000Z',
+    });
+  });
+
+  it('creates only changed CUDYR fields when the patient had no previous CUDYR object', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-23T10:35:00.000Z'));
     const record = createMockRecord({ R1: createMockPatient('R1') });
@@ -221,18 +247,12 @@ describe('useBedManagement CUDYR updates', () => {
       });
     });
 
-    expect(mockPatchRecord).toHaveBeenCalledWith(
-      expect.objectContaining({
-        'beds.R1.cudyr': expect.objectContaining({
-          changeClothes: 2,
-          mobilization: 3,
-          feeding: 0,
-          vitalSigns: 1,
-          invasiveElements: 0,
-        }),
-        cudyrUpdatedAt: '2026-03-23T10:35:00.000Z',
-      })
-    );
+    expect(mockPatchRecord).toHaveBeenCalledWith({
+      'beds.R1.cudyr.changeClothes': 2,
+      'beds.R1.cudyr.mobilization': 3,
+      'beds.R1.cudyr.vitalSigns': 1,
+      cudyrUpdatedAt: '2026-03-23T10:35:00.000Z',
+    });
   });
 
   it('reports whether CUDYR batch persistence was confirmed', async () => {
