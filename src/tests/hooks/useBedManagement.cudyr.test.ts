@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { useBedManagement } from '@/hooks/useBedManagement';
 import type {
   DailyRecord,
