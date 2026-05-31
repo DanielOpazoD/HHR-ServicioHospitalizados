@@ -130,13 +130,7 @@ const buildCudyrBatchAuditDetails = (
 
 export const useCudyrLogic = (readOnly: boolean) => {
   const { record } = useDailyRecordData();
-  const {
-    updateCudyr,
-    updateCudyrMultiple,
-    updateCudyrBatch,
-    updateClinicalCribCudyr,
-    updateClinicalCribCudyrMultiple,
-  } = useDailyRecordCudyrActions();
+  const { updateCudyrBatch } = useDailyRecordCudyrActions();
   const { logEvent, logViewEvent, userId } = useAuditContext();
   const { role } = useAuth();
   const { success, error: notifyError } = useNotification();
@@ -175,35 +169,7 @@ export const useCudyrLogic = (readOnly: boolean) => {
 
     setIsSavingCudyrChanges(true);
     try {
-      let didConfirmPersistence = false;
-
-      if (updateCudyrBatch) {
-        didConfirmPersistence = await updateCudyrBatch(draft);
-      } else {
-        Object.entries(draft.beds).forEach(([bedId, fields]) => {
-          if (updateCudyrMultiple) {
-            updateCudyrMultiple(bedId, fields);
-            return;
-          }
-
-          Object.entries(fields).forEach(([field, value]) => {
-            updateCudyr(bedId, field as keyof CudyrScore, Number(value));
-          });
-        });
-
-        Object.entries(draft.clinicalCribs).forEach(([bedId, fields]) => {
-          if (updateClinicalCribCudyrMultiple) {
-            updateClinicalCribCudyrMultiple(bedId, fields);
-            return;
-          }
-
-          Object.entries(fields).forEach(([field, value]) => {
-            updateClinicalCribCudyr(bedId, field as keyof CudyrScore, Number(value));
-          });
-        });
-
-        didConfirmPersistence = true;
-      }
+      const didConfirmPersistence = updateCudyrBatch ? await updateCudyrBatch(draft) : false;
 
       if (!didConfirmPersistence || !record) {
         notifyError(
@@ -237,11 +203,7 @@ export const useCudyrLogic = (readOnly: boolean) => {
     isSavingCudyrChanges,
     pendingCudyrChangeCount,
     record,
-    updateClinicalCribCudyr,
-    updateClinicalCribCudyrMultiple,
-    updateCudyr,
     updateCudyrBatch,
-    updateCudyrMultiple,
     logEvent,
     notifyError,
     success,

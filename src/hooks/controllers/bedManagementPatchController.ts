@@ -7,6 +7,7 @@ import { createEmptyPatient } from '@/services/factories/patientFactory';
 import { BEDS } from '@/constants/beds';
 import { getBedTypeForRecord } from '@/utils/bedTypeUtils';
 import { deepClone } from '@/utils/deepClone';
+import { EMPTY_CUDYR_SCORE } from '@/services/cudyr/CudyrScoreUtils';
 import {
   clearDeliveryRouteFields,
   clearGinecobstetriciaFields,
@@ -28,6 +29,15 @@ import {
 
 const getCudyrTimestampPatch = () => ({
   cudyrUpdatedAt: new Date().toISOString(),
+});
+
+const buildNextCudyrScore = (
+  currentScore: CudyrScore | undefined,
+  fields: CudyrScorePatch
+): CudyrScore => ({
+  ...EMPTY_CUDYR_SCORE,
+  ...(currentScore ?? {}),
+  ...fields,
 });
 
 const resolveMotherLabel = (patient: PatientData): string => {
@@ -293,23 +303,21 @@ export const buildUpdateCudyrBatchPatches = (
   const patches: Record<string, unknown> = {};
 
   Object.entries(changes.beds ?? {}).forEach(([bedId, fields]) => {
-    if (!hasDisplayablePatientName(state.beds[bedId])) {
+    const patient = state.beds[bedId];
+    if (!hasDisplayablePatientName(patient)) {
       return;
     }
 
-    Object.entries(fields).forEach(([field, value]) => {
-      patches[`beds.${bedId}.cudyr.${field}`] = value;
-    });
+    patches[`beds.${bedId}.cudyr`] = buildNextCudyrScore(patient.cudyr, fields);
   });
 
   Object.entries(changes.clinicalCribs ?? {}).forEach(([bedId, fields]) => {
-    if (!hasDisplayablePatientName(state.beds[bedId]?.clinicalCrib)) {
+    const crib = state.beds[bedId]?.clinicalCrib;
+    if (!crib || !hasDisplayablePatientName(crib)) {
       return;
     }
 
-    Object.entries(fields).forEach(([field, value]) => {
-      patches[`beds.${bedId}.clinicalCrib.cudyr.${field}`] = value;
-    });
+    patches[`beds.${bedId}.clinicalCrib.cudyr`] = buildNextCudyrScore(crib.cudyr, fields);
   });
 
   if (Object.keys(patches).length === 0) {
