@@ -167,144 +167,153 @@ export const CudyrHeader: React.FC<CudyrHeaderProps> = ({
       </div>
 
       {/* ================================================================= */}
-      {/* Row 2 — Stats + Categories + Actions (compact single bar)         */}
+      {/* Row 2 — Stats + Categories + Actions                              */}
       {/* ================================================================= */}
       <div
-        className="mb-4 flex flex-wrap items-center gap-2 overflow-hidden rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2"
+        className="mb-4 flex flex-col gap-2 overflow-hidden rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2"
         data-testid="cudyr-stats-actions-bar"
       >
-        {/* Metrics */}
-        <div
-          className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs"
-          data-testid="cudyr-metrics"
-        >
-          <span className="text-slate-600">
-            Ocupadas <b className="text-sm text-slate-800">{occupiedCount}</b>
-          </span>
-          <span className="text-slate-300">|</span>
-          <span className="text-slate-600">
-            Categorizadas <b className="text-sm text-slate-800">{categorizedCount}</b>
-          </span>
-          <span className="text-slate-300">|</span>
-          <span className="text-slate-600">
-            Índice{' '}
-            <b
-              className={clsx(
-                'text-sm',
-                categorizationIndex === 100 ? 'text-emerald-600' : 'text-slate-800'
-              )}
-            >
-              {categorizationIndex}%
-            </b>
-          </span>
-        </div>
-
-        {/* Category pills (non-zero only) */}
-        {nonZeroCategories.length > 0 && mergedCategoryCounts && (
-          <>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Metrics */}
+          <div
+            className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs"
+            data-testid="cudyr-metrics"
+          >
+            <span className="text-slate-600">
+              Ocupadas <b className="text-sm text-slate-800">{occupiedCount}</b>
+            </span>
             <span className="text-slate-300">|</span>
-            <div className="flex min-w-0 flex-wrap items-center gap-1">
-              {nonZeroCategories.map(cat => (
-                <span
-                  key={cat}
-                  className={clsx(
-                    'inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[10px] font-bold',
-                    CATEGORY_COLORS[cat[0]]
-                  )}
-                >
-                  {cat}
-                  <span className="opacity-80">{mergedCategoryCounts[cat]}</span>
-                </span>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        <div className="flex flex-wrap items-center justify-end gap-2" data-testid="cudyr-actions">
-          {hasPendingCudyrChanges && (
-            <>
-              <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
-                {pendingCudyrChangeCount}{' '}
-                {pendingCudyrChangeCount === 1 ? 'cambio pendiente' : 'cambios pendientes'}
-              </span>
-              <button
-                type="button"
-                onClick={onDiscardCudyrChanges}
-                disabled={isSavingCudyrChanges}
-                className="flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
-              >
-                <RotateCcw size={13} />
-                Descartar
-              </button>
-              <button
-                type="button"
-                onClick={onSaveCudyrChanges}
-                disabled={isSavingCudyrChanges}
+            <span className="text-slate-600">
+              Categorizadas <b className="text-sm text-slate-800">{categorizedCount}</b>
+            </span>
+            <span className="text-slate-300">|</span>
+            <span className="text-slate-600">
+              Índice{' '}
+              <b
                 className={clsx(
-                  'flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold transition-all',
-                  isSavingCudyrChanges
-                    ? 'bg-slate-100 text-slate-400 cursor-wait'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
+                  'text-sm',
+                  categorizationIndex === 100 ? 'text-emerald-600' : 'text-slate-800'
                 )}
               >
-                {isSavingCudyrChanges ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <Save size={13} />
-                )}
-                Guardar CUDYR
-              </button>
+                {categorizationIndex}%
+              </b>
+            </span>
+          </div>
+
+          {/* Category pills (non-zero only) */}
+          {nonZeroCategories.length > 0 && mergedCategoryCounts && (
+            <>
+              <span className="text-slate-300">|</span>
+              <div className="flex min-w-0 flex-wrap items-center gap-1">
+                {nonZeroCategories.map(cat => (
+                  <span
+                    key={cat}
+                    className={clsx(
+                      'inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[10px] font-bold',
+                      CATEGORY_COLORS[cat[0]]
+                    )}
+                  >
+                    {cat}
+                    <span className="opacity-80">{mergedCategoryCounts[cat]}</span>
+                  </span>
+                ))}
+              </div>
             </>
           )}
 
-          {/* Last modified */}
-          {updatedAt && (
-            <span className="text-[10px] text-slate-400" title={`Última modificación CUDYR`}>
-              Últ. mod. {formatTimeHHMM(updatedAt)}
-            </span>
-          )}
+          {/* Spacer */}
+          <div className="flex-1" />
 
-          {/* View instrument button */}
-          <button
-            type="button"
-            onClick={() => setIsInstrumentOpen(true)}
-            className="flex shrink-0 items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 transition-colors hover:bg-sky-100"
-            title="Ver Instrumento CUDYR (PDF)"
+          <div
+            className="flex flex-wrap items-center justify-end gap-2"
+            data-testid="cudyr-actions"
           >
-            <FileText size={13} />
-            Ver Instrumento
-          </button>
+            {/* Last modified */}
+            {updatedAt && (
+              <span className="text-[10px] text-slate-400" title={`Última modificación CUDYR`}>
+                Últ. mod. {formatTimeHHMM(updatedAt)}
+              </span>
+            )}
 
-          {/* Excel export */}
-          {currentDate && (
+            {/* View instrument button */}
             <button
-              onClick={handleExportExcel}
-              disabled={isExporting}
-              className={clsx(
-                'flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold transition-all',
-                isExporting
-                  ? 'bg-slate-100 text-slate-400 cursor-wait'
-                  : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
-              )}
-              title="Exportar resumen mensual CUDYR"
+              type="button"
+              onClick={() => setIsInstrumentOpen(true)}
+              className="flex shrink-0 items-center gap-1 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 transition-colors hover:bg-sky-100"
+              title="Ver Instrumento CUDYR (PDF)"
             >
-              {isExporting ? (
-                <>
-                  <Loader2 size={13} className="animate-spin" />
-                  Exportando...
-                </>
-              ) : (
-                <>
-                  <FileSpreadsheet size={13} />
-                  Excel mensual
-                </>
-              )}
+              <FileText size={13} />
+              Ver Instrumento
             </button>
-          )}
+
+            {/* Excel export */}
+            {currentDate && (
+              <button
+                onClick={handleExportExcel}
+                disabled={isExporting}
+                className={clsx(
+                  'flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-bold transition-all',
+                  isExporting
+                    ? 'bg-slate-100 text-slate-400 cursor-wait'
+                    : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+                )}
+                title="Exportar resumen mensual CUDYR"
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    Exportando...
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet size={13} />
+                    Excel mensual
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
+
+        {hasPendingCudyrChanges && (
+          <div
+            className="mt-2 flex w-full flex-wrap items-center gap-2 rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-2 text-sm shadow-sm"
+            data-testid="cudyr-pending-save-row"
+          >
+            <span className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-bold text-amber-800 shadow-sm">
+              {pendingCudyrChangeCount}{' '}
+              {pendingCudyrChangeCount === 1 ? 'cambio pendiente' : 'cambios pendientes'}
+            </span>
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={onDiscardCudyrChanges}
+              disabled={isSavingCudyrChanges}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+            >
+              <RotateCcw size={16} />
+              Descartar
+            </button>
+            <button
+              type="button"
+              onClick={onSaveCudyrChanges}
+              disabled={isSavingCudyrChanges}
+              className={clsx(
+                'flex shrink-0 items-center gap-1.5 rounded-lg px-5 py-2.5 text-sm font-extrabold shadow-md transition-all',
+                isSavingCudyrChanges
+                  ? 'bg-slate-100 text-slate-400 cursor-wait'
+                  : 'bg-blue-700 text-white hover:bg-blue-800 active:scale-95'
+              )}
+            >
+              {isSavingCudyrChanges ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Save size={16} />
+              )}
+              Guardar CUDYR
+            </button>
+          </div>
+        )}
       </div>
 
       {/* PDF viewer modal */}
