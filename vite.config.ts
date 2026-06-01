@@ -129,6 +129,7 @@ export default defineConfig(({ mode }) => {
             '**/assets/terminologyService-*.js',
             '**/assets/fonasaDatabase-*.js',
             '**/assets/clinicalDocumentTemplateEditorController-*.js',
+            '**/assets/heic2any-*.js',
           ],
         },
         registerType: 'autoUpdate',
