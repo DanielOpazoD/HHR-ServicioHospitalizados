@@ -29,7 +29,7 @@ export interface CompressedPrescriptionImage {
 export interface CompressedPrescriptionImageBundle {
   full: CompressedPrescriptionImage;
   thumbnail: CompressedPrescriptionImage;
-  /** Object URL to preview the full image in the form before submit. */
+  /** Object URL to preview the compressed JPEG in the form before submit. */
   previewObjectUrl: string;
 }
 
@@ -51,41 +51,135 @@ export const releaseCompressedPrescriptionImagePreview = (objectUrl: string): vo
   }
 };
 
-/**
- * Decodes a `File` into an `HTMLImageElement` ready for canvas drawing.
- * Rejects files we know browsers cannot draw to canvas reliably.
- */
-const loadImageFromFile = (file: File): Promise<HTMLImageElement> =>
-  new Promise((resolve, reject) => {
-    if (file.type && !ACCEPTED_FILE_TYPES.has(file.type)) {
-      reject(new Error(`Formato no soportado: ${file.type}.`));
-      return;
+interface DecodedPrescriptionImage {
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  release: () => void;
+}
+
+const isHighEfficiencyImage = (file: File): boolean =>
+  file.type === 'image/heic' || file.type === 'image/heif' || /\.(heic|heif)$/i.test(file.name);
+
+const withJpegExtension = (fileName: string): string => {
+  const baseName = fileName.includes('.') ? fileName.replace(/\.[^.]+$/, '') : fileName;
+  return `${baseName}.jpg`;
+};
+
+const buildImageDecodeError = (file: File): Error => {
+  if (isHighEfficiencyImage(file)) {
+    return new Error(
+      'La foto está en formato HEIC/HEIF y este navegador no pudo convertirla. En Samsung, cambia "Imágenes de alta eficiencia" a desactivado o comparte la foto como JPEG e intenta nuevamente.'
+    );
+  }
+
+  return new Error(
+    'No se pudo decodificar la imagen capturada. Intenta compartirla como JPEG o tomar una nueva foto desde la cámara.'
+  );
+};
+
+const assertSupportedFileType = (file: File): void => {
+  if (file.type && !ACCEPTED_FILE_TYPES.has(file.type)) {
+    throw new Error(`Formato no soportado: ${file.type}.`);
+  }
+};
+
+const convertHighEfficiencyImageToJpeg = async (file: File): Promise<File> => {
+  try {
+    const { default: heic2any } = await import('heic2any');
+    const converted = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.92,
+    });
+    const blob = Array.isArray(converted) ? converted[0] : converted;
+    if (!blob || blob.size === 0) {
+      throw new Error('empty HEIC conversion');
     }
+
+    return new File([blob], withJpegExtension(file.name), {
+      type: 'image/jpeg',
+      lastModified: file.lastModified || Date.now(),
+    });
+  } catch {
+    throw buildImageDecodeError(file);
+  }
+};
+
+const normalizePrescriptionImageFile = async (file: File): Promise<File> => {
+  if (!isHighEfficiencyImage(file)) {
+    return file;
+  }
+
+  return convertHighEfficiencyImageToJpeg(file);
+};
+
+const loadImageElementFromFile = (file: File): Promise<DecodedPrescriptionImage> =>
+  new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
     const image = new Image();
     image.onload = () => {
-      resolve(image);
+      resolve({
+        source: image,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+        release: () => URL.revokeObjectURL(objectUrl),
+      });
     };
     image.onerror = () => {
       URL.revokeObjectURL(objectUrl);
-      reject(new Error('No se pudo decodificar la imagen capturada.'));
+      reject(buildImageDecodeError(file));
     };
     image.src = objectUrl;
   });
 
+const loadImageBitmapFromFile = async (file: File): Promise<DecodedPrescriptionImage> => {
+  const createBitmap = globalThis.createImageBitmap?.bind(globalThis);
+  if (!createBitmap) {
+    throw buildImageDecodeError(file);
+  }
+
+  try {
+    const bitmap = await createBitmap(file, { imageOrientation: 'from-image' });
+    return {
+      source: bitmap,
+      width: bitmap.width,
+      height: bitmap.height,
+      release: () => bitmap.close?.(),
+    };
+  } catch {
+    throw buildImageDecodeError(file);
+  }
+};
+
+/**
+ * Decodes a `File` into a drawable browser image source ready for canvas.
+ * Some mobile gallery images fail through `<img>` object URLs but decode
+ * through `createImageBitmap`, so keep both paths.
+ */
+const loadImageFromFile = async (file: File): Promise<DecodedPrescriptionImage> => {
+  assertSupportedFileType(file);
+
+  try {
+    return await loadImageElementFromFile(file);
+  } catch {
+    return loadImageBitmapFromFile(file);
+  }
+};
+
 const computeScaledDimensions = (
-  image: HTMLImageElement,
+  image: Pick<DecodedPrescriptionImage, 'width' | 'height'>,
   maxDimension: number
 ): { width: number; height: number } => {
-  const ratio = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+  const ratio = Math.min(1, maxDimension / Math.max(image.width, image.height));
   return {
-    width: Math.max(1, Math.round(image.naturalWidth * ratio)),
-    height: Math.max(1, Math.round(image.naturalHeight * ratio)),
+    width: Math.max(1, Math.round(image.width * ratio)),
+    height: Math.max(1, Math.round(image.height * ratio)),
   };
 };
 
 const drawCompressedJpeg = async (
-  image: HTMLImageElement,
+  image: DecodedPrescriptionImage,
   maxDimension: number,
   quality: number
 ): Promise<{ blob: Blob; width: number; height: number }> => {
@@ -97,7 +191,7 @@ const drawCompressedJpeg = async (
   if (!context) {
     throw new Error('No se pudo crear el contexto de canvas para comprimir la imagen.');
   }
-  context.drawImage(image, 0, 0, width, height);
+  context.drawImage(image.source, 0, 0, width, height);
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       blob => {
@@ -135,7 +229,8 @@ const blobToBase64 = (blob: Blob): Promise<string> =>
 export const compressPrescriptionImage = async (
   file: File
 ): Promise<CompressedPrescriptionImageBundle> => {
-  const image = await loadImageFromFile(file);
+  const normalizedFile = await normalizePrescriptionImageFile(file);
+  const image = await loadImageFromFile(normalizedFile);
   try {
     const fullDraw = await drawCompressedJpeg(
       image,
@@ -149,6 +244,8 @@ export const compressPrescriptionImage = async (
     );
     const fullBase64 = await blobToBase64(fullDraw.blob);
     const thumbBase64 = await blobToBase64(thumbDraw.blob);
+    const previewObjectUrl = URL.createObjectURL(fullDraw.blob);
+    image.release();
 
     return {
       full: {
@@ -163,10 +260,10 @@ export const compressPrescriptionImage = async (
         height: thumbDraw.height,
         byteSize: thumbDraw.blob.size,
       },
-      previewObjectUrl: image.src,
+      previewObjectUrl,
     };
   } catch (error) {
-    URL.revokeObjectURL(image.src);
+    image.release();
     throw error;
   }
 };

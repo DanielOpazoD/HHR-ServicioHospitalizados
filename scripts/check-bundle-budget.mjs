@@ -151,6 +151,19 @@ const ignoredPrecacheRegexes = precacheIgnoredAssetPatterns
   .filter(pattern => typeof pattern === 'string' && pattern.length > 0)
   .map(pattern => buildRegex(pattern, 'precache ignore'));
 
+const chunkPatternBudgetEntries = chunkPatternBudgets
+  .map(patternBudget => {
+    const pattern = typeof patternBudget?.pattern === 'string' ? patternBudget.pattern : '';
+    const maxBytes = Number(patternBudget?.maxBytes || 0);
+    if (!pattern || !maxBytes) return null;
+    return {
+      pattern,
+      maxBytes,
+      regex: buildRegex(pattern, 'chunk budget'),
+    };
+  })
+  .filter(Boolean);
+
 if (!fs.existsSync(serviceWorkerPath)) {
   fail('dist/service-worker.js not found. Run "npm run build" before checking bundle budgets.');
 }
@@ -221,6 +234,10 @@ for (const entryFile of entryFiles) {
 }
 
 for (const asset of jsAssets) {
+  if (chunkPatternBudgetEntries.some(patternBudget => patternBudget.regex.test(asset.name))) {
+    continue;
+  }
+
   if (asset.size > chunkMaxBytes) {
     violations.push(
       `Chunk "${asset.name}" is ${toKb(asset.size)} (global chunk limit ${toKb(chunkMaxBytes)})`
@@ -232,21 +249,15 @@ for (const asset of jsAssets) {
   }
 }
 
-for (const patternBudget of chunkPatternBudgets) {
-  const pattern = typeof patternBudget?.pattern === 'string' ? patternBudget.pattern : '';
-  const maxBytes = Number(patternBudget?.maxBytes || 0);
-  if (!pattern || !maxBytes) continue;
-
-  const regex = buildRegex(pattern, 'chunk budget');
-
-  for (const asset of jsAssets.filter(candidate => regex.test(candidate.name))) {
-    if (asset.size > maxBytes) {
+for (const patternBudget of chunkPatternBudgetEntries) {
+  for (const asset of jsAssets.filter(candidate => patternBudget.regex.test(candidate.name))) {
+    if (asset.size > patternBudget.maxBytes) {
       violations.push(
-        `Chunk "${asset.name}" is ${toKb(asset.size)} (pattern ${pattern} limit ${toKb(maxBytes)})`
+        `Chunk "${asset.name}" is ${toKb(asset.size)} (pattern ${patternBudget.pattern} limit ${toKb(patternBudget.maxBytes)})`
       );
-    } else if (asset.size / maxBytes >= nearLimitThresholdRatio) {
+    } else if (asset.size / patternBudget.maxBytes >= nearLimitThresholdRatio) {
       nearLimitWarnings.push(
-        `Chunk "${asset.name}" is near pattern limit: ${toKb(asset.size)} (${toPct(asset.size, maxBytes)} of ${toKb(maxBytes)}) [pattern ${pattern}]`
+        `Chunk "${asset.name}" is near pattern limit: ${toKb(asset.size)} (${toPct(asset.size, patternBudget.maxBytes)} of ${toKb(patternBudget.maxBytes)}) [pattern ${patternBudget.pattern}]`
       );
     }
   }

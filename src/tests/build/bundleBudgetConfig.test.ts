@@ -46,6 +46,9 @@ describe('bundle budget config', () => {
     expect(findBudget(config, '^vendor-pdf-.*\\.js$')).toMatchObject({
       maxBytes: 430000,
     });
+    expect(findBudget(config, '^heic2any-.*\\.js$')).toMatchObject({
+      maxBytes: 1450000,
+    });
   });
 
   it('keeps authenticated shell budget above the measured critical-runtime baseline', () => {
@@ -80,6 +83,7 @@ describe('bundle budget config', () => {
         '^assets/terminologyService-.*\\.js$',
         '^assets/fonasaDatabase-.*\\.js$',
         '^assets/clinicalDocumentTemplateEditorController-.*\\.js$',
+        '^assets/heic2any-.*\\.js$',
       ])
     );
   });
