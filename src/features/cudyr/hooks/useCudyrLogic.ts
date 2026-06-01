@@ -31,12 +31,12 @@ const updateDraftField = (
   bedId: string,
   field: keyof CudyrScore,
   value: number,
-  persistedValue: number
+  persistedValue: number | undefined
 ): Required<CudyrBatchUpdate> => {
   const nextGroup = { ...draft[group] };
   const nextFields: CudyrScorePatch = { ...(nextGroup[bedId] ?? {}) };
 
-  if (value === persistedValue) {
+  if (persistedValue !== undefined && value === persistedValue) {
     delete nextFields[field];
   } else {
     nextFields[field] = value;
@@ -146,7 +146,7 @@ export const useCudyrLogic = (readOnly: boolean) => {
 
   const handleScoreChange = useCallback(
     (bedId: string, field: keyof CudyrScore, value: number) => {
-      const persistedValue = record?.beds[bedId]?.cudyr?.[field] ?? 0;
+      const persistedValue = record?.beds[bedId]?.cudyr?.[field];
       setDraft(current => updateDraftField(current, 'beds', bedId, field, value, persistedValue));
     },
     [record?.beds]
@@ -154,7 +154,7 @@ export const useCudyrLogic = (readOnly: boolean) => {
 
   const handleCribScoreChange = useCallback(
     (bedId: string, field: keyof CudyrScore, value: number) => {
-      const persistedValue = record?.beds[bedId]?.clinicalCrib?.cudyr?.[field] ?? 0;
+      const persistedValue = record?.beds[bedId]?.clinicalCrib?.cudyr?.[field];
       setDraft(current =>
         updateDraftField(current, 'clinicalCribs', bedId, field, value, persistedValue)
       );

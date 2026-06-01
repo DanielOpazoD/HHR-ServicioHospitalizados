@@ -166,6 +166,32 @@ describe('useCudyrLogic', () => {
     );
   });
 
+  it('keeps an explicit zero CUDYR score as a pending value when the cell was empty', async () => {
+    cudyrMocks.dailyRecordData.record = {
+      ...createRecord(),
+      beds: {
+        R1: createPatient('R1', { cudyr: undefined }),
+      },
+    };
+    const { result } = renderHook(() => useCudyrLogic(false));
+
+    act(() => {
+      result.current.handleScoreChange('R1', 'changeClothes', 0);
+    });
+
+    expect(result.current.pendingCudyrChangeCount).toBe(1);
+    expect(result.current.record?.beds.R1?.cudyr?.changeClothes).toBe(0);
+
+    await act(async () => {
+      await result.current.saveCudyrChanges();
+    });
+
+    expect(cudyrMocks.actions.updateCudyrBatch).toHaveBeenCalledWith({
+      beds: { R1: { changeClothes: 0 } },
+      clinicalCribs: {},
+    });
+  });
+
   it('protects the page unload flow while CUDYR changes are pending', () => {
     const { result, unmount } = renderHook(() => useCudyrLogic(false));
 
