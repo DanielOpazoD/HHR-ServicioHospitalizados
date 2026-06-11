@@ -191,6 +191,7 @@ export const buildPatientRowModalsBindings = ({
     data,
     currentDateString,
     isSubRow,
+    canUseArbitraryAdmissionDate: role === 'admin',
     runtime,
     viewContext: resolvePatientRowContextWithOverrides({
       role,

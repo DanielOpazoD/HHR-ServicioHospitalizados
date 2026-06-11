@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import { BEDS } from '@/constants/beds';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
+import { PatientStatus } from '@/types/domain/patientClassification';
 import {
   resolveAddDischargeMovement,
   resolveAddTransferMovement,
@@ -103,8 +104,39 @@ describe('patientMovementCreationController', () => {
     const record = DataFactory.createMockDailyRecord('2025-01-01');
     record.beds.R1 = DataFactory.createMockPatient('R1', {
       patientName: 'Madre A',
+      rut: '11-1',
+      admissionDate: '2024-12-28',
+      admissionTime: '08:00',
+      firstSeenDate: '2024-12-28',
+      pathology: 'Puerperio',
+      specialty: 'Ginecobstetricia',
+      location: 'Sala 1',
       clinicalCrib: DataFactory.createMockPatient('R1', {
         patientName: 'RN A',
+        firstName: 'RN',
+        lastName: 'A',
+        rut: '22-2',
+        clinicalEpisodeId: 'ep-baby',
+        admissionDate: '2024-12-31',
+        admissionTime: '23:10',
+        firstSeenDate: '2024-12-31',
+        pathology: 'RN sano',
+        specialty: 'Pediatría',
+        status: PatientStatus.ESTABLE,
+        age: '1d',
+        devices: ['Incubadora', 'VVP'],
+        handoffNote: 'Nota RN',
+        handoffNoteDayShift: 'Nota día RN',
+        handoffNoteNightShift: 'Nota noche RN',
+        medicalHandoffNote: 'Evolución RN',
+        clinicalEvents: [
+          {
+            id: 'ev-rn-1',
+            name: 'Control neonatal',
+            date: '2024-12-31T23:30:00.000Z',
+            createdAt: '2024-12-31T23:30:00.000Z',
+          },
+        ],
       }),
     });
 
@@ -122,7 +154,43 @@ describe('patientMovementCreationController', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.updatedRecord.beds.R1.patientName).toBe('RN A');
+      expect(result.value.updatedRecord.discharges).toHaveLength(1);
+      expect(result.value.updatedRecord.discharges[0]).toMatchObject({
+        patientName: 'Madre A',
+        rut: '11-1',
+        admissionDate: '2024-12-28',
+        isNested: false,
+      });
+      expect(result.value.updatedRecord.beds.R1).toMatchObject({
+        patientName: 'RN A',
+        firstName: 'RN',
+        lastName: 'A',
+        rut: '22-2',
+        clinicalEpisodeId: 'ep-baby',
+        admissionDate: '2024-12-31',
+        admissionTime: '23:10',
+        firstSeenDate: '2024-12-31',
+        pathology: 'RN sano',
+        specialty: 'Pediatría',
+        status: PatientStatus.ESTABLE,
+        age: '1d',
+        devices: ['Incubadora', 'VVP'],
+        handoffNote: 'Nota RN',
+        handoffNoteDayShift: 'Nota día RN',
+        handoffNoteNightShift: 'Nota noche RN',
+        medicalHandoffNote: 'Evolución RN',
+        clinicalEvents: [
+          {
+            id: 'ev-rn-1',
+            name: 'Control neonatal',
+            date: '2024-12-31T23:30:00.000Z',
+            createdAt: '2024-12-31T23:30:00.000Z',
+          },
+        ],
+        location: 'Sala 1',
+        bedMode: 'Cuna',
+        hasCompanionCrib: false,
+      });
       expect(result.value.updatedRecord.beds.R1.clinicalCrib).toBeUndefined();
     }
   });

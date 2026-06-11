@@ -40,6 +40,7 @@ export interface DemographicsModalProps {
   recordDate: string;
   isClinicalCribPatient?: boolean;
   requiresCompleteDemographics?: boolean;
+  canUseArbitraryAdmissionDate?: boolean;
 }
 
 export interface LocalDemographicsState {

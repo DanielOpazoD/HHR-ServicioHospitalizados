@@ -359,4 +359,56 @@ describe('DemographicsModal', () => {
       })
     );
   });
+
+  it('allows saving an arbitrary past admission date from demographics', () => {
+    const onSave = vi.fn();
+
+    render(
+      <DemographicsModal
+        isOpen
+        onClose={vi.fn()}
+        data={createEmptyDemographics()}
+        onSave={onSave}
+        bedId="R1"
+        recordDate="2026-05-01"
+        requiresCompleteDemographics
+        canUseArbitraryAdmissionDate
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Nombre'), { target: { value: 'Ana' } });
+    fireEvent.change(screen.getByPlaceholderText('Apellido paterno'), {
+      target: { value: 'Perez' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Apellido materno'), {
+      target: { value: 'Soto' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('12.345.678-9'), {
+      target: { value: '11.111.111-1' },
+    });
+
+    const birthDateInput = document.querySelector('input[type="date"]');
+    expect(birthDateInput).toBeInstanceOf(HTMLInputElement);
+    fireEvent.change(birthDateInput as HTMLInputElement, { target: { value: '1980-04-12' } });
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Origen del ingreso' }), {
+      target: { value: 'Urgencias' },
+    });
+    fireEvent.change(screen.getByLabelText('Fecha de ingreso'), {
+      target: { value: '2026-04-20' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Hora de ingreso' }), {
+      target: { value: '14:00' },
+    });
+    fireEvent.click(screen.getAllByRole('radio')[1]);
+
+    fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        admissionDate: '2026-04-20',
+        admissionTime: '14:00',
+      })
+    );
+  });
 });

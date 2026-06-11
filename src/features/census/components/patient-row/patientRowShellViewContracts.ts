@@ -31,6 +31,7 @@ export interface PatientRowModalsProps {
   onSaveDemographics: (fields: Partial<PatientData>) => void;
   onSaveCribDemographics: (fields: Partial<PatientData>) => void;
   onRevertEmptyDemographics: () => void;
+  canUseArbitraryAdmissionDate?: boolean;
 }
 
 export interface PatientRowProps {
