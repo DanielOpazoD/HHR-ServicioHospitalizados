@@ -20,6 +20,7 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({
   recordDate,
   isClinicalCribPatient = false,
   requiresCompleteDemographics = false,
+  canUseArbitraryAdmissionDate = false,
 }) => {
   const {
     localData,
@@ -87,6 +88,7 @@ export const DemographicsModal: React.FC<DemographicsModalProps> = ({
             localData={localData}
             setLocalData={setLocalData}
             recordDate={recordDate}
+            canUseArbitraryAdmissionDate={canUseArbitraryAdmissionDate}
             missingRequiredFields={
               requiresCompleteDemographics ? requiredCompletion.missingFields : []
             }

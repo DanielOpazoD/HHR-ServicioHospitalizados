@@ -146,6 +146,7 @@ interface BuildModalSectionBindingsParams {
   data: PatientData;
   currentDateString: string;
   isSubRow: boolean;
+  canUseArbitraryAdmissionDate?: boolean;
   runtime: PatientRowRuntime;
   viewContext: PatientRowViewContext;
 }
@@ -155,6 +156,7 @@ export const buildPatientModalSectionBindings = ({
   data,
   currentDateString,
   isSubRow,
+  canUseArbitraryAdmissionDate = false,
   runtime,
   viewContext,
 }: BuildModalSectionBindingsParams): PatientRowModalsBindings => ({
@@ -175,4 +177,5 @@ export const buildPatientModalSectionBindings = ({
   onSaveDemographics: runtime.modalSavers.onSaveDemographics,
   onSaveCribDemographics: runtime.modalSavers.onSaveCribDemographics,
   onRevertEmptyDemographics: runtime.modalSavers.onRevertEmptyDemographics,
+  canUseArbitraryAdmissionDate,
 });
