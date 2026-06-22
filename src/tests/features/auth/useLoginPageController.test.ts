@@ -85,10 +85,10 @@ describe('useLoginPageController', () => {
     expect(result.current.isDayGradient).toBe(false);
   });
 
-  it('warms the default post-login route on mount', () => {
+  it('keeps the login mount light and defers the post-login route preload', () => {
     renderHook(() => useLoginPageController(vi.fn()));
 
-    expect(mockPreloadDefaultPostLoginRoute).toHaveBeenCalledTimes(1);
+    expect(mockPreloadDefaultPostLoginRoute).not.toHaveBeenCalled();
   });
 
   it('surfaces a bootstrap auth error passed from the app shell', () => {
@@ -118,7 +118,23 @@ describe('useLoginPageController', () => {
   });
 
   it('calls onLoginSuccess when Google login succeeds', async () => {
+    const events: string[] = [];
     const onLoginSuccess = vi.fn();
+    mockPreloadDefaultPostLoginRoute.mockImplementationOnce(async () => {
+      events.push('preload');
+    });
+    mockExecuteGoogleSignIn.mockImplementationOnce(async () => {
+      events.push('sign-in');
+      return createApplicationSuccess<AuthSessionState>({
+        status: 'authorized',
+        user: {
+          uid: 'google-1',
+          email: 'test@hospital.cl',
+          displayName: 'Google User',
+          role: 'admin',
+        },
+      });
+    });
     const { result } = renderHook(() => useLoginPageController(onLoginSuccess));
 
     await act(async () => {
@@ -128,6 +144,8 @@ describe('useLoginPageController', () => {
     });
 
     expect(mockExecuteGoogleSignIn).toHaveBeenCalledTimes(1);
+    expect(mockPreloadDefaultPostLoginRoute).toHaveBeenCalledTimes(1);
+    expect(events).toEqual(['sign-in', 'preload']);
     expect(onLoginSuccess).toHaveBeenCalledTimes(1);
     expect(result.current.error).toBeNull();
     expect(result.current.isAnyLoading).toBe(false);

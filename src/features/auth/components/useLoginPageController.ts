@@ -86,10 +86,6 @@ export const useLoginPageController = (
   );
 
   useEffect(() => {
-    warmDefaultPostLoginRoute();
-  }, []);
-
-  useEffect(() => {
     if (!initialAuthError?.message) {
       return;
     }
@@ -112,12 +108,12 @@ export const useLoginPageController = (
     setErrorCode(null);
     setIsGoogleLoading(true);
     markGoogleLoginAttemptHint();
-    warmDefaultPostLoginRoute();
 
     try {
       const outcome = await executeGoogleSignIn();
       if (outcome.status === 'success') {
         clearGoogleLoginAttemptHint();
+        warmDefaultPostLoginRoute();
         onLoginSuccess();
         return;
       }

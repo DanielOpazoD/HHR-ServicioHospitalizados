@@ -194,6 +194,28 @@ describe('PatientRowOrbitalQuickActions behavior', () => {
     expect(actionContainer!.className).toContain('pointer-events-auto');
   });
 
+  it('does not leak quick-action button clicks to document listeners', async () => {
+    const documentClick = vi.fn();
+    document.addEventListener('click', documentClick);
+    const onViewMedicalIndications = vi.fn();
+
+    renderSinglePatientRowOrbitalQuickActions({
+      showMedicalIndicationsAction: true,
+      onViewMedicalIndications,
+    });
+
+    fireEvent.mouseMove(screen.getByTestId('patient-row'), { clientX: 0 });
+    fireEvent.click(await screen.findByRole('button', { name: /acciones clínicas rápidas/i }));
+    documentClick.mockClear();
+
+    fireEvent.click(await screen.findByRole('button', { name: /indicaciones médicas/i }));
+
+    expect(onViewMedicalIndications).toHaveBeenCalledTimes(1);
+    expect(documentClick).not.toHaveBeenCalled();
+
+    document.removeEventListener('click', documentClick);
+  });
+
   it('resets hover state when tab loses visibility', async () => {
     renderSinglePatientRowOrbitalQuickActions();
 
