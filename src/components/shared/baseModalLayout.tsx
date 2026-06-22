@@ -16,6 +16,7 @@ export const BaseModalBackdrop: React.FC<BaseModalBackdropProps> = ({
   children,
 }) => (
   <div
+    data-printable-modal-root={printable ? '' : undefined}
     className={clsx(
       'fixed inset-0 bg-slate-900/60 z-[100] backdrop-blur-sm animate-fade-in',
       scrollableBody ? 'flex items-center justify-center p-4' : 'overflow-y-auto p-4',

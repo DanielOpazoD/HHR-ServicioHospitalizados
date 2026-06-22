@@ -107,10 +107,34 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
     wrapperWidth: launcherWrapperWidth,
   });
 
+  const stopPortalEvent = (event: React.MouseEvent) => {
+    event.stopPropagation();
+  };
+
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    stopPortalEvent(event);
+    close();
+  };
+
+  const handleActionButtonClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    itemId: PatientRowOrbitalQuickActionItem['id']
+  ) => {
+    stopPortalEvent(event);
+    handleItemClick(itemId);
+  };
+
+  const handleTriggerClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    stopPortalEvent(event);
+    toggle();
+  };
+
   return createPortal(
     <>
       {/* Backdrop: transparent click-catcher that closes the action stack */}
-      {isOpen ? <div className="fixed inset-0 z-[38]" aria-hidden="true" onClick={close} /> : null}
+      {isOpen ? (
+        <div className="fixed inset-0 z-[38]" aria-hidden="true" onClick={handleBackdropClick} />
+      ) : null}
 
       {/* Launcher wrapper: pointer-events-none shell positioned over the row */}
       <div
@@ -143,7 +167,7 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
                 <div key={item.id}>
                   <button
                     type="button"
-                    onClick={() => handleItemClick(item.id)}
+                    onClick={event => handleActionButtonClick(event, item.id)}
                     onKeyDown={event => handleActionKeyDown(index, event)}
                     aria-label={item.tooltip}
                     title={item.tooltip}
@@ -194,7 +218,7 @@ export const PatientRowOrbitalQuickActionsPortal: React.FC<
           {/* Trigger button: pointer-events-auto when visible, none when hidden */}
           <button
             type="button"
-            onClick={toggle}
+            onClick={handleTriggerClick}
             onKeyDown={handleTriggerKeyDown}
             onMouseEnter={handleLauncherMouseEnter}
             onMouseLeave={handleLauncherMouseLeave}
