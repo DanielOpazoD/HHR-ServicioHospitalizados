@@ -57,3 +57,50 @@ export const insertClinicalDocumentPlainTextAtCursor = (
   const html = escapeClinicalDocumentHtml(text).replace(/\n/g, '<br>');
   insertClinicalDocumentHtmlAtCursor(editor, html);
 };
+
+/**
+ * Removes a trailing pattern (e.g. a typed `/lab ` slash command) that ends at
+ * the collapsed caret, deleting it from the caret's own text node so the cursor
+ * stays put. Returns `true` if it removed the match, `false` if the caret is not
+ * a collapsed position inside a text node ending with the pattern (the caller
+ * should then fall back to an innerHTML-level strip).
+ *
+ * Preserving the caret matters: a full `innerHTML` rewrite collapses the
+ * selection, which makes a subsequent cursor insertion fall back to appending
+ * at the end of the editor instead of where the user was typing.
+ */
+export const removeTrailingPatternAtCaret = (editor: HTMLDivElement, pattern: RegExp): boolean => {
+  if (typeof document === 'undefined' || typeof window === 'undefined') {
+    return false;
+  }
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) {
+    return false;
+  }
+
+  const range = selection.getRangeAt(0);
+  const node = range.endContainer;
+  if (!range.collapsed || node.nodeType !== Node.TEXT_NODE || !editor.contains(node)) {
+    return false;
+  }
+
+  const textBeforeCaret = (node.textContent ?? '').slice(0, range.endOffset);
+  const match = textBeforeCaret.match(pattern);
+  if (!match || match[0].length === 0) {
+    return false;
+  }
+
+  const removalStart = range.endOffset - match[0].length;
+  const removalRange = document.createRange();
+  removalRange.setStart(node, removalStart);
+  removalRange.setEnd(node, range.endOffset);
+  removalRange.deleteContents();
+
+  const caretRange = document.createRange();
+  caretRange.setStart(node, removalStart);
+  caretRange.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(caretRange);
+  return true;
+};

@@ -38,22 +38,44 @@ const escapeHtml = (value: string): string =>
     .replaceAll("'", '&#39;');
 
 const BLOCK_LEVEL_TAGS = new Set(['DIV', 'P', 'LI', 'BLOCKQUOTE']);
+const LIST_CONTAINER_TAGS = new Set(['UL', 'OL']);
+
+interface EditorLine {
+  /** Inner HTML of the line, with inline formatting (b/i/u/span/a) preserved. */
+  html: string;
+  /** Visible text of the line, used only to drop blank lines. */
+  text: string;
+}
 
 /**
- * Walks the editor's DOM and produces one logical text line per block-level
- * descendant (divs, paragraphs, list items) and per `<br>`. Inline elements
- * contribute their text to the current line.
+ * Walks the editor's DOM and produces one logical line per block-level
+ * descendant (divs, paragraphs, list items) and per `<br>`. Unlike a plain
+ * text extraction, inline formatting elements (`<b>`, `<i>`, `<u>`,
+ * `<span style="color…">`, `<a>`) are preserved as HTML so that rebuilding the
+ * mandatory list wrapper never discards the user's emphasis/colour/links.
  *
  * Implemented manually because `Element.innerText` is not faithful in jsdom
  * (it concatenates without block-boundary newlines), and we need
  * deterministic behavior across runtimes.
  */
-const collectEditorLines = (editor: HTMLElement): string[] => {
-  const lines: string[] = [];
+const collectEditorLines = (editor: HTMLElement): EditorLine[] => {
+  const lines: EditorLine[] = [];
+  let htmlParts: string[] = [];
+  let textParts: string[] = [];
 
-  const visit = (node: Node, currentLine: string[]): void => {
+  const flush = (): void => {
+    if (textParts.join('').trim().length > 0) {
+      lines.push({ html: htmlParts.join('').trim(), text: textParts.join('') });
+    }
+    htmlParts = [];
+    textParts = [];
+  };
+
+  const visit = (node: Node): void => {
     if (node.nodeType === Node.TEXT_NODE) {
-      currentLine.push(node.textContent || '');
+      const value = node.textContent || '';
+      textParts.push(value);
+      htmlParts.push(escapeHtml(value));
       return;
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
@@ -62,42 +84,42 @@ const collectEditorLines = (editor: HTMLElement): string[] => {
     const tagName = element.tagName.toUpperCase();
 
     if (tagName === 'BR') {
-      lines.push(currentLine.join('').trim());
-      currentLine.length = 0;
+      flush();
       return;
     }
 
     if (BLOCK_LEVEL_TAGS.has(tagName)) {
-      if (currentLine.length > 0) {
-        lines.push(currentLine.join('').trim());
-        currentLine.length = 0;
-      }
-      const blockLine: string[] = [];
-      Array.from(element.childNodes).forEach(child => visit(child, blockLine));
-      lines.push(blockLine.join('').trim());
+      flush();
+      Array.from(element.childNodes).forEach(visit);
+      flush();
       return;
     }
 
-    Array.from(element.childNodes).forEach(child => visit(child, currentLine));
+    if (LIST_CONTAINER_TAGS.has(tagName)) {
+      Array.from(element.childNodes).forEach(visit);
+      return;
+    }
+
+    // Inline element (or unknown): keep its markup intact on the current line.
+    textParts.push(element.textContent || '');
+    htmlParts.push(element.outerHTML);
   };
 
-  const tailLine: string[] = [];
-  Array.from(editor.childNodes).forEach(child => visit(child, tailLine));
-  if (tailLine.length > 0) {
-    lines.push(tailLine.join('').trim());
-  }
+  Array.from(editor.childNodes).forEach(visit);
+  flush();
 
-  return lines.filter(line => line.length > 0);
+  return lines;
 };
 
 /**
- * Splits the editor's current visible text into list items, preserving the
- * user's logical line breaks. Empty lines are dropped.
+ * Splits the editor's current content into list items, preserving the user's
+ * logical line breaks AND any inline formatting within each line. Empty lines
+ * are dropped.
  */
 const splitEditorTextIntoListItemsHtml = (editor: HTMLElement): string => {
   const lines = collectEditorLines(editor);
   if (lines.length === 0) return '<li><br></li>';
-  return lines.map(line => `<li>${escapeHtml(line)}</li>`).join('');
+  return lines.map(line => `<li>${line.html}</li>`).join('');
 };
 
 /**

@@ -89,4 +89,25 @@ describe('enforceMandatoryListShape', () => {
     expect(editor.innerHTML).toBe('<ol><li>x</li></ol>');
     cleanup(editor);
   });
+
+  it('preserves inline formatting (bold/italic/colour) when repairing a stray sibling', () => {
+    // Reproduces the browser behaviour where pressing Enter exits the list and
+    // leaves a trailing block sibling, tripping the shape check.
+    const editor = mountEditor(
+      '<ol><li><b>Diagnostico uno</b></li><li>Diagnostico <span style="color: rgb(220, 38, 38)">dos</span></li></ol><div><br></div>'
+    );
+    const mutated = enforceMandatoryListShape(editor, 'ol');
+    expect(mutated).toBe(true);
+    expect(editor.innerHTML).toBe(
+      '<ol><li><b>Diagnostico uno</b></li><li>Diagnostico <span style="color: rgb(220, 38, 38)">dos</span></li></ol>'
+    );
+    cleanup(editor);
+  });
+
+  it('preserves inline formatting when the wrapper itself was destroyed', () => {
+    const editor = mountEditor('<div><b>uno</b></div><div><i>dos</i></div>');
+    enforceMandatoryListShape(editor, 'ul');
+    expect(editor.innerHTML).toBe('<ul><li><b>uno</b></li><li><i>dos</i></li></ul>');
+    cleanup(editor);
+  });
 });

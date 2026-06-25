@@ -348,4 +348,87 @@ describe('useClinicalDocumentRichTextEditorController', () => {
     expect(onChange).not.toHaveBeenCalled();
     expect(editor.innerHTML).toBe('Inicial');
   });
+
+  it('commits the cleaned content when /lab resolves to no labs (no stranded "/lab" in value)', async () => {
+    const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+    const editor = document.createElement('div');
+    editor.contentEditable = 'true';
+    editor.textContent = 'Nota /lab ';
+    document.body.appendChild(editor);
+    editorRef.current = editor;
+
+    // Caret at the end, right after the typed command.
+    const textNode = editor.firstChild as Text;
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(textNode, (textNode.textContent ?? '').length);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    const onChange = vi.fn();
+    const onSlashLab = vi.fn().mockResolvedValue(null);
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentRichTextEditorController({
+        sectionId: 'section-1',
+        value: 'Nota /lab ',
+        disabled: false,
+        editorRef,
+        onChange,
+        onSlashLab,
+      })
+    );
+
+    await act(async () => {
+      result.current.handleInput();
+    });
+
+    expect(onSlashLab).toHaveBeenCalledTimes(1);
+    // The cleaned content is propagated even though no labs came back, so the
+    // command does not resurface on blur.
+    expect(onChange).toHaveBeenCalled();
+    expect(onChange.mock.calls.at(-1)?.[0]).not.toContain('/lab');
+    expect(editor.textContent).not.toContain('/lab');
+
+    editor.remove();
+  });
+
+  it('clears the pending history-debounce timer on unmount (no leak after blur-less unmount)', () => {
+    vi.useFakeTimers();
+    try {
+      const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+      const editor = document.createElement('div');
+      editor.innerHTML = 'Inicial';
+      editorRef.current = editor;
+
+      const { result, unmount } = renderHook(() =>
+        useClinicalDocumentRichTextEditorController({
+          sectionId: 'section-1',
+          value: 'Inicial',
+          disabled: false,
+          editorRef,
+          onChange: vi.fn(),
+        })
+      );
+
+      act(() => {
+        result.current.handleActivateInteraction();
+      });
+
+      // Typing schedules a debounced history snapshot (500ms timer).
+      editor.innerHTML = 'Editado';
+      act(() => {
+        result.current.handleInput();
+      });
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+      // Switching documents unmounts the editor WITHOUT a blur; the cleanup
+      // must clear the pending timer so it cannot fire after unmount.
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

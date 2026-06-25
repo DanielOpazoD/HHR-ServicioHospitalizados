@@ -186,6 +186,34 @@ describe('ClinicalDocumentFormattingToolbar', () => {
     expect(screen.getByRole('button', { name: 'Rehacer' })).toBeDisabled();
   });
 
+  // -----------------------------------------------------------------------
+  // Floating panel placement (regression: panel was clipped by the modal
+  // header's overflow scroll container and never appeared on screen)
+  // -----------------------------------------------------------------------
+
+  it('portals the formatting panel to <body> with fixed positioning so it cannot be clipped', () => {
+    const { container } = render(
+      <ClinicalDocumentFormattingToolbar {...buildProps({ isFormattingOpen: true })} />
+    );
+
+    const panel = document.body.querySelector<HTMLElement>(
+      '.clinical-document-global-toolbar-modal'
+    );
+
+    expect(panel).not.toBeNull();
+    // Rendered outside the toolbar's own subtree (the render container), as a
+    // direct child of <body>, so an ancestor's overflow can never hide it.
+    expect(container.contains(panel)).toBe(false);
+    expect(panel?.parentElement).toBe(document.body);
+    expect(panel?.style.position).toBe('fixed');
+  });
+
+  it('does not render the formatting panel when closed', () => {
+    render(<ClinicalDocumentFormattingToolbar {...buildProps({ isFormattingOpen: false })} />);
+
+    expect(document.body.querySelector('.clinical-document-global-toolbar-modal')).toBeNull();
+  });
+
   it('inserts a table through the toolbar dialog', async () => {
     const onInsertHtml = vi.fn();
 

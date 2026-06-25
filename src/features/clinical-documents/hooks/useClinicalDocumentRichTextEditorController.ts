@@ -10,6 +10,7 @@ import {
 import {
   insertClinicalDocumentHtmlAtCursor,
   insertClinicalDocumentPlainTextAtCursor,
+  removeTrailingPatternAtCaret,
 } from '@/features/clinical-documents/controllers/clinicalDocumentEditorInsertionController';
 import {
   applyClinicalDocumentEditorCommand,
@@ -19,7 +20,10 @@ import { resolveClinicalDocumentKeyboardShortcut } from '@/features/clinical-doc
 import {
   detectSlashCommand,
   removeSlashCommandFromHtml,
+  SLASH_LAB_TEXT_REMOVE,
 } from '@/features/clinical-documents/controllers/clinicalDocumentSlashCommandController';
+import { enforceMandatoryListShape } from '@/features/clinical-documents/controllers/clinicalDocumentMandatoryListShapeController';
+import type { ClinicalDocumentMandatoryListType } from '@/features/clinical-documents/controllers/clinicalDocumentEmptySectionTemplateController';
 import type {
   ClinicalDocumentRichTextEditorActivationApi,
   ClinicalDocumentRichTextEditorCommand,
@@ -31,6 +35,12 @@ interface UseClinicalDocumentRichTextEditorControllerParams {
   value: string;
   disabled: boolean;
   editorRef: MutableRefObject<HTMLDivElement | null>;
+  /**
+   * When set, command application (toolbar/keyboard) re-enforces the list
+   * wrapper so list-affecting commands cannot leave the section without its
+   * mandatory `<ol>`/`<ul>` shape.
+   */
+  mandatoryListType?: ClinicalDocumentMandatoryListType | null;
   onChange: (value: string) => void;
   onActivate?: (sectionId: string, editor: ClinicalDocumentRichTextEditorActivationApi) => void;
   onDeactivate?: (sectionId: string) => void;
@@ -44,6 +54,7 @@ export const useClinicalDocumentRichTextEditorController = ({
   value,
   disabled,
   editorRef,
+  mandatoryListType,
   onChange,
   onActivate,
   onDeactivate,
@@ -157,6 +168,18 @@ export const useClinicalDocumentRichTextEditorController = ({
     [pushHistorySnapshot]
   );
 
+  // Flush the debounced history snapshot on unmount. Switching documents
+  // re-keys the editor subtree, which unmounts WITHOUT firing blur, so the
+  // pending snapshot would otherwise be dropped and its timer would fire after
+  // unmount. `flushPendingHistorySnapshot` clears that timer and commits the
+  // snapshot. (`flushPendingHistorySnapshot` is stable, so this runs once.)
+  useEffect(
+    () => () => {
+      flushPendingHistorySnapshot();
+    },
+    [flushPendingHistorySnapshot]
+  );
+
   const applyEditorCommand = useCallback(
     (command: ClinicalDocumentRichTextEditorCommand, value?: string) => {
       const editor = editorRef.current;
@@ -191,6 +214,11 @@ export const useClinicalDocumentRichTextEditorController = ({
       editor.focus();
       pendingExternalNormalizedValueRef.current = null;
       applyClinicalDocumentEditorCommand(command, value);
+      // List-affecting commands (toggle list, outdent) can strip the mandatory
+      // wrapper. Restore it here so the section never persists a broken shape.
+      if (mandatoryListType) {
+        enforceMandatoryListShape(editor, mandatoryListType);
+      }
       const html = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
       lastLocalNormalizedValueRef.current = html;
       pushHistorySnapshot(html);
@@ -200,6 +228,7 @@ export const useClinicalDocumentRichTextEditorController = ({
       disabled,
       editorRef,
       flushPendingHistorySnapshot,
+      mandatoryListType,
       onChange,
       pushHistorySnapshot,
       updateHistoryState,
@@ -285,7 +314,19 @@ export const useClinicalDocumentRichTextEditorController = ({
     const command = detectSlashCommand(textContent);
 
     if (command === 'lab' && onSlashLab) {
-      editor.innerHTML = removeSlashCommandFromHtml(editor.innerHTML);
+      // Strip the typed command at the caret (keeps the cursor in place); fall
+      // back to an innerHTML-level strip only if the caret isn't where expected.
+      if (!removeTrailingPatternAtCaret(editor, SLASH_LAB_TEXT_REMOVE)) {
+        editor.innerHTML = removeSlashCommandFromHtml(editor.innerHTML);
+      }
+
+      // Commit the cleaned content NOW so a null lab result can't leave the
+      // stranded "/lab " in `value` (which would otherwise resurface on blur).
+      const cleanedHtml = normalizeClinicalDocumentContentForStorage(editor.innerHTML);
+      pendingExternalNormalizedValueRef.current = null;
+      lastLocalNormalizedValueRef.current = cleanedHtml;
+      debouncedPushHistorySnapshot(cleanedHtml);
+      onChange(cleanedHtml);
 
       void onSlashLab().then(labText => {
         if (!labText) return;
