@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Check, ImageOff, Loader2, Maximize2, Pencil, Trash2, X } from 'lucide-react';
 import { BaseModal } from '@/components/shared/BaseModal';
 import { useConfirmDialog } from '@/context/UIContext';
+import { formatDateTimeCL } from '@/utils/dateDisplayUtils';
 import {
   PRESCRIPTION_ASSIGNMENT_SCOPE_LABELS,
   PRESCRIPTION_TYPES,
@@ -35,22 +36,6 @@ const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-};
-
-const formatDateTime = (iso: string): string => {
-  try {
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) return iso;
-    return date.toLocaleString('es-CL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return iso;
-  }
 };
 
 export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = ({
@@ -269,7 +254,7 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
                 )}
                 {record.typeUpdatedAt && (
                   <p className="mt-1 text-[10px] text-slate-400">
-                    Actualizado {formatDateTime(record.typeUpdatedAt)}
+                    Actualizado {formatDateTimeCL(record.typeUpdatedAt)}
                     {record.typeUpdatedBy ? ` · ${record.typeUpdatedBy}` : ''}
                   </p>
                 )}
@@ -306,7 +291,7 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
                 Subido
               </dt>
               <dd className="text-slate-700">
-                {formatDateTime(record.createdAt)} ·{' '}
+                {formatDateTimeCL(record.createdAt)} ·{' '}
                 {record.uploader?.displayName ||
                   record.uploader?.email ||
                   (record.uploader?.source === 'qr_pin' ? 'Vía QR + PIN' : 'Personal autenticado')}
@@ -317,7 +302,7 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
               <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
                 Respaldo sugerido
               </dt>
-              <dd className="text-slate-700">{formatDateTime(record.expiresAt)}</dd>
+              <dd className="text-slate-700">{formatDateTimeCL(record.expiresAt)}</dd>
             </div>
 
             <div>
@@ -337,7 +322,7 @@ export const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = (
                   Reasignado
                 </dt>
                 <dd className="text-slate-700">
-                  {formatDateTime(record.patientReassignedAt)}
+                  {formatDateTimeCL(record.patientReassignedAt)}
                   {record.patientReassignedBy ? ` · ${record.patientReassignedBy}` : ''}
                 </dd>
               </div>

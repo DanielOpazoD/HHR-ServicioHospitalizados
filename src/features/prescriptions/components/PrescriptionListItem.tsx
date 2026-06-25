@@ -7,27 +7,12 @@ import {
   type PrescriptionRecord,
 } from '@/types/prescriptionTypes';
 import { resolvePrescriptionImageDownloadUrl } from '@/features/prescriptions/services/prescriptionStorageImageService';
+import { formatDateTimeCL } from '@/utils/dateDisplayUtils';
 
 interface PrescriptionListItemProps {
   record: PrescriptionRecord;
   onSelect: (record: PrescriptionRecord) => void;
 }
-
-const formatDateTime = (iso: string): string => {
-  try {
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) return iso;
-    return date.toLocaleString('es-CL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return iso;
-  }
-};
 
 const TYPE_BADGE_CLASS: Record<string, string> = {
   comun: 'border-slate-200 bg-slate-100 text-slate-700',
@@ -132,7 +117,7 @@ export const PrescriptionListItem: React.FC<PrescriptionListItemProps> = ({ reco
         </div>
 
         <div className="flex items-center gap-2 text-[11px] text-slate-500">
-          <span>{formatDateTime(record.createdAt)}</span>
+          <span>{formatDateTimeCL(record.createdAt)}</span>
           <span aria-hidden="true">·</span>
           <span className="truncate">
             {record.uploader?.displayName ||
