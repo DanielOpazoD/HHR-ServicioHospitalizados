@@ -19,6 +19,7 @@ import {
   CLINICAL_ATTACHMENT_INLINE_IMAGE_MAX_BYTES,
   resolveClinicalAttachmentFilePolicy,
 } from '@/features/clinical-documents/controllers/clinicalAttachmentFilePolicy';
+import { escapeHtml } from '@/utils/htmlEscape';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -238,13 +239,6 @@ export const readFileAsDataUrl = (file: File): Promise<string> =>
 export const buildPastedImageHtml = (dataUrl: string): string =>
   `<img src="${dataUrl}" alt="Imagen pegada" style="max-width:100%">`;
 
-const escapeHtmlAttribute = (value: string): string =>
-  value
-    .replaceAll('&', '&amp;')
-    .replaceAll('"', '&quot;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
-
 export interface PastedStorageImageHtmlParams {
   attachmentId: string;
   imageUrl: string;
@@ -256,8 +250,6 @@ export const buildPastedStorageImageHtml = ({
   imageUrl,
   storagePath,
 }: PastedStorageImageHtmlParams): string =>
-  `<img src="${escapeHtmlAttribute(imageUrl)}" alt="Imagen adjunta" data-clinical-attachment-id="${escapeHtmlAttribute(
+  `<img src="${escapeHtml(imageUrl)}" alt="Imagen adjunta" data-clinical-attachment-id="${escapeHtml(
     attachmentId
-  )}" data-clinical-document-storage-path="${escapeHtmlAttribute(
-    storagePath
-  )}" style="max-width:100%">`;
+  )}" data-clinical-document-storage-path="${escapeHtml(storagePath)}" style="max-width:100%">`;

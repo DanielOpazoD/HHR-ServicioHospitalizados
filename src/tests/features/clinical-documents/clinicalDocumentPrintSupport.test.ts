@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  escapeHtmlAttr,
-  escapeHtmlText,
   escapeStyleText,
   sanitizeClinicalDocumentSheetClone,
   waitForClinicalDocumentSheetAssets,
@@ -111,9 +109,8 @@ describe('clinicalDocumentPrintSupport', () => {
     vi.useRealTimers();
   });
 
-  it('escapes html-safe fragments for attributes, text and style tags', () => {
-    expect(escapeHtmlAttr('Tom & "Jerry"')).toBe('Tom &amp; &quot;Jerry&quot;');
-    expect(escapeHtmlText('<Alta & control>')).toBe('&lt;Alta &amp; control&gt;');
+  it('escapes embedded </style> sequences for style tags', () => {
+    // HTML text/attribute escaping is covered by src/tests/utils/htmlEscape.test.ts.
     expect(escapeStyleText('</style><script>')).toBe('<\\/style><script>');
   });
 });

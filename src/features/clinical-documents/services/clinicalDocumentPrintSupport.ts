@@ -216,10 +216,4 @@ export const waitForClinicalDocumentSheetAssets = async (
   }
 };
 
-export const escapeHtmlAttr = (value: string): string =>
-  value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-
-export const escapeHtmlText = (value: string): string =>
-  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
 export const escapeStyleText = (value: string): string => value.replace(/<\/style/gi, '<\\/style');

@@ -1,6 +1,7 @@
 import { AuditLogEntry } from '@/types/auditLogTypes';
 import { formatAuditTimestamp } from '@/services/admin/utils/auditUtils';
 import { buildClinicalAuditExportRows } from '@/services/admin/clinicalAuditExportRows';
+import { escapeHtml } from '@/utils/htmlEscape';
 
 interface AuditPdfReportParams {
   filteredLogs: AuditLogEntry[];
@@ -19,13 +20,6 @@ export const generateAuditPdfHtml = ({
   endDate,
 }: AuditPdfReportParams): string => {
   const rows = buildClinicalAuditExportRows(filteredLogs).slice(0, 200);
-  const escapeHtml = (value: string): string =>
-    value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
 
   return `
         <!DOCTYPE html>
