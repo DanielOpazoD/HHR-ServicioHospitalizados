@@ -58,12 +58,16 @@ export const insertClinicalDocumentPlainTextAtCursor = (
   insertClinicalDocumentHtmlAtCursor(editor, html);
 };
 
+/** Upper bound on how far back to look for the trailing pattern (chars). */
+const TRAILING_PATTERN_LOOKBACK = 64;
+
 /**
  * Removes a trailing pattern (e.g. a typed `/lab ` slash command) that ends at
- * the collapsed caret, deleting it from the caret's own text node so the cursor
- * stays put. Returns `true` if it removed the match, `false` if the caret is not
- * a collapsed position inside a text node ending with the pattern (the caller
- * should then fall back to an innerHTML-level strip).
+ * the collapsed caret, deleting it from the text flow so the cursor stays put.
+ * Handles the command spanning several adjacent text nodes (e.g. across an
+ * inline formatting boundary). Returns `true` if it removed the match, `false`
+ * if the caret is not a collapsed position whose preceding text ends with the
+ * pattern (the caller should then fall back to an innerHTML-level strip).
  *
  * Preserving the caret matters: a full `innerHTML` rewrite collapses the
  * selection, which makes a subsequent cursor insertion fall back to appending
@@ -80,27 +84,55 @@ export const removeTrailingPatternAtCaret = (editor: HTMLDivElement, pattern: Re
   }
 
   const range = selection.getRangeAt(0);
-  const node = range.endContainer;
-  if (!range.collapsed || node.nodeType !== Node.TEXT_NODE || !editor.contains(node)) {
+  const caretNode = range.endContainer;
+  if (!range.collapsed || caretNode.nodeType !== Node.TEXT_NODE || !editor.contains(caretNode)) {
     return false;
   }
 
-  const textBeforeCaret = (node.textContent ?? '').slice(0, range.endOffset);
+  // Collect a bounded run of text ending at the caret, walking back across
+  // adjacent text nodes so a command split by inline markup is still matched.
+  const segments: Array<{ node: Text; length: number }> = [
+    { node: caretNode as Text, length: range.endOffset },
+  ];
+  let textBeforeCaret = (caretNode.textContent ?? '').slice(0, range.endOffset);
+
+  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+  walker.currentNode = caretNode;
+  while (textBeforeCaret.length < TRAILING_PATTERN_LOOKBACK) {
+    const previous = walker.previousNode();
+    if (!previous) {
+      break;
+    }
+    const text = previous.textContent ?? '';
+    segments.unshift({ node: previous as Text, length: text.length });
+    textBeforeCaret = text + textBeforeCaret;
+  }
+
   const match = textBeforeCaret.match(pattern);
   if (!match || match[0].length === 0) {
     return false;
   }
 
-  const removalStart = range.endOffset - match[0].length;
-  const removalRange = document.createRange();
-  removalRange.setStart(node, removalStart);
-  removalRange.setEnd(node, range.endOffset);
-  removalRange.deleteContents();
+  // Map the match start (an offset into the collected text) back to a node.
+  const matchStartInText = textBeforeCaret.length - match[0].length;
+  let startNode: Text = caretNode as Text;
+  let startOffset = range.endOffset;
+  let consumed = 0;
+  for (const segment of segments) {
+    if (matchStartInText <= consumed + segment.length) {
+      startNode = segment.node;
+      startOffset = matchStartInText - consumed;
+      break;
+    }
+    consumed += segment.length;
+  }
 
-  const caretRange = document.createRange();
-  caretRange.setStart(node, removalStart);
-  caretRange.collapse(true);
+  const removalRange = document.createRange();
+  removalRange.setStart(startNode, startOffset);
+  removalRange.setEnd(caretNode, range.endOffset);
+  removalRange.deleteContents();
+  // After deleteContents the range is collapsed at the start — reuse it as caret.
   selection.removeAllRanges();
-  selection.addRange(caretRange);
+  selection.addRange(removalRange);
   return true;
 };

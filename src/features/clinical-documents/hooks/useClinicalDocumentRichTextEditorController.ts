@@ -168,11 +168,13 @@ export const useClinicalDocumentRichTextEditorController = ({
     [pushHistorySnapshot]
   );
 
-  // Flush the debounced history snapshot on unmount. Switching documents
-  // re-keys the editor subtree, which unmounts WITHOUT firing blur, so the
-  // pending snapshot would otherwise be dropped and its timer would fire after
-  // unmount. `flushPendingHistorySnapshot` clears that timer and commits the
-  // snapshot. (`flushPendingHistorySnapshot` is stable, so this runs once.)
+  // Clean up the debounced history snapshot on unmount. Switching documents
+  // re-keys the editor subtree, which unmounts WITHOUT firing blur; without this
+  // the 500ms timer survives and fires after unmount, calling setState on a gone
+  // component (leak / wasted work). `flushPendingHistorySnapshot` clears the
+  // timer (and commits the final snapshot before this instance's history is
+  // discarded). Content is never lost here — `onChange` already runs eagerly on
+  // every edit. (`flushPendingHistorySnapshot` is stable, so this runs once.)
   useEffect(
     () => () => {
       flushPendingHistorySnapshot();

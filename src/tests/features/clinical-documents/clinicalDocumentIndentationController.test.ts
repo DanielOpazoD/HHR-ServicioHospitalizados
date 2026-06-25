@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { applyClinicalDocumentIndentationCommand } from '@/features/clinical-documents/controllers/clinicalDocumentIndentationController';
+import {
+  applyClinicalDocumentIndentationCommand,
+  normalizeNestedListStructure,
+} from '@/features/clinical-documents/controllers/clinicalDocumentIndentationController';
 
 /**
  * Builds an editor root attached to <body> (so window.getSelection resolves)
@@ -84,5 +87,59 @@ describe('applyClinicalDocumentIndentationCommand', () => {
     expect((editor.children[1] as HTMLElement).style.marginLeft).toBe('24px');
     // The third block sits outside the selection and stays untouched.
     expect((editor.children[2] as HTMLElement).style.marginLeft).toBe('');
+  });
+});
+
+describe('normalizeNestedListStructure', () => {
+  it('relocates a list nested directly in a list into the preceding <li>', () => {
+    const editor = mountEditor('<ol><li>uno</li><ol><li>dos</li></ol><li>tres</li></ol>');
+
+    normalizeNestedListStructure(editor);
+
+    // The sublist now lives inside <li>uno</li>, producing valid HTML.
+    expect(editor.innerHTML).toBe('<ol><li>uno<ol><li>dos</li></ol></li><li>tres</li></ol>');
+  });
+
+  it('wraps the orphan sublist in a new <li> when there is no preceding item', () => {
+    const editor = mountEditor('<ul><ul><li>solo</li></ul></ul>');
+
+    normalizeNestedListStructure(editor);
+
+    expect(editor.innerHTML).toBe('<ul><li><ul><li>solo</li></ul></li></ul>');
+  });
+
+  it('repairs multiple levels of invalid nesting', () => {
+    const editor = mountEditor('<ol><li>a</li><ol><li>b</li><ol><li>c</li></ol></ol></ol>');
+
+    normalizeNestedListStructure(editor);
+
+    expect(editor.innerHTML).toBe('<ol><li>a<ol><li>b<ol><li>c</li></ol></li></ol></li></ol>');
+  });
+
+  it('leaves already-valid nesting untouched', () => {
+    const valid = '<ol><li>a<ol><li>b</li></ol></li><li>c</li></ol>';
+    const editor = mountEditor(valid);
+
+    normalizeNestedListStructure(editor);
+
+    expect(editor.innerHTML).toBe(valid);
+  });
+
+  it('relocates by moving nodes (preserving identity), not by rebuilding markup', () => {
+    // Moving the existing node keeps live ranges/caret valid in a real browser;
+    // re-creating it via innerHTML would not. We assert the original text node
+    // survives the relocation, still connected to the editor.
+    const editor = mountEditor('<ol><li>uno</li><ol><li>dos</li></ol></ol>');
+    const dosText = editor.querySelectorAll('li')[1].firstChild as Text;
+
+    normalizeNestedListStructure(editor);
+
+    expect(editor.contains(dosText)).toBe(true);
+    expect(dosText.textContent).toBe('dos');
+    // It now lives in the sublist nested inside the first <li>, so that outer
+    // item's text spans both labels.
+    const outerItem = editor.querySelector('li');
+    expect(outerItem?.textContent).toContain('uno');
+    expect(outerItem?.textContent).toContain('dos');
   });
 });

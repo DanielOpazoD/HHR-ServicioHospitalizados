@@ -214,6 +214,34 @@ describe('ClinicalDocumentFormattingToolbar', () => {
     expect(document.body.querySelector('.clinical-document-global-toolbar-modal')).toBeNull();
   });
 
+  it('anchors the panel below the Formato button and repositions on resize', () => {
+    render(<ClinicalDocumentFormattingToolbar {...buildProps({ isFormattingOpen: true })} />);
+
+    const button = screen.getByRole('button', { name: 'Formato' });
+    vi.spyOn(button, 'getBoundingClientRect').mockReturnValue({
+      bottom: 100,
+      right: 300,
+      top: 80,
+      left: 250,
+      width: 50,
+      height: 20,
+      x: 250,
+      y: 80,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    fireEvent(window, new Event('resize'));
+
+    const panel = document.body.querySelector<HTMLElement>(
+      '.clinical-document-global-toolbar-modal'
+    );
+    expect(panel?.style.position).toBe('fixed');
+    expect(panel?.style.visibility).toBe('visible');
+    // 8px gap below the button's bottom edge; right edge aligned to the button.
+    expect(panel?.style.top).toBe('108px');
+    expect(panel?.style.right).toBe(`${window.innerWidth - 300}px`);
+  });
+
   it('inserts a table through the toolbar dialog', async () => {
     const onInsertHtml = vi.fn();
 

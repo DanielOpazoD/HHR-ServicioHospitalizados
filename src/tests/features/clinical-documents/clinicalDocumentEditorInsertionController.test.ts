@@ -57,6 +57,26 @@ describe('removeTrailingPatternAtCaret', () => {
     expect(editor.textContent).toBe('x /lab ');
   });
 
+  it('removes the pattern even when it spans multiple text nodes', () => {
+    // "/lab " split across an inline boundary: "Nota /la" + "b ".
+    const editor = document.createElement('div');
+    editor.contentEditable = 'true';
+    editor.appendChild(document.createTextNode('Nota /la'));
+    editor.appendChild(document.createTextNode('b '));
+    document.body.appendChild(editor);
+
+    const lastNode = editor.lastChild as Text;
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(lastNode, (lastNode.textContent ?? '').length);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    expect(removeTrailingPatternAtCaret(editor, SLASH_LAB)).toBe(true);
+    expect(editor.textContent).toBe('Nota ');
+  });
+
   it('returns false when the selection is not collapsed', () => {
     const editor = mountEditor('Nota /lab ');
     const textNode = editor.firstChild as Text;
