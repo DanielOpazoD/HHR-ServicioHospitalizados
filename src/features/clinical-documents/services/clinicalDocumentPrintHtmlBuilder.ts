@@ -6,6 +6,7 @@ import {
   CLINICAL_DOCUMENT_SHEET_ID,
   escapeStyleText,
   sanitizeClinicalDocumentSheetClone,
+  sanitizeCssValue,
   type ClinicalDocumentAnnexPrintMode,
 } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
 import { escapeHtml } from '@/utils/htmlEscape';
@@ -68,7 +69,9 @@ export const buildClinicalDocumentPrintHtml = async (
     ? '.clinical-document-patient-info-title{display:none !important;}'
     : '';
   const appStyles = options.includeAppStyles ? collectAppStyleTags() : '';
-  const bodyFontFamily = escapeHtml(
+  // CSS context (inside <style>): preserve the quotes that the font stack needs;
+  // HTML-escaping here would corrupt `'Segoe UI'` into `&#39;Segoe UI&#39;`.
+  const bodyFontFamily = sanitizeCssValue(
     options.bodyFontFamily?.trim() ||
       window.getComputedStyle(document.body).fontFamily ||
       "Inter, 'Segoe UI', Roboto, Arial, sans-serif"

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   escapeStyleText,
   sanitizeClinicalDocumentSheetClone,
+  sanitizeCssValue,
   waitForClinicalDocumentSheetAssets,
 } from '@/features/clinical-documents/services/clinicalDocumentPrintSupport';
 
@@ -112,5 +113,14 @@ describe('clinicalDocumentPrintSupport', () => {
   it('escapes embedded </style> sequences for style tags', () => {
     // HTML text/attribute escaping is covered by src/tests/utils/htmlEscape.test.ts.
     expect(escapeStyleText('</style><script>')).toBe('<\\/style><script>');
+  });
+
+  it('keeps CSS values valid: preserves quotes but strips style-breakout chars', () => {
+    // A font-family stack must keep its quotes (HTML-escaping would corrupt it).
+    expect(sanitizeCssValue("Inter, 'Segoe UI', Roboto, sans-serif")).toBe(
+      "Inter, 'Segoe UI', Roboto, sans-serif"
+    );
+    // …while characters that could break out of the declaration / <style> are removed.
+    expect(sanitizeCssValue('Arial};{<>x')).toBe('Arialx');
   });
 });

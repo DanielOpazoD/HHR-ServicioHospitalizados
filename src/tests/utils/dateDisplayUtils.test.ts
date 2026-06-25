@@ -8,13 +8,14 @@ describe('formatDateTimeCL', () => {
     expect(formatDateTimeCL('')).toBe('');
   });
 
-  it('renders a 2-digit day/month, 4-digit year and a time component', () => {
+  it('renders a 2-digit day/month, 4-digit year and a 24-hour time', () => {
     const formatted = formatDateTimeCL('2026-06-25T16:30:00');
-    // ICU/locale separators and 12h/24h clock vary by runtime, so assert the
-    // component shape rather than an exact string.
+    // Separators are locale-driven, but the 24h clock is pinned, so the time is
+    // deterministic across runtimes.
     expect(formatted).toMatch(/\b25\b/);
     expect(formatted).toMatch(/\b06\b/);
     expect(formatted).toMatch(/\b2026\b/);
-    expect(formatted).toMatch(/\b\d{1,2}:30\b/);
+    expect(formatted).toContain('16:30');
+    expect(formatted).not.toMatch(/[ap]\.?\s*m\.?/i);
   });
 });
