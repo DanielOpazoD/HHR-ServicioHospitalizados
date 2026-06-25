@@ -120,6 +120,7 @@ export const ClinicalDocumentRichTextEditor: React.FC<ClinicalDocumentRichTextEd
     value: effectiveValue,
     disabled,
     editorRef,
+    mandatoryListType,
     onChange,
     onActivate,
     onDeactivate,

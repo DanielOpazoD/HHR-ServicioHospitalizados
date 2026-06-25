@@ -89,4 +89,38 @@ describe('enforceMandatoryListShape', () => {
     expect(editor.innerHTML).toBe('<ol><li>x</li></ol>');
     cleanup(editor);
   });
+
+  it('preserves inline formatting (bold/italic/colour) when repairing a stray sibling', () => {
+    // Reproduces the browser behaviour where pressing Enter exits the list and
+    // leaves a trailing block sibling, tripping the shape check.
+    const editor = mountEditor(
+      '<ol><li><b>Diagnostico uno</b></li><li>Diagnostico <span style="color: rgb(220, 38, 38)">dos</span></li></ol><div><br></div>'
+    );
+    const mutated = enforceMandatoryListShape(editor, 'ol');
+    expect(mutated).toBe(true);
+    expect(editor.innerHTML).toBe(
+      '<ol><li><b>Diagnostico uno</b></li><li>Diagnostico <span style="color: rgb(220, 38, 38)">dos</span></li></ol>'
+    );
+    cleanup(editor);
+  });
+
+  it('preserves inline formatting when the wrapper itself was destroyed', () => {
+    const editor = mountEditor('<div><b>uno</b></div><div><i>dos</i></div>');
+    enforceMandatoryListShape(editor, 'ul');
+    expect(editor.innerHTML).toBe('<ul><li><b>uno</b></li><li><i>dos</i></li></ul>');
+    cleanup(editor);
+  });
+
+  it('strips unsafe markup (event handlers, disallowed tags) while repairing the list', () => {
+    const editor = mountEditor(
+      '<ol><li><b onclick="alert(1)">Dx</b><script>alert(1)</script></li></ol><div>stray</div>'
+    );
+    enforceMandatoryListShape(editor, 'ol');
+
+    expect(editor.innerHTML).not.toContain('onclick');
+    expect(editor.innerHTML).not.toContain('<script');
+    // The documented inline formatting survives, just without the handler.
+    expect(editor.innerHTML).toContain('<b>Dx</b>');
+    cleanup(editor);
+  });
 });

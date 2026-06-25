@@ -647,6 +647,17 @@
   padding: 8px;
 }
 
+/**
+ * Floating variant: rendered through a portal on <body> with fixed coordinates
+ * (see ClinicalDocumentFormattingToolbar). Keeps the panel inside the viewport
+ * and scrollable on short screens so it stays fully reachable.
+ */
+.clinical-document-global-toolbar-modal--floating {
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+}
+
 .clinical-document-toolbar-cluster {
   display: inline-flex;
   align-items: center;
