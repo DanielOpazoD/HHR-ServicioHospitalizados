@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ClipboardEvent, KeyboardEvent, MutableRefObject } from 'react';
 
 import {
@@ -23,6 +23,7 @@ import {
   SLASH_LAB_TEXT_REMOVE,
 } from '@/features/clinical-documents/controllers/clinicalDocumentSlashCommandController';
 import { enforceMandatoryListShape } from '@/features/clinical-documents/controllers/clinicalDocumentMandatoryListShapeController';
+import { useClinicalDocumentEditorHistory } from '@/features/clinical-documents/hooks/useClinicalDocumentEditorHistory';
 import type { ClinicalDocumentMandatoryListType } from '@/features/clinical-documents/controllers/clinicalDocumentEmptySectionTemplateController';
 import type {
   ClinicalDocumentRichTextEditorActivationApi,
@@ -62,13 +63,8 @@ export const useClinicalDocumentRichTextEditorController = ({
   onImagePasteRejected,
   onSlashLab,
 }: UseClinicalDocumentRichTextEditorControllerParams) => {
-  const historyRef = useRef<string[]>([]);
-  const historyIndexRef = useRef(-1);
-  const isApplyingHistoryRef = useRef(false);
   const isActiveRef = useRef(false);
   const lastLocalNormalizedValueRef = useRef('');
-  const historyDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingHistoryHtmlRef = useRef<string | null>(null);
   const pendingExternalNormalizedValueRef = useRef<string | null>(null);
   const onActivateRef = useRef(onActivate);
   const onDeactivateRef = useRef(onDeactivate);
@@ -77,22 +73,23 @@ export const useClinicalDocumentRichTextEditorController = ({
   >(null);
   const insertHtmlRef = useRef<((html: string) => void) | null>(null);
   const normalizedValue = useMemo(() => normalizeClinicalDocumentContentForStorage(value), [value]);
-  const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false });
+
+  // Undo/redo buffer. Driven through stable method callbacks so its internal
+  // refs never leak into this hook's dependency arrays.
+  const {
+    historyState,
+    seedHistory,
+    navigateHistory,
+    consumeApplyingFlag,
+    pushHistorySnapshot,
+    debouncedPushHistorySnapshot,
+    flushPendingHistorySnapshot,
+  } = useClinicalDocumentEditorHistory();
 
   useEffect(() => {
     onActivateRef.current = onActivate;
     onDeactivateRef.current = onDeactivate;
   }, [onActivate, onDeactivate]);
-
-  const updateHistoryState = useCallback(
-    (nextIndex = historyIndexRef.current, history = historyRef.current) => {
-      setHistoryState({
-        canUndo: nextIndex > 0,
-        canRedo: nextIndex >= 0 && nextIndex < history.length - 1,
-      });
-    },
-    []
-  );
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -111,84 +108,11 @@ export const useClinicalDocumentRichTextEditorController = ({
       }
     }
 
-    if (!isApplyingHistoryRef.current && !isFocused && !isLocalEcho) {
-      historyRef.current = [normalizedValue];
-      historyIndexRef.current = 0;
-      updateHistoryState(0, historyRef.current);
+    const wasApplyingHistory = consumeApplyingFlag();
+    if (!wasApplyingHistory && !isFocused && !isLocalEcho) {
+      seedHistory(normalizedValue);
     }
-
-    isApplyingHistoryRef.current = false;
-  }, [editorRef, normalizedValue, updateHistoryState]);
-
-  const pushHistorySnapshot = useCallback(
-    (html: string) => {
-      const normalizedHtml = normalizeClinicalDocumentContentForStorage(html);
-      const current = historyRef.current[historyIndexRef.current];
-
-      if (normalizedHtml === current) {
-        return;
-      }
-
-      historyRef.current = [
-        ...historyRef.current.slice(0, historyIndexRef.current + 1),
-        normalizedHtml,
-      ];
-      historyIndexRef.current = historyRef.current.length - 1;
-      updateHistoryState();
-    },
-    [updateHistoryState]
-  );
-
-  const HISTORY_DEBOUNCE_MS = 500;
-
-  const flushPendingHistorySnapshot = useCallback(() => {
-    if (historyDebounceTimerRef.current) {
-      clearTimeout(historyDebounceTimerRef.current);
-      historyDebounceTimerRef.current = null;
-    }
-    const pending = pendingHistoryHtmlRef.current;
-    if (pending !== null) {
-      pendingHistoryHtmlRef.current = null;
-      pushHistorySnapshot(pending);
-    }
-  }, [pushHistorySnapshot]);
-
-  const debouncedPushHistorySnapshot = useCallback(
-    (html: string) => {
-      pendingHistoryHtmlRef.current = html;
-      if (historyDebounceTimerRef.current) {
-        clearTimeout(historyDebounceTimerRef.current);
-      }
-      historyDebounceTimerRef.current = setTimeout(() => {
-        historyDebounceTimerRef.current = null;
-        pendingHistoryHtmlRef.current = null;
-        pushHistorySnapshot(html);
-      }, HISTORY_DEBOUNCE_MS);
-    },
-    [pushHistorySnapshot]
-  );
-
-  /** Clears the debounced timer and pending ref WITHOUT pushing a snapshot. */
-  const discardPendingHistorySnapshot = useCallback(() => {
-    if (historyDebounceTimerRef.current) {
-      clearTimeout(historyDebounceTimerRef.current);
-      historyDebounceTimerRef.current = null;
-    }
-    pendingHistoryHtmlRef.current = null;
-  }, []);
-
-  // Clean up the debounced history snapshot on unmount. Switching documents
-  // re-keys the editor subtree, which unmounts WITHOUT firing blur; without this
-  // the 500ms timer survives and fires after unmount, doing wasted work (and, on
-  // older React, a setState-after-unmount warning). We DISCARD rather than flush:
-  // this instance's history is about to be thrown away, and content is never lost
-  // because `onChange` already runs eagerly on every edit.
-  useEffect(
-    () => () => {
-      discardPendingHistorySnapshot();
-    },
-    [discardPendingHistorySnapshot]
-  );
+  }, [editorRef, normalizedValue, consumeApplyingFlag, seedHistory]);
 
   const applyEditorCommand = useCallback(
     (command: ClinicalDocumentRichTextEditorCommand, value?: string) => {
@@ -197,27 +121,12 @@ export const useClinicalDocumentRichTextEditorController = ({
 
       flushPendingHistorySnapshot();
 
-      if (command === 'undo') {
-        if (historyIndexRef.current <= 0) return;
-        historyIndexRef.current -= 1;
-        const previous = historyRef.current[historyIndexRef.current] || '';
-        isApplyingHistoryRef.current = true;
-        editor.innerHTML = previous;
-        updateHistoryState();
-        lastLocalNormalizedValueRef.current = previous;
-        onChange(previous);
-        return;
-      }
-
-      if (command === 'redo') {
-        if (historyIndexRef.current >= historyRef.current.length - 1) return;
-        historyIndexRef.current += 1;
-        const next = historyRef.current[historyIndexRef.current] || '';
-        isApplyingHistoryRef.current = true;
-        editor.innerHTML = next;
-        updateHistoryState();
-        lastLocalNormalizedValueRef.current = next;
-        onChange(next);
+      if (command === 'undo' || command === 'redo') {
+        const snapshot = navigateHistory(command);
+        if (snapshot === null) return;
+        editor.innerHTML = snapshot;
+        lastLocalNormalizedValueRef.current = snapshot;
+        onChange(snapshot);
         return;
       }
 
@@ -239,9 +148,9 @@ export const useClinicalDocumentRichTextEditorController = ({
       editorRef,
       flushPendingHistorySnapshot,
       mandatoryListType,
+      navigateHistory,
       onChange,
       pushHistorySnapshot,
-      updateHistoryState,
     ]
   );
 
@@ -367,15 +276,13 @@ export const useClinicalDocumentRichTextEditorController = ({
       if (!hasLocalEditAfterExternalValue && currentNormalizedValue !== nextNormalizedValue) {
         editor.innerHTML = nextNormalizedValue;
         lastLocalNormalizedValueRef.current = nextNormalizedValue;
-        historyRef.current = [nextNormalizedValue];
-        historyIndexRef.current = 0;
-        updateHistoryState(0, historyRef.current);
+        seedHistory(nextNormalizedValue);
       }
       pendingExternalNormalizedValueRef.current = null;
     }
     isActiveRef.current = false;
     onDeactivateRef.current?.(sectionId);
-  }, [editorRef, flushPendingHistorySnapshot, sectionId, updateHistoryState]);
+  }, [editorRef, flushPendingHistorySnapshot, seedHistory, sectionId]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {

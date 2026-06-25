@@ -10,18 +10,11 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { createPortal } from 'react-dom';
 import {
   Bold,
-  Eraser,
-  IndentDecrease,
-  IndentIncrease,
-  Italic,
   Link2,
-  List,
-  ListOrdered,
   Printer,
   Redo2,
   RotateCcw,
   Table2,
-  Underline,
   Undo2,
   ZoomIn,
   ZoomOut,
@@ -29,6 +22,19 @@ import {
 
 import { ClinicalDocumentLinkDialog } from '@/features/clinical-documents/components/ClinicalDocumentLinkDialog';
 import { ClinicalDocumentTableDialog } from '@/features/clinical-documents/components/ClinicalDocumentTableDialog';
+import {
+  defaultIconBtn,
+  FORMATTING_ICON_SIZE,
+  FORMATTING_PANEL_OFFSET_PX,
+  FORMATTING_PANEL_VIEWPORT_MARGIN_PX,
+  FORMATTING_PANEL_Z_INDEX,
+  iconBtn,
+  listFormattingActions,
+  renderToolbarButtons,
+  textFormattingActions,
+  ToolbarCluster,
+  TOOLBAR_ICON_SIZE,
+} from '@/features/clinical-documents/components/clinicalDocumentFormattingToolbarShared';
 
 import type {
   ClinicalDocumentFormattingCommand,
@@ -58,91 +64,6 @@ export interface ClinicalDocumentFormattingToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
 }
-
-// ---------------------------------------------------------------------------
-// Formatting sub-panel actions
-// ---------------------------------------------------------------------------
-
-const textFormattingActions = [
-  { command: 'bold' as const, label: 'Negrita', icon: Bold },
-  { command: 'italic' as const, label: 'Cursiva', icon: Italic },
-  { command: 'underline' as const, label: 'Subrayado', icon: Underline },
-  { command: 'removeFormat' as const, label: 'Quitar formato', icon: Eraser },
-];
-
-const listFormattingActions = [
-  { command: 'insertUnorderedList' as const, label: 'Viñetas', icon: List },
-  { command: 'insertOrderedList' as const, label: 'Lista numerada', icon: ListOrdered },
-  { command: 'indent' as const, label: 'Aumentar sangría', icon: IndentIncrease },
-  { command: 'outdent' as const, label: 'Disminuir sangría', icon: IndentDecrease },
-];
-
-// ---------------------------------------------------------------------------
-// Shared styles
-// ---------------------------------------------------------------------------
-
-/** Icon size (px) for main toolbar buttons. */
-const TOOLBAR_ICON_SIZE = 15;
-
-/** Icon size (px) for the expanded formatting sub-panel. */
-const FORMATTING_ICON_SIZE = 14;
-
-/** Gap (px) between the Format button and the floating panel below it. */
-const FORMATTING_PANEL_OFFSET_PX = 8;
-
-/** Minimum margin (px) the floating panel keeps from the viewport edges. */
-const FORMATTING_PANEL_VIEWPORT_MARGIN_PX = 8;
-
-/**
- * Stacking order for the floating formatting panel. Must sit above the
- * BaseModal overlay (`z-[100]`) so the panel is reachable when the editor is
- * opened from inside the clinical documents modal.
- */
-const FORMATTING_PANEL_Z_INDEX = 120;
-
-const iconBtn =
-  'inline-flex h-7 w-7 items-center justify-center rounded-lg border transition-colors disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300';
-
-const defaultIconBtn = `${iconBtn} border-slate-200 text-slate-600 hover:bg-slate-50`;
-
-const ToolbarCluster: React.FC<{
-  label: string;
-  children: React.ReactNode;
-}> = ({ label, children }) => (
-  <div className="clinical-document-toolbar-cluster" role="group" aria-label={label}>
-    <span className="clinical-document-toolbar-cluster-label">{label}</span>
-    <div className="flex items-center gap-1">{children}</div>
-  </div>
-);
-
-type ToolbarAction = {
-  command: ClinicalDocumentFormattingCommand;
-  label: string;
-  icon: React.ComponentType<{ size?: number }>;
-};
-
-const renderToolbarButtons = (
-  actions: ToolbarAction[],
-  onApplyFormatting: (command: ClinicalDocumentFormattingCommand) => void,
-  formattingDisabled: boolean
-) =>
-  actions.map(action => {
-    const Icon = action.icon;
-    return (
-      <button
-        key={action.command}
-        type="button"
-        className="clinical-document-toolbar-button"
-        onMouseDown={event => event.preventDefault()}
-        onClick={() => onApplyFormatting(action.command)}
-        disabled={formattingDisabled}
-        aria-label={action.label}
-        title={action.label}
-      >
-        <Icon size={FORMATTING_ICON_SIZE} />
-      </button>
-    );
-  });
 
 // ---------------------------------------------------------------------------
 // Component

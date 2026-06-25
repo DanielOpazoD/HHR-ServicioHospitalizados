@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useClinicalDocumentRichTextEditorController } from '@/features/clinical-documents/hooks/useClinicalDocumentRichTextEditorController';
 import { CLINICAL_DOCUMENT_MAX_INLINE_IMAGE_BYTES } from '@/features/clinical-documents/controllers/clinicalDocumentPasteController';
+import type { ClinicalDocumentRichTextEditorActivationApi } from '@/features/clinical-documents/hooks/clinicalDocumentRichTextEditorTypes';
 
 const applyEditorCommandMock = vi.fn();
 const normalizeContentMock = vi.fn((value: string) => value.trim());
@@ -392,6 +393,52 @@ describe('useClinicalDocumentRichTextEditorController', () => {
     expect(editor.textContent).not.toContain('/lab');
 
     editor.remove();
+  });
+
+  it('navigates undo/redo through the snapshot buffer', () => {
+    const editorRef = createRef<HTMLDivElement>() as MutableRefObject<HTMLDivElement | null>;
+    const editor = document.createElement('div');
+    editor.innerHTML = 'Inicial';
+    editorRef.current = editor;
+    const onChange = vi.fn();
+    let api: ClinicalDocumentRichTextEditorActivationApi | null = null;
+
+    const { result } = renderHook(() =>
+      useClinicalDocumentRichTextEditorController({
+        sectionId: 'section-1',
+        value: 'Inicial',
+        disabled: false,
+        editorRef,
+        onChange,
+        onActivate: (_sectionId, editorApi) => {
+          api = editorApi;
+        },
+      })
+    );
+
+    act(() => {
+      result.current.handleActivateInteraction();
+    });
+    expect(api).not.toBeNull();
+
+    // Record a second snapshot, then walk the buffer backward and forward.
+    editor.innerHTML = 'Editado';
+    act(() => {
+      api!.applyCommand('bold');
+    });
+    expect(onChange).toHaveBeenLastCalledWith('Editado');
+
+    act(() => {
+      api!.applyCommand('undo');
+    });
+    expect(editor.innerHTML).toBe('Inicial');
+    expect(onChange).toHaveBeenLastCalledWith('Inicial');
+
+    act(() => {
+      api!.applyCommand('redo');
+    });
+    expect(editor.innerHTML).toBe('Editado');
+    expect(onChange).toHaveBeenLastCalledWith('Editado');
   });
 
   it('clears the pending history-debounce timer on unmount (no leak after blur-less unmount)', () => {
