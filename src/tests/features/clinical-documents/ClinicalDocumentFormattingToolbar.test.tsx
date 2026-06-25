@@ -214,32 +214,45 @@ describe('ClinicalDocumentFormattingToolbar', () => {
     expect(document.body.querySelector('.clinical-document-global-toolbar-modal')).toBeNull();
   });
 
-  it('anchors the panel below the Formato button and repositions on resize', () => {
+  const mockButtonRect = (button: HTMLElement, rect: { bottom: number; right: number }) => {
+    vi.spyOn(button, 'getBoundingClientRect').mockReturnValue({
+      bottom: rect.bottom,
+      right: rect.right,
+      top: rect.bottom - 20,
+      left: rect.right - 50,
+      width: 50,
+      height: 20,
+      x: rect.right - 50,
+      y: rect.bottom - 20,
+      toJSON: () => ({}),
+    } as DOMRect);
+  };
+
+  it('anchors the panel under the button, clamps both edges, and bounds the height', () => {
     render(<ClinicalDocumentFormattingToolbar {...buildProps({ isFormattingOpen: true })} />);
 
     const button = screen.getByRole('button', { name: 'Formato' });
-    vi.spyOn(button, 'getBoundingClientRect').mockReturnValue({
-      bottom: 100,
-      right: 300,
-      top: 80,
-      left: 250,
-      width: 50,
-      height: 20,
-      x: 250,
-      y: 80,
-      toJSON: () => ({}),
-    } as DOMRect);
-
-    fireEvent(window, new Event('resize'));
-
     const panel = document.body.querySelector<HTMLElement>(
       '.clinical-document-global-toolbar-modal'
-    );
-    expect(panel?.style.position).toBe('fixed');
-    expect(panel?.style.visibility).toBe('visible');
-    // 8px gap below the button's bottom edge; right edge aligned to the button.
-    expect(panel?.style.top).toBe('108px');
-    expect(panel?.style.right).toBe(`${window.innerWidth - 300}px`);
+    )!;
+    // jsdom has no layout; give the panel a real width so clamping is exercised.
+    Object.defineProperty(panel, 'offsetWidth', { configurable: true, value: 220 });
+
+    // Normal anchor: right edge aligned to the button (left = right - width).
+    mockButtonRect(button, { bottom: 100, right: 300 });
+    fireEvent(window, new Event('resize'));
+
+    expect(panel.style.position).toBe('fixed');
+    expect(panel.style.visibility).toBe('visible');
+    expect(panel.style.top).toBe('108px');
+    expect(panel.style.left).toBe('80px'); // 300 - 220
+    expect(panel.style.right).toBe('auto');
+    expect(panel.style.maxHeight).toBe(`${window.innerHeight - 116}px`); // viewport - top - margin
+
+    // Button near the left edge: left is clamped to the viewport margin (not negative).
+    mockButtonRect(button, { bottom: 100, right: 100 });
+    fireEvent(window, new Event('resize'));
+    expect(panel.style.left).toBe('8px');
   });
 
   it('inserts a table through the toolbar dialog', async () => {

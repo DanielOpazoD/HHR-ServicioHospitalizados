@@ -77,6 +77,26 @@ describe('removeTrailingPatternAtCaret', () => {
     expect(editor.textContent).toBe('Nota ');
   });
 
+  it('does not splice the pattern across a block boundary', () => {
+    // "/la" ends one block and "b " starts the next — must NOT be matched as
+    // "/lab" and deleted across the two blocks.
+    const editor = document.createElement('div');
+    editor.contentEditable = 'true';
+    editor.innerHTML = '<div>Nota /la</div><div>b </div>';
+    document.body.appendChild(editor);
+
+    const secondBlockText = editor.children[1].firstChild as Text;
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(secondBlockText, (secondBlockText.textContent ?? '').length);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    expect(removeTrailingPatternAtCaret(editor, SLASH_LAB)).toBe(false);
+    expect(editor.textContent).toContain('/la');
+  });
+
   it('returns false when the selection is not collapsed', () => {
     const editor = mountEditor('Nota /lab ');
     const textNode = editor.firstChild as Text;

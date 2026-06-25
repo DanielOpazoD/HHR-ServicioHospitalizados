@@ -61,6 +61,22 @@ export const insertClinicalDocumentPlainTextAtCursor = (
 /** Upper bound on how far back to look for the trailing pattern (chars). */
 const TRAILING_PATTERN_LOOKBACK = 64;
 
+/** Block-level tags that bound an inline run (the walk never crosses them). */
+const BLOCK_BOUNDARY_TAGS = new Set(['DIV', 'P', 'LI', 'BLOCKQUOTE', 'TD', 'TH']);
+
+/** Nearest block-level ancestor of `node` within `editor` (the editor itself if none). */
+const resolveBlockContainer = (node: Node, editor: HTMLElement): HTMLElement => {
+  let current: HTMLElement | null =
+    node.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node.parentElement;
+  while (current && current !== editor) {
+    if (BLOCK_BOUNDARY_TAGS.has(current.tagName.toUpperCase())) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return editor;
+};
+
 /**
  * Removes a trailing pattern (e.g. a typed `/lab ` slash command) that ends at
  * the collapsed caret, deleting it from the text flow so the cursor stays put.
@@ -90,7 +106,10 @@ export const removeTrailingPatternAtCaret = (editor: HTMLDivElement, pattern: Re
   }
 
   // Collect a bounded run of text ending at the caret, walking back across
-  // adjacent text nodes so a command split by inline markup is still matched.
+  // adjacent text nodes so a command split by inline markup is still matched —
+  // but never crossing a block boundary, so `/la` ending one block and `b `
+  // starting the next are NOT spliced into a spurious `/lab` match.
+  const caretBlock = resolveBlockContainer(caretNode, editor);
   const segments: Array<{ node: Text; length: number }> = [
     { node: caretNode as Text, length: range.endOffset },
   ];
@@ -100,7 +119,7 @@ export const removeTrailingPatternAtCaret = (editor: HTMLDivElement, pattern: Re
   walker.currentNode = caretNode;
   while (textBeforeCaret.length < TRAILING_PATTERN_LOOKBACK) {
     const previous = walker.previousNode();
-    if (!previous) {
+    if (!previous || !caretBlock.contains(previous)) {
       break;
     }
     const text = previous.textContent ?? '';

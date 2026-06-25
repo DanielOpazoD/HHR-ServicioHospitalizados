@@ -7,10 +7,12 @@
  * lose the auto-list behavior — typing a new line would no longer produce
  * a numbered or dashed marker.
  *
- * Pure DOM utilities; no React or controller coupling.
+ * Pure DOM utilities. Depends on the canonical HTML sanitizer so the rebuilt
+ * list can never reintroduce unsafe markup (see enforceMandatoryListShape).
  */
 
 import type { ClinicalDocumentMandatoryListType } from '@/features/clinical-documents/controllers/clinicalDocumentEmptySectionTemplateController';
+import { sanitizeClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
 
 /**
  * Returns true if the editor already complies with the mandatory list shape:
@@ -154,7 +156,10 @@ export const enforceMandatoryListShape = (
   }
 
   const itemsHtml = splitEditorTextIntoListItemsHtml(editor);
-  editor.innerHTML = `<${listTag}>${itemsHtml}</${listTag}>`;
+  // Preserved inline markup (`outerHTML`) is re-run through the sanitizer so a
+  // stray event handler / unsafe href can never survive the rebuild, while the
+  // documented inline formatting (bold/colour/links) is kept.
+  editor.innerHTML = sanitizeClinicalDocumentHtml(`<${listTag}>${itemsHtml}</${listTag}>`);
   placeCaretAtEndOfLastListItem(editor);
   return true;
 };

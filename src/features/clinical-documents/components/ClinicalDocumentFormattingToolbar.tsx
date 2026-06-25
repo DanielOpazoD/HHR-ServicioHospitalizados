@@ -189,11 +189,20 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
     }
 
     const rect = button.getBoundingClientRect();
-    panel.style.top = `${rect.bottom + FORMATTING_PANEL_OFFSET_PX}px`;
-    panel.style.right = `${Math.max(
-      FORMATTING_PANEL_VIEWPORT_MARGIN_PX,
-      window.innerWidth - rect.right
-    )}px`;
+    const margin = FORMATTING_PANEL_VIEWPORT_MARGIN_PX;
+    const top = rect.bottom + FORMATTING_PANEL_OFFSET_PX;
+
+    // Anchor the panel's right edge to the button, then clamp BOTH horizontal
+    // edges so a button near the left edge (narrow viewports) can't push the
+    // panel off-screen, and bound the height so it never runs past the bottom.
+    const width = panel.offsetWidth;
+    const maxLeft = Math.max(margin, window.innerWidth - width - margin);
+    const left = Math.min(Math.max(margin, rect.right - width), maxLeft);
+
+    panel.style.top = `${top}px`;
+    panel.style.left = `${left}px`;
+    panel.style.right = 'auto';
+    panel.style.maxHeight = `${Math.max(0, window.innerHeight - top - margin)}px`;
     panel.style.visibility = 'visible';
   }, []);
 
@@ -342,7 +351,7 @@ export const ClinicalDocumentFormattingToolbar: React.FC<
               style={{
                 position: 'fixed',
                 top: 0,
-                right: FORMATTING_PANEL_VIEWPORT_MARGIN_PX,
+                left: FORMATTING_PANEL_VIEWPORT_MARGIN_PX,
                 zIndex: FORMATTING_PANEL_Z_INDEX,
                 // Hidden until positionPanel() places it (same paint frame).
                 visibility: 'hidden',

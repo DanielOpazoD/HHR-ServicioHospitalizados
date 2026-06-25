@@ -110,4 +110,17 @@ describe('enforceMandatoryListShape', () => {
     expect(editor.innerHTML).toBe('<ul><li><b>uno</b></li><li><i>dos</i></li></ul>');
     cleanup(editor);
   });
+
+  it('strips unsafe markup (event handlers, disallowed tags) while repairing the list', () => {
+    const editor = mountEditor(
+      '<ol><li><b onclick="alert(1)">Dx</b><script>alert(1)</script></li></ol><div>stray</div>'
+    );
+    enforceMandatoryListShape(editor, 'ol');
+
+    expect(editor.innerHTML).not.toContain('onclick');
+    expect(editor.innerHTML).not.toContain('<script');
+    // The documented inline formatting survives, just without the handler.
+    expect(editor.innerHTML).toContain('<b>Dx</b>');
+    cleanup(editor);
+  });
 });

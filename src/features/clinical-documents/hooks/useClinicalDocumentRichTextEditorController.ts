@@ -168,18 +168,26 @@ export const useClinicalDocumentRichTextEditorController = ({
     [pushHistorySnapshot]
   );
 
+  /** Clears the debounced timer and pending ref WITHOUT pushing a snapshot. */
+  const discardPendingHistorySnapshot = useCallback(() => {
+    if (historyDebounceTimerRef.current) {
+      clearTimeout(historyDebounceTimerRef.current);
+      historyDebounceTimerRef.current = null;
+    }
+    pendingHistoryHtmlRef.current = null;
+  }, []);
+
   // Clean up the debounced history snapshot on unmount. Switching documents
   // re-keys the editor subtree, which unmounts WITHOUT firing blur; without this
-  // the 500ms timer survives and fires after unmount, calling setState on a gone
-  // component (leak / wasted work). `flushPendingHistorySnapshot` clears the
-  // timer (and commits the final snapshot before this instance's history is
-  // discarded). Content is never lost here — `onChange` already runs eagerly on
-  // every edit. (`flushPendingHistorySnapshot` is stable, so this runs once.)
+  // the 500ms timer survives and fires after unmount, doing wasted work (and, on
+  // older React, a setState-after-unmount warning). We DISCARD rather than flush:
+  // this instance's history is about to be thrown away, and content is never lost
+  // because `onChange` already runs eagerly on every edit.
   useEffect(
     () => () => {
-      flushPendingHistorySnapshot();
+      discardPendingHistorySnapshot();
     },
-    [flushPendingHistorySnapshot]
+    [discardPendingHistorySnapshot]
   );
 
   const applyEditorCommand = useCallback(
