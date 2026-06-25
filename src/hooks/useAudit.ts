@@ -9,6 +9,7 @@ import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { AuditAction } from '@/types/auditActionTypes';
 import { AuditLogEntry } from '@/types/auditLogTypes';
 import { reportAuditOutcome } from '@/hooks/controllers/auditEventRejectionLogger';
+import { logger } from '@/services/utils/loggerService';
 import {
   buildDebouncedAuditKey,
   buildMeaningfulAuditDetails,
@@ -201,7 +202,7 @@ export const useAudit = (userId: string): UseAuditReturn => {
           authors,
         });
         reportAuditOutcome(outcome, { userId, action, entityType, entityId });
-      })().catch(() => undefined);
+      })().catch(error => logger.warn('Failed to record audit event', error));
     },
     [userId]
   );
