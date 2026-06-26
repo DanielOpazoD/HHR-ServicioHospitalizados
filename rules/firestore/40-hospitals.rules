@@ -14,6 +14,14 @@
           allow create: if canCreateEditableHospitalDocument();
           allow update, delete: if canAdminMaintainHospitalDocument();
         }
+
+        // Recoverable conflict version snapshots. Auto-expire ~48h via a Firestore TTL policy on
+        // the `expireAt` field. See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
+        match /conflictSnapshots/{snapshotId} {
+          allow read: if canReadClinicalData();
+          allow create: if canCreateEditableHospitalDocument();
+          allow update, delete: if canAdminMaintainHospitalDocument();
+        }
       }
 
       // Deleted Records (Trash)

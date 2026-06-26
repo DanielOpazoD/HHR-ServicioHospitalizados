@@ -10,6 +10,10 @@ import {
   resolveEffectiveChangedPaths,
 } from '@/services/repositories/dailyRecordWriteRecoveryController';
 import { queueDailyRecordSyncTaskWithLocalRecord } from '@/services/storage/sync';
+import {
+  buildConflictId,
+  saveConflictVersionSnapshots,
+} from '@/services/storage/firestore/dailyRecordConflictSnapshotService';
 
 const queueMergedRecoveryTask = async (
   record: DailyRecord,
@@ -36,6 +40,15 @@ export const attemptConflictAutoMergeRecovery = async (
       return { status: 'not_possible' };
     }
 
+    // Capture both pre-merge versions (cloud + incoming) so an admin can later restore either.
+    // Best-effort and placed before the merge so it covers every conflict path that reaches here
+    // (auto-merge AND the unrecoverable block). See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
+    const conflictId = buildConflictId(date, remoteRecord, localRecord);
+    await saveConflictVersionSnapshots(date, conflictId, {
+      remote: remoteRecord,
+      incoming: localRecord,
+    });
+
     const { record: merged, trace } = resolveDailyRecordConflictWithTrace(
       remoteRecord,
       localRecord,
@@ -44,11 +57,10 @@ export const attemptConflictAutoMergeRecovery = async (
       }
     );
 
-    const auditDetails = buildConflictAuditSummary(
-      effectiveChangedPaths,
-      trace.policyVersion,
-      trace.entries
-    );
+    const auditDetails = {
+      ...buildConflictAuditSummary(effectiveChangedPaths, trace.policyVersion, trace.entries),
+      conflictId,
+    };
 
     const queued = await queueMergedRecoveryTask(merged, changedPaths, remoteRecord.lastUpdated);
     if (!queued) {

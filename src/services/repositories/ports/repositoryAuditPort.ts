@@ -2,6 +2,8 @@ import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCa
 import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 
 export interface ConflictAuditDetails {
+  /** Correlates the audit entry with the recoverable version snapshots in `conflictSnapshots/`. */
+  conflictId?: string;
   changedPaths: string[];
   policyVersion: string;
   entryCount: number;
