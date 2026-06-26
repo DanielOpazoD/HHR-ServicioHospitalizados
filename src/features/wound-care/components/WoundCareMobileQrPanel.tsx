@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { Check, Copy, QrCode, RefreshCw, XCircle } from 'lucide-react';
+import { useManagedTimeout } from '@/hooks/useManagedTimeout';
 import type { EpisodeContext } from '@/application/wound-care/woundCareUseCases';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import { useWoundCareMobileUploadSession } from '../hooks/useWoundCareMobileUploadSession';
@@ -24,6 +25,7 @@ export const WoundCareMobileQrPanel: React.FC<WoundCareMobileQrPanelProps> = ({
     useWoundCareMobileUploadSession(episodeContext);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const setManagedTimeout = useManagedTimeout();
 
   useEffect(() => {
     void createSession();
@@ -57,7 +59,7 @@ export const WoundCareMobileQrPanel: React.FC<WoundCareMobileQrPanelProps> = ({
     try {
       await writeClipboardText(uploadUrl);
       setCopyStatus('copied');
-      window.setTimeout(() => setCopyStatus('idle'), 1800);
+      setManagedTimeout(() => setCopyStatus('idle'), 1800);
     } catch {
       setCopyStatus('failed');
     }

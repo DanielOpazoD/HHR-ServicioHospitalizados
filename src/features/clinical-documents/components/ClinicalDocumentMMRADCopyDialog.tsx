@@ -4,6 +4,7 @@ import { Check, ClipboardCopy, Loader2, Radio, X } from 'lucide-react';
 import { searchMMRADExams, type MMRADExam } from '@/services/radiology/mmradService';
 import { buildMMRADReportClipboardText } from '@/services/radiology/mmradReportSupport';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
+import { useManagedTimeout } from '@/hooks/useManagedTimeout';
 
 interface ClinicalDocumentMMRADCopyDialogProps {
   patientRut: string;
@@ -40,6 +41,7 @@ export const ClinicalDocumentMMRADCopyDialog: React.FC<ClinicalDocumentMMRADCopy
   const [isLoading, setIsLoading] = useState(true);
   const [copiedExamKey, setCopiedExamKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const setManagedTimeout = useManagedTimeout();
 
   useEffect(() => {
     let cancelled = false;
@@ -95,7 +97,7 @@ export const ClinicalDocumentMMRADCopyDialog: React.FC<ClinicalDocumentMMRADCopy
     await writeClipboardText(text);
     const examKey = buildExamKey(exam);
     setCopiedExamKey(examKey);
-    window.setTimeout(() => {
+    setManagedTimeout(() => {
       setCopiedExamKey(currentKey => (currentKey === examKey ? null : currentKey));
     }, 1800);
   };
