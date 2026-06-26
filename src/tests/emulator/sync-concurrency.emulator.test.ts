@@ -34,9 +34,11 @@ import {
   updateRecordPartial,
 } from '@/services/storage/firestore/firestoreRecordWrites';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
-import { getRecordDocRef } from '@/services/storage/firestore/firestoreShared';
+import { docToRecord, getRecordDocRef } from '@/services/storage/firestore/firestoreShared';
 import { getForDateWithMeta } from '@/services/repositories/dailyRecordRepositoryReadService';
 import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
+import { assertNoPatientErasures } from '@/services/repositories/dailyRecordRemoteWriteController';
+import { DataRegressionError } from '@/utils/integrityGuard';
 import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import {
   clearAllRecords,
@@ -466,5 +468,77 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
     const persisted = await getRecordFromFirestore(date);
     expect(persisted?.beds.R1.devices).toEqual(['VVP#1']);
     expect(persisted?.beds.R1.deviceDetails?.CVC?.removalDate).toBe(date);
+  });
+
+  it('aborts an erasing full-save inside the transaction and preserves the remote patient', async () => {
+    const date = CURRENT_RECORD_DATE;
+
+    // The cloud holds an admitted patient in R1.
+    const remote = buildRecord(date, isoAt(date, '10:00:00'));
+    remote.beds = {
+      R1: buildPatient('R1', { patientName: 'Paciente Crítico', rut: '5.555.555-5' }),
+    };
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(remote);
+    });
+
+    // This session never received the admission: R1 is empty, there is no movement explaining it,
+    // and there is NO base version (expectedLastUpdated undefined) so the optimistic CAS is skipped
+    // on purpose. The only thing standing between this stale full-save and an erasure is the
+    // in-transaction backstop. This mirrors exactly the guard saveDetailed wires in production.
+    const local = buildRecord(date, isoAt(date, '10:00:00'));
+    local.beds = { R1: buildEmptyBed('R1') };
+
+    await expect(
+      saveRecordToFirestore(local, undefined, {
+        assertSafeOverwrite: remoteData =>
+          assertNoPatientErasures(docToRecord(remoteData, date), local),
+      })
+    ).rejects.toBeInstanceOf(DataRegressionError);
+
+    // The transaction never committed: the cloud patient survives untouched.
+    const persisted = await getRecordFromFirestore(date);
+    expect(persisted?.beds.R1.patientName).toBe('Paciente Crítico');
+    expect(persisted?.beds.R1.rut).toBe('5.555.555-5');
+  });
+
+  it('commits an emptied-bed full-save when a discharge accounts for the patient', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const baseline = isoAt(date, '10:00:00');
+
+    const remote = buildRecord(date, baseline);
+    remote.beds = {
+      R1: buildPatient('R1', { patientName: 'Paciente Dado de Alta', rut: '6.666.666-6' }),
+    };
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(remote);
+    });
+
+    // R1 is empty locally, but a discharge on that bed explains it — the guard must allow the save.
+    const local = buildRecord(date, baseline);
+    local.beds = { R1: buildEmptyBed('R1') };
+    local.discharges = [
+      {
+        id: 'd1',
+        bedId: 'R1',
+        bedName: 'R1',
+        bedType: 'Cama',
+        patientName: 'Paciente Dado de Alta',
+        rut: '6.666.666-6',
+        diagnosis: 'Resuelto',
+        time: '11:00',
+        status: 'Vivo',
+      },
+    ] as DailyRecord['discharges'];
+
+    await expect(
+      saveRecordToFirestore(local, baseline, {
+        assertSafeOverwrite: remoteData =>
+          assertNoPatientErasures(docToRecord(remoteData, date), local),
+      })
+    ).resolves.toBeUndefined();
+
+    const persisted = await getRecordFromFirestore(date);
+    expect(persisted?.beds.R1.patientName).toBe('');
   });
 });
