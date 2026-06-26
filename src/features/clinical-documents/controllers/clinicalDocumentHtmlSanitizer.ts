@@ -168,17 +168,3 @@ export const preserveElementAttributes = (
     if (rel) clone.setAttribute('rel', rel);
   }
 };
-
-// ---------------------------------------------------------------------------
-// Text escaping
-// ---------------------------------------------------------------------------
-
-/**
- * Escapes HTML special characters in plain text.
- * Use when embedding user-provided text inside HTML markup.
- *
- * @param str - Raw text string.
- * @returns String with `&`, `<`, `>`, and `"` replaced by HTML entities.
- */
-export const escapeHtml = (str: string): string =>
-  str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

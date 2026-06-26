@@ -13,6 +13,7 @@
 
 import type { ClinicalDocumentMandatoryListType } from '@/features/clinical-documents/controllers/clinicalDocumentEmptySectionTemplateController';
 import { sanitizeClinicalDocumentHtml } from '@/features/clinical-documents/controllers/clinicalDocumentRichTextController';
+import { escapeHtml } from '@/utils/htmlEscape';
 
 /**
  * Returns true if the editor already complies with the mandatory list shape:
@@ -30,14 +31,6 @@ export const editorMatchesMandatoryListShape = (
   if (firstElement.nextElementSibling) return false;
   return true;
 };
-
-const escapeHtml = (value: string): string =>
-  value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
 
 const BLOCK_LEVEL_TAGS = new Set(['DIV', 'P', 'LI', 'BLOCKQUOTE']);
 const LIST_CONTAINER_TAGS = new Set(['UL', 'OL']);

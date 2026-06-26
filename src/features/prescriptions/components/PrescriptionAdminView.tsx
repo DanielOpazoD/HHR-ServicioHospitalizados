@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Check,
@@ -43,6 +43,13 @@ export const PrescriptionAdminView: React.FC = () => {
   const [qrError, setQrError] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    },
+    []
+  );
 
   const [pin, setPin] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
@@ -74,7 +81,8 @@ export const PrescriptionAdminView: React.FC = () => {
     try {
       await writeClipboardText(uploadUrl);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       // Clipboard write rejected (rare). The button just stays in idle state.
     }

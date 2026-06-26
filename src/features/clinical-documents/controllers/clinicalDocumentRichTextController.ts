@@ -14,14 +14,7 @@ import {
 } from '@/features/clinical-documents/controllers/clinicalDocumentHtmlSanitizer';
 import { CLINICAL_DOCUMENT_INDENT_STEP_PX } from '@/features/clinical-documents/controllers/clinicalDocumentFormattingContract';
 import { applyClinicalDocumentIndentationCommand } from '@/features/clinical-documents/controllers/clinicalDocumentIndentationController';
-
-const escapeHtml = (value: string): string =>
-  value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+import { escapeHtml } from '@/utils/htmlEscape';
 
 const decodeHtmlEntities = (value: string): string => {
   if (!value) {

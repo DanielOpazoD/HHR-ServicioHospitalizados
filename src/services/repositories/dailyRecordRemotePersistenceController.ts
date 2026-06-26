@@ -4,6 +4,7 @@ import {
   type LocalRecordWriteResult,
 } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
+import { logger } from '@/services/utils/loggerService';
 import { resolveRemoteWriteRecovery } from '@/services/repositories/dailyRecordRemoteWriteController';
 import {
   applyRecoveryDecisionToState,
@@ -106,7 +107,9 @@ const runRemoteWriteWithOptionalPreOutboxRenewal = async (
   }
 
   const intervalId = globalThis.setInterval(() => {
-    renewLocalPreOutboxHold().catch(() => undefined);
+    renewLocalPreOutboxHold().catch(error =>
+      logger.warn('Failed to renew local pre-outbox hold', error)
+    );
   }, renewIntervalMs);
 
   try {

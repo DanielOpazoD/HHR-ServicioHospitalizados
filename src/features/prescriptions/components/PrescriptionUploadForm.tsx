@@ -26,12 +26,6 @@ interface PrescriptionUploadFormProps {
   controller: PrescriptionUploadControllerHandle;
 }
 
-const formatBytes = (bytes: number): string => {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-};
-
 const renderPrescriptionTypeIcon = (type: PrescriptionType) => {
   if (type === 'comun') {
     return <Pill size={18} className="shrink-0 text-sky-600" aria-hidden data-testid="icon-pill" />;
@@ -390,5 +384,3 @@ export const PrescriptionUploadForm: React.FC<PrescriptionUploadFormProps> = ({ 
     </>
   );
 };
-
-export { formatBytes as __formatBytesForTesting };
