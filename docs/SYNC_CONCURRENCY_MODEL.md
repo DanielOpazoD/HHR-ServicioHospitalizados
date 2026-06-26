@@ -65,17 +65,19 @@ beds absent from the payload are never dropped.
 ### Callable — `dailyRecordWriteAuthorityFunctions.js`
 
 Server `runTransaction` with `assertExpectedVersion` (CAS), revision check, `mutationId`
-idempotency, and a history snapshot. **Disabled by default** (`resolveDailyRecordAuthorityMode`
-→ `client_only`).
+idempotency, a history snapshot, and the same patient-erasure guard
+(`functions/lib/dailyRecordErasureGuard.js`, a server mirror of `findPatientErasures`, throwing
+`failed-precondition`). **Disabled by default** (`resolveDailyRecordAuthorityMode` → `client_only`).
 
 ## Known limitations
 
 - **Internal bed move ⇒ false-positive block.** Relocating a patient to another bed without a
   discharge/transfer/CMA record looks like an erasure to `findPatientErasures` and is blocked
   (fail-safe direction — blocks rather than erases).
-- **No server-side erasure guard.** The callable path enforces clinical authority + CAS but
-  not `findPatientErasures`. Enabling `enforced` mode drops that defense layer until the guard
-  is ported server-side.
+- **The erasure guard is duplicated.** `findPatientErasures` lives in both the client
+  (`dailyRecordRemoteWriteController.ts`) and the server
+  (`functions/lib/dailyRecordErasureGuard.js`) so the callable path has parity; keep the two
+  copies in sync.
 - **`findPatientErasures` is a heuristic.** It matches a movement by same patient name **and**
   same bed (`bedId`, or `originalBedId` for CMA); the density-regression thresholds (40% / 50
   points) are coarse and tuned for a full census.
