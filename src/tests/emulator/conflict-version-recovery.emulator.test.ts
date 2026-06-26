@@ -28,6 +28,8 @@ vi.mock('@/firebaseConfig', () => ({
 }));
 
 import { attemptConflictAutoMergeRecovery } from '@/services/repositories/dailyRecordConflictAutoMergeController';
+import { restoreDailyRecordVersion } from '@/services/repositories/dailyRecordVersionRestoreController';
+import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { setFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import { clearAllRecords } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { clearAllSyncQueue } from '@/services/storage/sync';
@@ -139,5 +141,49 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
     expect((remoteSnap?.record as DailyRecord)?.beds?.R1?.patientName).toBe('Remoto');
     const incomingSnap = snapshots.find(snap => snap.origin === 'incoming_premerge');
     expect((incomingSnap?.record as DailyRecord)?.beds?.R1?.patientName).toBe('Local');
+  });
+
+  it('restores a chosen version over the live record and snapshots the prior state to history', async () => {
+    const date = CURRENT_RECORD_DATE;
+
+    // The state currently live (e.g. the result of a wrong merge) that we want to override.
+    const live = buildRecord(date, isoAt(date, '12:00:00'));
+    live.beds = { R1: buildPatient('R1', { patientName: 'Estado vivo', pathology: 'Vivo' }) };
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(live);
+    });
+
+    // A captured conflict version the admin chooses to restore.
+    const versionToRestore = buildRecord(date, isoAt(date, '10:00:00'));
+    versionToRestore.beds = {
+      R1: buildPatient('R1', { patientName: 'Versión buena', pathology: 'Buena' }),
+    };
+    const snapshotId = 'cid__remote_premerge';
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context
+        .firestore()
+        .doc(`hospitals/hanga_roa/dailyRecords/${date}/conflictSnapshots/${snapshotId}`)
+        .set({ origin: 'remote_premerge', conflictId: 'cid', record: versionToRestore });
+    });
+
+    const result = await restoreDailyRecordVersion(date, snapshotId);
+    expect(result.status).toBe('restored');
+
+    // The live record now holds the restored version.
+    const restored = await getRecordFromFirestore(date);
+    expect(restored?.beds.R1.patientName).toBe('Versión buena');
+
+    // The prior live state is preserved (non-destructive) in the history subcollection.
+    let historyPatients: (string | undefined)[] = [];
+    await testEnv.withSecurityRulesDisabled(async context => {
+      const querySnapshot = await context
+        .firestore()
+        .collection(`hospitals/hanga_roa/dailyRecords/${date}/history`)
+        .get();
+      historyPatients = querySnapshot.docs.map(
+        snap => (snap.data() as DailyRecord).beds?.R1?.patientName
+      );
+    });
+    expect(historyPatients).toContain('Estado vivo');
   });
 });

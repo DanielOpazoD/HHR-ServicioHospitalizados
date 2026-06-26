@@ -77,6 +77,7 @@ export const CLINICAL_AUDIT_ACTIONS: ReadonlySet<AuditAction> = new Set<AuditAct
   'DATA_EXPORTED',
   'DATA_ADMISSION_DATES_BACKFILLED',
   'CONFLICT_AUTO_MERGED',
+  'CONFLICT_VERSION_RESTORED',
 ]);
 
 export const isClinicalAuditAction = (action: AuditAction): boolean =>

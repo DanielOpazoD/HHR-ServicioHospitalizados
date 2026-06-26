@@ -1,4 +1,12 @@
-import { collection, doc, Timestamp, writeBatch, type DocumentData } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  Timestamp,
+  writeBatch,
+  type DocumentData,
+} from 'firebase/firestore';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { DAILY_RECORD_CONFLICT_SNAPSHOTS } from '@/constants/firestorePaths';
 import {
@@ -59,7 +67,7 @@ export const saveConflictVersionSnapshots = async (
 
     const batch = writeBatch(db);
     for (const { origin, record } of entries) {
-      batch.set(doc(snapshotsRef, `${conflictId}__${origin}`), {
+      batch.set(doc(snapshotsRef, [conflictId, origin].join('__')), {
         origin,
         conflictId,
         snapshotTimestamp,
@@ -78,4 +86,45 @@ export const saveConflictVersionSnapshots = async (
       context: { date, conflictId },
     });
   }
+};
+
+export interface ConflictVersionSnapshot {
+  id: string;
+  origin: ConflictSnapshotOrigin;
+  conflictId?: string;
+  sourceLastUpdated?: string;
+  record: DailyRecord;
+}
+
+const toConflictVersionSnapshot = (id: string, data: DocumentData): ConflictVersionSnapshot => ({
+  id,
+  origin: data.origin as ConflictSnapshotOrigin,
+  conflictId: typeof data.conflictId === 'string' ? data.conflictId : undefined,
+  sourceLastUpdated:
+    typeof data.sourceLastUpdated === 'string' ? data.sourceLastUpdated : undefined,
+  record: data.record as DailyRecord,
+});
+
+/** Lists the recoverable conflict version snapshots still present for a day (admin recovery UI). */
+export const listConflictVersionSnapshots = async (
+  date: string,
+  runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime
+): Promise<ConflictVersionSnapshot[]> => {
+  const snapshotsRef = collection(getRecordDocRef(date, runtime), DAILY_RECORD_CONFLICT_SNAPSHOTS);
+  const querySnapshot = await getDocs(snapshotsRef);
+  return querySnapshot.docs.map(snap => toConflictVersionSnapshot(snap.id, snap.data()));
+};
+
+/** Reads a single conflict version snapshot (the source for a restore). */
+export const getConflictVersionSnapshot = async (
+  date: string,
+  snapshotId: string,
+  runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime
+): Promise<ConflictVersionSnapshot | null> => {
+  const snapshotRef = doc(
+    collection(getRecordDocRef(date, runtime), DAILY_RECORD_CONFLICT_SNAPSHOTS),
+    snapshotId
+  );
+  const snap = await getDoc(snapshotRef);
+  return snap.exists() ? toConflictVersionSnapshot(snap.id, snap.data()) : null;
 };

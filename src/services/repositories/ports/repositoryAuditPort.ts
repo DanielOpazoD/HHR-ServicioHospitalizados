@@ -46,3 +46,31 @@ export const logRepositoryConflictAutoMerged = async (
     recordDate: date,
   });
 };
+
+export interface ConflictVersionRestoreAuditDetails {
+  /** Snapshot document id that was restored. */
+  snapshotId: string;
+  /** Which side of the conflict it came from (e.g. remote_premerge / incoming_premerge). */
+  origin: string;
+  /** Correlates back to the conflict and its version snapshots. */
+  conflictId?: string;
+}
+
+/**
+ * Audits an admin restoring a daily-record version from the conflict panel. Permanent (the
+ * recoverable snapshots themselves expire via TTL, but this trail does not). See
+ * docs/ADR_CONFLICT_VERSION_RECOVERY.md.
+ */
+export const logRepositoryConflictVersionRestored = async (
+  date: string,
+  details: ConflictVersionRestoreAuditDetails
+): Promise<void> => {
+  await executeWriteAuditEvent({
+    userId: getCurrentUserEmail(),
+    action: 'CONFLICT_VERSION_RESTORED',
+    entityType: 'dailyRecord',
+    entityId: date,
+    details: details as unknown as Record<string, unknown>,
+    recordDate: date,
+  });
+};
