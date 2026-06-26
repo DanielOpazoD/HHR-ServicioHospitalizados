@@ -137,6 +137,30 @@ export const saveRecordAtomically = async (
   await runTransaction(db, async transaction => {
     const snap = await transaction.get(docRef);
 
+    // Refuse to full-replace an existing document without a base version: with no
+    // expectedLastUpdated the optimistic CAS below cannot run, so we cannot prove this write is not
+    // clobbering a newer remote. Surface it as a conflict so the caller reloads and retries.
+    if (snap.exists() && !expectedLastUpdated) {
+      recordOperationalErrorTelemetry(
+        'firestore',
+        'atomic_save_concurrency',
+        createOperationalError({
+          code: 'firestore_concurrency_conflict',
+          message: conflictMessage,
+          severity: 'warning',
+          userSafeMessage: conflictMessage,
+          context: { contextLabel, reason: 'missing_base_version' },
+        }),
+        {
+          code: 'firestore_concurrency_conflict',
+          message: conflictMessage,
+          severity: 'warning',
+          userSafeMessage: conflictMessage,
+        }
+      );
+      throw new ConcurrencyError(conflictMessage);
+    }
+
     if (snap.exists() && expectedLastUpdated) {
       const remoteLastUpdated = getRemoteLastUpdatedIso(snap.data() as Record<string, unknown>);
       if (remoteLastUpdated) {

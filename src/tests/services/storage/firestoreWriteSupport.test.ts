@@ -355,7 +355,7 @@ describe('firestoreWriteSupport', () => {
         saveRecordAtomically(
           { kind: 'docRef' } as never,
           { data: 'new' },
-          undefined, // no base version → CAS skipped; the in-transaction guard is the only defense
+          '2026-02-20T10:00:00.000Z', // valid base (CAS passes) so the erasure guard is what fires
           'conflict',
           'save',
           guard
@@ -363,6 +363,29 @@ describe('firestoreWriteSupport', () => {
       ).rejects.toThrow('erasure blocked');
 
       expect(guard).toHaveBeenCalledWith(remote);
+      expect(tx.set).not.toHaveBeenCalled();
+    });
+
+    it('refuses to overwrite an existing document without a base version', async () => {
+      const tx = makeTx({ exists: () => true, data: () => ({ beds: {} }) });
+      mockRunTransaction.mockImplementation((_db: unknown, fn: (tx: unknown) => Promise<void>) =>
+        fn(tx)
+      );
+      const guard = vi.fn();
+
+      await expect(
+        saveRecordAtomically(
+          { kind: 'docRef' } as never,
+          { data: 'new' },
+          undefined, // no base version + existing doc → unprovable safety → conflict
+          'conflict',
+          'save',
+          guard
+        )
+      ).rejects.toBeInstanceOf(ConcurrencyError);
+
+      // It fails fast: neither the erasure guard nor the write is reached.
+      expect(guard).not.toHaveBeenCalled();
       expect(tx.set).not.toHaveBeenCalled();
     });
 

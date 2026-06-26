@@ -482,15 +482,15 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
       await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(remote);
     });
 
-    // This session never received the admission: R1 is empty, there is no movement explaining it,
-    // and there is NO base version (expectedLastUpdated undefined) so the optimistic CAS is skipped
-    // on purpose. The only thing standing between this stale full-save and an erasure is the
-    // in-transaction backstop. This mirrors exactly the guard saveDetailed wires in production.
+    // R1 is empty locally with no movement explaining it, yet the base version MATCHES remote, so
+    // there is no concurrency conflict (the CAS passes) and no missing-base conflict either. The
+    // only thing between this content erasure and a committed write is the in-transaction backstop,
+    // exactly as saveDetailed wires it in production.
     const local = buildRecord(date, isoAt(date, '10:00:00'));
     local.beds = { R1: buildEmptyBed('R1') };
 
     await expect(
-      saveRecordToFirestore(local, undefined, {
+      saveRecordToFirestore(local, isoAt(date, '10:00:00'), {
         assertSafeOverwrite: remoteData =>
           assertNoPatientErasures(docToRecord(remoteData, date), local),
       })
@@ -540,5 +540,50 @@ describeEmulator('Firestore emulator sync concurrency flow', () => {
 
     const persisted = await getRecordFromFirestore(date);
     expect(persisted?.beds.R1.patientName).toBe('');
+  });
+
+  it('serializes two concurrent full-saves on the same base: exactly one wins, the other conflicts', async () => {
+    const date = CURRENT_RECORD_DATE;
+    // A base safely in the past so the winning write's real now-timestamp is unambiguously newer
+    // than the shared base, making the loser's CAS fire deterministically.
+    const base = new Date(Date.now() - 60_000).toISOString();
+
+    const seed = buildRecord(date, base);
+    seed.beds = {
+      R1: buildPatient('R1', { patientName: 'Paciente Carrera', pathology: 'Base' }),
+    };
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(seed);
+    });
+
+    // Two sessions load the SAME base and each edits the same patient differently.
+    const editA = buildRecord(date, base);
+    editA.beds = {
+      R1: buildPatient('R1', { patientName: 'Paciente Carrera', pathology: 'Edit A' }),
+    };
+    const editB = buildRecord(date, base);
+    editB.beds = {
+      R1: buildPatient('R1', { patientName: 'Paciente Carrera', pathology: 'Edit B' }),
+    };
+
+    const results = await Promise.allSettled([
+      saveRecordToFirestore(editA, base),
+      saveRecordToFirestore(editB, base),
+    ]);
+
+    // The real Firestore transaction serializes them: exactly one commits, the other reads the
+    // winner's newer version and aborts with ConcurrencyError — no lost update, no interleaving.
+    const rejected = results.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected'
+    );
+    expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect(rejected[0].reason).toBeInstanceOf(ConcurrencyError);
+
+    // The surviving record is internally consistent: the patient is intact and the diagnosis is
+    // exactly one of the two edits.
+    const persisted = await getRecordFromFirestore(date);
+    expect(persisted?.beds.R1.patientName).toBe('Paciente Carrera');
+    expect(['Edit A', 'Edit B']).toContain(persisted?.beds.R1.pathology);
   });
 });
