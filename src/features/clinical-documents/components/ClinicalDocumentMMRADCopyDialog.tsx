@@ -4,7 +4,7 @@ import { Check, ClipboardCopy, Loader2, Radio, X } from 'lucide-react';
 import { searchMMRADExams, type MMRADExam } from '@/services/radiology/mmradService';
 import { buildMMRADReportClipboardText } from '@/services/radiology/mmradReportSupport';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
-import { useManagedTimeout } from '@/hooks/useManagedTimeout';
+import { useTransientFlag } from '@/hooks/useTransientFlag';
 
 interface ClinicalDocumentMMRADCopyDialogProps {
   patientRut: string;
@@ -39,9 +39,8 @@ export const ClinicalDocumentMMRADCopyDialog: React.FC<ClinicalDocumentMMRADCopy
 }) => {
   const [exams, setExams] = useState<MMRADExam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [copiedExamKey, setCopiedExamKey] = useState<string | null>(null);
+  const [copiedExamKey, flashCopiedExamKey] = useTransientFlag<string | null>(null, 1800);
   const [error, setError] = useState<string | null>(null);
-  const setManagedTimeout = useManagedTimeout();
 
   useEffect(() => {
     let cancelled = false;
@@ -95,11 +94,7 @@ export const ClinicalDocumentMMRADCopyDialog: React.FC<ClinicalDocumentMMRADCopy
     if (!text) return;
 
     await writeClipboardText(text);
-    const examKey = buildExamKey(exam);
-    setCopiedExamKey(examKey);
-    setManagedTimeout(() => {
-      setCopiedExamKey(currentKey => (currentKey === examKey ? null : currentKey));
-    }, 1800);
+    flashCopiedExamKey(buildExamKey(exam));
   };
 
   return (

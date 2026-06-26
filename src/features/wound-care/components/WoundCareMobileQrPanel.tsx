@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { Check, Copy, QrCode, RefreshCw, XCircle } from 'lucide-react';
-import { useManagedTimeout } from '@/hooks/useManagedTimeout';
+import { useTransientFlag } from '@/hooks/useTransientFlag';
 import type { EpisodeContext } from '@/application/wound-care/woundCareUseCases';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import { useWoundCareMobileUploadSession } from '../hooks/useWoundCareMobileUploadSession';
@@ -24,8 +24,9 @@ export const WoundCareMobileQrPanel: React.FC<WoundCareMobileQrPanelProps> = ({
   const { session, uploadUrl, isBusy, error, createSession, revokeSession } =
     useWoundCareMobileUploadSession(episodeContext);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
-  const setManagedTimeout = useManagedTimeout();
+  const [copyStatus, flashCopyStatus, setCopyStatus] = useTransientFlag<
+    'idle' | 'copied' | 'failed'
+  >('idle', 1800);
 
   useEffect(() => {
     void createSession();
@@ -58,8 +59,7 @@ export const WoundCareMobileQrPanel: React.FC<WoundCareMobileQrPanelProps> = ({
 
     try {
       await writeClipboardText(uploadUrl);
-      setCopyStatus('copied');
-      setManagedTimeout(() => setCopyStatus('idle'), 1800);
+      flashCopyStatus('copied');
     } catch {
       setCopyStatus('failed');
     }
