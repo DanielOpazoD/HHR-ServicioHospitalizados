@@ -1,5 +1,6 @@
 import { CURRENT_SCHEMA_VERSION } from '@/constants/version';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DischargeData, TransferData, CMAData } from '@/types/domain/movements';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import {
   isRetryableSyncError,
@@ -37,6 +38,42 @@ const queueRecoveryTask = async (
   return result.accepted;
 };
 
+type AnyMovement = DischargeData | TransferData | CMAData;
+
+const findPatientErasures = (
+  remote: DailyRecord,
+  local: DailyRecord
+): { bedId: string; remotePatientName: string }[] => {
+  const allLocalMovements: AnyMovement[] = [
+    ...(local.discharges || []),
+    ...(local.transfers || []),
+    ...(local.cma || []),
+  ];
+
+  const erasures: { bedId: string; remotePatientName: string }[] = [];
+
+  for (const [bedId, remoteBed] of Object.entries(remote.beds || {})) {
+    const remotePatientName = remoteBed?.patientName?.trim();
+    if (!remotePatientName) continue;
+
+    const localBed = (local.beds || {})[bedId];
+    if (localBed?.patientName?.trim()) continue;
+
+    // A legitimate discharge/transfer/CMA records the bed or patient in a movement entry.
+    // If neither appears, the local session simply never received the admission — block it.
+    const accountedFor = allLocalMovements.some(m => {
+      if (m.patientName === remotePatientName) return true;
+      if ('bedId' in m) return m.bedId === bedId;
+      return false;
+    });
+    if (!accountedFor) {
+      erasures.push({ bedId, remotePatientName });
+    }
+  }
+
+  return erasures;
+};
+
 export const assertRemoteSaveCompatibility = async (
   date: string,
   record: DailyRecord
@@ -55,6 +92,16 @@ export const assertRemoteSaveCompatibility = async (
   if (isSuspicious) {
     throw new DataRegressionError(
       `Se detectó una pérdida masiva de datos (${dropPercentage.toFixed(1)}%). El guardado fue bloqueado.`,
+      calculateDensity(record),
+      calculateDensity(remoteRecord)
+    );
+  }
+
+  const erasures = findPatientErasures(remoteRecord, record);
+  if (erasures.length > 0) {
+    const detail = erasures.map(e => `${e.bedId} (${e.remotePatientName})`).join(', ');
+    throw new DataRegressionError(
+      `La cama ${detail} tiene un paciente en la nube pero está vacía en la copia local. El guardado fue bloqueado para evitar pérdida de datos.`,
       calculateDensity(record),
       calculateDensity(remoteRecord)
     );

@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   getDoc,
+  runTransaction,
   setDoc,
   Timestamp,
   type DocumentData,
@@ -104,6 +105,74 @@ export const assertFirestoreConcurrency = async (
       },
     });
   }
+};
+
+/**
+ * Writes a daily record using an atomic Firestore transaction that:
+ *   1. Reads the current server state (never cache)
+ *   2. Throws ConcurrencyError if the remote is newer than expectedLastUpdated
+ *   3. Writes a history snapshot of the pre-write state
+ *   4. Commits the new record
+ *
+ * This replaces the previous assertFirestoreConcurrency + saveHistorySnapshot + setDoc
+ * three-step sequence, which had a TOCTOU race and could fail open on network errors.
+ */
+export const saveRecordAtomically = async (
+  docRef: DocumentReference,
+  record: Record<string, unknown>,
+  expectedLastUpdated: string | undefined,
+  conflictMessage: string,
+  contextLabel: string,
+  runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime
+): Promise<void> => {
+  const db = runtime.getDb();
+
+  await runTransaction(db, async transaction => {
+    const snap = await transaction.get(docRef);
+
+    if (snap.exists() && expectedLastUpdated) {
+      const remoteLastUpdated = getRemoteLastUpdatedIso(snap.data() as Record<string, unknown>);
+      if (remoteLastUpdated) {
+        const drift =
+          new Date(remoteLastUpdated).getTime() - new Date(expectedLastUpdated).getTime();
+        if (drift > 0) {
+          recordOperationalErrorTelemetry(
+            'firestore',
+            'atomic_save_concurrency',
+            createOperationalError({
+              code: 'firestore_concurrency_conflict',
+              message: conflictMessage,
+              severity: 'warning',
+              userSafeMessage: conflictMessage,
+              context: {
+                contextLabel,
+                remoteLastUpdated,
+                expectedLastUpdated,
+                driftSeconds: Math.round(drift / 1000),
+              },
+            }),
+            {
+              code: 'firestore_concurrency_conflict',
+              message: conflictMessage,
+              severity: 'warning',
+              userSafeMessage: conflictMessage,
+            }
+          );
+          throw new ConcurrencyError(conflictMessage);
+        }
+      }
+    }
+
+    if (snap.exists()) {
+      const historyRef = doc(collection(docRef, 'history'), new Date().toISOString());
+      transaction.set(historyRef, {
+        ...(snap.data() as Record<string, unknown>),
+        snapshotTimestamp: Timestamp.now(),
+      });
+    }
+
+    transaction.set(docRef, record);
+  });
 };
 
 export const saveHistorySnapshot = async (date: string): Promise<void> => {

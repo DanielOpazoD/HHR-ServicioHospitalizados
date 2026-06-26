@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ConcurrencyError } from '@/services/storage/firestore/firestoreWriteSupport';
+
+const mockRunTransaction = vi.fn();
 
 vi.mock('firebase/firestore', async () => {
   const actual = await vi.importActual('firebase/firestore');
@@ -16,6 +17,8 @@ vi.mock('firebase/firestore', async () => {
     collection: vi.fn((...args: unknown[]) => ({ kind: 'collection', args })),
     doc: vi.fn((...args: unknown[]) => ({ kind: 'doc', args })),
     getDoc: vi.fn(),
+    runTransaction: (db: unknown, fn: (tx: unknown) => Promise<unknown>) =>
+      mockRunTransaction(db, fn),
     setDoc: vi.fn(),
     Timestamp: MockTimestamp,
   };
@@ -53,12 +56,18 @@ vi.mock('@/services/storage/firestore/firestoreShared', () => ({
   getRecordDocRef: vi.fn((date: string) => ({ kind: 'recordDocRef', date })),
 }));
 
+vi.mock('@/services/storage/firestore/firestoreServiceRuntime', () => ({
+  defaultFirestoreServiceRuntime: { getDb: () => ({ kind: 'db' }) },
+}));
+
 import { collection, doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import {
   asFirestoreUpdatePayload,
   assertFirestoreConcurrency,
+  ConcurrencyError,
   createDeletedRecordRef,
   saveHistorySnapshot,
+  saveRecordAtomically,
 } from '@/services/storage/firestore/firestoreWriteSupport';
 
 describe('firestoreWriteSupport', () => {
@@ -189,5 +198,98 @@ describe('firestoreWriteSupport', () => {
 
     expect(createDeletedRecordRef('2026-03-23')).toEqual(expect.objectContaining({ kind: 'doc' }));
     expect(asFirestoreUpdatePayload({ status: 'ok' })).toEqual({ status: 'ok' });
+  });
+
+  describe('saveRecordAtomically', () => {
+    const makeTx = (snap: { exists: () => boolean; data?: () => Record<string, unknown> }) => ({
+      get: vi.fn().mockResolvedValue(snap),
+      set: vi.fn(),
+    });
+
+    it('commits the record when remote is current or missing', async () => {
+      const tx = makeTx({ exists: () => false });
+      mockRunTransaction.mockImplementation((_db: unknown, fn: (tx: unknown) => Promise<void>) =>
+        fn(tx)
+      );
+
+      await saveRecordAtomically(
+        { kind: 'docRef' } as never,
+        { data: 'new' },
+        '2026-02-20T10:00:00.000Z',
+        'conflict',
+        'save'
+      );
+
+      expect(tx.set).toHaveBeenCalledWith({ kind: 'docRef' }, { data: 'new' });
+    });
+
+    it('writes a history snapshot before committing when the document exists', async () => {
+      const tx = makeTx({
+        exists: () => true,
+        data: () => ({ lastUpdated: '2026-02-20T10:00:00.000Z', beds: {} }),
+      });
+      mockRunTransaction.mockImplementation((_db: unknown, fn: (tx: unknown) => Promise<void>) =>
+        fn(tx)
+      );
+
+      await saveRecordAtomically(
+        { kind: 'docRef' } as never,
+        { data: 'new' },
+        '2026-02-20T10:00:00.000Z',
+        'conflict',
+        'save'
+      );
+
+      // Two set calls: history snapshot + the record itself
+      expect(tx.set).toHaveBeenCalledTimes(2);
+      expect(tx.set).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ kind: 'doc' }),
+        expect.objectContaining({
+          lastUpdated: '2026-02-20T10:00:00.000Z',
+          snapshotTimestamp: expect.any(Object),
+        })
+      );
+      expect(tx.set).toHaveBeenNthCalledWith(2, { kind: 'docRef' }, { data: 'new' });
+    });
+
+    it('throws ConcurrencyError when the remote is ahead of expectedLastUpdated', async () => {
+      const tx = makeTx({
+        exists: () => true,
+        data: () => ({ lastUpdated: '2026-02-20T11:00:00.000Z' }),
+      });
+      mockRunTransaction.mockImplementation((_db: unknown, fn: (tx: unknown) => Promise<void>) =>
+        fn(tx)
+      );
+
+      await expect(
+        saveRecordAtomically(
+          { kind: 'docRef' } as never,
+          { data: 'stale' },
+          '2026-02-20T10:00:00.000Z',
+          'conflict message',
+          'save'
+        )
+      ).rejects.toBeInstanceOf(ConcurrencyError);
+
+      expect(tx.set).not.toHaveBeenCalled();
+    });
+
+    it('allows the write when expectedLastUpdated is undefined (new document)', async () => {
+      const tx = makeTx({ exists: () => false });
+      mockRunTransaction.mockImplementation((_db: unknown, fn: (tx: unknown) => Promise<void>) =>
+        fn(tx)
+      );
+
+      await saveRecordAtomically(
+        { kind: 'docRef' } as never,
+        { data: 'first' },
+        undefined,
+        'conflict',
+        'save'
+      );
+
+      expect(tx.set).toHaveBeenCalledWith({ kind: 'docRef' }, { data: 'first' });
+    });
   });
 });
