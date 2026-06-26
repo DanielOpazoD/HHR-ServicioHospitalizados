@@ -53,21 +53,33 @@ const findPatientErasures = (
   const erasures: { bedId: string; remotePatientName: string }[] = [];
 
   for (const [bedId, remoteBed] of Object.entries(remote.beds || {})) {
-    const remotePatientName = remoteBed?.patientName?.trim();
-    if (!remotePatientName) continue;
-
     const localBed = (local.beds || {})[bedId];
-    if (localBed?.patientName?.trim()) continue;
 
-    // A legitimate discharge/transfer/CMA records the bed or patient in a movement entry.
-    // If neither appears, the local session simply never received the admission — block it.
-    const accountedFor = allLocalMovements.some(m => {
-      if (m.patientName === remotePatientName) return true;
-      if ('bedId' in m) return m.bedId === bedId;
-      return false;
-    });
-    if (!accountedFor) {
-      erasures.push({ bedId, remotePatientName });
+    // 1. Main bed occupant.
+    const remotePatientName = remoteBed?.patientName?.trim();
+    if (remotePatientName && !localBed?.patientName?.trim()) {
+      // A legitimate discharge/transfer/CMA records the bed or patient in a movement entry.
+      // If neither appears, the local session simply never received the admission — block it.
+      const accountedFor = allLocalMovements.some(m => {
+        if (m.patientName === remotePatientName) return true;
+        if ('bedId' in m) return m.bedId === bedId;
+        return false;
+      });
+      if (!accountedFor) {
+        erasures.push({ bedId, remotePatientName });
+      }
+    }
+
+    // 2. Nested clinical-crib occupant ("cuna clínica" — e.g. a sick newborn whose record is
+    //    attached to the bed independently of the main occupant). It can be erased on its own,
+    //    so it needs its own check. Match by patient name ONLY: a bedId-based discharge usually
+    //    belongs to the main occupant and must not mask an erased crib baby.
+    const remoteCribName = remoteBed?.clinicalCrib?.patientName?.trim();
+    if (remoteCribName && !localBed?.clinicalCrib?.patientName?.trim()) {
+      const accountedFor = allLocalMovements.some(m => m.patientName === remoteCribName);
+      if (!accountedFor) {
+        erasures.push({ bedId: `${bedId} (cuna clínica)`, remotePatientName: remoteCribName });
+      }
     }
   }
 
