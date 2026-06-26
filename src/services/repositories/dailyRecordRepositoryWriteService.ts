@@ -9,6 +9,7 @@ import {
   updateRecordPartial as updateRecordPartialToFirestore,
 } from '@/services/storage/firestore/firestoreRecordWrites';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
+import { docToRecord } from '@/services/storage/firestore/firestoreShared';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import {
   createPartialUpdateDailyRecordCommand,
@@ -18,7 +19,10 @@ import { buildDailyRecordSyncContract } from '@/services/storage/sync/syncTaskCo
 import { queueDailyRecordSyncTaskWithLocalRecord } from '@/services/storage/sync';
 import { prepareDailyRecordForPersistence } from '@/services/repositories/dailyRecordPersistencePreparation';
 import { preparePatchedRecordForPersistence } from '@/services/repositories/dailyRecordPatchPreparation';
-import { assertRemoteSaveCompatibility } from '@/services/repositories/dailyRecordRemoteWriteController';
+import {
+  assertNoPatientErasures,
+  assertRemoteSaveCompatibility,
+} from '@/services/repositories/dailyRecordRemoteWriteController';
 import { attemptConflictAutoMergeRecovery } from '@/services/repositories/dailyRecordConflictAutoMergeController';
 import { syncPatientsToMasterInBackground } from '@/services/repositories/dailyRecordBackgroundMasterSyncController';
 import { resolveBlockingFieldShrinkages } from '@/services/repositories/dailyRecordFieldShrinkageGuard';
@@ -203,7 +207,14 @@ export const saveDetailed = async (record: DailyRecord, expectedLastUpdated?: st
     changedPaths: ['*'],
     remoteState,
     remoteWrite: () =>
-      saveRecordToFirestore(validatedRecord, command.expectedLastUpdated, { syncContract }),
+      saveRecordToFirestore(validatedRecord, command.expectedLastUpdated, {
+        syncContract,
+        // Atomic backstop: re-check inside the write transaction against the freshly-read remote,
+        // so an erasure is blocked even if a patient was admitted after the pre-write check or
+        // when no base version (expectedLastUpdated) is available to the optimistic CAS.
+        assertSafeOverwrite: remoteData =>
+          assertNoPatientErasures(docToRecord(remoteData, command.date), validatedRecord),
+      }),
     queueLocalBeforeRemote: () =>
       queueDailyRecordSyncTaskWithLocalRecord(
         validatedRecord,

@@ -6,6 +6,7 @@ const {
   collectClinicalEpisodeCoverage,
   evaluateDailyRecordClinicalAuthority,
 } = require('./dailyRecordClinicalAuthorityPolicy');
+const { findPatientErasures } = require('./dailyRecordErasureGuard');
 
 const ALLOWED_DAILY_RECORD_WRITE_ROLES = new Set([
   'admin',
@@ -467,6 +468,24 @@ const assertAuthorizedDailyRecordWriter = async ({ context, resolveRoleForEmail 
   return email;
 };
 
+const assertNoPatientErasures = ({ snapshot, record }) => {
+  if (!snapshot.exists) {
+    return;
+  }
+  const erasures = findPatientErasures(snapshot.data() || {}, record);
+  if (erasures.length === 0) {
+    return;
+  }
+  const detail = erasures
+    .map(erasure => `${erasure.bedId} (${erasure.remotePatientName})`)
+    .join(', ');
+  throw new functions.https.HttpsError(
+    'failed-precondition',
+    `La cama ${detail} tiene un paciente en la nube pero está vacía en la copia entrante. ` +
+      'El guardado fue bloqueado para evitar pérdida de datos.'
+  );
+};
+
 const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }) => ({
   saveDailyRecordWithClinicalAuthority: functions.https.onCall(async (data, context) => {
     const startedAt = Date.now();
@@ -517,6 +536,7 @@ const createDailyRecordWriteAuthorityFunctions = ({ admin, resolveRoleForEmail }
 
         assertExpectedVersion({ snapshot, expectedLastUpdated });
         assertExpectedRevision({ snapshot, syncContract });
+        assertNoPatientErasures({ snapshot, record });
 
         if (dryRun) {
           return;

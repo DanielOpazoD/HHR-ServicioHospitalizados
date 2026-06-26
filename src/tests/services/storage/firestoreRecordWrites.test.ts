@@ -57,6 +57,7 @@ vi.mock('@/services/storage/firestore/firestoreWriteSupport', () => ({
   assertFirestoreConcurrency: vi.fn(),
   createDeletedRecordRef: vi.fn((date: string) => ({ trashRef: date })),
   saveHistorySnapshot: vi.fn(),
+  saveRecordAtomically: vi.fn(),
 }));
 
 vi.mock('@/services/storage/storageLoggers', () => ({
@@ -98,6 +99,7 @@ import {
   assertFirestoreConcurrency,
   createDeletedRecordRef,
   saveHistorySnapshot,
+  saveRecordAtomically,
 } from '@/services/storage/firestore/firestoreWriteSupport';
 import { withRetry } from '@/utils/networkUtils';
 
@@ -120,16 +122,15 @@ describe('firestoreRecordWrites', () => {
       beds: {},
     } as never);
 
-    expect(assertFirestoreConcurrency).toHaveBeenCalledWith(
+    expect(saveRecordAtomically).toHaveBeenCalledWith(
       { date: '2026-03-14' },
+      expect.objectContaining({ date: '2026-03-14' }),
       undefined,
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
       'save',
-      { toleranceMs: 0 }
+      undefined
     );
-    expect(saveHistorySnapshot).toHaveBeenCalledWith('2026-03-14');
-    expect(setDoc).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(setDoc).mock.calls[0]?.[0]).toEqual({ date: '2026-03-14' });
+    expect(setDoc).not.toHaveBeenCalled();
   });
 
   it('blocks full-record writes that violate clinical episode authority', async () => {
@@ -205,10 +206,13 @@ describe('firestoreRecordWrites', () => {
       'Daily record authority shadow validation failed',
       expect.objectContaining({ date: '2026-03-16', error: expect.any(Error) })
     );
-    expect(saveHistorySnapshot).toHaveBeenCalledWith('2026-03-16');
-    expect(setDoc).toHaveBeenCalledWith(
+    expect(saveRecordAtomically).toHaveBeenCalledWith(
       { date: '2026-03-16' },
-      expect.objectContaining({ date: '2026-03-16' })
+      expect.objectContaining({ date: '2026-03-16' }),
+      '2026-03-16T10:00:00.000Z',
+      'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
+      'save',
+      undefined
     );
   });
 
@@ -273,7 +277,7 @@ describe('firestoreRecordWrites', () => {
       '2026-03-14T10:00:00.000Z',
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
       'partial update',
-      { toleranceMs: 0 }
+      { toleranceMs: 0, failClosed: true }
     );
     expect(updateDoc).toHaveBeenCalledTimes(1);
 
@@ -377,7 +381,7 @@ describe('firestoreRecordWrites', () => {
       'boom'
     );
 
-    vi.mocked(setDoc).mockRejectedValueOnce(new Error('save failed'));
+    vi.mocked(saveRecordAtomically).mockRejectedValueOnce(new Error('save failed'));
     await expect(
       saveRecordToFirestore(
         {
@@ -388,13 +392,6 @@ describe('firestoreRecordWrites', () => {
       )
     ).rejects.toThrow('save failed');
 
-    expect(assertFirestoreConcurrency).toHaveBeenCalledWith(
-      { date: '2026-03-17' },
-      '2026-03-16T10:00:00.000Z',
-      'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
-      'save',
-      { toleranceMs: 0 }
-    );
     expect(firestoreWriteLoggerError).toHaveBeenCalledWith(
       'Firestore write failed: save',
       expect.objectContaining({
@@ -462,7 +459,7 @@ describe('firestoreRecordWrites', () => {
     await updateRecordPartial('2026-03-19', { status: 'ok' } as never);
     await deleteRecordFromFirestore('2026-03-19');
 
-    expect(setDoc).toHaveBeenCalled();
+    expect(saveRecordAtomically).toHaveBeenCalled();
     expect(updateDoc).toHaveBeenCalled();
     expect(deleteDoc).toHaveBeenCalled();
     expect(firestoreWriteLoggerWarn).toHaveBeenCalledWith(

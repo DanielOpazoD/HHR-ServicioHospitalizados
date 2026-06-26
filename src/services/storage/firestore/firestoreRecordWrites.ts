@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import type { DailyRecord, DailyRecordPatch } from '@/services/storage/storageDailyRecordContracts';
 import { withRetry } from '@/utils/networkUtils';
+import { DataRegressionError } from '@/utils/integrityGuard';
 import {
   flattenObject,
   getRecordDocRef,
@@ -17,8 +18,10 @@ import { isSpecialistScopedDailyRecordPatch } from '@/services/repositories/dail
 import {
   asFirestoreUpdatePayload,
   assertFirestoreConcurrency,
+  ConcurrencyError,
   createDeletedRecordRef,
   saveHistorySnapshot,
+  saveRecordAtomically,
 } from '@/services/storage/firestore/firestoreWriteSupport';
 import { firestoreWriteLogger } from '@/services/storage/storageLoggers';
 import { ensureUserRoleClaim } from '@/services/auth/authClaimSyncService';
@@ -133,13 +136,6 @@ export const saveRecordToFirestore = async (
 ): Promise<void> => {
   try {
     const docRef = getRecordDocRef(record.date);
-    await assertFirestoreConcurrency(
-      docRef,
-      expectedLastUpdated,
-      'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
-      'save',
-      { toleranceMs: 0 }
-    );
 
     assertDailyRecordClinicalAuthority(record);
 
@@ -163,18 +159,30 @@ export const saveRecordToFirestore = async (
     }
 
     await tryShadowDailyRecordSaveViaCallable(record, expectedLastUpdated, options.syncContract);
-    await saveHistorySnapshot(record.date);
 
     const sanitizedRecord = sanitizeForFirestore({
       ...record,
       lastUpdated: Timestamp.now(),
-    });
+    }) as Record<string, unknown>;
 
     const persist = () =>
-      withRetry(() => setDoc(docRef, sanitizedRecord as Record<string, unknown>), {
-        onRetry: (err: unknown, attempt: number) =>
-          logFirestoreWriteRetry('save', record.date, attempt, err),
-      });
+      withRetry(
+        () =>
+          saveRecordAtomically(
+            docRef,
+            sanitizedRecord,
+            expectedLastUpdated,
+            'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
+            'save',
+            options.assertSafeOverwrite
+          ),
+        {
+          onRetry: (err: unknown, attempt: number) =>
+            logFirestoreWriteRetry('save', record.date, attempt, err),
+          shouldRetry: (err: unknown) =>
+            !(err instanceof ConcurrencyError) && !(err instanceof DataRegressionError),
+        }
+      );
 
     try {
       await persist();
@@ -204,7 +212,7 @@ export const updateRecordPartial = async (
       expectedLastUpdated,
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
       'partial update',
-      { toleranceMs: 0 }
+      { toleranceMs: 0, failClosed: true }
     );
 
     // Specialist patches arrive in correct dot-notation (e.g. "beds.R1.medicalHandoffAudit").

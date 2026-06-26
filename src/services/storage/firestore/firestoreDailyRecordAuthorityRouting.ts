@@ -28,6 +28,11 @@ export interface DailyRecordPartialWriteOptions {
 
 export interface DailyRecordSaveWriteOptions {
   syncContract?: SyncTaskContract;
+  /**
+   * Optional guard invoked inside the save transaction with the freshly-read remote document.
+   * It may throw (e.g. DataRegressionError) to abort the commit atomically.
+   */
+  assertSafeOverwrite?: (remoteData: Record<string, unknown>) => void;
 }
 
 interface SpecialistMedicalHandoffCallablePayload {
