@@ -127,7 +127,8 @@ describe('firestoreRecordWrites', () => {
       expect.objectContaining({ date: '2026-03-14' }),
       undefined,
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
-      'save'
+      'save',
+      undefined
     );
     expect(setDoc).not.toHaveBeenCalled();
   });
@@ -210,7 +211,8 @@ describe('firestoreRecordWrites', () => {
       expect.objectContaining({ date: '2026-03-16' }),
       '2026-03-16T10:00:00.000Z',
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
-      'save'
+      'save',
+      undefined
     );
   });
 
@@ -275,7 +277,7 @@ describe('firestoreRecordWrites', () => {
       '2026-03-14T10:00:00.000Z',
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
       'partial update',
-      { toleranceMs: 0 }
+      { toleranceMs: 0, failClosed: true }
     );
     expect(updateDoc).toHaveBeenCalledTimes(1);
 

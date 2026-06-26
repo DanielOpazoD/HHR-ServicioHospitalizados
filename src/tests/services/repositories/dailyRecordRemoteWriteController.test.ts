@@ -16,6 +16,7 @@ import {
   queueDailyRecordSyncTaskWithLocalRecord,
 } from '@/services/storage/sync';
 import {
+  assertNoPatientErasures,
   assertRemoteSaveCompatibility,
   resolveRemoteWriteRecovery,
 } from '@/services/repositories/dailyRecordRemoteWriteController';
@@ -220,6 +221,24 @@ describe('dailyRecordRemoteWriteController', () => {
       await expect(assertRemoteSaveCompatibility('2026-06-25', local)).rejects.toThrow(
         /cuna clínica/
       );
+    });
+  });
+
+  describe('assertNoPatientErasures (pure, used as the in-transaction backstop)', () => {
+    it('throws when the cloud holds a patient missing locally with no movement', () => {
+      const remote = recordWith({ ...fillerBeds(5), H5C2: occupiedBed('Josué Villagra Tolloza') });
+      const local = recordWith(fillerBeds(5));
+
+      expect(() => assertNoPatientErasures(remote, local)).toThrow(
+        /H5C2 \(Josué Villagra Tolloza\)/
+      );
+    });
+
+    it('does not throw when the bed is empty in both copies', () => {
+      const remote = recordWith(fillerBeds(5));
+      const local = recordWith(fillerBeds(5));
+
+      expect(() => assertNoPatientErasures(remote, local)).not.toThrow();
     });
   });
 });

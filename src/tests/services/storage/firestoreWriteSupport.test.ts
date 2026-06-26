@@ -166,6 +166,30 @@ describe('firestoreWriteSupport', () => {
     );
   });
 
+  it('fails closed and rethrows the verification error when failClosed is set', async () => {
+    const offline = new Error('offline');
+    vi.mocked(getDoc).mockRejectedValueOnce(offline);
+
+    await expect(
+      assertFirestoreConcurrency(
+        {} as never,
+        '2026-02-20T10:00:00.000Z',
+        'conflict message',
+        'partial update',
+        { failClosed: true }
+      )
+    ).rejects.toBe(offline);
+
+    expect(mockRecordOperationalErrorTelemetry).toHaveBeenCalledWith(
+      'firestore',
+      'verify_record_concurrency',
+      offline,
+      expect.objectContaining({
+        code: 'firestore_concurrency_verification_failed',
+      })
+    );
+  });
+
   it('saves a history snapshot when the source record exists', async () => {
     vi.mocked(getDoc).mockResolvedValueOnce({
       exists: () => true,
@@ -315,6 +339,51 @@ describe('firestoreWriteSupport', () => {
       );
 
       expect(tx.set).toHaveBeenCalledWith({ kind: 'docRef' }, { data: 'first' });
+    });
+
+    it('runs assertSafeOverwrite against remote state and aborts the commit if it throws', async () => {
+      const remote = { beds: { H5C2: { patientName: 'Josué' } } };
+      const tx = makeTx({ exists: () => true, data: () => remote });
+      mockRunTransaction.mockImplementation((_db: unknown, fn: (tx: unknown) => Promise<void>) =>
+        fn(tx)
+      );
+      const guard = vi.fn(() => {
+        throw new Error('erasure blocked');
+      });
+
+      await expect(
+        saveRecordAtomically(
+          { kind: 'docRef' } as never,
+          { data: 'new' },
+          undefined, // no base version → CAS skipped; the in-transaction guard is the only defense
+          'conflict',
+          'save',
+          guard
+        )
+      ).rejects.toThrow('erasure blocked');
+
+      expect(guard).toHaveBeenCalledWith(remote);
+      expect(tx.set).not.toHaveBeenCalled();
+    });
+
+    it('commits when assertSafeOverwrite passes', async () => {
+      const tx = makeTx({ exists: () => true, data: () => ({ beds: {} }) });
+      mockRunTransaction.mockImplementation((_db: unknown, fn: (tx: unknown) => Promise<void>) =>
+        fn(tx)
+      );
+      const guard = vi.fn();
+
+      await saveRecordAtomically(
+        { kind: 'docRef' } as never,
+        { data: 'new' },
+        '2026-02-20T10:00:00.000Z',
+        'conflict',
+        'save',
+        guard
+      );
+
+      expect(guard).toHaveBeenCalledTimes(1);
+      expect(tx.set).toHaveBeenCalledWith({ kind: 'docRef' }, { data: 'new' });
     });
   });
 });

@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import type { DailyRecord, DailyRecordPatch } from '@/services/storage/storageDailyRecordContracts';
 import { withRetry } from '@/utils/networkUtils';
+import { DataRegressionError } from '@/utils/integrityGuard';
 import {
   flattenObject,
   getRecordDocRef,
@@ -172,12 +173,14 @@ export const saveRecordToFirestore = async (
             sanitizedRecord,
             expectedLastUpdated,
             'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
-            'save'
+            'save',
+            options.assertSafeOverwrite
           ),
         {
           onRetry: (err: unknown, attempt: number) =>
             logFirestoreWriteRetry('save', record.date, attempt, err),
-          shouldRetry: (err: unknown) => !(err instanceof ConcurrencyError),
+          shouldRetry: (err: unknown) =>
+            !(err instanceof ConcurrencyError) && !(err instanceof DataRegressionError),
         }
       );
 
@@ -209,7 +212,7 @@ export const updateRecordPartial = async (
       expectedLastUpdated,
       'El registro ha sido modificado por otro usuario. Por favor recarga la página.',
       'partial update',
-      { toleranceMs: 0 }
+      { toleranceMs: 0, failClosed: true }
     );
 
     // Specialist patches arrive in correct dot-notation (e.g. "beds.R1.medicalHandoffAudit").

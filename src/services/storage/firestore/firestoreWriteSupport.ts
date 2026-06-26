@@ -44,7 +44,7 @@ export const assertFirestoreConcurrency = async (
   expectedLastUpdated: string | undefined,
   conflictMessage: string,
   contextLabel: string,
-  options: { toleranceMs?: number } = {}
+  options: { toleranceMs?: number; failClosed?: boolean } = {}
 ): Promise<void> => {
   if (!expectedLastUpdated) {
     return;
@@ -98,12 +98,18 @@ export const assertFirestoreConcurrency = async (
     recordOperationalErrorTelemetry('firestore', 'verify_record_concurrency', error, {
       code: 'firestore_concurrency_verification_failed',
       message: `No se pudo verificar concurrencia para ${contextLabel}.`,
-      severity: 'warning',
+      severity: options.failClosed ? 'error' : 'warning',
       userSafeMessage: `No se pudo verificar concurrencia para ${contextLabel}.`,
       context: {
         contextLabel,
       },
     });
+
+    // Fail closed when the caller cannot tolerate an unverified write (e.g. partial updates that
+    // could overwrite a field with stale data): abort instead of silently proceeding.
+    if (options.failClosed) {
+      throw error;
+    }
   }
 };
 
@@ -123,6 +129,7 @@ export const saveRecordAtomically = async (
   expectedLastUpdated: string | undefined,
   conflictMessage: string,
   contextLabel: string,
+  assertSafeOverwrite?: (remoteData: Record<string, unknown>) => void,
   runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime
 ): Promise<void> => {
   const db = runtime.getDb();
@@ -164,6 +171,11 @@ export const saveRecordAtomically = async (
     }
 
     if (snap.exists()) {
+      // Atomic erasure backstop: validate the new record against the freshly-read remote state
+      // INSIDE the transaction. This holds even when expectedLastUpdated is absent (CAS skipped)
+      // and closes the TOCTOU window between the pre-write integrity check and this commit.
+      assertSafeOverwrite?.(snap.data() as Record<string, unknown>);
+
       const historyRef = doc(collection(docRef, 'history'), new Date().toISOString());
       transaction.set(historyRef, {
         ...(snap.data() as Record<string, unknown>),
