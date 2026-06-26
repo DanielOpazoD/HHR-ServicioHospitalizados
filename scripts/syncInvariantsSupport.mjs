@@ -98,8 +98,8 @@ export const evaluateSyncInvariants = root => {
     buildInvariant(
       'full-save-sync-contract',
       repositoryWrite.includes('buildDailyRecordSyncContract(validatedRecord') &&
-        repositoryWrite.includes(
-          'saveRecordToFirestore(validatedRecord, command.expectedLastUpdated, { syncContract })'
+        /saveRecordToFirestore\(validatedRecord, command\.expectedLastUpdated, \{\s*syncContract/.test(
+          repositoryWrite
         ) &&
         firestoreWrites.includes('syncContract: options.syncContract'),
       'Full daily-record saves must propagate syncContract/baseRevision to the remote authority path.',

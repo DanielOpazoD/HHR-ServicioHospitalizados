@@ -93,7 +93,8 @@ describe('firestoreService', () => {
       id: 'mock-id',
     } as unknown as DocumentSnapshot<DocumentData>);
 
-    await saveRecordToFirestore(mockRecord);
+    // Pass a base version: saving over an existing doc without one is now a conflict by design.
+    await saveRecordToFirestore(mockRecord, '2026-02-19T00:00:00.000Z');
 
     // Should have called setDoc twice: once for snapshot, once for main record
     expect(firestore.setDoc).toHaveBeenCalledTimes(2);
