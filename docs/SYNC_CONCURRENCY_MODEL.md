@@ -75,9 +75,10 @@ idempotency, a history snapshot, and the same patient-erasure guard
   discharge/transfer/CMA record looks like an erasure to `findPatientErasures` and is blocked
   (fail-safe direction — blocks rather than erases).
 - **The erasure guard is duplicated.** `findPatientErasures` lives in both the client
-  (`dailyRecordRemoteWriteController.ts`) and the server
-  (`functions/lib/dailyRecordErasureGuard.js`) so the callable path has parity; keep the two
-  copies in sync.
+  (`src/services/repositories/dailyRecordErasureGuard.ts`) and the server
+  (`functions/lib/dailyRecordErasureGuard.js`). A parity test
+  (`src/tests/functions/dailyRecordErasureGuardParity.test.ts`) runs a shared battery through both
+  and fails on any drift.
 - **`findPatientErasures` is a heuristic.** It matches a movement by same patient name **and**
   same bed (`bedId`, or `originalBedId` for CMA); the density-regression thresholds (40% / 50
   points) are coarse and tuned for a full census.
@@ -88,6 +89,9 @@ idempotency, a history snapshot, and the same patient-erasure guard
 
 - Unit: `firestoreWriteSupport.test.ts` (CAS, missing-base, erasure backstop, strict tolerance),
   `dailyRecordRemoteWriteController.test.ts` (`findPatientErasures` cases), `networkUtils.test.ts`.
-- Real engine: `src/tests/emulator/sync-concurrency.emulator.test.ts` runs against the Firestore
-  emulator — including two concurrent saves on the same base (one wins, one `ConcurrencyError`)
-  and the in-transaction erasure backstop. Run via `npm run test:emulator:sync:ci`.
+- Server guard: `src/tests/functions/dailyRecordErasureGuard.test.ts` (pure helper) and
+  `dailyRecordWriteAuthorityErasure.test.ts` (handler blocks the write); client/server parity is
+  enforced by `dailyRecordErasureGuardParity.test.ts`.
+- Real engine: `src/tests/emulator/atomic-write-guards.emulator.test.ts` runs against the Firestore
+  emulator — two concurrent saves on the same base (one wins, one `ConcurrencyError`) and the
+  in-transaction erasure backstop. Run via `npm run test:emulator:sync:ci`.
