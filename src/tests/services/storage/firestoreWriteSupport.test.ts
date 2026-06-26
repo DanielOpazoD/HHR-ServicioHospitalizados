@@ -275,6 +275,31 @@ describe('firestoreWriteSupport', () => {
       expect(tx.set).not.toHaveBeenCalled();
     });
 
+    it('treats even a sub-second-newer remote as a conflict (strict, no tolerance window)', async () => {
+      // The atomic save intentionally has NO same-session tolerance: any positive drift is a
+      // conflict. This locks that contract so a future tolerance window cannot silently reopen
+      // the concurrent-overwrite race.
+      const tx = makeTx({
+        exists: () => true,
+        data: () => ({ lastUpdated: '2026-02-20T10:00:00.500Z' }), // only 500ms newer
+      });
+      mockRunTransaction.mockImplementation((_db: unknown, fn: (tx: unknown) => Promise<void>) =>
+        fn(tx)
+      );
+
+      await expect(
+        saveRecordAtomically(
+          { kind: 'docRef' } as never,
+          { data: 'stale' },
+          '2026-02-20T10:00:00.000Z',
+          'conflict message',
+          'save'
+        )
+      ).rejects.toBeInstanceOf(ConcurrencyError);
+
+      expect(tx.set).not.toHaveBeenCalled();
+    });
+
     it('allows the write when expectedLastUpdated is undefined (new document)', async () => {
       const tx = makeTx({ exists: () => false });
       mockRunTransaction.mockImplementation((_db: unknown, fn: (tx: unknown) => Promise<void>) =>

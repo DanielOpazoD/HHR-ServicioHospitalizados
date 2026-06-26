@@ -132,10 +132,42 @@ describe('dailyRecordRemoteWriteController', () => {
       await expect(assertRemoteSaveCompatibility('2026-06-25', local)).resolves.toBeUndefined();
     });
 
-    it('allows the save when a discharge references the bed even if the name differs', async () => {
+    it('blocks a bed-reuse erasure when a same-bed discharge names a different patient', async () => {
+      // The cloud has "Juan Pérez" in H1C1, but locally a DIFFERENT patient was discharged from
+      // H1C1. The same-bed discharge must not vouch for the unrelated remote patient — saving the
+      // empty bed would erase Juan.
       const remote = recordWith({ ...fillerBeds(5), H1C1: occupiedBed('Juan Pérez') });
       const local = recordWith(fillerBeds(5), {
         discharges: [{ patientName: 'Otro Nombre', bedId: 'H1C1' }],
+      });
+
+      vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(remote);
+
+      await expect(assertRemoteSaveCompatibility('2026-06-25', local)).rejects.toThrow(
+        /H1C1 \(Juan Pérez\) tiene un paciente en la nube/
+      );
+    });
+
+    it('does not let a same-name discharge on a DIFFERENT bed mask an erasure', async () => {
+      // Two patients share a name: one is discharged from H2C1, the other is still in H5C2 in the
+      // cloud. The discharge must be tied to its own bed, not vouch for H5C2 by name alone.
+      const remote = recordWith({ ...fillerBeds(4), H5C2: occupiedBed('Juan Soto') });
+      const local = recordWith(fillerBeds(4), {
+        discharges: [{ patientName: 'Juan Soto', bedId: 'H2C1' }],
+      });
+
+      vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(remote);
+
+      await expect(assertRemoteSaveCompatibility('2026-06-25', local)).rejects.toThrow(
+        /H5C2 \(Juan Soto\) tiene un paciente en la nube/
+      );
+    });
+
+    it('accounts for an emptied bed via a CMA originalBedId match', async () => {
+      // CMA movements carry the source bed in `originalBedId` (no `bedId`).
+      const remote = recordWith({ ...fillerBeds(4), R2: occupiedBed('Omar Castillo') });
+      const local = recordWith(fillerBeds(4), {
+        cma: [{ patientName: 'Omar Castillo', originalBedId: 'R2' }],
       });
 
       vi.mocked(getRecordFromFirestore).mockResolvedValueOnce(remote);
