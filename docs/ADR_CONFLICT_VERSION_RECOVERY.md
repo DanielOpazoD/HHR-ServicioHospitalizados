@@ -42,8 +42,9 @@ política de cambios (runtime/datos/clínico).
 **Dentro (MVP):**
 
 1. Captura dual de snapshots completos al momento del conflicto/merge.
-2. Lectura + restauración por admin desde el `ConflictPanel` existente
-   (`src/features/admin/components/internal/ConflictPanel.tsx`).
+2. Lectura + restauración por admin desde el **censo**: botón sutil admin en
+   `src/features/census/components/CensusStaffHeader.tsx` →
+   `src/features/census/components/ConflictVersionsAdminControl.tsx`.
 3. **Auditoría de la restauración** (requisito explícito).
 
 **Fuera (evita sobreingeniería, por la doctrina del equipo):**
