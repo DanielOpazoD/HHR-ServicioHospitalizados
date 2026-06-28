@@ -65,7 +65,10 @@ export const logRepositoryConflictVersionRestored = async (
   date: string,
   details: ConflictVersionRestoreAuditDetails
 ): Promise<void> => {
-  await executeWriteAuditEvent({
+  // executeWriteAuditEvent never throws: it returns a failed ApplicationOutcome for an anonymous
+  // clinical actor or an underlying write error. Surface that as a throw so the restore caller can
+  // fail closed instead of silently overwriting the record without an audit row.
+  const outcome = await executeWriteAuditEvent({
     userId: getCurrentUserEmail(),
     action: 'CONFLICT_VERSION_RESTORED',
     entityType: 'dailyRecord',
@@ -73,4 +76,11 @@ export const logRepositoryConflictVersionRestored = async (
     details: details as unknown as Record<string, unknown>,
     recordDate: date,
   });
+  if (outcome.status !== 'success') {
+    throw new Error(
+      outcome.issues[0]?.message ??
+        outcome.userSafeMessage ??
+        'No se pudo registrar la auditoría de restauración de versión en conflicto.'
+    );
+  }
 };

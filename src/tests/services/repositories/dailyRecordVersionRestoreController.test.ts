@@ -65,29 +65,39 @@ describe('restoreDailyRecordVersion', () => {
     expect(logRepositoryConflictVersionRestored).not.toHaveBeenCalled();
   });
 
-  it('still succeeds when the audit log fails, but surfaces the failure via telemetry', async () => {
+  it('fails closed when the audit fails: aborts before saving (no unaudited overwrite)', async () => {
     vi.mocked(getConflictVersionSnapshot).mockResolvedValue({
       id: 's1',
       origin: 'incoming_premerge',
       record: { date: '2026-06-26', beds: {} } as never,
     });
-    vi.mocked(getRecordFromFirestore).mockResolvedValue(null);
+    vi.mocked(getRecordFromFirestore).mockResolvedValue({
+      date: '2026-06-26',
+      lastUpdated: '2026-06-26T12:00:00.000Z',
+    } as never);
     vi.mocked(logRepositoryConflictVersionRestored).mockRejectedValueOnce(new Error('audit down'));
 
-    const result = await restoreDailyRecordVersion('2026-06-26', 's1');
+    await expect(restoreDailyRecordVersion('2026-06-26', 's1')).rejects.toThrow('audit down');
+    // The live record is never overwritten when the restore cannot be audited.
+    expect(saveRecordToFirestore).not.toHaveBeenCalled();
+  });
 
-    expect(result).toEqual({ status: 'restored' });
-    // No current record → no base version passed.
-    expect(saveRecordToFirestore).toHaveBeenCalledWith(
-      expect.objectContaining({ date: '2026-06-26' }),
-      undefined
-    );
-    // A restore that is not audited must not be silent — it is observable in telemetry.
+  it('surfaces telemetry and rethrows when the save fails after a successful audit', async () => {
+    vi.mocked(getConflictVersionSnapshot).mockResolvedValue({
+      id: 's1',
+      origin: 'remote_premerge',
+      record: { date: '2026-06-26', beds: {} } as never,
+    });
+    vi.mocked(getRecordFromFirestore).mockResolvedValue(null);
+    vi.mocked(saveRecordToFirestore).mockRejectedValueOnce(new Error('save down'));
+
+    await expect(restoreDailyRecordVersion('2026-06-26', 's1')).rejects.toThrow('save down');
+    // The audit already landed but the save failed — observable for reconciliation.
     expect(recordOperationalErrorTelemetry).toHaveBeenCalledWith(
       'firestore',
-      'restore_daily_record_version_audit',
+      'restore_daily_record_version_save',
       expect.any(Error),
-      expect.objectContaining({ code: 'firestore_conflict_restore_audit_failed' })
+      expect.objectContaining({ code: 'firestore_conflict_restore_save_failed_post_audit' })
     );
   });
 });

@@ -27,6 +27,15 @@ vi.mock('@/firebaseConfig', () => ({
   auth: null,
 }));
 
+// Focus this suite on Firestore rules + restore mechanics. The audit path (fail-closed outcome
+// handling) is covered by the unit test; a no-op audit keeps the restore from depending on the
+// audit-write rules/auth in the emulator (there is no authenticated app user here).
+vi.mock('@/services/repositories/ports/repositoryAuditPort', async () => ({
+  ...(await vi.importActual('@/services/repositories/ports/repositoryAuditPort')),
+  logRepositoryConflictVersionRestored: vi.fn().mockResolvedValue(undefined),
+  logRepositoryConflictAutoMerged: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { attemptConflictAutoMergeRecovery } from '@/services/repositories/dailyRecordConflictAutoMergeController';
 import { restoreDailyRecordVersion } from '@/services/repositories/dailyRecordVersionRestoreController';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
@@ -75,6 +84,7 @@ const isoAt = (date: string, time: string): string => `${date}T${time}.000Z`;
 describeEmulator('Firestore emulator conflict version recovery', () => {
   let testEnv: RulesTestEnvironment;
   let nurseDb: TestFirestore;
+  let adminDb: TestFirestore;
 
   beforeAll(async () => {
     const rulesPath = path.resolve(__dirname, '../../../firestore.rules');
@@ -90,6 +100,13 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
       .authenticatedContext('user_nurse', {
         email: 'hospitalizados@hospitalhangaroa.cl',
         role: 'nurse_hospital',
+      })
+      .firestore();
+
+    adminDb = testEnv
+      .authenticatedContext('user_admin', {
+        email: 'daniel.opazo@hospitalhangaroa.cl',
+        role: 'admin',
       })
       .firestore();
   });
@@ -143,7 +160,7 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
     expect((incomingSnap?.record as DailyRecord)?.beds?.R1?.patientName).toBe('Local');
   });
 
-  it('restores a chosen version over the live record and snapshots the prior state to history', async () => {
+  it('restores a chosen version (admin) over the live record and snapshots the prior state to history', async () => {
     const date = CURRENT_RECORD_DATE;
 
     // The state currently live (e.g. the result of a wrong merge) that we want to override.
@@ -166,6 +183,8 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
         .set({ origin: 'remote_premerge', conflictId: 'cid', record: versionToRestore });
     });
 
+    // Restore is admin-only: rules restrict conflictSnapshots reads to isAdmin().
+    activeDb = adminDb;
     const result = await restoreDailyRecordVersion(date, snapshotId);
     expect(result.status).toBe('restored');
 
@@ -185,5 +204,24 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
       );
     });
     expect(historyPatients).toContain('Estado vivo');
+  });
+
+  it('denies restore to a non-admin (nurse): the conflictSnapshots read is blocked by rules', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const snapshotId = 'cid__remote_premerge';
+
+    const versionToRestore = buildRecord(date, isoAt(date, '10:00:00'));
+    versionToRestore.beds = { R1: buildPatient('R1', { patientName: 'Versión buena' }) };
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context
+        .firestore()
+        .doc(`hospitals/hanga_roa/dailyRecords/${date}/conflictSnapshots/${snapshotId}`)
+        .set({ origin: 'remote_premerge', conflictId: 'cid', record: versionToRestore });
+    });
+
+    // nurseDb is the active context (set in beforeEach). With reads restricted to isAdmin(), the
+    // repository call must be denied at the snapshot read — the client UI gate is not the only guard.
+    activeDb = nurseDb;
+    await expect(restoreDailyRecordVersion(date, snapshotId)).rejects.toThrow();
   });
 });

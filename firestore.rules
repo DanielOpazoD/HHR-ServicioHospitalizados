@@ -700,7 +700,7 @@ service cloud.firestore {
           allow update, delete: if canAdminMaintainHospitalDocument();
         }
         match /conflictSnapshots/{snapshotId} {
-          allow read: if canReadClinicalData();
+          allow read: if isAdmin();
           allow create: if canCreateEditableHospitalDocument();
           allow update, delete: if canAdminMaintainHospitalDocument();
         }

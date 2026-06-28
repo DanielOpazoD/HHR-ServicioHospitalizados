@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import {
@@ -41,6 +41,16 @@ export const useConflictVersionRecovery = ({
   const [loading, setLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<ConflictVersionSnapshot[]>([]);
+
+  // CensusStaffHeader keeps this hook mounted across day changes (only the `date` prop changes).
+  // Reset on date change so a stale, still-open list can never restore an old snapshotId against the
+  // new day (the snapshot lives in the previous day's subcollection).
+  useEffect(() => {
+    setIsOpen(false);
+    setLoading(false);
+    setRestoringId(null);
+    setSnapshots([]);
+  }, [date]);
 
   const load = useCallback(async () => {
     if (!date) return;

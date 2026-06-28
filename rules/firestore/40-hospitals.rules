@@ -16,9 +16,11 @@
         }
 
         // Recoverable conflict version snapshots. Auto-expire ~48h via a Firestore TTL policy on
-        // the `expireAt` field. See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
+        // the `expireAt` field. Preview/restore is an admin-only recovery affordance, so reads are
+        // restricted to admins (defense in depth behind the UI gate); any editor may still create a
+        // snapshot during normal conflict resolution. See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
         match /conflictSnapshots/{snapshotId} {
-          allow read: if canReadClinicalData();
+          allow read: if isAdmin();
           allow create: if canCreateEditableHospitalDocument();
           allow update, delete: if canAdminMaintainHospitalDocument();
         }

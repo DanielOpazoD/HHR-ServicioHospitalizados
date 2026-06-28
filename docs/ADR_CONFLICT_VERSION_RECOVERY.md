@@ -54,23 +54,24 @@ política de cambios (runtime/datos/clínico).
 
 ## Modelo de datos
 
-Reusar la subcolección existente
-`hospitals/{hospitalId}/dailyRecords/{date}/history/{snapshotId}`, añadiendo metadatos a cada
-snapshot:
+Subcolección **dedicada**
+`hospitals/{hospitalId}/dailyRecords/{date}/conflictSnapshots/{snapshotId}`, separada del `history/`
+existente para que la política de TTL aplique solo a estos blobs recuperables y nunca toque el
+historial permanente. Cada documento (id `{conflictId}__{origin}`) lleva:
 
-| Campo                                  | Descripción                                                                                                 |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `snapshotTimestamp`                    | server `Timestamp`                                                                                          |
-| `origin`                               | `'pre_write' \| 'remote_premerge' \| 'incoming_premerge' \| 'merged' \| 'admin_restore_point'`              |
-| `conflictId`                           | correlaciona con el `ConflictAuditSummary` del merge                                                        |
-| `sourceRevision` / `sourceLastUpdated` | versión de origen                                                                                           |
-| `expireAt`                             | server `Timestamp` = creación + 48 h; gobierna el TTL nativo. **Ausente en `pre_write`** (esos no expiran). |
-| `record`                               | el `DailyRecord` completo sanitizado                                                                        |
+| Campo                                  | Descripción                                                                                          |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `snapshotTimestamp`                    | server `Timestamp`                                                                                   |
+| `origin`                               | `'remote_premerge' \| 'incoming_premerge'` — las dos versiones pre-merge capturadas                  |
+| `conflictId`                           | correlaciona con el `ConflictAuditSummary` del merge                                                 |
+| `sourceRevision` / `sourceLastUpdated` | versión de origen                                                                                    |
+| `expireAt`                             | server `Timestamp` = creación + 48 h; gobierna el TTL nativo. Presente en **todos** estos snapshots. |
+| `record`                               | el `DailyRecord` completo sanitizado                                                                 |
 
-Hoy `saveRecordAtomically` ya escribe `pre_write`. Se añade: en
-`attemptConflictAutoMergeRecovery`, persistir `remote_premerge` + `incoming_premerge`
-(atómicamente) **antes** de encolar el fusionado, y etiquetar el `merged`. El historial es
-**append-only**.
+En `attemptConflictAutoMergeRecovery` se persisten `remote_premerge` + `incoming_premerge`
+(atómicamente, best-effort) **antes** de resolver el merge, cubriendo toda ruta de conflicto. El
+`history/` existente (los `pre_write` de `saveRecordAtomically` y el estado previo que se snapshotea
+al restaurar) queda **separado y permanente**. La colección `conflictSnapshots/` es **append-only**.
 
 ## Retención y expiración (TTL ~48 h)
 
@@ -91,18 +92,21 @@ el campo `expireAt`):
 - **Sin cron ni función programada:** el TTL es server-side y de cero mantenimiento (evita la
   sobreingeniería de un job de limpieza). El TTL **no dispara funciones ni auditoría** al borrar,
   por eso la auditoría debe ser independiente del snapshot (como ya está diseñado).
-- **Layout:** `expireAt` solo en los snapshots de conflicto dentro de `history/` (los `pre_write`
-  sin el campo no expiran); como alternativa, una subcolección dedicada `conflictSnapshots/` con
-  su propia política. _Me inclino por la dedicada por claridad de la política de TTL._
+- **Layout (resuelto):** subcolección dedicada `conflictSnapshots/`, separada de `history/`. La
+  **política de TTL nativa debe habilitarse sobre el grupo de colección `conflictSnapshots`, campo
+  `expireAt`** — así el TTL solo afecta estos blobs recuperables y nunca el historial permanente.
 
 ## Contrato de restauración
 
 `restoreDailyRecordVersion(date, snapshotId)`:
 
-- **Solo admin** (las rules ya distinguen el rol `admin`).
-- Lee el snapshot y hace un **full-save atómico** del `record` (reusa `saveRecordAtomically`):
-  el CAS corre contra el remoto actual, así que el estado que hubiera se snapshotea como de
-  costumbre — **nunca destructivo**.
+- **Solo admin** — enforzado en las **rules** (lectura de `conflictSnapshots/` restringida a
+  `isAdmin()`), no solo en el gate de la UI.
+- **Falla cerrado:** primero se escribe la auditoría `CONFLICT_VERSION_RESTORED`; solo si ésta tiene
+  éxito se guarda el `record`. Un actor anónimo o un fallo de auditoría **aborta antes** de mutar —
+  nunca hay un overwrite clínico sin auditar.
+- Luego, **full-save atómico** del `record` (reusa `saveRecordAtomically`): el CAS corre contra el
+  remoto actual, así que el estado que hubiera se snapshotea como de costumbre — **nunca destructivo**.
 - El estado restaurado queda como **una nueva versión** en el historial; nada se pierde.
 - Idempotente / reentrante.
 
