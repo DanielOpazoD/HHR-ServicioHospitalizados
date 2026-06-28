@@ -10,7 +10,6 @@ import type {
 const ORIGIN_LABEL: Record<string, string> = {
   remote_premerge: 'Versión en la nube (remota)',
   incoming_premerge: 'Versión local (entrante)',
-  merged: 'Versión fusionada',
 };
 
 const summarizeSnapshot = (snapshot: ConflictVersionSnapshot): string => {

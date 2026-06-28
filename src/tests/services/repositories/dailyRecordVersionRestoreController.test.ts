@@ -12,14 +12,15 @@ vi.mock('@/services/storage/firestore/firestoreRecordWrites', () => ({
 vi.mock('@/services/repositories/ports/repositoryAuditPort', () => ({
   logRepositoryConflictVersionRestored: vi.fn(),
 }));
-vi.mock('@/services/repositories/repositoryLoggers', () => ({
-  dailyRecordWriteLogger: { warn: vi.fn() },
+vi.mock('@/services/observability/operationalTelemetryOutcomeRecorder', () => ({
+  recordOperationalErrorTelemetry: vi.fn(),
 }));
 
 import { getConflictVersionSnapshot } from '@/services/storage/firestore/dailyRecordConflictSnapshotService';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { saveRecordToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
 import { logRepositoryConflictVersionRestored } from '@/services/repositories/ports/repositoryAuditPort';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import { restoreDailyRecordVersion } from '@/services/repositories/dailyRecordVersionRestoreController';
 
 describe('restoreDailyRecordVersion', () => {
@@ -64,7 +65,7 @@ describe('restoreDailyRecordVersion', () => {
     expect(logRepositoryConflictVersionRestored).not.toHaveBeenCalled();
   });
 
-  it('still succeeds (best-effort) when the audit log fails after the restore', async () => {
+  it('still succeeds when the audit log fails, but surfaces the failure via telemetry', async () => {
     vi.mocked(getConflictVersionSnapshot).mockResolvedValue({
       id: 's1',
       origin: 'incoming_premerge',
@@ -80,6 +81,13 @@ describe('restoreDailyRecordVersion', () => {
     expect(saveRecordToFirestore).toHaveBeenCalledWith(
       expect.objectContaining({ date: '2026-06-26' }),
       undefined
+    );
+    // A restore that is not audited must not be silent — it is observable in telemetry.
+    expect(recordOperationalErrorTelemetry).toHaveBeenCalledWith(
+      'firestore',
+      'restore_daily_record_version_audit',
+      expect.any(Error),
+      expect.objectContaining({ code: 'firestore_conflict_restore_audit_failed' })
     );
   });
 });

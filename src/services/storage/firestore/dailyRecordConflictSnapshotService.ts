@@ -24,7 +24,7 @@ import { recordOperationalErrorTelemetry } from '@/services/observability/operat
  */
 export const CONFLICT_SNAPSHOT_TTL_MS = 48 * 60 * 60 * 1000;
 
-export type ConflictSnapshotOrigin = 'remote_premerge' | 'incoming_premerge' | 'merged';
+export type ConflictSnapshotOrigin = 'remote_premerge' | 'incoming_premerge';
 
 const sourceLastUpdatedOf = (record: DailyRecord): string =>
   typeof record.lastUpdated === 'string' ? record.lastUpdated : 'na';
@@ -105,6 +105,18 @@ const toConflictVersionSnapshot = (id: string, data: DocumentData): ConflictVers
   record: data.record as DailyRecord,
 });
 
+/**
+ * Whether a snapshot is still within its recovery window. The Firestore TTL policy purges expired
+ * blobs asynchronously (up to ~24h after `expireAt`), so the list must not surface — nor let an
+ * admin restore — a version that is already past `expireAt`. Defensive: a missing/invalid `expireAt`
+ * is treated as recoverable rather than silently hidden.
+ */
+const isConflictSnapshotRecoverable = (data: DocumentData, nowMs: number): boolean => {
+  const expireAt = data.expireAt as { toMillis?: () => number } | undefined;
+  if (!expireAt || typeof expireAt.toMillis !== 'function') return true;
+  return expireAt.toMillis() > nowMs;
+};
+
 /** Lists the recoverable conflict version snapshots still present for a day (admin recovery UI). */
 export const listConflictVersionSnapshots = async (
   date: string,
@@ -112,7 +124,11 @@ export const listConflictVersionSnapshots = async (
 ): Promise<ConflictVersionSnapshot[]> => {
   const snapshotsRef = collection(getRecordDocRef(date, runtime), DAILY_RECORD_CONFLICT_SNAPSHOTS);
   const querySnapshot = await getDocs(snapshotsRef);
-  return querySnapshot.docs.map(snap => toConflictVersionSnapshot(snap.id, snap.data()));
+  const nowMs = Date.now();
+  return querySnapshot.docs
+    .map(snap => ({ id: snap.id, data: snap.data() }))
+    .filter(({ data }) => isConflictSnapshotRecoverable(data, nowMs))
+    .map(({ id, data }) => toConflictVersionSnapshot(id, data));
 };
 
 /** Reads a single conflict version snapshot (the source for a restore). */

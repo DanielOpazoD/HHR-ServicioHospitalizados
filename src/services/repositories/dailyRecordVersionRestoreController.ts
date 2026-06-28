@@ -3,7 +3,7 @@ import { getConflictVersionSnapshot } from '@/services/storage/firestore/dailyRe
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { saveRecordToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
 import { logRepositoryConflictVersionRestored } from '@/services/repositories/ports/repositoryAuditPort';
-import { dailyRecordWriteLogger } from '@/services/repositories/repositoryLoggers';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 export type RestoreDailyRecordVersionResult = { status: 'restored' } | { status: 'not_found' };
 
@@ -37,7 +37,16 @@ export const restoreDailyRecordVersion = async (
       conflictId: snapshot.conflictId,
     });
   } catch (auditError) {
-    dailyRecordWriteLogger.warn('Conflict version restore audit log failed', auditError);
+    // Auditing the restore is a hard requirement, so a failed audit write (the restore itself
+    // already happened) must be observable — not just logged. Surface it through telemetry, like the
+    // snapshot-capture path does. See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
+    recordOperationalErrorTelemetry('firestore', 'restore_daily_record_version_audit', auditError, {
+      code: 'firestore_conflict_restore_audit_failed',
+      message: 'No se pudo auditar la restauración de versión en conflicto.',
+      severity: 'warning',
+      userSafeMessage: 'No se pudo auditar la restauración de versión en conflicto.',
+      context: { date, snapshotId },
+    });
   }
 
   return { status: 'restored' };

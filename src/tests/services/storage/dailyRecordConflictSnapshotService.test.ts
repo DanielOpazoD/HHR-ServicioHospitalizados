@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockBatchSet, mockBatchCommit } = vi.hoisted(() => ({
+const { mockBatchSet, mockBatchCommit, mockGetDocs } = vi.hoisted(() => ({
   mockBatchSet: vi.fn(),
   mockBatchCommit: vi.fn().mockResolvedValue(undefined),
+  mockGetDocs: vi.fn(),
 }));
 
 vi.mock('firebase/firestore', async () => {
@@ -16,6 +17,7 @@ vi.mock('firebase/firestore', async () => {
     ...actual,
     collection: vi.fn((...args: unknown[]) => ({ kind: 'collection', args })),
     doc: vi.fn((parent: unknown, id: string) => ({ kind: 'doc', parent, id })),
+    getDocs: (...args: unknown[]) => mockGetDocs(...args),
     Timestamp: MockTimestamp,
     writeBatch: vi.fn(() => ({ set: mockBatchSet, commit: mockBatchCommit })),
   };
@@ -39,6 +41,7 @@ import { Timestamp } from 'firebase/firestore';
 import {
   buildConflictId,
   saveConflictVersionSnapshots,
+  listConflictVersionSnapshots,
   CONFLICT_SNAPSHOT_TTL_MS,
 } from '@/services/storage/firestore/dailyRecordConflictSnapshotService';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
@@ -121,5 +124,34 @@ describe('dailyRecordConflictSnapshotService', () => {
       expect.any(Error),
       expect.objectContaining({ code: 'firestore_conflict_snapshot_failed' })
     );
+  });
+
+  it('lists only still-recoverable snapshots, filtering out any past expireAt (TTL grace window)', async () => {
+    const ts = (millis: number) => ({ toMillis: () => millis });
+    const now = Date.now();
+    mockGetDocs.mockResolvedValueOnce({
+      docs: [
+        {
+          id: 'cid__remote_premerge',
+          data: () => ({
+            origin: 'remote_premerge',
+            expireAt: ts(now + 60_000),
+            record: { date: '2026-06-26' },
+          }),
+        },
+        {
+          id: 'cid__incoming_premerge',
+          data: () => ({
+            origin: 'incoming_premerge',
+            expireAt: ts(now - 60_000),
+            record: { date: '2026-06-26' },
+          }),
+        },
+      ],
+    });
+
+    const result = await listConflictVersionSnapshots('2026-06-26');
+
+    expect(result.map(s => s.id)).toEqual(['cid__remote_premerge']);
   });
 });
