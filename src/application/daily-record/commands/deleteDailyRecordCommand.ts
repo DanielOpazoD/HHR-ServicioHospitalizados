@@ -4,7 +4,11 @@
  * Deleting a daily census record removes clinical data, so it is audited and **fails closed**: the
  * DAILY_RECORD_DELETED audit is written FIRST, and only if it succeeds is the record deleted — an
  * anonymous actor or a failed audit write aborts before any deletion (no unaudited clinical-record
- * delete, Ley 20.584). See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
+ * delete, Ley 20.584).
+ *
+ * Residual: if the audit succeeds but the delete then fails, a "phantom" audit (deletion recorded
+ * but not performed) can result. That is the accepted trade-off vs. an unaudited deletion — the same
+ * posture as executeDeletePrescription. See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
  */
 import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
 import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';

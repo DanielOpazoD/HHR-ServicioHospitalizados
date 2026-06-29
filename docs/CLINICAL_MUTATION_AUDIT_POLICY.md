@@ -73,7 +73,9 @@ Para no dar **falsa confianza**, conviene ser explícito sobre el alcance:
   Cada entrada `failClosed` es `{ action, test }` y el gate confirma que el archivo de test exista —
   ya no se puede declarar `failClosed` sin apuntar a una prueba. Lo que el gate **no** hace es
   verificar que ese test realmente demuestre el abort (que el emisor audite-primero y no mute si la
-  auditoría falla); eso queda en el propio test + revisión humana.
+  auditoría falla); eso queda en el propio test + revisión humana. **`serverSideEnforced` tiene el
+  mismo límite:** el gate confirma que el archivo `emitter` (`functions/`) exista, no que esa Cloud
+  Function audite correctamente.
 - **No detecta el call vía alias.** Si el `executeWriteAuditEvent` se invoca a través de un alias
   inyectado (`deps.writeAuditEvent ?? executeWriteAuditEvent`), el escaneo sintáctico no lo ve; hoy
   esos consumidores capturan el outcome, pero es un punto ciego conocido.

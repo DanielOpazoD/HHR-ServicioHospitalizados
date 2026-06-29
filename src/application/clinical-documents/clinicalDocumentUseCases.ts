@@ -162,7 +162,8 @@ export const executeDeleteClinicalDocument = async (
 
   // Fail closed: audit BEFORE deleting, so a clinical document is never removed without a guaranteed
   // audit trail (Ley 20.584). A failed audit (anonymous actor or write error) aborts the delete and
-  // returns the failed outcome. See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
+  // returns the failed outcome. (Residual: a delete that fails AFTER a successful audit leaves a
+  // "phantom" audit — accepted vs. an unaudited delete.) See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
   const auditOutcome = await writeAuditEvent({
     userId: auditContext.deletedBy || getCurrentUserEmail(),
     action: 'CLINICAL_DOCUMENT_DELETED',
