@@ -281,9 +281,11 @@
     "qs": "6.15.2",
     "@isaacs/brace-expansion": "5.0.1",
     "markdown-it": "14.1.1",
-    "protobufjs": "7.5.8",
+    "protobufjs": "7.6.4",
     "@protobufjs/utf8": "1.1.1",
-    "tmp": "0.2.6"
+    "tmp": "0.2.7",
+    "@grpc/grpc-js": "1.14.4",
+    "hono": "4.12.27"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,css,md}": [
