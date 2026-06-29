@@ -2,7 +2,6 @@ import { useCallback, useRef } from 'react';
 
 import { useUI } from '@/context/UIContext';
 import { useAuditContext } from '@/context/AuditContext';
-import { useClinicalToday } from '@/hooks/useClinicalToday';
 import { resolveStaleDayEditDecision } from '@/hooks/controllers/staleDayEditController';
 import { getPreviousDay } from '@/utils/clinicalDayUtils';
 import { formatDateForDisplay } from '@/utils/dateDisplayUtils';
@@ -18,23 +17,31 @@ const parseLocalDate = (isoDate: string): Date => {
 /**
  * Guards edits made to a clinical day other than the clinical "today".
  *
- * The first time the user edits a given stale (past) day in this session, it asks
- * for an explicit confirmation that names both concrete dates and records a
- * PREVIOUS_DAY_EDIT_CONFIRMED audit event; afterwards that day is remembered so
- * edits flow without re-prompting (one confirm per day, not per keystroke).
+ * `clinicalToday` is injected (a single source of truth shared with the date strip
+ * and banner) so the guard never drifts from the UI around the shift rollover.
  *
- * Returns a callback the bed-management dispatcher calls before mutating: it
- * resolves to true to proceed, false to abort. Self-contained — it reads the
- * reactive clinical day, the confirm dialog, and the audit logger from context.
+ * The first time the user edits a given stale (past) day in this session it asks for
+ * an explicit confirmation that names both concrete dates and records a
+ * PREVIOUS_DAY_EDIT_CONFIRMED audit event; afterwards that day is remembered so edits
+ * flow without re-prompting (one confirm per day). Concurrent edits to the same day
+ * share a single in-flight confirmation, and audit logging is best-effort — a failure
+ * to log never blocks a confirmed edit.
  */
-export const useStaleDayEditGuard = (): ((recordDate: string) => Promise<boolean>) => {
-  const clinicalToday = useClinicalToday();
+export const useStaleDayEditGuard = (clinicalToday: string): StaleDayEditGuard => {
   const { confirm } = useUI();
   const { logEvent } = useAuditContext();
   const confirmedDaysRef = useRef<Set<string>>(new Set());
+  const pendingConfirmationsRef = useRef<Map<string, Promise<boolean>>>(new Map());
 
   return useCallback(
     async (recordDate: string): Promise<boolean> => {
+      // Coalesce overlapping edits to the same day onto one dialog (no double prompt
+      // or double audit under rapid repeated actions).
+      const pending = pendingConfirmationsRef.current.get(recordDate);
+      if (pending) {
+        return pending;
+      }
+
       const decision = resolveStaleDayEditDecision({
         currentDateString: recordDate,
         clinicalToday,
@@ -48,7 +55,7 @@ export const useStaleDayEditGuard = (): ((recordDate: string) => Promise<boolean
       const viewedLabel = formatDateForDisplay(parseLocalDate(recordDate));
       const todayLabel = formatDateForDisplay(parseLocalDate(clinicalToday));
 
-      const confirmed = await confirm({
+      const confirmationPromise = confirm({
         variant: 'warning',
         title: '¿Editar un día anterior?',
         message:
@@ -57,19 +64,27 @@ export const useStaleDayEditGuard = (): ((recordDate: string) => Promise<boolean
         confirmText: 'Sí, editar ese día',
         cancelText: 'Ir a hoy',
       });
+      pendingConfirmationsRef.current.set(recordDate, confirmationPromise);
+      const confirmed = await confirmationPromise.finally(() => {
+        pendingConfirmationsRef.current.delete(recordDate);
+      });
       if (!confirmed) {
         return false;
       }
 
       confirmedDaysRef.current.add(recordDate);
-      logEvent(
-        'PREVIOUS_DAY_EDIT_CONFIRMED',
-        'dailyRecord',
-        recordDate,
-        { viewedDate: recordDate, clinicalToday },
-        undefined,
-        recordDate
-      );
+      try {
+        logEvent(
+          'PREVIOUS_DAY_EDIT_CONFIRMED',
+          'dailyRecord',
+          recordDate,
+          { viewedDate: recordDate, clinicalToday },
+          undefined,
+          recordDate
+        );
+      } catch {
+        // Best-effort audit (policy: bestEffortObservable) — never block the edit.
+      }
       return true;
     },
     [clinicalToday, confirm, logEvent]

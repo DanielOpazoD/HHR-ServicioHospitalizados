@@ -117,7 +117,7 @@ export const useAuthenticatedAppRuntime = ({
   // Built here (inside the UI + audit providers) and injected down so the bed
   // dispatcher can confirm/audit edits to a previous day without coupling the
   // lower-level record hooks to those providers.
-  const ensureStaleDayEditAllowed = useStaleDayEditGuard();
+  const ensureStaleDayEditAllowed = useStaleDayEditGuard(clinicalToday);
   const dailyRecordHook = useDailyRecord(
     dateNav.currentDateString,
     false,

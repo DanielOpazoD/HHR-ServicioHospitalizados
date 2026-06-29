@@ -56,6 +56,19 @@ export const DateStripDayButtons: React.FC<DateStripDayButtonsProps> = ({
     currentModule,
   });
 
+  // Census gates future days against the clinical "today" (consistent with the HOY
+  // marker), so a calendar day that is still a future clinical day before the 08:00/
+  // 09:00 rollover is not selectable. Handoff (no clinical day) keeps the calendar
+  // reference.
+  const futureBlockReferenceDate =
+    currentModule === 'CENSUS' && clinicalToday
+      ? new Date(
+          Number(clinicalToday.slice(0, 4)),
+          Number(clinicalToday.slice(5, 7)) - 1,
+          Number(clinicalToday.slice(8, 10))
+        )
+      : today;
+
   const dayButtons = Array.from(
     { length: Math.max(0, endDay - startDay + 1) },
     (_, index): React.ReactNode => {
@@ -82,7 +95,7 @@ export const DateStripDayButtons: React.FC<DateStripDayButtonsProps> = ({
         selectedYear,
         selectedMonth,
         day,
-        referenceDate: today,
+        referenceDate: futureBlockReferenceDate,
       });
 
       return (

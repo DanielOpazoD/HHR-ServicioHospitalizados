@@ -236,10 +236,11 @@ export const DateStrip: React.FC<DateStripProps> = ({
           {showGoToToday && (
             <button
               onClick={goToClinicalToday}
+              aria-label="Ir a hoy"
               className="flex h-[30px] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-0 text-[10px] font-semibold text-amber-700 transition-colors hover:bg-amber-100"
               title="Volver al día de hoy"
             >
-              <CalendarClock size={13} />
+              <CalendarClock size={13} aria-hidden="true" />
               <span className="hidden sm:inline">Ir a hoy</span>
             </button>
           )}
