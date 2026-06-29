@@ -16,6 +16,10 @@ import { mergeAvailableDates } from '@/services/repositories/dailyRecordSyncComp
 import { measureRepositoryOperation } from '@/services/repositories/repositoryPerformance';
 import { dailyRecordReadLogger } from '@/services/repositories/repositoryLoggers';
 import {
+  createLocalSyncHint,
+  shouldHintLocalSync,
+} from '@/services/observability/localSyncDiagnostics';
+import {
   createBridgedDailyRecordReadResult,
   createLocalRuntimeReadCandidate,
   createLocalRuntimeReadResult,
@@ -61,6 +65,17 @@ const logRemoteFetchAttempt = (date: string): void => {
   logLegacyInfo(`[Repository DEBUG] Attempting Firestore fetch for ${date}`);
   logLegacyInfo(`[Repository] Checking remote + legacy fallback for ${date}...`);
 };
+
+// Dev-only: the first time a remote read fails on localhost (usually an incomplete
+// localhost sign-in), emit one actionable hint. Never fires in test or production.
+const emitLocalSyncHintOnce = createLocalSyncHint({
+  shouldHint: () =>
+    shouldHintLocalSync(
+      import.meta.env.MODE,
+      typeof window !== 'undefined' ? window.location.hostname : undefined
+    ),
+  warn: message => dailyRecordReadLogger.warn(message),
+});
 
 export const getForDate = async (
   date: string,
@@ -108,6 +123,7 @@ export const getForDateWithMeta = async (
           logRemoteFetchAttempt,
           onRemoteFetchFailure: (err, failedDate) => {
             dailyRecordReadLogger.warn(`Remote fetch failed for ${failedDate}`, err);
+            emitLocalSyncHintOnce();
           },
         });
       }

@@ -162,6 +162,7 @@
       { "id": "check:persistence-hub-boundaries", "group": "boundaries" },
       { "id": "check:legacy-localstorage-imports", "group": "boundaries" },
       { "id": "check:legacy-bridge-boundary", "group": "boundaries" },
+      { "id": "check:legacy-read-gating", "group": "boundaries" },
       { "id": "check:compatibility-import-governance", "group": "governance" },
       { "id": "check:schema-governance", "group": "governance" },
       { "id": "check:runtime-contracts", "group": "governance" },
