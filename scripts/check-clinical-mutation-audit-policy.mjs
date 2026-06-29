@@ -53,7 +53,16 @@ export const evaluateAuditPolicy = ({ actions, policy }) => {
     }
     seen.set(action, bucket);
   };
-  failClosed.forEach((a) => classify(a, 'failClosed'));
+  failClosed.forEach((entry) => {
+    classify(entry?.action, 'failClosed');
+    if (typeof entry?.test !== 'string' || !/^src\/tests\/.*\.test\.tsx?$/.test(entry.test)) {
+      errors.push(
+        `failClosed "${entry?.action ?? '(missing action)'}" must link a "test" — a ` +
+          'src/tests/**/*.test.ts(x) file proving it aborts the mutation on audit failure. ' +
+          'A fail-closed claim needs proof.'
+      );
+    }
+  });
   bestEffort.forEach((e) => classify(e?.action, 'bestEffortObservable'));
   exempt.forEach((a) => classify(a, 'exemptNonMutation'));
 
@@ -142,6 +151,17 @@ const runCli = () => {
   }
 
   const errors = evaluateAuditPolicy({ actions, policy });
+
+  // The proving test linked by each fail-closed action must actually exist on disk.
+  for (const entry of policy.failClosed ?? []) {
+    if (
+      entry?.test &&
+      /^src\/tests\/.*\.test\.tsx?$/.test(entry.test) &&
+      !fs.existsSync(path.join(root, entry.test))
+    ) {
+      errors.push(`failClosed "${entry.action}" links a missing test file: ${entry.test}`);
+    }
+  }
 
   let scanned = 0;
   for (const rel of listSourceFiles(srcDir)) {

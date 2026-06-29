@@ -4,6 +4,8 @@ import {
   executeCreateMedicalIndicationRecord,
   executeCreateMedicalIndicationTemplate,
   executeGetLatestMedicalIndicationRecord,
+  executeMarkMedicalIndicationTemplateUsed,
+  executeUpdateMedicalIndicationTemplate,
 } from '@/application/medical-indications/medicalIndicationsUseCases';
 import type {
   MedicalIndicationRecordPort,
@@ -193,5 +195,76 @@ describe('medicalIndications use cases', () => {
       '2026-05-31',
       undefined
     );
+  });
+
+  describe('fail-closed (audit-first): a failed audit aborts before mutating', () => {
+    const failedAudit = () =>
+      vi.fn().mockResolvedValue({ status: 'failed', data: null, errors: [] });
+    const buildTemplatePort = (): MedicalIndicationTemplatePort => ({
+      listActiveByUser: vi.fn(),
+      create: vi.fn().mockResolvedValue(undefined),
+      update: vi.fn().mockResolvedValue(undefined),
+      archive: vi.fn().mockResolvedValue(undefined),
+      markUsed: vi.fn().mockResolvedValue(undefined),
+    });
+
+    it('CREATE does not create when the audit fails', async () => {
+      const templatePort = buildTemplatePort();
+      await expect(
+        executeCreateMedicalIndicationTemplate(
+          { userId: 'u', userLabel: 'd@e.com', text: 'X', now: '2026-05-29T10:00:00.000Z' },
+          { templatePort, writeAuditEvent: failedAudit() }
+        )
+      ).rejects.toThrow();
+      expect(templatePort.create).not.toHaveBeenCalled();
+    });
+
+    it('UPDATE does not update when the audit fails', async () => {
+      const templatePort = buildTemplatePort();
+      await expect(
+        executeUpdateMedicalIndicationTemplate(
+          {
+            templateId: 'tpl-1',
+            userId: 'u',
+            userLabel: 'd@e.com',
+            text: 'X',
+            now: '2026-05-29T10:00:00.000Z',
+          },
+          { templatePort, writeAuditEvent: failedAudit() }
+        )
+      ).rejects.toThrow();
+      expect(templatePort.update).not.toHaveBeenCalled();
+    });
+
+    it('ARCHIVE does not archive when the audit fails', async () => {
+      const templatePort = buildTemplatePort();
+      await expect(
+        executeArchiveMedicalIndicationTemplate(
+          {
+            templateId: 'tpl-1',
+            userId: 'u',
+            userLabel: 'd@e.com',
+            now: '2026-05-29T11:00:00.000Z',
+          },
+          { templatePort, writeAuditEvent: failedAudit() }
+        )
+      ).rejects.toThrow();
+      expect(templatePort.archive).not.toHaveBeenCalled();
+    });
+
+    it('USED does not mark used when the audit fails', async () => {
+      const templatePort = buildTemplatePort();
+      await expect(
+        executeMarkMedicalIndicationTemplateUsed(
+          {
+            template: { id: 'tpl-1', userId: 'u', text: 'X', useCount: 0 } as never,
+            userLabel: 'd@e.com',
+            now: '2026-05-29T11:00:00.000Z',
+          },
+          { templatePort, writeAuditEvent: failedAudit() }
+        )
+      ).rejects.toThrow();
+      expect(templatePort.markUsed).not.toHaveBeenCalled();
+    });
   });
 });

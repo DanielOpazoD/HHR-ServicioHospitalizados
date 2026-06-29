@@ -119,9 +119,10 @@ export const executeCreateMedicalIndicationTemplate = async (
   };
 
   const templatePort = dependencies.templatePort || defaultMedicalIndicationTemplatePort;
-  await templatePort.create(template, input.hospitalId);
-
   const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+
+  // Fail closed: audit BEFORE creating, so a template is never persisted without an audit trail
+  // (an anonymous actor or an audit-write failure aborts here). See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
   await assertAuditPersisted(
     writeAuditEvent({
       userId: input.userLabel,
@@ -134,8 +135,10 @@ export const executeCreateMedicalIndicationTemplate = async (
         textPreview: text.slice(0, 120),
       },
     }),
-    'Se guardó la indicación personal, pero no se pudo registrar la auditoría.'
+    'No se guardó la indicación personal porque no se pudo registrar la auditoría.'
   );
+
+  await templatePort.create(template, input.hospitalId);
 
   return template;
 };
@@ -151,14 +154,9 @@ export const executeUpdateMedicalIndicationTemplate = async (
   }
 
   const templatePort = dependencies.templatePort || defaultMedicalIndicationTemplatePort;
-  await templatePort.update(
-    input.templateId,
-    input.userId,
-    { text, updatedAt: now },
-    input.hospitalId
-  );
-
   const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+
+  // Fail closed: audit before mutating.
   await assertAuditPersisted(
     writeAuditEvent({
       userId: input.userLabel,
@@ -171,7 +169,14 @@ export const executeUpdateMedicalIndicationTemplate = async (
         textPreview: text.slice(0, 120),
       },
     }),
-    'Se actualizó la indicación personal, pero no se pudo registrar la auditoría.'
+    'No se actualizó la indicación personal porque no se pudo registrar la auditoría.'
+  );
+
+  await templatePort.update(
+    input.templateId,
+    input.userId,
+    { text, updatedAt: now },
+    input.hospitalId
   );
 };
 
@@ -181,9 +186,9 @@ export const executeArchiveMedicalIndicationTemplate = async (
 ): Promise<void> => {
   const now = input.now || defaultNow();
   const templatePort = dependencies.templatePort || defaultMedicalIndicationTemplatePort;
-  await templatePort.archive(input.templateId, input.userId, now, input.hospitalId);
-
   const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+
+  // Fail closed: audit before mutating.
   await assertAuditPersisted(
     writeAuditEvent({
       userId: input.userLabel,
@@ -195,8 +200,10 @@ export const executeArchiveMedicalIndicationTemplate = async (
         templateOwnerUserId: input.userId,
       },
     }),
-    'Se archivó la indicación personal, pero no se pudo registrar la auditoría.'
+    'No se archivó la indicación personal porque no se pudo registrar la auditoría.'
   );
+
+  await templatePort.archive(input.templateId, input.userId, now, input.hospitalId);
 };
 
 export const executeMarkMedicalIndicationTemplateUsed = async (
@@ -205,15 +212,9 @@ export const executeMarkMedicalIndicationTemplateUsed = async (
 ): Promise<void> => {
   const now = input.now || defaultNow();
   const templatePort = dependencies.templatePort || defaultMedicalIndicationTemplatePort;
-  await templatePort.markUsed(
-    input.template.id,
-    input.template.userId,
-    now,
-    input.template.useCount + 1,
-    input.hospitalId
-  );
-
   const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+
+  // Fail closed: audit before mutating.
   await assertAuditPersisted(
     writeAuditEvent({
       userId: input.userLabel,
@@ -226,7 +227,15 @@ export const executeMarkMedicalIndicationTemplateUsed = async (
         textPreview: input.template.text.slice(0, 120),
       },
     }),
-    'Se insertó la indicación personal, pero no se pudo registrar la auditoría.'
+    'No se insertó la indicación personal porque no se pudo registrar la auditoría.'
+  );
+
+  await templatePort.markUsed(
+    input.template.id,
+    input.template.userId,
+    now,
+    input.template.useCount + 1,
+    input.hospitalId
   );
 };
 

@@ -186,6 +186,24 @@ describe('executeDeletePrescription', () => {
     expect(port.delete).toHaveBeenCalledWith('rx-1', 'hhr');
   });
 
+  it('fails closed: a failed audit aborts before deleting', async () => {
+    const port = buildPort();
+    await expect(
+      executeDeletePrescription(
+        { prescriptionId: 'rx-1', hospitalId: 'hhr', deletedBy: 'admin@h.cl' },
+        {
+          prescriptionPort: port,
+          writeAuditEvent: vi.fn(async () => ({
+            status: 'failed' as const,
+            data: null,
+            issues: [],
+          })),
+        }
+      )
+    ).rejects.toThrow();
+    expect(port.delete).not.toHaveBeenCalled();
+  });
+
   it('writes an attributable audit event before manual deletion', async () => {
     const port = buildPort({
       get: vi.fn(

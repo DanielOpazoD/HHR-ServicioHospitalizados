@@ -50,7 +50,8 @@ tiene **dos enforcements**:
 1. una `AuditAction` no está clasificada (fuerza decidir su postura antes de mergear);
 2. una acción aparece en más de un bucket;
 3. una entrada `bestEffortObservable` no trae `justification`;
-4. la política declara una acción que ya no existe en el union (entrada obsoleta).
+4. la política declara una acción que ya no existe en el union (entrada obsoleta);
+5. una acción `failClosed` no enlaza un `test` probatorio existente (`src/tests/**/*.test.ts`).
 
 **B. Cumplimiento (outcome no descartado).** Escanea `src/` (excluyendo tests) y **falla** si algún
 llamado a `executeWriteAuditEvent(...)` descarta su `ApplicationOutcome` (statement que arranca con
@@ -65,11 +66,11 @@ registro real + tests del detector (atrapa el `await` desnudo / `void`, acepta a
 
 Para no dar **falsa confianza**, conviene ser explícito sobre el alcance:
 
-- **No prueba el _cumplimiento_ de la postura `failClosed` declarada.** El enforcement B atrapa el
-  patrón-bug más común (outcome descartado en un call directo a `executeWriteAuditEvent`), pero **no**
-  demuestra que un emisor `failClosed` realmente **aborte** la mutación si la auditoría falla. Eso se
-  prueba con un test por acción (p.ej. `dailyRecordVersionRestoreController.test.ts` para
-  `CONFLICT_VERSION_RESTORED`). Una postura `failClosed` sin su test es deuda, no garantía.
+- **El gate exige que cada `failClosed` enlace un `test` existente, pero no verifica su _semántica_.**
+  Cada entrada `failClosed` es `{ action, test }` y el gate confirma que el archivo de test exista —
+  ya no se puede declarar `failClosed` sin apuntar a una prueba. Lo que el gate **no** hace es
+  verificar que ese test realmente demuestre el abort (que el emisor audite-primero y no mute si la
+  auditoría falla); eso queda en el propio test + revisión humana.
 - **No detecta el call vía alias.** Si el `executeWriteAuditEvent` se invoca a través de un alias
   inyectado (`deps.writeAuditEvent ?? executeWriteAuditEvent`), el escaneo sintáctico no lo ve; hoy
   esos consumidores capturan el outcome, pero es un punto ciego conocido.
@@ -82,13 +83,32 @@ Para no dar **falsa confianza**, conviene ser explícito sobre el alcance:
 ## Cómo agregar una `AuditAction` nueva
 
 1. Agrega el literal al union en `src/types/auditActionTypes.ts`.
-2. Clasifícalo en `scripts/clinical-mutation-audit-policy.json` (con `justification` si es
-   `bestEffortObservable`).
-3. Asegura que el emisor cumpla la postura declarada (fail-closed → verificar el outcome y abortar).
+2. Clasifícalo en `scripts/clinical-mutation-audit-policy.json` (`justification` si es
+   `bestEffortObservable`; `{ action, test }` apuntando a su test probatorio si es `failClosed`).
+3. Asegura que el emisor cumpla la postura declarada (fail-closed → auditar-primero, verificar el
+   outcome y **abortar antes de mutar**).
 
-## Alineaciones aplicadas en este ciclo
+## Verificación de las posturas `failClosed`
 
-- `CONFLICT_VERSION_RESTORED` → `failClosed` (audita antes de guardar; aborta si falla).
-- `CONFLICT_AUTO_MERGED` → `bestEffortObservable`; el helper ahora superficializa el outcome fallido
-  y el caller lo telemetría (antes se tragaba el fallo).
-- `PATIENT_HARMONIZED` → `bestEffortObservable`; se audita **antes** de mutar la identidad.
+Se auditaron los emisores de las 14 acciones declaradas `failClosed`. Resultado: solo **7** eran
+realmente fail-closed; las otras 7 se **reclasificaron** tras verificar el emisor.
+
+**Quedan `failClosed` (verificadas + con test probatorio enlazado):**
+
+- `CONFLICT_VERSION_RESTORED`, `PRESCRIPTION_MANUAL_DELETED` — audit-first; abortan si la auditoría falla.
+- `MEDICAL_INDICATION_RECORD_CREATED` — atómico (`createWithAuditEvent`: registro + auditoría en un
+  solo `runBatch`).
+- `MEDICAL_INDICATION_TEMPLATE_{CREATED,UPDATED,ARCHIVED,USED}` — **reordenadas a audit-first** este
+  ciclo (antes mutaban y luego asertaban; ahora abortan antes de mutar).
+
+**Reclasificadas a `bestEffortObservable`** (el emisor no puede fail-close como está):
+
+- `PATIENT_CLEARED`, `DAILY_RECORD_DELETED`, `CLINICAL_DOCUMENT_DELETED`, `CLINICAL_EVENT_DELETED`,
+  `MEDICAL_HANDOFF_RESTORED` — emitidas por el logger fire-and-forget del hook (`useAudit`): el
+  outcome se reporta por telemetría pero la mutación no se bloquea.
+- `STATISTICAL_SPECIALTY_RECLASSIFIED`, `PRESCRIPTION_RETENTION_DELETED` — emitidas server-side
+  (Cloud Functions / retención); sin emisor cliente que el gate pueda enforzar.
+
+Llevar los hard-deletes de registros clínicos a fail-closed real (re-plumbing a un use-case) es el
+siguiente paso opcional (Scope C). Ciclo previo: `CONFLICT_AUTO_MERGED` y `PATIENT_HARMONIZED` quedaron
+`bestEffortObservable` con su outcome superficializado.
