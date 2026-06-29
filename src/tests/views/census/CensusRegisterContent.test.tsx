@@ -16,6 +16,16 @@ vi.mock('@/context/DailyRecordContext', () => ({
   useDailyRecordStatus: () => mockUseDailyRecordStatus(),
 }));
 
+vi.mock('@/context/CensusContext', () => ({
+  useCensusContext: () => ({
+    dateNav: { clinicalToday: '2026-03-10', goToClinicalToday: () => {} },
+  }),
+}));
+
+vi.mock('@/features/census/components/CensusStaleDayBanner', () => ({
+  CensusStaleDayBanner: () => null,
+}));
+
 vi.mock('@/features/census/components/CensusPrintHeader', () => ({
   CensusPrintHeader: () => <div data-testid="census-print-header" />,
 }));

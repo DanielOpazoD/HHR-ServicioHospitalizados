@@ -183,6 +183,8 @@ export const buildDateStripProps = ({
     selectedDay: runtime.dateNav.selectedDay,
     setSelectedDay: runtime.dateNav.setSelectedDay,
     currentDateString: runtime.dateNav.currentDateString,
+    clinicalToday: runtime.dateNav.clinicalToday,
+    goToClinicalToday: runtime.dateNav.goToClinicalToday,
     daysInMonth: runtime.dateNav.daysInMonth,
     existingDaysInMonth: runtime.dateNav.existingDaysInMonth,
     onExportPDF: ui.showPrintButton ? runtime.exportManager.handleExportPDF : undefined,

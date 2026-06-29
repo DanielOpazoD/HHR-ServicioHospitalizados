@@ -18,6 +18,7 @@ export const IMPORTANT_ACTIONS: AuditAction[] = [
   'MEDICAL_HANDOFF_MODIFIED',
   'HANDOFF_NOVEDADES_MODIFIED',
   'MEDICAL_HANDOFF_RESTORED',
+  'PREVIOUS_DAY_EDIT_CONFIRMED',
 ];
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
@@ -31,6 +32,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   PATIENT_CLEARED: 'Limpieza de Cama',
   DAILY_RECORD_DELETED: 'Eliminación de Registro',
   DAILY_RECORD_CREATED: 'Creación de Registro',
+  PREVIOUS_DAY_EDIT_CONFIRMED: 'Edición de día anterior confirmada',
   PRESCRIPTION_MANUAL_DELETED: 'Receta eliminada manualmente',
   PRESCRIPTION_RETENTION_DELETED: 'Receta eliminada por proceso automático histórico',
   MEDICAL_INDICATION_RECORD_CREATED: 'Indicaciones médicas generadas',

@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDateNavigation } from '@/hooks/useDateNavigation';
+import { resolveCurrentClinicalDay } from '@/utils/clinicalDayUtils';
 
 describe('useDateNavigation', () => {
   beforeEach(() => {
@@ -20,13 +21,12 @@ describe('useDateNavigation', () => {
   });
 
   describe('Initial State', () => {
-    it('should initialize with current date', () => {
+    it('should initialize to the clinical day (08:00/09:00 shift rollover)', () => {
       const { result } = renderHook(() => useDateNavigation());
-      const today = new Date();
 
-      expect(result.current.selectedYear).toBe(today.getFullYear());
-      expect(result.current.selectedMonth).toBe(today.getMonth());
-      expect(result.current.selectedDay).toBe(today.getDate());
+      // Lands on the clinical "today", not the raw calendar date: before the shift
+      // rollover the night shift's clinical day is still the previous calendar day.
+      expect(result.current.currentDateString).toBe(resolveCurrentClinicalDay());
     });
 
     it('should initialize from the date query string when present', () => {

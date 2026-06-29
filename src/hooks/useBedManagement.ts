@@ -12,6 +12,7 @@ import { useBedAudit } from './useBedAudit';
 import type { BedAction } from '@/hooks/contracts/bedManagementActionContracts';
 import { executeBedManagementAction } from '@/hooks/controllers/bedManagementDispatchController';
 import { useBedManagementActionCreators } from '@/hooks/useBedManagementActionCreators';
+import type { StaleDayEditGuard } from '@/hooks/useStaleDayEditGuard';
 
 /**
  * Interface defining the actions available for bed management.
@@ -100,7 +101,10 @@ export interface BedManagementActions {
 export const useBedManagement = (
   record: DailyRecord | null,
   _saveAndUpdate: PersistDailyRecord, // Kept for legacy compat
-  patchRecord: ApplyDailyRecordPatch
+  patchRecord: ApplyDailyRecordPatch,
+  // Injected from a layer that has the UI + audit providers (the authenticated
+  // runtime). Optional so lower-level tests can render this hook without them.
+  ensureStaleDayEditAllowed?: StaleDayEditGuard
 ): BedManagementActions => {
   const validation = usePatientValidation();
   const bedAudit = useBedAudit(record);
@@ -123,8 +127,9 @@ export const useBedManagement = (
         validation,
         bedAudit,
         patchRecord,
+        ensureStaleDayEditAllowed,
       }),
-    [validation, patchRecord, bedAudit]
+    [validation, patchRecord, bedAudit, ensureStaleDayEditAllowed]
   );
 
   const dispatch = useCallback(

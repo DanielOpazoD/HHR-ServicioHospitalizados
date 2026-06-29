@@ -7,6 +7,8 @@ import { CensusPrintHeader } from './CensusPrintHeader';
 import { CensusStaffHeader } from './CensusStaffHeader';
 import { CensusRegisterMainContent } from './CensusRegisterMainContent';
 import { CensusOperationalStateBanner } from './CensusOperationalStateBanner';
+import { CensusStaleDayBanner } from './CensusStaleDayBanner';
+import { useCensusContext } from '@/context/CensusContext';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import { isSpecialistCensusAccessProfile } from '@/features/census/types/censusAccessProfile';
 import { useDeferredCensusEnhancement } from '@/features/census/hooks/useDeferredCensusEnhancement';
@@ -45,6 +47,7 @@ export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
   const shouldRenderSections = !isSpecialistCensusAccessProfile(accessProfile);
   const shouldRenderDeferredSections = useDeferredCensusEnhancement(shouldRenderSections);
   const dailyRecordStatus = useDailyRecordStatus();
+  const { dateNav } = useCensusContext();
   const operationalState = resolveCensusOperationalState({
     branch: 'register',
     bootstrapPhase: dailyRecordStatus.bootstrapPhase,
@@ -59,6 +62,12 @@ export const CensusRegisterContent: React.FC<CensusRegisterContentProps> = ({
 
       <div className="space-y-6" style={marginStyle}>
         <CensusOperationalStateBanner state={operationalState} />
+
+        <CensusStaleDayBanner
+          currentDateString={currentDateString}
+          clinicalToday={dateNav.clinicalToday}
+          onGoToToday={dateNav.goToClinicalToday}
+        />
 
         <CensusStaffHeader readOnly={readOnly} stats={stats} accessProfile={accessProfile} />
 
