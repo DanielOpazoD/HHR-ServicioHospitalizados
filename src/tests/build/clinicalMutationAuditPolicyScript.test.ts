@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  detectIgnoredAuditOutcomes,
   evaluateAuditPolicy,
   parseAuditActions,
 } from '../../../scripts/check-clinical-mutation-audit-policy.mjs';
@@ -69,6 +70,36 @@ describe('check-clinical-mutation-audit-policy', () => {
     it('fails on a stale policy entry not in the union', () => {
       const errors = evaluateAuditPolicy({ actions: ['ACTION_A', 'ACTION_C'], policy: basePolicy });
       expect(errors.join('\n')).toContain('stale');
+    });
+  });
+
+  describe('detectIgnoredAuditOutcomes (compliance: the silent-drop bug class)', () => {
+    it('flags a bare await whose outcome is discarded', () => {
+      const src = 'async function f() {\n  await executeWriteAuditEvent({ action: "X" });\n}';
+      expect(detectIgnoredAuditOutcomes(src)).toHaveLength(1);
+    });
+
+    it('flags a void-discarded call', () => {
+      expect(detectIgnoredAuditOutcomes('void executeWriteAuditEvent(x);')).toHaveLength(1);
+    });
+
+    it('accepts an assigned outcome', () => {
+      expect(
+        detectIgnoredAuditOutcomes('const outcome = await executeWriteAuditEvent({ action: "X" });')
+      ).toEqual([]);
+    });
+
+    it('accepts a returned outcome (with or without await)', () => {
+      expect(detectIgnoredAuditOutcomes('return await executeWriteAuditEvent(x);')).toEqual([]);
+      expect(detectIgnoredAuditOutcomes('const f = () => executeWriteAuditEvent(x);')).toEqual([]);
+    });
+
+    it('ignores imports and type references (not a call)', () => {
+      const src =
+        "import { executeWriteAuditEvent } from '@/x';\n" +
+        'type W = typeof executeWriteAuditEvent;\n' +
+        'let w: Parameters<typeof executeWriteAuditEvent>[0];';
+      expect(detectIgnoredAuditOutcomes(src)).toEqual([]);
     });
   });
 

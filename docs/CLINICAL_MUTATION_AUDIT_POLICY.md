@@ -43,15 +43,41 @@ Ninguna es "mejor": son decisiones distintas. La política sólo exige que la el
 ## El gate
 
 `check:clinical-mutation-audit-policy` ([`scripts/check-clinical-mutation-audit-policy.mjs`](../scripts/check-clinical-mutation-audit-policy.mjs))
-lee el union `AuditAction` y la política, y **falla** si:
+tiene **dos enforcements**:
+
+**A. Declaración (registro).** Lee el union `AuditAction` y la política, y **falla** si:
 
 1. una `AuditAction` no está clasificada (fuerza decidir su postura antes de mergear);
 2. una acción aparece en más de un bucket;
 3. una entrada `bestEffortObservable` no trae `justification`;
 4. la política declara una acción que ya no existe en el union (entrada obsoleta).
 
-Cubierto por `src/tests/build/clinicalMutationAuditPolicyScript.test.ts`, incluido un test de
-no-drift que valida el registro real contra el union real.
+**B. Cumplimiento (outcome no descartado).** Escanea `src/` (excluyendo tests) y **falla** si algún
+llamado a `executeWriteAuditEvent(...)` descarta su `ApplicationOutcome` (statement que arranca con
+el call, con o sin `await`/`void`). Ese es el bug exacto que reapareció en #129/#130: como
+`executeWriteAuditEvent` **no lanza**, un outcome ignorado deja caer el fallo en silencio. El emisor
+debe capturar e inspeccionar el outcome (o pasarlo por un helper fail-closed).
+
+Cubierto por `src/tests/build/clinicalMutationAuditPolicyScript.test.ts`: test de no-drift del
+registro real + tests del detector (atrapa el `await` desnudo / `void`, acepta asignación/return).
+
+## Limitaciones (qué NO verifica)
+
+Para no dar **falsa confianza**, conviene ser explícito sobre el alcance:
+
+- **No prueba el _cumplimiento_ de la postura `failClosed` declarada.** El enforcement B atrapa el
+  patrón-bug más común (outcome descartado en un call directo a `executeWriteAuditEvent`), pero **no**
+  demuestra que un emisor `failClosed` realmente **aborte** la mutación si la auditoría falla. Eso se
+  prueba con un test por acción (p.ej. `dailyRecordVersionRestoreController.test.ts` para
+  `CONFLICT_VERSION_RESTORED`). Una postura `failClosed` sin su test es deuda, no garantía.
+- **No detecta el call vía alias.** Si el `executeWriteAuditEvent` se invoca a través de un alias
+  inyectado (`deps.writeAuditEvent ?? executeWriteAuditEvent`), el escaneo sintáctico no lo ve; hoy
+  esos consumidores capturan el outcome, pero es un punto ciego conocido.
+- **No detecta una mutación clínica que no emita _ninguna_ `AuditAction`.** El gate gobierna las
+  acciones declaradas; una escritura clínica nueva sin evento de auditoría es invisible aquí (queda
+  para revisión humana / las rules + cobertura crítica).
+- **Las posturas son políticas declaradas**, no todas verificadas contra su emisor. Las verificadas
+  este ciclo se listan abajo; el resto es intención declarada hasta que se audite su emisor.
 
 ## Cómo agregar una `AuditAction` nueva
 

@@ -1,17 +1,23 @@
 #!/usr/bin/env node
 /**
- * Governance gate: every AuditAction must declare how its mutation is audited.
+ * Governance gate for clinical-mutation auditing. Two enforcements:
  *
- * Reads the AuditAction union (src/types/auditActionTypes.ts) and the declared policy
- * (scripts/clinical-mutation-audit-policy.json) and fails if any action is unclassified, declared
- * in more than one bucket, references a non-existent action, or is best-effort without a
- * justification. This makes "how is this clinical mutation audited" an explicit, reviewed decision
- * instead of an accident — a new clinical AuditAction cannot ship until its audit posture is
- * declared. See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
+ * 1. DECLARATION (registry): every AuditAction (src/types/auditActionTypes.ts) must be classified in
+ *    scripts/clinical-mutation-audit-policy.json. Fails if an action is unclassified, in more than
+ *    one bucket, best-effort without a justification, or the policy references a removed action.
+ * 2. COMPLIANCE (outcome not ignored): no call to executeWriteAuditEvent may discard its returned
+ *    ApplicationOutcome — that is the exact bug that recurred in #129/#130 (a failed audit dropped
+ *    silently). executeWriteAuditEvent never throws, so the outcome must be captured and inspected
+ *    (or threaded through a fail-closed helper).
+ *
+ * This makes "how is this clinical mutation audited" an explicit, reviewed decision AND prevents the
+ * silent-drop bug class. See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const AUDIT_FN = 'executeWriteAuditEvent';
 
 /**
  * Parse the string-literal members out of the `export type AuditAction = ...` union. Matches any
@@ -25,8 +31,8 @@ export const parseAuditActions = (typesSource) => {
 };
 
 /**
- * Pure evaluator: given the action list and the policy object, return the list of violation
- * messages (empty array = OK). No IO, so it is unit-testable.
+ * Pure registry evaluator: given the action list and the policy object, return violation messages
+ * (empty array = OK).
  */
 export const evaluateAuditPolicy = ({ actions, policy }) => {
   const errors = [];
@@ -78,10 +84,46 @@ export const evaluateAuditPolicy = ({ actions, policy }) => {
   return errors;
 };
 
+/**
+ * Pure detector: find calls to executeWriteAuditEvent whose outcome is discarded. A call is
+ * "discarded" when its statement starts with the call itself (optionally `await`/`void`) — i.e.
+ * nothing captures the return value. Assignments (`const o = await ...`), returns (`return ...`) and
+ * expression positions (inside `(`, `[`, `=>`, …) all keep something before the call. Returns
+ * `{ line }` for each violation. No IO, so it is unit-testable.
+ */
+export const detectIgnoredAuditOutcomes = (source) => {
+  const violations = [];
+  const re = new RegExp(`${AUDIT_FN}\\s*\\(`, 'g');
+  let match;
+  while ((match = re.exec(source)) !== null) {
+    const callIdx = match.index;
+    const boundary = Math.max(
+      source.lastIndexOf(';', callIdx),
+      source.lastIndexOf('{', callIdx),
+      source.lastIndexOf('}', callIdx)
+    );
+    const prefix = source
+      .slice(boundary + 1, callIdx)
+      .replace(/\b(?:await|void)\b/g, '')
+      .trim();
+    if (prefix === '') {
+      violations.push({ line: source.slice(0, callIdx).split('\n').length });
+    }
+  }
+  return violations;
+};
+
+const listSourceFiles = (dir) =>
+  fs
+    .readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .filter((rel) => /\.(ts|tsx)$/.test(rel))
+    .filter((rel) => !/(^|[/\\])tests[/\\]/.test(rel));
+
 const runCli = () => {
   const root = process.cwd();
   const typesFile = path.join(root, 'src', 'types', 'auditActionTypes.ts');
   const policyFile = path.join(root, 'scripts', 'clinical-mutation-audit-policy.json');
+  const srcDir = path.join(root, 'src');
 
   const fail = (msg) => {
     console.error(`\n[clinical-mutation-audit-policy] FAILED\n\n${msg}\n`);
@@ -100,13 +142,28 @@ const runCli = () => {
   }
 
   const errors = evaluateAuditPolicy({ actions, policy });
+
+  let scanned = 0;
+  for (const rel of listSourceFiles(srcDir)) {
+    scanned += 1;
+    const violations = detectIgnoredAuditOutcomes(fs.readFileSync(path.join(srcDir, rel), 'utf8'));
+    for (const v of violations) {
+      errors.push(
+        `src/${rel.split(path.sep).join('/')}:${v.line} — ${AUDIT_FN}(...) outcome is discarded. ` +
+          'Capture and inspect the ApplicationOutcome (or thread it through a fail-closed helper); ' +
+          'it never throws, so an ignored result drops audit failures silently.'
+      );
+    }
+  }
+
   if (errors.length) fail(errors.join('\n\n'));
 
   console.log(
     `[clinical-mutation-audit-policy] OK — ${actions.length} AuditAction(s) classified ` +
       `(${(policy.failClosed ?? []).length} fail-closed, ` +
       `${(policy.bestEffortObservable ?? []).length} best-effort-observable, ` +
-      `${(policy.exemptNonMutation ?? []).length} exempt).`
+      `${(policy.exemptNonMutation ?? []).length} exempt); ` +
+      `${scanned} source file(s) scanned, no discarded ${AUDIT_FN} outcomes.`
   );
 };
 
