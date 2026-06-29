@@ -15,6 +15,7 @@ vi.mock('@/services/admin/utils/auditUtils', () => ({
 
 import {
   logRepositoryConflictAutoMerged,
+  logRepositoryConflictVersionRestored,
   setRepositoryConflictLogger,
 } from '@/services/repositories/ports/repositoryAuditPort';
 
@@ -77,5 +78,37 @@ describe('repositoryAuditPort', () => {
       details,
       recordDate: '2026-02-19',
     });
+  });
+
+  it('writes conflict version restore events through the modern audit use case', async () => {
+    await logRepositoryConflictVersionRestored('2026-02-19', {
+      snapshotId: 'cid__remote_premerge',
+      origin: 'remote_premerge',
+      conflictId: 'cid',
+    });
+
+    expect(auditMocks.executeWriteAuditEvent).toHaveBeenCalledWith({
+      userId: 'doctor@hospital.cl',
+      action: 'CONFLICT_VERSION_RESTORED',
+      entityType: 'dailyRecord',
+      entityId: '2026-02-19',
+      details: { snapshotId: 'cid__remote_premerge', origin: 'remote_premerge', conflictId: 'cid' },
+      recordDate: '2026-02-19',
+    });
+  });
+
+  it('throws when the restore audit outcome is not successful (fail-closed signal)', async () => {
+    auditMocks.executeWriteAuditEvent.mockResolvedValueOnce({
+      status: 'failed',
+      data: null,
+      issues: [{ kind: 'anonymous_clinical_audit_rejection', message: 'Actor anónimo' }],
+    });
+
+    await expect(
+      logRepositoryConflictVersionRestored('2026-02-19', {
+        snapshotId: 's1',
+        origin: 'incoming_premerge',
+      })
+    ).rejects.toThrow('Actor anónimo');
   });
 });

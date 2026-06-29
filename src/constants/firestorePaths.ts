@@ -93,6 +93,14 @@ export const SETTINGS_DOCS = {
   CLINICAL_DOCUMENT_INDICATIONS: 'clinicalDocumentIndications',
 } as const;
 
+/**
+ * Subcollection (under a `dailyRecords/{date}` document) holding recoverable conflict version
+ * snapshots. Each doc carries an `expireAt` field governed by a Firestore TTL policy (~48h) so the
+ * recoverable blobs self-expire while the audit trail persists.
+ * See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
+ */
+export const DAILY_RECORD_CONFLICT_SNAPSHOTS = 'conflictSnapshots';
+
 // ============================================================================
 // Path Builders
 // ============================================================================
