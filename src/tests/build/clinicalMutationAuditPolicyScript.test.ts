@@ -87,6 +87,24 @@ describe('check-clinical-mutation-audit-policy', () => {
       });
       expect(errors.join('\n')).toContain('must link a "test"');
     });
+
+    it('classifies serverSideEnforced and requires an emitter under functions/', () => {
+      expect(
+        evaluateAuditPolicy({
+          actions: ['ACTION_A', 'ACTION_B', 'ACTION_C', 'ACTION_D'],
+          policy: {
+            ...basePolicy,
+            serverSideEnforced: [{ action: 'ACTION_D', emitter: 'functions/lib/x.js' }],
+          },
+        })
+      ).toEqual([]);
+
+      const bad = evaluateAuditPolicy({
+        actions: ['ACTION_A', 'ACTION_B', 'ACTION_C', 'ACTION_D'],
+        policy: { ...basePolicy, serverSideEnforced: [{ action: 'ACTION_D' }] },
+      });
+      expect(bad.join('\n')).toContain('must declare an "emitter"');
+    });
   });
 
   describe('detectIgnoredAuditOutcomes (compliance: the silent-drop bug class)', () => {

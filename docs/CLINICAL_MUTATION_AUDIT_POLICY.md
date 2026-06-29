@@ -27,18 +27,21 @@ postura de **cada** `AuditAction` y la enforzamos con un gate.
 Ninguna es "mejor": son decisiones distintas. La política sólo exige que la elección sea
 **explícita** por acción.
 
-## Las tres posturas
+## Las posturas
 
 - **`failClosed`** — la mutación **debe abortar** si su auditoría no se puede escribir. Reservada
   para sobrescrituras/borrados de administrador donde un cambio sin auditar es inaceptable **y**
-  abortar es seguro (no urgente, reversible). Ej.: `CONFLICT_VERSION_RESTORED`,
-  `*_DELETED`, `MEDICAL_INDICATION_TEMPLATE_*`.
+  abortar es seguro (no urgente, reversible). Ej.: `CONFLICT_VERSION_RESTORED`, los borrados de
+  registro clínico (`DAILY_RECORD_DELETED`, `CLINICAL_DOCUMENT_DELETED`),
+  `MEDICAL_INDICATION_TEMPLATE_*`. Enlaza un `test` probatorio.
 - **`bestEffortObservable`** — la mutación **procede** aunque la auditoría falle, pero el fallo se
   **superficializa** (outcome degradado, telemetría, o el log local-first auto-observado). Reservada
   para acciones de **flujo clínico urgente** donde abortar dañaría la atención (admitir, dar de alta,
   trasladar, cargar en el censo). Requiere `justification`.
 - **`exemptNonMutation`** — vistas, login/logout, exportaciones/impresiones (salida/acceso) y eventos
   de sistema que **no mutan** estado clínico; no requieren auditoría fail-closed.
+- **`serverSideEnforced`** — emitida/enforzada server-side en una Cloud Function (`{ action, emitter }`);
+  el gate exige que el archivo `functions/` del emisor exista (no hay test cliente que enlazar).
 
 ## El gate
 
@@ -93,22 +96,25 @@ Para no dar **falsa confianza**, conviene ser explícito sobre el alcance:
 Se auditaron los emisores de las 14 acciones declaradas `failClosed`. Resultado: solo **7** eran
 realmente fail-closed; las otras 7 se **reclasificaron** tras verificar el emisor.
 
-**Quedan `failClosed` (verificadas + con test probatorio enlazado):**
+**`failClosed` (9, verificadas + con test probatorio enlazado):**
 
 - `CONFLICT_VERSION_RESTORED`, `PRESCRIPTION_MANUAL_DELETED` — audit-first; abortan si la auditoría falla.
 - `MEDICAL_INDICATION_RECORD_CREATED` — atómico (`createWithAuditEvent`: registro + auditoría en un
   solo `runBatch`).
-- `MEDICAL_INDICATION_TEMPLATE_{CREATED,UPDATED,ARCHIVED,USED}` — **reordenadas a audit-first** este
-  ciclo (antes mutaban y luego asertaban; ahora abortan antes de mutar).
+- `MEDICAL_INDICATION_TEMPLATE_{CREATED,UPDATED,ARCHIVED,USED}` — **reordenadas a audit-first** (antes
+  mutaban y luego asertaban; ahora abortan antes de mutar).
+- `CLINICAL_DOCUMENT_DELETED`, `DAILY_RECORD_DELETED` — **Scope C**: re-plumbeadas a use-cases
+  audit-first (`executeDeleteClinicalDocument`, `executeDeleteDailyRecord`). Ya no se borra un
+  registro clínico sin auditoría garantizada; el logger fire-and-forget del hook se retiró.
 
-**Reclasificadas a `bestEffortObservable`** (el emisor no puede fail-close como está):
+**Reclasificadas a `bestEffortObservable`** (emisor fire-and-forget del hook `useAudit`; el outcome se
+reporta por telemetría pero la mutación no se bloquea):
 
-- `PATIENT_CLEARED`, `DAILY_RECORD_DELETED`, `CLINICAL_DOCUMENT_DELETED`, `CLINICAL_EVENT_DELETED`,
-  `MEDICAL_HANDOFF_RESTORED` — emitidas por el logger fire-and-forget del hook (`useAudit`): el
-  outcome se reporta por telemetría pero la mutación no se bloquea.
-- `STATISTICAL_SPECIALTY_RECLASSIFIED`, `PRESCRIPTION_RETENTION_DELETED` — emitidas server-side
-  (Cloud Functions / retención); sin emisor cliente que el gate pueda enforzar.
+- `PATIENT_CLEARED`, `CLINICAL_EVENT_DELETED`, `MEDICAL_HANDOFF_RESTORED`.
+- `PRESCRIPTION_RETENTION_DELETED` — reservada: sin emisor actual (retención server-side futura).
 
-Llevar los hard-deletes de registros clínicos a fail-closed real (re-plumbing a un use-case) es el
-siguiente paso opcional (Scope C). Ciclo previo: `CONFLICT_AUTO_MERGED` y `PATIENT_HARMONIZED` quedaron
-`bestEffortObservable` con su outcome superficializado.
+**`serverSideEnforced`:** `STATISTICAL_SPECIALTY_RECLASSIFIED` — emitida en
+`functions/lib/minsal/minsalReclassifications.js`.
+
+Ciclo previo: `CONFLICT_AUTO_MERGED` y `PATIENT_HARMONIZED` quedaron `bestEffortObservable` con su
+outcome superficializado.

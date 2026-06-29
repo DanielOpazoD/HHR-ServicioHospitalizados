@@ -29,13 +29,6 @@ interface DeleteClinicalDocumentFromWorkspaceParams {
   setSelectedDocumentId: (documentId: string | null) => void;
   setDraft: Dispatch<SetStateAction<ClinicalDocumentRecord | null>>;
   lastPersistedSnapshotRef: MutableRefObject<string>;
-  logClinicalDocumentDeleted: (
-    documentId: string,
-    templateId: string,
-    documentTitle: string,
-    patientRut?: string,
-    recordDate?: string
-  ) => void;
 }
 
 export const deleteClinicalDocumentFromWorkspace = async ({
@@ -48,7 +41,6 @@ export const deleteClinicalDocumentFromWorkspace = async ({
   setSelectedDocumentId,
   setDraft,
   lastPersistedSnapshotRef,
-  logClinicalDocumentDeleted,
 }: DeleteClinicalDocumentFromWorkspaceParams): Promise<void> => {
   if (!canDelete) {
     notify.warning('Permiso insuficiente', 'No tienes permisos para eliminar documentos clínicos.');
@@ -68,7 +60,12 @@ export const deleteClinicalDocumentFromWorkspace = async ({
   if (!confirmed) return;
 
   try {
-    const result = await executeDeleteClinicalDocument(document.id, hospitalId);
+    const result = await executeDeleteClinicalDocument(document.id, hospitalId, {
+      templateId: document.templateId,
+      documentTitle: document.title,
+      patientRut: patient.rut,
+      recordDate: document.sourceDailyRecordDate,
+    });
     recordOperationalOutcome('clinical_document', 'delete_clinical_document', result, {
       date: document.sourceDailyRecordDate,
       context: { documentId: document.id },
@@ -96,13 +93,6 @@ export const deleteClinicalDocumentFromWorkspace = async ({
       setDraft(null);
       lastPersistedSnapshotRef.current = '';
     }
-    void logClinicalDocumentDeleted(
-      document.id,
-      document.templateId,
-      document.title,
-      patient.rut,
-      document.sourceDailyRecordDate
-    );
     notify.success('Documento eliminado', `${document.title} fue eliminado correctamente.`);
   } catch (error) {
     const errorMessage = resolveClinicalDocumentExceptionMessage(

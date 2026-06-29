@@ -39,6 +39,7 @@ export const evaluateAuditPolicy = ({ actions, policy }) => {
   const failClosed = policy.failClosed ?? [];
   const bestEffort = policy.bestEffortObservable ?? [];
   const exempt = policy.exemptNonMutation ?? [];
+  const serverSide = policy.serverSideEnforced ?? [];
   const actionSet = new Set(actions);
 
   const seen = new Map();
@@ -65,6 +66,15 @@ export const evaluateAuditPolicy = ({ actions, policy }) => {
   });
   bestEffort.forEach((e) => classify(e?.action, 'bestEffortObservable'));
   exempt.forEach((a) => classify(a, 'exemptNonMutation'));
+  serverSide.forEach((e) => {
+    classify(e?.action, 'serverSideEnforced');
+    if (typeof e?.emitter !== 'string' || !e.emitter.startsWith('functions/')) {
+      errors.push(
+        `serverSideEnforced "${e?.action ?? '(missing action)'}" must declare an "emitter" path ` +
+          'under functions/ (the Cloud Function that emits it).'
+      );
+    }
+  });
 
   bestEffort.forEach((e) => {
     if (typeof e?.justification !== 'string' || e.justification.trim().length < 12) {
@@ -163,6 +173,17 @@ const runCli = () => {
     }
   }
 
+  // The Cloud Function emitter linked by each server-side action must exist on disk.
+  for (const entry of policy.serverSideEnforced ?? []) {
+    if (
+      entry?.emitter &&
+      entry.emitter.startsWith('functions/') &&
+      !fs.existsSync(path.join(root, entry.emitter))
+    ) {
+      errors.push(`serverSideEnforced "${entry.action}" links a missing emitter file: ${entry.emitter}`);
+    }
+  }
+
   let scanned = 0;
   for (const rel of listSourceFiles(srcDir)) {
     scanned += 1;
@@ -182,7 +203,8 @@ const runCli = () => {
     `[clinical-mutation-audit-policy] OK — ${actions.length} AuditAction(s) classified ` +
       `(${(policy.failClosed ?? []).length} fail-closed, ` +
       `${(policy.bestEffortObservable ?? []).length} best-effort-observable, ` +
-      `${(policy.exemptNonMutation ?? []).length} exempt); ` +
+      `${(policy.exemptNonMutation ?? []).length} exempt, ` +
+      `${(policy.serverSideEnforced ?? []).length} server-side); ` +
       `${scanned} source file(s) scanned, no discarded ${AUDIT_FN} outcomes.`
   );
 };

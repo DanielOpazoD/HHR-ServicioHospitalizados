@@ -16,11 +16,23 @@ import {
   defaultClinicalDocumentPort,
   type ClinicalDocumentPort,
 } from '@/application/ports/clinicalDocumentPort';
+import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
+import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 
 type PersistReason = 'autosave' | 'manual' | 'admin_fix';
 
 interface ClinicalDocumentUseCaseDependencies {
   clinicalDocumentPort?: ClinicalDocumentPort;
+  writeAuditEvent?: typeof executeWriteAuditEvent;
+}
+
+/** Audit context for a fail-closed clinical-document deletion. */
+export interface DeleteClinicalDocumentAuditContext {
+  deletedBy?: string;
+  templateId?: string;
+  documentTitle?: string;
+  patientRut?: string;
+  recordDate?: string;
 }
 
 const appendVersionAudit = (
@@ -142,9 +154,33 @@ export const executePersistClinicalDocumentDraft = async (
 export const executeDeleteClinicalDocument = async (
   documentId: string,
   hospitalId: string,
+  auditContext: DeleteClinicalDocumentAuditContext = {},
   dependencies: ClinicalDocumentUseCaseDependencies = {}
 ): Promise<ApplicationOutcome<null>> => {
   const clinicalDocumentPort = dependencies.clinicalDocumentPort || defaultClinicalDocumentPort;
+  const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+
+  // Fail closed: audit BEFORE deleting, so a clinical document is never removed without a guaranteed
+  // audit trail (Ley 20.584). A failed audit (anonymous actor or write error) aborts the delete and
+  // returns the failed outcome. See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
+  const auditOutcome = await writeAuditEvent({
+    userId: auditContext.deletedBy || getCurrentUserEmail(),
+    action: 'CLINICAL_DOCUMENT_DELETED',
+    entityType: 'clinicalDocument',
+    entityId: documentId,
+    patientRut: auditContext.patientRut,
+    recordDate: auditContext.recordDate,
+    details: {
+      documentId,
+      templateId: auditContext.templateId,
+      documentTitle: auditContext.documentTitle,
+      patientRut: auditContext.patientRut,
+    },
+  });
+  if (auditOutcome.status === 'failed') {
+    return auditOutcome;
+  }
+
   try {
     await clinicalDocumentPort.delete(documentId, hospitalId);
     return createApplicationSuccess(null);

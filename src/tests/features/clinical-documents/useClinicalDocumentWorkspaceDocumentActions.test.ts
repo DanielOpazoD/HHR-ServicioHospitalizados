@@ -319,12 +319,17 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
       'Documento eliminado',
       `${selectedDocument.title} fue eliminado correctamente.`
     );
-    expect(auditContextMocks.logClinicalDocumentDeleted).toHaveBeenCalledWith(
+    // The audit is now owned by the use-case (fail-closed: audited before delete), not the
+    // fire-and-forget hook logger. Assert the use-case received the audit context.
+    expect(clinicalDocumentUseCases.executeDeleteClinicalDocument).toHaveBeenCalledWith(
       selectedDocument.id,
-      selectedDocument.templateId,
-      selectedDocument.title,
-      patient.rut,
-      selectedDocument.sourceDailyRecordDate
+      'hhr',
+      expect.objectContaining({
+        templateId: selectedDocument.templateId,
+        documentTitle: selectedDocument.title,
+        patientRut: patient.rut,
+        recordDate: selectedDocument.sourceDailyRecordDate,
+      })
     );
   });
 
@@ -362,7 +367,8 @@ describe('useClinicalDocumentWorkspaceDocumentActions', () => {
 
     expect(clinicalDocumentUseCases.executeDeleteClinicalDocument).toHaveBeenCalledWith(
       selectedDocument.id,
-      'hhr'
+      'hhr',
+      expect.objectContaining({ templateId: selectedDocument.templateId })
     );
     expect(notify.warning).not.toHaveBeenCalledWith(
       'Permiso insuficiente',

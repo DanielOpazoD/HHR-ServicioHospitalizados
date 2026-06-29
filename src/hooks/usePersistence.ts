@@ -22,6 +22,7 @@ import { recordOperationalOutcome } from '@/services/observability/operationalTe
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
 import { getPreviousDay as getPreviousCalendarDay } from '@/utils/clinicalDayUtils';
 import { defaultDailyRecordSyncPort } from '@/application/ports/dailyRecordPort';
+import { executeDeleteDailyRecord } from '@/application/daily-record/commands/deleteDailyRecordCommand';
 
 interface UsePersistenceProps {
   currentDateString: string;
@@ -40,7 +41,7 @@ export const usePersistence = ({
 }: UsePersistenceProps) => {
   const { success, warning, error: notifyError } = useNotification();
   const { dailyRecord } = useRepositories();
-  const { logDailyRecordCreated, logDailyRecordDeleted } = useAuditContext();
+  const { logDailyRecordCreated } = useAuditContext();
 
   /**
    * Creates a new daily record for the current date.
@@ -191,7 +192,19 @@ export const usePersistence = ({
    * Deletes the current day's record.
    */
   const resetDay = useCallback(async () => {
-    await defaultDailyRecordWritePort.delete(currentDateString);
+    // Fail closed: audit-first via the delete use-case. If the audit cannot be written, the record is
+    // NOT deleted — a daily record is never removed without a guaranteed audit trail (Ley 20.584).
+    const outcome = await executeDeleteDailyRecord({
+      date: currentDateString,
+      deleteRecord: date => defaultDailyRecordWritePort.delete(date),
+    });
+    if (outcome.status === 'failed') {
+      notifyError(
+        'No se pudo eliminar',
+        'No se eliminó el registro porque no se pudo registrar la auditoría.'
+      );
+      return;
+    }
     recordOperationalTelemetry(
       {
         category: 'create_day',
@@ -203,9 +216,7 @@ export const usePersistence = ({
     );
     setRecord(null);
     success('Registro eliminado', 'El registro del día ha sido eliminado.');
-
-    logDailyRecordDeleted(currentDateString);
-  }, [currentDateString, setRecord, success, logDailyRecordDeleted]);
+  }, [currentDateString, setRecord, success, notifyError]);
 
   return {
     createDay,
