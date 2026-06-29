@@ -124,6 +124,7 @@
     "check:critical-any": "node scripts/check-critical-any.mjs",
     "check:source-any": "node scripts/check-source-any.mjs",
     "check:repo-hygiene": "node scripts/check-repo-hygiene.mjs",
+    "check:clinical-mutation-audit-policy": "node scripts/check-clinical-mutation-audit-policy.mjs",
     "check:secret-leaks": "node scripts/check-secret-leaks.mjs",
     "check:firestore-rules-governance": "node scripts/check-firestore-rules-governance.mjs",
     "check:security": "npm run check:secret-leaks && node scripts/check-rules-generated.mjs && node scripts/check-rules-source-governance.mjs && npm run check:firestore-rules-governance && node scripts/check-firestore-rules-critical-access-matrix.mjs && node scripts/check-security-hardening.mjs",
@@ -280,9 +281,11 @@
     "qs": "6.15.2",
     "@isaacs/brace-expansion": "5.0.1",
     "markdown-it": "14.1.1",
-    "protobufjs": "7.5.8",
+    "protobufjs": "7.6.4",
     "@protobufjs/utf8": "1.1.1",
-    "tmp": "0.2.6"
+    "tmp": "0.2.7",
+    "@grpc/grpc-js": "1.14.4",
+    "hono": "4.12.27"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,css,md}": [

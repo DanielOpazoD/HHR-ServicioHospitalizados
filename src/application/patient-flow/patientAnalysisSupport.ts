@@ -116,10 +116,11 @@ export const harmonizePatientConflictHistory = async ({
       continue;
     }
 
-    await dailyRecordRepository.updatePartial(date, {
-      [`beds.${bedId}.patientName`]: correctName,
-    } as DailyRecordPatch);
-
+    // Audit BEFORE mutating patient identity so the trail precedes the change. This audit path is
+    // local-first (recorded locally; remote sync is best-effort and self-observed in auditCore), so
+    // PATIENT_HARMONIZED is declared best-effort-observable in
+    // scripts/clinical-mutation-audit-policy.json — true fail-closed would require routing this
+    // batch through executeWriteAuditEvent (tracked as a follow-up, see the policy justification).
     await auditPort.writeEvent(
       currentUserEmail,
       'PATIENT_HARMONIZED',
@@ -135,6 +136,10 @@ export const harmonizePatientConflictHistory = async ({
       rut,
       date
     );
+
+    await dailyRecordRepository.updatePartial(date, {
+      [`beds.${bedId}.patientName`]: correctName,
+    } as DailyRecordPatch);
   }
 };
 
