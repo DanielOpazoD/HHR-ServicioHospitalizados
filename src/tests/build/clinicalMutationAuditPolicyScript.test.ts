@@ -21,6 +21,12 @@ describe('check-clinical-mutation-audit-policy', () => {
       expect(parseAuditActions(src)).toEqual(['PATIENT_ADMITTED', 'VIEW_PATIENT']);
     });
 
+    it('extracts members regardless of quote style or naming convention', () => {
+      // The gate must not be bypassable by a future action that breaks the UPPER_SNAKE convention.
+      const src = 'export type AuditAction =\n  | "PATIENT_ADMITTED"\n  | \'data_imported\';\n';
+      expect(parseAuditActions(src)).toEqual(['PATIENT_ADMITTED', 'data_imported']);
+    });
+
     it('returns null when the union is absent', () => {
       expect(parseAuditActions('export type Something = string;')).toBeNull();
     });

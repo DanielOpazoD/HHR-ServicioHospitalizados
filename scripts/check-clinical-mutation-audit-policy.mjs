@@ -13,11 +13,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-/** Parse the `'ACTION'` members out of the `export type AuditAction = ...` union. */
+/**
+ * Parse the string-literal members out of the `export type AuditAction = ...` union. Matches any
+ * single- or double-quoted literal (not just UPPER_SNAKE) so a future action with a different naming
+ * convention can't be silently dropped — that would let it bypass classification by this gate.
+ */
 export const parseAuditActions = (typesSource) => {
   const unionMatch = typesSource.match(/export type AuditAction =([\s\S]*?);/);
   if (!unionMatch) return null;
-  return [...unionMatch[1].matchAll(/'([A-Z0-9_]+)'/g)].map((m) => m[1]);
+  return [...unionMatch[1].matchAll(/(['"])(.*?)\1/g)].map((m) => m[2]);
 };
 
 /**
