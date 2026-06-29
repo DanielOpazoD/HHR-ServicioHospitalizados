@@ -362,7 +362,8 @@ describe('ClinicalDocumentsWorkspace', () => {
     await waitFor(() => {
       expect(clinicalDocumentUseCases.executeDeleteClinicalDocument).toHaveBeenCalledWith(
         authoredDocument.id,
-        'hhr'
+        'hhr',
+        expect.objectContaining({ templateId: authoredDocument.templateId })
       );
     });
   });

@@ -39,6 +39,7 @@ export const evaluateAuditPolicy = ({ actions, policy }) => {
   const failClosed = policy.failClosed ?? [];
   const bestEffort = policy.bestEffortObservable ?? [];
   const exempt = policy.exemptNonMutation ?? [];
+  const serverSide = policy.serverSideEnforced ?? [];
   const actionSet = new Set(actions);
 
   const seen = new Map();
@@ -53,9 +54,30 @@ export const evaluateAuditPolicy = ({ actions, policy }) => {
     }
     seen.set(action, bucket);
   };
-  failClosed.forEach((a) => classify(a, 'failClosed'));
+  failClosed.forEach((entry) => {
+    classify(entry?.action, 'failClosed');
+    // Normalize first so a traversal path (src/tests/../fixtures/x.test.ts) can't satisfy the root.
+    const test = typeof entry?.test === 'string' ? path.posix.normalize(entry.test) : entry?.test;
+    if (typeof test !== 'string' || !/^src\/tests\/.*\.test\.tsx?$/.test(test)) {
+      errors.push(
+        `failClosed "${entry?.action ?? '(missing action)'}" must link a "test" — a ` +
+          'src/tests/**/*.test.ts(x) file proving it aborts the mutation on audit failure. ' +
+          'A fail-closed claim needs proof.'
+      );
+    }
+  });
   bestEffort.forEach((e) => classify(e?.action, 'bestEffortObservable'));
   exempt.forEach((a) => classify(a, 'exemptNonMutation'));
+  serverSide.forEach((e) => {
+    classify(e?.action, 'serverSideEnforced');
+    const emitter = typeof e?.emitter === 'string' ? path.posix.normalize(e.emitter) : e?.emitter;
+    if (typeof emitter !== 'string' || !emitter.startsWith('functions/')) {
+      errors.push(
+        `serverSideEnforced "${e?.action ?? '(missing action)'}" must declare an "emitter" path ` +
+          'under functions/ (the Cloud Function that emits it).'
+      );
+    }
+  });
 
   bestEffort.forEach((e) => {
     if (typeof e?.justification !== 'string' || e.justification.trim().length < 12) {
@@ -81,6 +103,31 @@ export const evaluateAuditPolicy = ({ actions, policy }) => {
     }
   }
 
+  return errors;
+};
+
+/**
+ * Pure: given the linked entries and an injectable `fileExists`, return errors for any failClosed
+ * `test` or serverSideEnforced `emitter` whose path is missing. Paths are normalized first so a
+ * traversal (e.g. `src/tests/../fixtures/x.test.ts`) can't point outside the intended root. No IO,
+ * so it is unit-testable.
+ */
+export const findMissingLinkedFiles = ({ failClosed = [], serverSideEnforced = [], fileExists }) => {
+  const errors = [];
+  for (const entry of failClosed) {
+    if (typeof entry?.test !== 'string') continue;
+    const test = path.posix.normalize(entry.test);
+    if (test.startsWith('src/tests/') && /\.test\.tsx?$/.test(test) && !fileExists(test)) {
+      errors.push(`failClosed "${entry.action}" links a missing test file: ${entry.test}`);
+    }
+  }
+  for (const entry of serverSideEnforced) {
+    if (typeof entry?.emitter !== 'string') continue;
+    const emitter = path.posix.normalize(entry.emitter);
+    if (emitter.startsWith('functions/') && !fileExists(emitter)) {
+      errors.push(`serverSideEnforced "${entry.action}" links a missing emitter file: ${entry.emitter}`);
+    }
+  }
   return errors;
 };
 
@@ -143,6 +190,15 @@ const runCli = () => {
 
   const errors = evaluateAuditPolicy({ actions, policy });
 
+  // The proving test (failClosed) and Cloud Function emitter (serverSideEnforced) must exist on disk.
+  errors.push(
+    ...findMissingLinkedFiles({
+      failClosed: policy.failClosed ?? [],
+      serverSideEnforced: policy.serverSideEnforced ?? [],
+      fileExists: (rel) => fs.existsSync(path.join(root, rel)),
+    })
+  );
+
   let scanned = 0;
   for (const rel of listSourceFiles(srcDir)) {
     scanned += 1;
@@ -162,7 +218,8 @@ const runCli = () => {
     `[clinical-mutation-audit-policy] OK — ${actions.length} AuditAction(s) classified ` +
       `(${(policy.failClosed ?? []).length} fail-closed, ` +
       `${(policy.bestEffortObservable ?? []).length} best-effort-observable, ` +
-      `${(policy.exemptNonMutation ?? []).length} exempt); ` +
+      `${(policy.exemptNonMutation ?? []).length} exempt, ` +
+      `${(policy.serverSideEnforced ?? []).length} server-side); ` +
       `${scanned} source file(s) scanned, no discarded ${AUDIT_FN} outcomes.`
   );
 };

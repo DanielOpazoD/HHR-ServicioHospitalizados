@@ -75,7 +75,7 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
   lastPersistedSnapshotRef,
   signatureProfile,
 }: UseClinicalDocumentWorkspaceDocumentActionsParams) => {
-  const { logClinicalDocumentCreated, logClinicalDocumentDeleted } = useAuditContext();
+  const { logClinicalDocumentCreated } = useAuditContext();
 
   const createDocument = useCallback(async () => {
     if (!canEdit || !user) {
@@ -169,25 +169,25 @@ export const useClinicalDocumentWorkspaceDocumentActions = ({
         document,
         canDelete: canDelete || Boolean(canDeleteDocument?.(document)),
         hospitalId,
+        deletedBy: user?.email ?? '',
         notify,
         patient,
         selectedDocumentId,
         setSelectedDocumentId,
         setDraft,
         lastPersistedSnapshotRef,
-        logClinicalDocumentDeleted,
       }),
     [
       canDelete,
       canDeleteDocument,
       hospitalId,
+      user,
       lastPersistedSnapshotRef,
       notify,
       patient,
       selectedDocumentId,
       setDraft,
       setSelectedDocumentId,
-      logClinicalDocumentDeleted,
     ]
   );
 

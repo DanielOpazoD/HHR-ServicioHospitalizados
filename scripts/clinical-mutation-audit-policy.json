@@ -8,31 +8,72 @@
     "",
     "Buckets:",
     "- failClosed: the mutation MUST abort if its audit cannot be written (anonymous actor or",
-    "  audit error). Reserved for admin overwrites / deletions where an unaudited change is",
-    "  unacceptable AND aborting is safe (non-urgent, reversible).",
+    "  audit error). Each entry is { action, test } and the gate requires the linked",
+    "  src/tests/**/*.test.ts to exist — a fail-closed claim must point to a proving test (the",
+    "  emitter audits-first and a failed audit aborts the mutation, verified by that test).",
     "- bestEffortObservable: the mutation proceeds even if the audit fails, but the failure is",
     "  surfaced (degraded ApplicationOutcome, telemetry, or local-first audit self-observed in",
     "  auditCore). Reserved for urgent clinical-flow actions where aborting would impede care.",
     "- exemptNonMutation: views, auth, output/export and system events that do not mutate",
-    "  clinical state, so no fail-closed audit is required."
+    "  clinical state, so no fail-closed audit is required.",
+    "- serverSideEnforced: { action, emitter } — emitted/enforced server-side in a Cloud Function;",
+    "  the gate requires the linked functions/ emitter file to exist (there is no client test to link)."
   ],
   "failClosed": [
-    "CONFLICT_VERSION_RESTORED",
-    "MEDICAL_HANDOFF_RESTORED",
-    "PATIENT_CLEARED",
-    "DAILY_RECORD_DELETED",
-    "CLINICAL_EVENT_DELETED",
-    "CLINICAL_DOCUMENT_DELETED",
-    "PRESCRIPTION_MANUAL_DELETED",
-    "PRESCRIPTION_RETENTION_DELETED",
-    "MEDICAL_INDICATION_TEMPLATE_CREATED",
-    "MEDICAL_INDICATION_TEMPLATE_UPDATED",
-    "MEDICAL_INDICATION_TEMPLATE_ARCHIVED",
-    "MEDICAL_INDICATION_TEMPLATE_USED",
-    "MEDICAL_INDICATION_RECORD_CREATED",
-    "STATISTICAL_SPECIALTY_RECLASSIFIED"
+    {
+      "action": "CONFLICT_VERSION_RESTORED",
+      "test": "src/tests/services/repositories/dailyRecordVersionRestoreController.test.ts"
+    },
+    {
+      "action": "PRESCRIPTION_MANUAL_DELETED",
+      "test": "src/tests/application/prescriptions/prescriptionUseCases.test.ts"
+    },
+    {
+      "action": "MEDICAL_INDICATION_TEMPLATE_CREATED",
+      "test": "src/tests/application/medical-indications/medicalIndicationsUseCases.test.ts"
+    },
+    {
+      "action": "MEDICAL_INDICATION_TEMPLATE_UPDATED",
+      "test": "src/tests/application/medical-indications/medicalIndicationsUseCases.test.ts"
+    },
+    {
+      "action": "MEDICAL_INDICATION_TEMPLATE_ARCHIVED",
+      "test": "src/tests/application/medical-indications/medicalIndicationsUseCases.test.ts"
+    },
+    {
+      "action": "MEDICAL_INDICATION_TEMPLATE_USED",
+      "test": "src/tests/application/medical-indications/medicalIndicationsUseCases.test.ts"
+    },
+    {
+      "action": "MEDICAL_INDICATION_RECORD_CREATED",
+      "test": "src/tests/application/medical-indications/medicalIndicationsUseCases.test.ts"
+    },
+    {
+      "action": "CLINICAL_DOCUMENT_DELETED",
+      "test": "src/tests/application/clinical-documents/clinicalDocumentDeleteUseCase.test.ts"
+    },
+    {
+      "action": "DAILY_RECORD_DELETED",
+      "test": "src/tests/application/daily-record/deleteDailyRecordCommand.test.ts"
+    }
   ],
   "bestEffortObservable": [
+    {
+      "action": "PATIENT_CLEARED",
+      "justification": "Reclassified after verifying the emitter: audited via the hook fire-and-forget logger (useAudit.logEvent); the outcome is reported via telemetry (reportAuditOutcome) but the mutation is not gated. True fail-closed would require re-plumbing to a use-case (Scope C)."
+    },
+    {
+      "action": "CLINICAL_EVENT_DELETED",
+      "justification": "Reclassified: emitted by logDebouncedEvent (debounced hook logger, fire-and-forget); outcome reported, mutation not gated."
+    },
+    {
+      "action": "MEDICAL_HANDOFF_RESTORED",
+      "justification": "Reclassified: emitted by the handoff hook logger (fire-and-forget); outcome reported, mutation not gated."
+    },
+    {
+      "action": "PRESCRIPTION_RETENTION_DELETED",
+      "justification": "Deleted by a server-side retention job (TTL/Cloud Function); no client emitter for this gate to enforce."
+    },
     {
       "action": "CONFLICT_AUTO_MERGED",
       "justification": "Automatic conflict-resolution recovery path; blocking the merge on an audit failure is worse than proceeding. The caller telemeters the failure (dailyRecordConflictAutoMergeController)."
@@ -162,5 +203,11 @@
     "CLINICAL_DOCUMENT_EXPORTED",
     "CLINICAL_DOCUMENT_PRINTED",
     "SYSTEM_ERROR"
+  ],
+  "serverSideEnforced": [
+    {
+      "action": "STATISTICAL_SPECIALTY_RECLASSIFIED",
+      "emitter": "functions/lib/minsal/minsalReclassifications.js"
+    }
   ]
 }
