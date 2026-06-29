@@ -83,6 +83,8 @@ describeEmulator('Firestore emulator — DAILY_RECORD_DELETED fail-closed', () =
   });
 
   afterAll(async () => {
+    // Restore the global Firestore runtime flag so this suite does not leak `enabled` state.
+    setFirestoreEnabled(false);
     await testEnv.cleanup();
   });
 
@@ -100,7 +102,7 @@ describeEmulator('Firestore emulator — DAILY_RECORD_DELETED fail-closed', () =
     await seedRecord(date);
 
     const outcome = await executeDeleteDailyRecord(
-      { date, deleteRecord },
+      { date, deletedBy: 'admin@h.cl', deleteRecord },
       { writeAuditEvent: vi.fn().mockResolvedValue({ status: 'failed', data: null, issues: [] }) }
     );
 
@@ -114,7 +116,7 @@ describeEmulator('Firestore emulator — DAILY_RECORD_DELETED fail-closed', () =
     await seedRecord(date);
 
     const outcome = await executeDeleteDailyRecord(
-      { date, deleteRecord },
+      { date, deletedBy: 'admin@h.cl', deleteRecord },
       { writeAuditEvent: vi.fn().mockResolvedValue({ status: 'success', data: null, issues: [] }) }
     );
 

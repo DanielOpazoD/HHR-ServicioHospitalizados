@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   detectIgnoredAuditOutcomes,
   evaluateAuditPolicy,
+  findMissingLinkedFiles,
   parseAuditActions,
 } from '../../../scripts/check-clinical-mutation-audit-policy.mjs';
 
@@ -104,6 +105,39 @@ describe('check-clinical-mutation-audit-policy', () => {
         policy: { ...basePolicy, serverSideEnforced: [{ action: 'ACTION_D' }] },
       });
       expect(bad.join('\n')).toContain('must declare an "emitter"');
+    });
+
+    it('rejects a failClosed test path that escapes src/tests via traversal', () => {
+      const errors = evaluateAuditPolicy({
+        actions: ['ACTION_A', 'ACTION_B', 'ACTION_C'],
+        policy: {
+          ...basePolicy,
+          failClosed: [{ action: 'ACTION_A', test: 'src/tests/../fixtures/proof.test.ts' }],
+        },
+      });
+      expect(errors.join('\n')).toContain('must link a "test"');
+    });
+  });
+
+  describe('findMissingLinkedFiles', () => {
+    it('flags a failClosed test and a serverSide emitter that do not exist', () => {
+      const errors = findMissingLinkedFiles({
+        failClosed: [{ action: 'A', test: 'src/tests/missing.test.ts' }] as never,
+        serverSideEnforced: [{ action: 'B', emitter: 'functions/missing.js' }] as never,
+        fileExists: () => false,
+      });
+      expect(errors.join('\n')).toContain('missing test file');
+      expect(errors.join('\n')).toContain('missing emitter file');
+    });
+
+    it('passes when the linked files exist', () => {
+      expect(
+        findMissingLinkedFiles({
+          failClosed: [{ action: 'A', test: 'src/tests/x.test.ts' }] as never,
+          serverSideEnforced: [{ action: 'B', emitter: 'functions/x.js' }] as never,
+          fileExists: () => true,
+        })
+      ).toEqual([]);
     });
   });
 

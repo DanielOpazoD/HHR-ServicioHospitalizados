@@ -11,7 +11,6 @@
  * posture as executeDeletePrescription. See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
  */
 import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
-import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 import {
   createApplicationFailed,
   createApplicationSuccess,
@@ -20,13 +19,14 @@ import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTy
 
 export interface DeleteDailyRecordInput {
   date: string;
+  /** Verified actor performing the deletion. Required: a fail-closed delete must not synthesize one. */
+  deletedBy: string;
   /** Performs the actual cross-store deletion (injected so the use-case stays port-agnostic). */
   deleteRecord: (date: string) => Promise<void>;
 }
 
 export interface DeleteDailyRecordDeps {
   writeAuditEvent?: typeof executeWriteAuditEvent;
-  deletedBy?: string;
 }
 
 export const executeDeleteDailyRecord = async (
@@ -36,7 +36,7 @@ export const executeDeleteDailyRecord = async (
   const writeAuditEvent = deps.writeAuditEvent || executeWriteAuditEvent;
 
   const auditOutcome = await writeAuditEvent({
-    userId: deps.deletedBy || getCurrentUserEmail(),
+    userId: input.deletedBy,
     action: 'DAILY_RECORD_DELETED',
     entityType: 'dailyRecord',
     entityId: input.date,

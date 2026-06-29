@@ -210,17 +210,20 @@ describe('medicalIndications use cases', () => {
 
     it('CREATE does not create when the audit fails', async () => {
       const templatePort = buildTemplatePort();
+      const writeAuditEvent = failedAudit();
       await expect(
         executeCreateMedicalIndicationTemplate(
           { userId: 'u', userLabel: 'd@e.com', text: 'X', now: '2026-05-29T10:00:00.000Z' },
-          { templatePort, writeAuditEvent: failedAudit() }
+          { templatePort, writeAuditEvent }
         )
       ).rejects.toThrow();
+      expect(writeAuditEvent).toHaveBeenCalledTimes(1);
       expect(templatePort.create).not.toHaveBeenCalled();
     });
 
     it('UPDATE does not update when the audit fails', async () => {
       const templatePort = buildTemplatePort();
+      const writeAuditEvent = failedAudit();
       await expect(
         executeUpdateMedicalIndicationTemplate(
           {
@@ -230,14 +233,16 @@ describe('medicalIndications use cases', () => {
             text: 'X',
             now: '2026-05-29T10:00:00.000Z',
           },
-          { templatePort, writeAuditEvent: failedAudit() }
+          { templatePort, writeAuditEvent }
         )
       ).rejects.toThrow();
+      expect(writeAuditEvent).toHaveBeenCalledTimes(1);
       expect(templatePort.update).not.toHaveBeenCalled();
     });
 
     it('ARCHIVE does not archive when the audit fails', async () => {
       const templatePort = buildTemplatePort();
+      const writeAuditEvent = failedAudit();
       await expect(
         executeArchiveMedicalIndicationTemplate(
           {
@@ -246,14 +251,16 @@ describe('medicalIndications use cases', () => {
             userLabel: 'd@e.com',
             now: '2026-05-29T11:00:00.000Z',
           },
-          { templatePort, writeAuditEvent: failedAudit() }
+          { templatePort, writeAuditEvent }
         )
       ).rejects.toThrow();
+      expect(writeAuditEvent).toHaveBeenCalledTimes(1);
       expect(templatePort.archive).not.toHaveBeenCalled();
     });
 
     it('USED does not mark used when the audit fails', async () => {
       const templatePort = buildTemplatePort();
+      const writeAuditEvent = failedAudit();
       await expect(
         executeMarkMedicalIndicationTemplateUsed(
           {
@@ -261,9 +268,10 @@ describe('medicalIndications use cases', () => {
             userLabel: 'd@e.com',
             now: '2026-05-29T11:00:00.000Z',
           },
-          { templatePort, writeAuditEvent: failedAudit() }
+          { templatePort, writeAuditEvent }
         )
       ).rejects.toThrow();
+      expect(writeAuditEvent).toHaveBeenCalledTimes(1);
       expect(templatePort.markUsed).not.toHaveBeenCalled();
     });
   });

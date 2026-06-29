@@ -17,7 +17,6 @@ import {
   type ClinicalDocumentPort,
 } from '@/application/ports/clinicalDocumentPort';
 import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
-import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 
 type PersistReason = 'autosave' | 'manual' | 'admin_fix';
 
@@ -28,7 +27,8 @@ interface ClinicalDocumentUseCaseDependencies {
 
 /** Audit context for a fail-closed clinical-document deletion. */
 export interface DeleteClinicalDocumentAuditContext {
-  deletedBy?: string;
+  /** Verified actor performing the deletion. Required: a fail-closed delete must not synthesize one. */
+  deletedBy: string;
   templateId?: string;
   documentTitle?: string;
   patientRut?: string;
@@ -154,7 +154,7 @@ export const executePersistClinicalDocumentDraft = async (
 export const executeDeleteClinicalDocument = async (
   documentId: string,
   hospitalId: string,
-  auditContext: DeleteClinicalDocumentAuditContext = {},
+  auditContext: DeleteClinicalDocumentAuditContext,
   dependencies: ClinicalDocumentUseCaseDependencies = {}
 ): Promise<ApplicationOutcome<null>> => {
   const clinicalDocumentPort = dependencies.clinicalDocumentPort || defaultClinicalDocumentPort;
@@ -165,7 +165,7 @@ export const executeDeleteClinicalDocument = async (
   // returns the failed outcome. (Residual: a delete that fails AFTER a successful audit leaves a
   // "phantom" audit — accepted vs. an unaudited delete.) See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
   const auditOutcome = await writeAuditEvent({
-    userId: auditContext.deletedBy || getCurrentUserEmail(),
+    userId: auditContext.deletedBy,
     action: 'CLINICAL_DOCUMENT_DELETED',
     entityType: 'clinicalDocument',
     entityId: documentId,

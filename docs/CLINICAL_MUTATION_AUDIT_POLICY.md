@@ -54,7 +54,8 @@ tiene **dos enforcements**:
 2. una acción aparece en más de un bucket;
 3. una entrada `bestEffortObservable` no trae `justification`;
 4. la política declara una acción que ya no existe en el union (entrada obsoleta);
-5. una acción `failClosed` no enlaza un `test` probatorio existente (`src/tests/**/*.test.ts`).
+5. una acción `failClosed` no enlaza un `test` probatorio existente (`src/tests/**/*.test.ts`);
+6. una acción `serverSideEnforced` no enlaza un `emitter` existente bajo `functions/`.
 
 **B. Cumplimiento (outcome no descartado).** Escanea `src/` (excluyendo tests) y **falla** si algún
 llamado a `executeWriteAuditEvent(...)` descarta su `ApplicationOutcome` (statement que arranca con

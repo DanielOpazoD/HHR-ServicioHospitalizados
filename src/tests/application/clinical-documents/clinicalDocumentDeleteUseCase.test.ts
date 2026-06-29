@@ -6,7 +6,7 @@ const buildPort = () =>
   ({ delete: vi.fn(async () => undefined) }) as unknown as ClinicalDocumentPort;
 
 describe('executeDeleteClinicalDocument (fail-closed)', () => {
-  it('audits before deleting and succeeds when the audit succeeds', async () => {
+  it('audits BEFORE deleting and succeeds when the audit succeeds', async () => {
     const port = buildPort();
     const writeAuditEvent = vi.fn(async () => ({
       status: 'success' as const,
@@ -31,9 +31,13 @@ describe('executeDeleteClinicalDocument (fail-closed)', () => {
       })
     );
     expect(port.delete).toHaveBeenCalledWith('doc-1', 'hhr');
+    // Audit-first: the audit was invoked before the delete.
+    expect(writeAuditEvent.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(port.delete).mock.invocationCallOrder[0]
+    );
   });
 
-  it('fails closed: a failed audit aborts before deleting (no unaudited clinical-record delete)', async () => {
+  it('fails closed: a failed audit was attempted and aborts before deleting', async () => {
     const port = buildPort();
     const writeAuditEvent = vi.fn(async () => ({
       status: 'failed' as const,
@@ -49,6 +53,7 @@ describe('executeDeleteClinicalDocument (fail-closed)', () => {
     );
 
     expect(outcome.status).toBe('failed');
-    expect(port.delete).not.toHaveBeenCalled();
+    expect(writeAuditEvent).toHaveBeenCalledTimes(1); // the audit WAS attempted (first)
+    expect(port.delete).not.toHaveBeenCalled(); // ...and the delete never happened
   });
 });

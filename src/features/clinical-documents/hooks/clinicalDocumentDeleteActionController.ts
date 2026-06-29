@@ -23,6 +23,8 @@ interface DeleteClinicalDocumentFromWorkspaceParams {
   document: ClinicalDocumentRecord;
   canDelete: boolean;
   hospitalId: string;
+  /** Verified actor email; threaded into the fail-closed delete use-case (no synthesized identity). */
+  deletedBy: string;
   notify: NotificationPort;
   patient: PatientData;
   selectedDocumentId: string | null;
@@ -35,6 +37,7 @@ export const deleteClinicalDocumentFromWorkspace = async ({
   document,
   canDelete,
   hospitalId,
+  deletedBy,
   notify,
   patient,
   selectedDocumentId,
@@ -61,6 +64,7 @@ export const deleteClinicalDocumentFromWorkspace = async ({
 
   try {
     const result = await executeDeleteClinicalDocument(document.id, hospitalId, {
+      deletedBy,
       templateId: document.templateId,
       documentTitle: document.title,
       patientRut: patient.rut,

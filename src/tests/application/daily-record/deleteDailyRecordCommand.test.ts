@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { executeDeleteDailyRecord } from '@/application/daily-record/commands/deleteDailyRecordCommand';
 
 describe('executeDeleteDailyRecord (fail-closed)', () => {
-  it('audits before deleting and succeeds when the audit succeeds', async () => {
+  it('audits BEFORE deleting and succeeds when the audit succeeds', async () => {
     const deleteRecord = vi.fn(async () => undefined);
     const writeAuditEvent = vi.fn(async () => ({
       status: 'success' as const,
@@ -11,8 +11,8 @@ describe('executeDeleteDailyRecord (fail-closed)', () => {
     }));
 
     const outcome = await executeDeleteDailyRecord(
-      { date: '2026-06-29', deleteRecord },
-      { writeAuditEvent, deletedBy: 'admin@h.cl' }
+      { date: '2026-06-29', deletedBy: 'admin@h.cl', deleteRecord },
+      { writeAuditEvent }
     );
 
     expect(outcome.status).toBe('success');
@@ -25,9 +25,13 @@ describe('executeDeleteDailyRecord (fail-closed)', () => {
       })
     );
     expect(deleteRecord).toHaveBeenCalledWith('2026-06-29');
+    // Audit-first: the audit was invoked before the delete.
+    expect(writeAuditEvent.mock.invocationCallOrder[0]).toBeLessThan(
+      deleteRecord.mock.invocationCallOrder[0]
+    );
   });
 
-  it('fails closed: a failed audit aborts before deleting (no unaudited clinical-record delete)', async () => {
+  it('fails closed: a failed audit was attempted and aborts before deleting', async () => {
     const deleteRecord = vi.fn(async () => undefined);
     const writeAuditEvent = vi.fn(async () => ({
       status: 'failed' as const,
@@ -36,11 +40,12 @@ describe('executeDeleteDailyRecord (fail-closed)', () => {
     }));
 
     const outcome = await executeDeleteDailyRecord(
-      { date: '2026-06-29', deleteRecord },
-      { writeAuditEvent, deletedBy: 'admin@h.cl' }
+      { date: '2026-06-29', deletedBy: 'admin@h.cl', deleteRecord },
+      { writeAuditEvent }
     );
 
     expect(outcome.status).toBe('failed');
-    expect(deleteRecord).not.toHaveBeenCalled();
+    expect(writeAuditEvent).toHaveBeenCalledTimes(1); // the audit WAS attempted (first)
+    expect(deleteRecord).not.toHaveBeenCalled(); // ...and the delete never happened
   });
 });
