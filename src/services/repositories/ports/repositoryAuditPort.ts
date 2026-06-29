@@ -37,7 +37,7 @@ export const logRepositoryConflictAutoMerged = async (
     return;
   }
 
-  await executeWriteAuditEvent({
+  const outcome = await executeWriteAuditEvent({
     userId: getCurrentUserEmail(),
     action: 'CONFLICT_AUTO_MERGED',
     entityType: 'dailyRecord',
@@ -45,6 +45,16 @@ export const logRepositoryConflictAutoMerged = async (
     details: details as unknown as Record<string, unknown>,
     recordDate: date,
   });
+  // Surface a failed audit outcome (executeWriteAuditEvent never throws). The caller decides the
+  // posture: auto-merge is best-effort-observable (see scripts/clinical-mutation-audit-policy.json),
+  // so it telemeters rather than aborting — but the failure must not be silently dropped.
+  if (outcome.status !== 'success') {
+    throw new Error(
+      outcome.issues[0]?.message ??
+        outcome.userSafeMessage ??
+        'No se pudo registrar la auditoría de auto-merge de conflicto.'
+    );
+  }
 };
 
 export interface ConflictVersionRestoreAuditDetails {

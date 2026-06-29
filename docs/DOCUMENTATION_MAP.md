@@ -38,6 +38,7 @@ Documentos que gobiernan decisiones activas y estructura actual del repo.
 - [docs/FOUNDATION_TRACKER.md](FOUNDATION_TRACKER.md)
 - [docs/QUALITY_GUARDRAILS.md](QUALITY_GUARDRAILS.md)
 - [docs/SAFE_CHANGE_CHECKLIST.md](SAFE_CHANGE_CHECKLIST.md)
+- [docs/CLINICAL_MUTATION_AUDIT_POLICY.md](CLINICAL_MUTATION_AUDIT_POLICY.md) — postura de auditoría declarada por `AuditAction` (gate `check:clinical-mutation-audit-policy`)
 
 #### ADRs
 

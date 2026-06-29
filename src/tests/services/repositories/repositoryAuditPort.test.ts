@@ -80,6 +80,33 @@ describe('repositoryAuditPort', () => {
     });
   });
 
+  it('throws when the auto-merge audit outcome is not successful (no longer silently dropped)', async () => {
+    auditMocks.executeWriteAuditEvent.mockResolvedValueOnce({
+      status: 'failed',
+      data: null,
+      issues: [{ kind: 'unknown', message: 'audit write failed' }],
+    });
+
+    await expect(
+      logRepositoryConflictAutoMerged('2026-02-19', {
+        changedPaths: ['beds.R1.pathology'],
+        policyVersion: '2026-02-v2',
+        entryCount: 1,
+        strategyBreakdown: { scalar_policy: 1 },
+        winnerBreakdown: { local: 1 },
+        reasonBreakdown: { default_local_priority: 1 },
+        samplePaths: ['beds.R1.pathology'],
+        assessment: {
+          riskLevel: 'low' as const,
+          reviewRecommended: false,
+          reviewReasons: [],
+          localDominantPaths: ['beds.R1.pathology'],
+          remoteProtectedPaths: [],
+        },
+      })
+    ).rejects.toThrow('audit write failed');
+  });
+
   it('writes conflict version restore events through the modern audit use case', async () => {
     await logRepositoryConflictVersionRestored('2026-02-19', {
       snapshotId: 'cid__remote_premerge',

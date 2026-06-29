@@ -9,6 +9,7 @@ const {
   logRepositoryConflictAutoMergedMock,
   queueSyncTaskMock,
   loggerWarnMock,
+  recordTelemetryMock,
 } = vi.hoisted(() => ({
   getRecordFromFirestoreMock: vi.fn(),
   resolveConflictMock: vi.fn(),
@@ -16,6 +17,7 @@ const {
   logRepositoryConflictAutoMergedMock: vi.fn(),
   queueSyncTaskMock: vi.fn(),
   loggerWarnMock: vi.fn(),
+  recordTelemetryMock: vi.fn(),
 }));
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
@@ -42,6 +44,10 @@ vi.mock('@/services/repositories/repositoryLoggers', () => ({
   dailyRecordWriteSupportLogger: {
     warn: loggerWarnMock,
   },
+}));
+
+vi.mock('@/services/observability/operationalTelemetryOutcomeRecorder', () => ({
+  recordOperationalErrorTelemetry: recordTelemetryMock,
 }));
 
 const record = {
@@ -86,6 +92,26 @@ describe('dailyRecordConflictAutoMergeController', () => {
       })
     );
     expect(logRepositoryConflictAutoMergedMock).toHaveBeenCalled();
+  });
+
+  it('stays best-effort but observable: telemeters when the audit fails, still auto_merged', async () => {
+    getRecordFromFirestoreMock.mockResolvedValue(record);
+    resolveConflictMock.mockReturnValue({ record, trace: { policyVersion: 'v1', entries: [] } });
+    buildConflictAuditSummaryMock.mockReturnValue({ summary: 'ok' });
+    queueSyncTaskMock.mockResolvedValue({ accepted: true });
+    logRepositoryConflictAutoMergedMock.mockRejectedValueOnce(new Error('audit down'));
+
+    await expect(
+      attemptConflictAutoMergeRecovery('2026-04-15', record, ['beds.R1.patientName'])
+    ).resolves.toEqual({ status: 'auto_merged' });
+
+    // The merge proceeds (system recovery), but the audit failure is no longer silent.
+    expect(recordTelemetryMock).toHaveBeenCalledWith(
+      'firestore',
+      'conflict_auto_merge_audit',
+      expect.any(Error),
+      expect.objectContaining({ code: 'firestore_conflict_auto_merge_audit_failed' })
+    );
   });
 
   it('returns not_possible when queuing the merged record is rejected', async () => {

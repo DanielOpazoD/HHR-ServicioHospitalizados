@@ -5,6 +5,7 @@ import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/con
 import { buildConflictAuditSummary } from '@/services/repositories/conflictResolutionAuditSummary';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
 import { dailyRecordWriteSupportLogger } from '@/services/repositories/repositoryLoggers';
+import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 import {
   buildRecoveryTaskMeta,
   resolveEffectiveChangedPaths,
@@ -70,7 +71,16 @@ export const attemptConflictAutoMergeRecovery = async (
     try {
       await logRepositoryConflictAutoMerged(date, auditDetails);
     } catch (auditError) {
-      dailyRecordWriteSupportLogger.warn('Conflict auto-merge audit log failed', auditError);
+      // Auto-merge is a system recovery path; blocking it on an audit failure is worse than an
+      // observable best-effort audit. Surface via telemetry (posture declared best-effort-observable
+      // in scripts/clinical-mutation-audit-policy.json) instead of a silent warn.
+      recordOperationalErrorTelemetry('firestore', 'conflict_auto_merge_audit', auditError, {
+        code: 'firestore_conflict_auto_merge_audit_failed',
+        message: 'No se pudo auditar el auto-merge de conflicto.',
+        severity: 'warning',
+        userSafeMessage: 'No se pudo auditar el auto-merge de conflicto.',
+        context: { date },
+      });
     }
 
     return { status: 'auto_merged' };
