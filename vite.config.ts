@@ -78,6 +78,15 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
       hmr: isNetlifyLocalDev ? false : undefined,
+      // Mirror netlify.toml's Cross-Origin-Opener-Policy so Firebase Auth's
+      // Google sign-in popup works on localhost. Without unsafe-none the dev
+      // server leaves COOP at the browser default and Chrome blocks the
+      // post-auth window.close() call, degrading popup sign-in (and the
+      // Firestore session that depends on it). Dev-only; production sets this
+      // same header via netlify.toml.
+      headers: {
+        'Cross-Origin-Opener-Policy': 'unsafe-none',
+      },
       fs: {
         // Allow Vite to serve files (notably @fontsource .woff2 assets) when
         // node_modules is symlinked from a `.claude/worktrees/<name>/`
