@@ -81,8 +81,6 @@ describe('MedicalIndicationsQuickAction', () => {
 
     await openDialog();
     await waitFor(() => expect(listActiveByUserSpy).toHaveBeenCalledTimes(1));
-
-    expect(listActiveByUserSpy).toHaveBeenCalledTimes(1);
   });
 
   it('hidrata las últimas indicaciones aplicadas compartidas al abrir el modal', async () => {

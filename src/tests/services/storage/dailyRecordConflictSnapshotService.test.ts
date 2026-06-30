@@ -100,7 +100,7 @@ describe('dailyRecordConflictSnapshotService', () => {
 
   it('sets expireAt at roughly now + 48h', async () => {
     const now = new Date('2026-06-26T12:00:00.000Z');
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(now);
 
     const before = Date.now();
