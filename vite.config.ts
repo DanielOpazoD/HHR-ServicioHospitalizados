@@ -128,6 +128,7 @@ export default defineConfig(({ mode }) => {
             '**/vendor/exceljs.bare.min.js',
             '**/assets/exceljs.min-*.js',
             '**/assets/pdf.worker-*.mjs',
+            '**/assets/vendor-pdfjs-*.js',
             '**/assets/pdf-*.js',
             '**/assets/vendor-pdf-*.js',
             '**/assets/docxtemplater-*.js',

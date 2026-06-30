@@ -9,6 +9,7 @@
     "^vendor/exceljs\\.bare\\.min\\.js$",
     "^assets/exceljs\\.min-.*\\.js$",
     "^assets/pdf\\.worker-.*\\.mjs$",
+    "^assets/vendor-pdfjs-.*\\.js$",
     "^assets/pdf-.*\\.js$",
     "^assets/vendor-pdf-.*\\.js$",
     "^assets/docxtemplater-.*\\.js$",
@@ -73,6 +74,11 @@
       "pattern": "^pdf-.*\\.js$",
       "_comment": "PDF.js worker/runtime remains async, but this protects the large PDF viewer chunk from silently drifting toward the global chunk limit.",
       "maxBytes": 560000
+    },
+    {
+      "pattern": "^vendor-pdfjs-.*\\.js$",
+      "_comment": "PDF.js text/import runtime is async and must stay out of the PWA precache. This dedicated budget keeps PDF.js drift visible separately from app-level PDF chunks.",
+      "maxBytes": 520000
     },
     {
       "pattern": "^vendor-pdf-.*\\.js$",

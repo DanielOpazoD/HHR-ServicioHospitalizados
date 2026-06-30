@@ -11,6 +11,10 @@
  *
  * Server still validates the resulting bytes (size cap 4 MB per blob).
  */
+import {
+  buildHighEfficiencyImageDecodeError,
+  convertHighEfficiencyImageToJpeg,
+} from '@/features/prescriptions/services/prescriptionHighEfficiencyImageConverter';
 
 export const PRESCRIPTION_FULL_IMAGE_MAX_DIMENSION = 1200;
 export const PRESCRIPTION_THUMBNAIL_IMAGE_MAX_DIMENSION = 360;
@@ -61,16 +65,9 @@ interface DecodedPrescriptionImage {
 const isHighEfficiencyImage = (file: File): boolean =>
   file.type === 'image/heic' || file.type === 'image/heif' || /\.(heic|heif)$/i.test(file.name);
 
-const withJpegExtension = (fileName: string): string => {
-  const baseName = fileName.includes('.') ? fileName.replace(/\.[^.]+$/, '') : fileName;
-  return `${baseName}.jpg`;
-};
-
 const buildImageDecodeError = (file: File): Error => {
   if (isHighEfficiencyImage(file)) {
-    return new Error(
-      'La foto está en formato HEIC/HEIF y este navegador no pudo convertirla. En Samsung, cambia "Imágenes de alta eficiencia" a desactivado o comparte la foto como JPEG e intenta nuevamente.'
-    );
+    return buildHighEfficiencyImageDecodeError();
   }
 
   return new Error(
@@ -81,28 +78,6 @@ const buildImageDecodeError = (file: File): Error => {
 const assertSupportedFileType = (file: File): void => {
   if (file.type && !ACCEPTED_FILE_TYPES.has(file.type)) {
     throw new Error(`Formato no soportado: ${file.type}.`);
-  }
-};
-
-const convertHighEfficiencyImageToJpeg = async (file: File): Promise<File> => {
-  try {
-    const { default: heic2any } = await import('heic2any');
-    const converted = await heic2any({
-      blob: file,
-      toType: 'image/jpeg',
-      quality: 0.92,
-    });
-    const blob = Array.isArray(converted) ? converted[0] : converted;
-    if (!blob || blob.size === 0) {
-      throw new Error('empty HEIC conversion');
-    }
-
-    return new File([blob], withJpegExtension(file.name), {
-      type: 'image/jpeg',
-      lastModified: file.lastModified || Date.now(),
-    });
-  } catch {
-    throw buildImageDecodeError(file);
   }
 };
 

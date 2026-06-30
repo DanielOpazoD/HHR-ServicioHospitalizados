@@ -10,7 +10,10 @@
  * but not performed) can result. That is the accepted trade-off vs. an unaudited deletion — the same
  * posture as executeDeletePrescription. See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
  */
-import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
+import {
+  loadExecuteWriteAuditEvent,
+  type WriteAuditEvent,
+} from '@/application/audit/writeAuditEventUseCaseLoader';
 import {
   createApplicationFailed,
   createApplicationSuccess,
@@ -26,14 +29,14 @@ export interface DeleteDailyRecordInput {
 }
 
 export interface DeleteDailyRecordDeps {
-  writeAuditEvent?: typeof executeWriteAuditEvent;
+  writeAuditEvent?: WriteAuditEvent;
 }
 
 export const executeDeleteDailyRecord = async (
   input: DeleteDailyRecordInput,
   deps: DeleteDailyRecordDeps = {}
 ): Promise<ApplicationOutcome<null>> => {
-  const writeAuditEvent = deps.writeAuditEvent || executeWriteAuditEvent;
+  const writeAuditEvent = deps.writeAuditEvent || (await loadExecuteWriteAuditEvent());
 
   const auditOutcome = await writeAuditEvent({
     userId: input.deletedBy,
