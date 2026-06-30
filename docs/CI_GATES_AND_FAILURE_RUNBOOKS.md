@@ -95,6 +95,8 @@ Incluye:
 - `npm run check:release-evidence`
 - `npm run test:firestore:release:ci`
 
+`check:release-evidence` bloquea evidencia formal generada desde un worktree sucio, reportes stale, signoff clínico incompleto, smoke visual clínico faltante y `quality-metrics` con `flakeRiskFiles > 0`. Si falla por flake-risk, corregir o aislar el test afectado antes de regenerar `report:release-evidence`.
+
 ### `test:release-confidence`
 
 Pack versionado compacto para release confidence, definido en `scripts/config/release-confidence-pack.json`.

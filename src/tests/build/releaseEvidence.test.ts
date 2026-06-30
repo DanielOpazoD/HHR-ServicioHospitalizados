@@ -136,6 +136,29 @@ describe('release evidence guardrail', () => {
     );
   });
 
+  it('blocks release evidence while quality metrics still report flake-risk tests', () => {
+    const root = makeRoot({ gitSha: 'abc123', gitDirty: false });
+    fs.writeFileSync(
+      path.join(root, 'reports/quality-metrics.json'),
+      JSON.stringify({
+        gitSha: 'abc123',
+        gitDirty: false,
+        tests: {
+          flakeRiskFiles: 2,
+          flakeRiskFilePaths: [
+            'src/tests/components/layout/date-strip/MedicalIndicationsQuickAction.test.tsx',
+            'src/tests/services/storage/dailyRecordConflictSnapshotService.test.ts',
+          ],
+        },
+      }),
+      'utf8'
+    );
+
+    expect(collectReleaseEvidenceIssues(root)).toContain(
+      'reports/quality-metrics.json reports 2 flake-risk test file(s): src/tests/components/layout/date-strip/MedicalIndicationsQuickAction.test.tsx, src/tests/services/storage/dailyRecordConflictSnapshotService.test.ts.'
+    );
+  });
+
   it('requires the release confidence matrix to be present in the evidence pack', () => {
     const root = makeRoot({ gitSha: 'abc123', gitDirty: false });
     fs.rmSync(path.join(root, 'reports/release-confidence-matrix.json'));

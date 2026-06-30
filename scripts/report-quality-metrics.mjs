@@ -353,6 +353,7 @@ const getTestMetrics = () => {
   let skipCount = 0;
   let onlyCount = 0;
   let flakeRiskFiles = 0;
+  const flakeRiskFilePaths = [];
   let megatestFilesOver500 = 0;
 
   const skipPattern = /\b(?:it|test|describe)\.skip\s*\(/g;
@@ -392,6 +393,7 @@ const getTestMetrics = () => {
       !isQuarantined
     ) {
       flakeRiskFiles += 1;
+      flakeRiskFilePaths.push(relative);
     }
   }
 
@@ -400,6 +402,7 @@ const getTestMetrics = () => {
     skippedMarkers: skipCount,
     onlyMarkers: onlyCount,
     flakeRiskFiles,
+    flakeRiskFilePaths,
     megatestFilesOver500,
     quarantinedFiles: quarantinedFiles.size,
     knownFailureEntries: Array.isArray(failureCatalog?.entries) ? failureCatalog.entries.length : 0,
@@ -648,6 +651,9 @@ const mdLines = [
   `- Forbidden .skip markers: ${metrics.tests.skippedMarkers}`,
   `- Forbidden .only markers: ${metrics.tests.onlyMarkers}`,
   `- Flake-risk test files: ${metrics.tests.flakeRiskFiles}`,
+  ...(metrics.tests.flakeRiskFilePaths.length > 0
+    ? metrics.tests.flakeRiskFilePaths.map(filePath => `  - ${filePath}`)
+    : []),
   `- Megatests >500 lines: ${metrics.tests.megatestFilesOver500}`,
   `- Quarantined test files: ${metrics.tests.quarantinedFiles}`,
   `- Known failure entries: ${metrics.tests.knownFailureEntries}`,
