@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 export const LEGACY_RETIREMENT_DEBT_GENERATED_AT = 'stable:legacy-retirement-debt';
 
 const asArray = value => (Array.isArray(value) ? value : []);
@@ -8,6 +11,73 @@ const asNumber = value => {
 };
 
 const hasNumericBudget = value => Number.isFinite(Number(value));
+
+const normalizePath = value => String(value || '').replace(/\\/g, '/');
+
+const matchesAnyPattern = (value, patterns) =>
+  asArray(patterns).some(pattern => new RegExp(pattern).test(value));
+
+const walkFiles = (root, relativeDir, files = []) => {
+  const absoluteDir = path.join(root, relativeDir);
+  if (!fs.existsSync(absoluteDir)) return files;
+
+  for (const entry of fs.readdirSync(absoluteDir, { withFileTypes: true })) {
+    const relativePath = normalizePath(path.join(relativeDir, entry.name));
+    if (entry.isDirectory()) {
+      if (!['node_modules', 'dist', 'build', 'coverage', 'reports'].includes(entry.name)) {
+        walkFiles(root, relativePath, files);
+      }
+      continue;
+    }
+
+    if (/\.(c|m)?(t|j)sx?$/.test(entry.name)) {
+      files.push(relativePath);
+    }
+  }
+
+  return files;
+};
+
+const collectDetectedConsumers = ({ root, detection }) => {
+  const roots = asArray(detection?.sourceRoots).length > 0 ? asArray(detection.sourceRoots) : ['src'];
+  const markers = asArray(detection?.markers).filter(Boolean);
+  if (markers.length === 0) return [];
+
+  const includePatterns = asArray(detection?.includePathPatterns);
+  const excludePatterns = asArray(detection?.excludePathPatterns);
+  const candidateFiles = roots.flatMap(sourceRoot => walkFiles(root, sourceRoot));
+  const consumers = [];
+
+  for (const relativePath of candidateFiles) {
+    if (includePatterns.length > 0 && !matchesAnyPattern(relativePath, includePatterns)) continue;
+    if (matchesAnyPattern(relativePath, excludePatterns)) continue;
+
+    const content = fs.readFileSync(path.join(root, relativePath), 'utf8');
+    if (markers.some(marker => content.includes(marker))) {
+      consumers.push(relativePath);
+    }
+  }
+
+  return [...new Set(consumers)].sort();
+};
+
+export const collectObservedLegacyConsumers = ({
+  config,
+  root = process.cwd(),
+  observedConsumersBySurface = {},
+}) => {
+  const observed = { ...observedConsumersBySurface };
+
+  for (const surface of asArray(config?.surfaces)) {
+    if (!surface?.id || !surface.consumerDetection || observed[surface.id]) continue;
+    observed[surface.id] = collectDetectedConsumers({
+      root,
+      detection: surface.consumerDetection,
+    });
+  }
+
+  return observed;
+};
 
 const countCompatibilityEntries = compatibilityGovernanceReport =>
   asArray(compatibilityGovernanceReport?.entries).length;
@@ -85,7 +155,6 @@ const buildRoleAliasSurface = ({ surface, compatibilityGovernanceReport }) => {
 const buildConsumerBudgetSurface = ({ surface, observedConsumersBySurface }) => {
   const approvedConsumers = asArray(surface.approvedConsumers);
   const observedConsumers = asArray(observedConsumersBySurface?.[surface.id]);
-  const consumers = observedConsumers.length > 0 ? observedConsumers : approvedConsumers;
   const maxAuthorizedConsumers = asNumber(surface.maxAuthorizedConsumers);
   const hasConsumerBudget = hasNumericBudget(surface.maxAuthorizedConsumers);
   const unapprovedConsumers = observedConsumers.filter(
@@ -93,9 +162,12 @@ const buildConsumerBudgetSurface = ({ surface, observedConsumersBySurface }) => 
   );
   const issues = [];
 
-  if (hasConsumerBudget && consumers.length > maxAuthorizedConsumers) {
+  if (observedConsumers.length === 0) {
+    issues.push(`${surface.id} has no observed consumers from static detection`);
+  }
+  if (hasConsumerBudget && observedConsumers.length > maxAuthorizedConsumers) {
     issues.push(
-      `${surface.id} authorized consumers ${consumers.length} exceed budget ${maxAuthorizedConsumers}`
+      `${surface.id} observed consumers ${observedConsumers.length} exceed budget ${maxAuthorizedConsumers}`
     );
   }
   if (unapprovedConsumers.length > 0) {
@@ -105,7 +177,7 @@ const buildConsumerBudgetSurface = ({ surface, observedConsumersBySurface }) => 
   return createSurfaceResult({
     surface,
     status: issues.length === 0 ? 'ok' : 'degraded',
-    signal: `consumers=${consumers.length}/${hasConsumerBudget ? maxAuthorizedConsumers : 'n/a'}, unapproved=${unapprovedConsumers.length}`,
+    signal: `consumers=${observedConsumers.length}/${hasConsumerBudget ? maxAuthorizedConsumers : 'n/a'}, unapproved=${unapprovedConsumers.length}`,
     issues,
   });
 };
@@ -168,6 +240,29 @@ export const buildLegacyRetirementDebtReport = ({
     surfaces,
     issues,
   };
+};
+
+const readRequiredJson = (root, relativePath) => {
+  const absolutePath = path.join(root, relativePath);
+  if (!fs.existsSync(absolutePath)) {
+    throw new Error(`Missing required JSON input: ${relativePath}`);
+  }
+  return JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
+};
+
+export const loadLegacyRetirementDebtReport = (root = process.cwd()) => {
+  const config = readRequiredJson(root, 'scripts/config/legacy-retirement-debt.json');
+  const observedConsumersBySurface = collectObservedLegacyConsumers({ config, root });
+
+  return buildLegacyRetirementDebtReport({
+    config,
+    legacyBridgeReport: readRequiredJson(root, 'reports/legacy-bridge-governance.json'),
+    compatibilityGovernanceReport: readRequiredJson(
+      root,
+      'reports/compatibility-governance.json'
+    ),
+    observedConsumersBySurface,
+  });
 };
 
 export const formatLegacyRetirementDebtMarkdown = report => {

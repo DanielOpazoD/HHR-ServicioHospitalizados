@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 export const BUNDLE_RISK_LEDGER_GENERATED_AT = 'stable:bundle-risk-ledger';
 
 const asArray = value => (Array.isArray(value) ? value : []);
@@ -64,6 +67,17 @@ export const buildBundleRiskLedgerReport = ({ ledgerConfig, bundleBudgetConfig }
   };
 };
 
+const readRequiredJson = (root, relativePath) => {
+  const absolutePath = path.join(root, relativePath);
+  return JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
+};
+
+export const loadBundleRiskLedgerReport = (root = process.cwd()) =>
+  buildBundleRiskLedgerReport({
+    ledgerConfig: readRequiredJson(root, 'scripts/config/bundle-risk-ledger.json'),
+    bundleBudgetConfig: readRequiredJson(root, 'scripts/config/bundle-budget.json'),
+  });
+
 export const formatBundleRiskLedgerMarkdown = report => {
   const lines = [
     '# Bundle Risk Ledger Snapshot',
@@ -74,15 +88,15 @@ export const formatBundleRiskLedgerMarkdown = report => {
     '',
     '## Surfaces',
     '',
-    '| Surface | Owner | Workflow | Status | Budget | Precache |',
-    '| --- | --- | --- | --- | --- | --- |',
+    '| Surface | Owner | Workflow | Threshold | Status | Budget | Precache | Release posture | Guardrails |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
   ];
 
   for (const surface of report.surfaces) {
     lines.push(
-      `| ${surface.id} | ${surface.owner} | ${surface.workflow} | ${surface.status} | ${surface.budgetCovered ? 'covered' : 'missing'} | ${
+      `| ${surface.id} | ${surface.owner} | ${surface.workflow} | ${surface.thresholdLabel || 'n/a'} | ${surface.status} | ${surface.budgetCovered ? 'covered' : 'missing'} | ${
         surface.precacheExcluded === null ? 'n/a' : surface.precacheExcluded ? 'excluded' : 'missing'
-      } |`
+      } | ${surface.releasePosture || 'n/a'} | ${surface.guardrails.join(', ') || 'n/a'} |`
     );
   }
 

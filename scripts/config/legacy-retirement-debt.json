@@ -54,6 +54,15 @@
         "src/features/clinical-documents/hooks/useClinicalDocumentWorkspaceDraft.ts",
         "src/services/repositories/ClinicalDocumentRepository.ts"
       ],
+      "consumerDetection": {
+        "sourceRoots": ["src"],
+        "markers": ["hydrateLegacyClinicalDocument"],
+        "includePathPatterns": ["^src/(application|domain|features|services)/"],
+        "excludePathPatterns": [
+          "\\.test\\.",
+          "^src/features/clinical-documents/(public|internal)\\.ts$"
+        ]
+      },
       "guardrails": [
         "test:clinical-documents",
         "check:clinical-documents-feature-boundary",
@@ -68,15 +77,36 @@
       "label": "Legacy episode hydration",
       "owner": "census/clinical-documents",
       "phase": "restrict",
-      "maxAuthorizedConsumers": 6,
+      "maxAuthorizedConsumers": 7,
       "approvedConsumers": [
         "src/application/patient-flow/clinicalEpisode.ts",
         "src/features/census/components/global-search/patientSelectionDocumentController.ts",
         "src/features/census/components/global-search/usePatientSelection.ts",
         "src/features/census/controllers/clinicalDocumentPresenceController.ts",
         "src/features/clinical-documents/controllers/clinicalDocumentEpisodeController.ts",
-        "src/features/clinical-documents/hooks/clinicalDocumentWorkspaceBootstrapSupport.ts"
+        "src/features/clinical-documents/hooks/clinicalDocumentWorkspaceBootstrapSupport.ts",
+        "src/features/clinical-documents/hooks/useClinicalDocumentWorkspaceBootstrap.ts"
       ],
+      "consumerDetection": {
+        "sourceRoots": ["src"],
+        "markers": [
+          "buildClinicalDocumentEpisodeKeyCandidates",
+          "buildClinicalEpisodeKeyCandidates",
+          "resolveClinicalEpisodeIdentifier",
+          "isLegacyEpisodeKey",
+          "alternateEpisodeKeys"
+        ],
+        "includePathPatterns": [
+          "^src/application/patient-flow/clinicalEpisode\\.ts$",
+          "^src/features/census/components/global-search/",
+          "^src/features/census/controllers/clinicalDocumentPresenceController\\.ts$",
+          "^src/features/clinical-documents/"
+        ],
+        "excludePathPatterns": [
+          "\\.test\\.",
+          "^src/features/clinical-documents/domain/clinicalDocumentEpisodeTypes\\.ts$"
+        ]
+      },
       "guardrails": [
         "src/tests/security/clinicalEpisodeKeyGovernanceStatic.test.ts",
         "test:clinical-documents",

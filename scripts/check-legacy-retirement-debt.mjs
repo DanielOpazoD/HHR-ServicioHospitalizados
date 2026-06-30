@@ -1,24 +1,17 @@
 #!/usr/bin/env node
 
-import fs from 'node:fs';
-import path from 'node:path';
-import {
-  buildLegacyRetirementDebtReport,
-  formatLegacyRetirementDebtMarkdown,
-} from './legacyRetirementDebtSupport.mjs';
+import { formatLegacyRetirementDebtMarkdown, loadLegacyRetirementDebtReport } from './legacyRetirementDebtSupport.mjs';
 
-const ROOT = process.cwd();
-
-const readJson = relativePath => {
-  const absolutePath = path.join(ROOT, relativePath);
-  return fs.existsSync(absolutePath) ? JSON.parse(fs.readFileSync(absolutePath, 'utf8')) : null;
-};
-
-const report = buildLegacyRetirementDebtReport({
-  config: readJson('scripts/config/legacy-retirement-debt.json'),
-  legacyBridgeReport: readJson('reports/legacy-bridge-governance.json') || {},
-  compatibilityGovernanceReport: readJson('reports/compatibility-governance.json') || {},
-});
+let report;
+try {
+  report = loadLegacyRetirementDebtReport();
+} catch (error) {
+  console.error(`[legacy-retirement-debt] ${error instanceof Error ? error.message : String(error)}`);
+  console.error(
+    '[legacy-retirement-debt] Run npm run report:legacy-bridge and npm run report:compatibility-governance before this check.'
+  );
+  process.exit(1);
+}
 
 if (report.status !== 'ok') {
   console.error('[legacy-retirement-debt] Validation failed:');

@@ -39,7 +39,11 @@
       "chunkBudgetPattern": "^vendor-pdf-.*\\.js$",
       "precacheIgnoredPattern": "^assets/vendor-pdf-.*\\.js$",
       "releasePosture": "Async PDF generation remains acceptable while on-demand and under its dedicated ceiling.",
-      "guardrails": ["check:bundle-budget", "src/tests/build/bundleBudgetConfig.test.ts"],
+      "guardrails": [
+        "check:bundle-budget",
+        "src/tests/build/bundleBudgetConfig.test.ts",
+        "src/tests/build/pwaPrecachePolicy.test.ts"
+      ],
       "nextAction": "Separate generation/viewer imports only if the PDF family grows past the current dedicated ceiling."
     },
     {

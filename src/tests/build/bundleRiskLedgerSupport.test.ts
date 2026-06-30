@@ -96,7 +96,11 @@ describe('bundleRiskLedgerSupport', () => {
     const markdown = formatBundleRiskLedgerMarkdown(report);
 
     expect(markdown).toContain('# Bundle Risk Ledger Snapshot');
-    expect(markdown).toContain('| Surface | Owner | Workflow | Status | Budget | Precache |');
+    expect(markdown).toContain(
+      '| Surface | Owner | Workflow | Threshold | Status | Budget | Precache | Release posture | Guardrails |'
+    );
+    expect(markdown).toContain('1,450,000 bytes chunk budget');
+    expect(markdown).toContain('async only; not a blocker');
     expect(markdown).toContain('vendor-heic2any');
     expect(markdown).toContain('app-authenticated-shell');
   });
