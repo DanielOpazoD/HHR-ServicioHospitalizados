@@ -6,6 +6,9 @@ import { chunkForModule } from '../../../scripts/config/chunkingPolicy';
 const readSource = (relativePath: string): string =>
   fs.readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 
+const directAuditWriterImportPattern =
+  /import\s+\{[\s\S]*executeWriteAuditEvent[\s\S]*\}\s+from ['"][^'"]*application\/audit\/writeAuditEventUseCase(?:\.ts)?['"]/;
+
 const collectProductionSourceFiles = (directory: string): string[] => {
   const entries = fs.readdirSync(directory, { withFileTypes: true });
   return entries.flatMap(entry => {
@@ -223,13 +226,17 @@ describe('chunkingPolicy', () => {
     const offenders = sourceFiles
       .filter(file => !allowedFiles.has(file))
       .filter(file =>
-        readSource(path.relative(process.cwd(), file)).match(
-          /import\s+\{[\s\S]*executeWriteAuditEvent[\s\S]*\}\s+from ['"]@\/application\/audit\/writeAuditEventUseCase['"]/
-        )
+        readSource(path.relative(process.cwd(), file)).match(directAuditWriterImportPattern)
       )
       .map(file => path.relative(process.cwd(), file));
 
     expect(offenders).toEqual([]);
+  });
+
+  it('detects direct audit writer imports even when they use a relative module path', () => {
+    expect(
+      "import { executeWriteAuditEvent } from '../../application/audit/writeAuditEventUseCase';"
+    ).toMatch(directAuditWriterImportPattern);
   });
 
   it('keeps census runtime hooks off legacy audit services during startup', () => {
