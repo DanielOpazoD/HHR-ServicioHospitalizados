@@ -92,6 +92,11 @@
       "artifact": "reports/compatibility-governance.md"
     },
     {
+      "id": "legacy_retirement_debt",
+      "script": "report:legacy-retirement-debt",
+      "artifact": "reports/legacy-retirement-debt.md"
+    },
+    {
       "id": "serverless_sensitive_coverage",
       "script": "report:serverless-sensitive-coverage",
       "artifact": "reports/serverless-sensitive-coverage.md"
@@ -163,6 +168,7 @@
       { "id": "check:legacy-localstorage-imports", "group": "boundaries" },
       { "id": "check:legacy-bridge-boundary", "group": "boundaries" },
       { "id": "check:legacy-read-gating", "group": "boundaries" },
+      { "id": "check:legacy-retirement-debt", "group": "governance" },
       { "id": "check:compatibility-import-governance", "group": "governance" },
       { "id": "check:schema-governance", "group": "governance" },
       { "id": "check:runtime-contracts", "group": "governance" },

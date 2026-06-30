@@ -145,6 +145,7 @@ export const buildReleaseReadinessScorecard = root => {
     technicalOwnershipMap: 'reports/technical-ownership-map.json',
     guardrailGovernance: 'reports/guardrail-governance.json',
     compatibilityImportGovernance: 'reports/compatibility-import-governance.json',
+    legacyRetirementDebt: 'reports/legacy-retirement-debt.json',
   };
 
   const sources = Object.fromEntries(
@@ -278,6 +279,19 @@ export const buildReleaseReadinessScorecard = root => {
         compatibilityOk,
         `restrictedEntries=${compatibilityImportGovernance.checkedEntries ?? 'n/a'}, unauthorizedImports=${compatibilityImportGovernance.issues?.length ?? 'n/a'}`,
         `restrictedEntries=${compatibilityImportGovernance.checkedEntries ?? 'n/a'}, unauthorizedImports=${compatibilityImportGovernance.issues?.length ?? 'n/a'}`
+      ),
+    });
+  }
+
+  const legacyRetirementDebt = sources.legacyRetirementDebt;
+  if (legacyRetirementDebt) {
+    const legacyRetirementDebtOk = legacyRetirementDebt.status === 'ok';
+    indicators.push({
+      name: 'legacy_retirement_debt',
+      ...statusFrom(
+        legacyRetirementDebtOk,
+        `openSurfaces=${legacyRetirementDebt.openSurfaceCount ?? 'n/a'}/${legacyRetirementDebt.maxOpenSurfaces ?? 'n/a'}, issues=${legacyRetirementDebt.issues?.length ?? 'n/a'}`,
+        `openSurfaces=${legacyRetirementDebt.openSurfaceCount ?? 'n/a'}/${legacyRetirementDebt.maxOpenSurfaces ?? 'n/a'}, issues=${legacyRetirementDebt.issues?.length ?? 'n/a'}`
       ),
     });
   }
