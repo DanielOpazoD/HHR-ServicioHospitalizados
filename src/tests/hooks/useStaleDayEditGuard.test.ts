@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const confirm = vi.fn();
 const logEvent = vi.fn();
@@ -15,6 +15,10 @@ describe('useStaleDayEditGuard', () => {
   beforeEach(() => {
     confirm.mockReset();
     logEvent.mockReset();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('allows editing the clinical today without prompting or logging', async () => {
@@ -88,5 +92,14 @@ describe('useStaleDayEditGuard', () => {
     const { result } = renderHook(() => useStaleDayEditGuard(CLINICAL_TODAY));
 
     await expect(result.current('2026-06-28')).resolves.toBe(true);
+  });
+
+  it('steps aside under E2E mode without prompting (seeded fixed dates)', async () => {
+    vi.stubEnv('VITE_E2E_MODE', 'true');
+    const { result } = renderHook(() => useStaleDayEditGuard(CLINICAL_TODAY));
+
+    await expect(result.current('2026-06-28')).resolves.toBe(true);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(logEvent).not.toHaveBeenCalled();
   });
 });

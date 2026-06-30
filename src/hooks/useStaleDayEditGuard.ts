@@ -35,6 +35,14 @@ export const useStaleDayEditGuard = (clinicalToday: string): StaleDayEditGuard =
 
   return useCallback(
     async (recordDate: string): Promise<boolean> => {
+      // E2E builds seed fixed past dates and drive edits with no human to dismiss the
+      // dialog, so the guard would block every edit. Step aside under strict E2E mode
+      // (VITE_E2E_MODE only — NOT localhost dev or prod, where the guard stays active).
+      // The guard's own behavior is covered by this file's unit tests.
+      if (import.meta.env.VITE_E2E_MODE === 'true') {
+        return true;
+      }
+
       // Coalesce overlapping edits to the same day onto one dialog (no double prompt
       // or double audit under rapid repeated actions).
       const pending = pendingConfirmationsRef.current.get(recordDate);
