@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockBatchSet, mockBatchCommit, mockGetDocs } = vi.hoisted(() => ({
   mockBatchSet: vi.fn(),
@@ -55,6 +55,10 @@ describe('dailyRecordConflictSnapshotService', () => {
     mockBatchCommit.mockResolvedValue(undefined);
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('buildConflictId', () => {
     it('is deterministic and doc-id-safe (no `:` or `.`)', () => {
       const remote = rec('2026-06-26T10:00:00.000Z', 'X');
@@ -95,6 +99,10 @@ describe('dailyRecordConflictSnapshotService', () => {
   });
 
   it('sets expireAt at roughly now + 48h', async () => {
+    const now = new Date('2026-06-26T12:00:00.000Z');
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
     const before = Date.now();
     await saveConflictVersionSnapshots('2026-06-26', 'cid', {
       remote: rec('a', 'R'),
