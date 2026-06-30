@@ -35,8 +35,8 @@
         "reports/compatibility-governance.md",
         "reports/legacy-retirement-debt.md"
       ],
-      "retirementCriteria": "Two consecutive release snapshots show zero viewer_census values in production claims and config/roles, then write-back canonicalization can be removed.",
-      "nextAction": "Audit production role sources before deleting viewer_census compatibility from helpers, Firestore rules and Storage rules."
+      "retirementCriteria": "Two consecutive release snapshots show zero legacy viewer role aliases in production claims and config/roles, then write-back canonicalization can be removed.",
+      "nextAction": "Audit production role sources before deleting legacy viewer role compatibility from helpers, Firestore rules and Storage rules."
     },
     {
       "id": "legacy-clinical-document-hydration",

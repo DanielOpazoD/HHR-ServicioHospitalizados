@@ -84,6 +84,12 @@ const createScorecardRoot = () => {
     maxOpenSurfaces: 4,
     issues: [],
   });
+  writeJson(root, 'reports/bundle-risk-ledger.json', {
+    generatedAt: 'stable:bundle-risk-ledger',
+    status: 'ok',
+    surfaces: [{ id: 'vendor-heic2any' }, { id: 'vendor-pdfjs' }],
+    issues: [],
+  });
 
   return root;
 };
@@ -121,6 +127,12 @@ describe('buildReleaseReadinessScorecard', () => {
       status: 'ok',
       summary: 'openSurfaces=4/4, issues=0',
     });
+    expect(
+      report.indicators.find(indicator => indicator.name === 'bundle_risk_ledger')
+    ).toMatchObject({
+      status: 'ok',
+      summary: 'surfaces=2, issues=0',
+    });
   });
 
   it('degrades release readiness when legacy retirement debt evidence is degraded', () => {
@@ -148,6 +160,32 @@ describe('buildReleaseReadinessScorecard', () => {
       summary: 'openSurfaces=5/4, issues=1',
     });
     expect(report.issues).toContain('legacy_retirement_debt: openSurfaces=5/4, issues=1');
+  });
+
+  it('degrades release readiness when bundle risk ledger evidence is degraded', () => {
+    const root = createScorecardRoot();
+    writeJson(root, 'reports/compatibility-import-governance.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      checkedEntries: 0,
+      issues: [],
+    });
+    writeJson(root, 'reports/bundle-risk-ledger.json', {
+      generatedAt: 'stable:bundle-risk-ledger',
+      status: 'degraded',
+      surfaces: [{ id: 'vendor-heic2any' }],
+      issues: ['vendor-heic2any is missing precache exclusion'],
+    });
+
+    const report = buildReleaseReadinessScorecard(root);
+
+    expect(report.overallStatus).toBe('degraded');
+    expect(
+      report.indicators.find(indicator => indicator.name === 'bundle_risk_ledger')
+    ).toMatchObject({
+      status: 'degraded',
+      summary: 'surfaces=1, issues=1',
+    });
+    expect(report.issues).toContain('bundle_risk_ledger: surfaces=1, issues=1');
   });
 
   it('degrades compatibility governance when unauthorized imports are reported', () => {

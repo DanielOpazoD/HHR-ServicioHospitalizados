@@ -82,6 +82,11 @@
       "artifact": "reports/operational-health.md"
     },
     {
+      "id": "bundle_risk_ledger",
+      "script": "report:bundle-risk-ledger",
+      "artifact": "reports/bundle-risk-ledger.md"
+    },
+    {
       "id": "system_confidence",
       "script": "report:system-confidence",
       "artifact": "reports/system-confidence.md"
@@ -206,7 +211,8 @@
       { "id": "check:source-any", "group": "type-safety" },
       { "id": "check:repo-hygiene", "group": "hygiene" },
       { "id": "check:clinical-mutation-audit-policy", "group": "security" },
-      { "id": "check:security", "group": "security" }
+      { "id": "check:security", "group": "security" },
+      { "id": "check:bundle-risk-ledger", "group": "size" }
     ]
   },
   "guardrailPolicy": {

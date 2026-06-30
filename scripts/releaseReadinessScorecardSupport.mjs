@@ -139,6 +139,7 @@ const buildReleaseHotspots = operationalHealth => {
 export const buildReleaseReadinessScorecard = root => {
   const sourceFiles = {
     qualityMetrics: 'reports/quality-metrics.json',
+    bundleRiskLedger: 'reports/bundle-risk-ledger.json',
     systemConfidence: 'reports/system-confidence.json',
     operationalHealth: 'reports/operational-health.json',
     releaseConfidenceMatrix: 'reports/release-confidence-matrix.json',
@@ -226,6 +227,19 @@ export const buildReleaseReadinessScorecard = root => {
       name: 'release_hotspots',
       status: releaseHotspots.status,
       summary: releaseHotspots.summary,
+    });
+  }
+
+  const bundleRiskLedger = sources.bundleRiskLedger;
+  if (bundleRiskLedger) {
+    const bundleRiskLedgerOk = bundleRiskLedger.status === 'ok';
+    indicators.push({
+      name: 'bundle_risk_ledger',
+      ...statusFrom(
+        bundleRiskLedgerOk,
+        `surfaces=${bundleRiskLedger.surfaces?.length ?? 'n/a'}, issues=${bundleRiskLedger.issues?.length ?? 'n/a'}`,
+        `surfaces=${bundleRiskLedger.surfaces?.length ?? 'n/a'}, issues=${bundleRiskLedger.issues?.length ?? 'n/a'}`
+      ),
     });
   }
 
