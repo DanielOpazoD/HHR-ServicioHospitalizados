@@ -18,10 +18,12 @@ interface CensusStaleDayBannerProps {
 }
 
 /**
- * Persistent banner shown whenever the census is parked on a day other than the
- * clinical "today" — the continuous, non-modal counterpart to the edit confirmation,
- * so a user who navigated away (or whose day rolled over) sees the mismatch and can
- * jump back in one click. Renders nothing when already on the clinical day.
+ * Thin "third bar" that sits directly under the date strip (the white bar) whenever
+ * the census is parked on a day other than the clinical "today" — a continuous,
+ * non-modal cue in smaller type. Renders nothing when already on the clinical day, so
+ * the night shift working its own clinical day before the rollover never sees it.
+ *
+ * Sticky offset 96px = navbar (56) + date strip (40); z below the date strip's z-40.
  */
 export const CensusStaleDayBanner: React.FC<CensusStaleDayBannerProps> = ({
   currentDateString,
@@ -38,18 +40,18 @@ export const CensusStaleDayBanner: React.FC<CensusStaleDayBannerProps> = ({
   return (
     <div
       role="alert"
-      className="flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-amber-800 print:hidden"
+      className="sticky top-[96px] z-30 flex items-center gap-2 border-b border-amber-300 bg-amber-50 px-4 py-1 text-amber-800 print:hidden"
     >
-      <CalendarClock size={18} className="shrink-0 text-amber-600" aria-hidden="true" />
-      <p className="flex-1 text-sm leading-snug">
+      <CalendarClock size={13} className="shrink-0 text-amber-600" aria-hidden="true" />
+      <p className="flex-1 text-[11px] leading-tight">
         Estás viendo el <span className="font-semibold">{viewedLabel}</span>. El día de hoy es{' '}
         <span className="font-semibold">{todayLabel}</span>.
       </p>
       <button
         onClick={onGoToToday}
-        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-400 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100"
+        aria-label="Ir a hoy"
+        className="shrink-0 rounded-md border border-amber-400 bg-white px-2 py-0.5 text-[10px] font-semibold text-amber-700 transition-colors hover:bg-amber-100"
       >
-        <CalendarClock size={14} aria-hidden="true" />
         Ir a hoy
       </button>
     </div>
