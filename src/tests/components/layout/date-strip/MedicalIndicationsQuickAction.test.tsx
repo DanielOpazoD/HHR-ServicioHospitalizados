@@ -11,6 +11,8 @@ vi.mock('@/services/pdf/medicalIndicationsPdfService', () => ({
   printMedicalIndicationsPdf: vi.fn(),
 }));
 
+const TEST_TARGET_DATE = '2026-06-30';
+
 describe('MedicalIndicationsQuickAction', () => {
   beforeEach(() => {
     vi.spyOn(defaultMedicalIndicationTemplatePort, 'listActiveByUser').mockResolvedValue([]);
@@ -78,9 +80,7 @@ describe('MedicalIndicationsQuickAction', () => {
     render(<MedicalIndicationsQuickAction patients={patients} />);
 
     await openDialog();
-    await new Promise(resolve => setTimeout(resolve, 25));
-
-    expect(listActiveByUserSpy).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(listActiveByUserSpy).toHaveBeenCalledTimes(1));
   });
 
   it('hidrata las últimas indicaciones aplicadas compartidas al abrir el modal', async () => {
@@ -91,7 +91,7 @@ describe('MedicalIndicationsQuickAction', () => {
         patientName: 'Juan Pérez',
         episodeId: 'episode-juan-20260331',
         bedId: 'A-01',
-        targetDate: new Date().toISOString().slice(0, 10),
+        targetDate: TEST_TARGET_DATE,
         generatedAt: '2026-05-29T12:00:00.000Z',
         generatedByUserId: 'doctor-1',
         generatedByName: 'Dra. Test',
@@ -149,7 +149,7 @@ describe('MedicalIndicationsQuickAction', () => {
                   patientName: 'Juan Pérez',
                   episodeId: 'episode-juan-20260331',
                   bedId: 'A-01',
-                  targetDate: new Date().toISOString().slice(0, 10),
+                  targetDate: TEST_TARGET_DATE,
                   generatedAt: '2026-05-29T12:00:00.000Z',
                   generatedByUserId: 'doctor-1',
                   generatedByName: 'Dra. Test',

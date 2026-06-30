@@ -44,6 +44,22 @@ const fail = issues => {
   process.exit(1);
 };
 
+const collectQualityMetricEvidenceIssues = (reportFile, parsedReport) => {
+  const issues = [];
+  const flakeRiskFiles = Number(parsedReport?.tests?.flakeRiskFiles ?? 0);
+  if (flakeRiskFiles > 0) {
+    const filePaths = Array.isArray(parsedReport?.tests?.flakeRiskFilePaths)
+      ? parsedReport.tests.flakeRiskFilePaths
+          .filter(filePath => typeof filePath === 'string' && filePath.trim())
+          .map(filePath => filePath.trim())
+      : [];
+    const fileList = filePaths.length > 0 ? `: ${filePaths.join(', ')}` : '';
+    issues.push(`${reportFile} reports ${flakeRiskFiles} flake-risk test file(s)${fileList}.`);
+  }
+
+  return issues;
+};
+
 export const collectReleaseEvidenceIssues = (root = ROOT) => {
   const issues = [];
   const gitState = getGitReportState(root);
@@ -73,6 +89,10 @@ export const collectReleaseEvidenceIssues = (root = ROOT) => {
 
     if (parsedReport?.gitDirty === true) {
       issues.push(`${reportFile} was generated with worktree=dirty.`);
+    }
+
+    if (reportFile === 'reports/quality-metrics.json') {
+      issues.push(...collectQualityMetricEvidenceIssues(reportFile, parsedReport));
     }
   }
 
