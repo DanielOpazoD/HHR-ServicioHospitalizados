@@ -48,7 +48,10 @@ Este plan reduce superficie legacy sin reescribir flujos clínicos estables. La 
 ## Closure signals
 
 - `check:legacy-read-gating` pasa con cero consumidores no gateados.
+- 0 new legacy read bridge consumers aparecen en reportes de diff respecto del último release.
 - `report:compatibility-import-governance` reporta cero imports no autorizados.
 - Auditoría de role aliases reporta cero entradas legacy en config/roles y custom claims.
+- 0 legacy role aliases detected for 2 consecutive releases antes de retirar el write-back de canonización.
 - La hidratación de legacy clinical document y legacy episode queda confinada a controllers compatibles y tests dirigidos.
+- 0 legacy hydration leaks outside approved controllers en tests estáticos y revisión de import graph.
 - `check:schema-governance` y `check:runtime-contracts` siguen verdes después de cada retiro.

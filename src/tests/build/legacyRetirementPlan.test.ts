@@ -15,5 +15,8 @@ describe('legacy retirement plan', () => {
     expect(plan).toContain('legacy episode');
     expect(plan).toContain('Closure signals');
     expect(plan).toContain('Non-goals');
+    expect(plan).toContain('0 new legacy read bridge consumers');
+    expect(plan).toContain('0 legacy role aliases detected for 2 consecutive releases');
+    expect(plan).toContain('0 legacy hydration leaks outside approved controllers');
   });
 });
