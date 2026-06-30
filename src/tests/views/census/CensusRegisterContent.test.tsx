@@ -22,10 +22,6 @@ vi.mock('@/context/CensusContext', () => ({
   }),
 }));
 
-vi.mock('@/features/census/components/CensusStaleDayBanner', () => ({
-  CensusStaleDayBanner: () => null,
-}));
-
 vi.mock('@/features/census/components/CensusPrintHeader', () => ({
   CensusPrintHeader: () => <div data-testid="census-print-header" />,
 }));

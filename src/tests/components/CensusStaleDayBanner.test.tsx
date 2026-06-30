@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { CensusStaleDayBanner } from '@/features/census/components/CensusStaleDayBanner';
+import { CensusStaleDayBanner } from '@/components/layout/app-content/CensusStaleDayBanner';
 
 describe('CensusStaleDayBanner', () => {
   it('renders nothing when the viewed day is the clinical today', () => {

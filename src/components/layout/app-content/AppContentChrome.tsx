@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { DateStrip } from '@/components/layout/DateStrip';
-import { CensusStaleDayBanner } from '@/features/census/components/CensusStaleDayBanner';
+import { CensusStaleDayBanner } from '@/components/layout/app-content/CensusStaleDayBanner';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import { AppRouter } from '@/components/AppRouter';
 
