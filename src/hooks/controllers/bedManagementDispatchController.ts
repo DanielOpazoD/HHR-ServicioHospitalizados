@@ -41,6 +41,12 @@ interface ExecuteBedManagementActionInput {
   validation: BedManagementValidationPort;
   bedAudit: BedManagementAuditPort;
   patchRecord: ApplyDailyRecordPatch;
+  /**
+   * Optional gate: when the edited record's day is not the clinical "today", asks
+   * the user to confirm editing a previous day. Returning false aborts before any
+   * mutation. Receives the record date being edited.
+   */
+  ensureStaleDayEditAllowed?: (recordDate: string) => Promise<boolean>;
 }
 
 const MULTIPLE_PATIENT_AUDIT_FIELD_PRIORITY = ['rut', 'patientName'];
@@ -205,6 +211,7 @@ export const executeBedManagementAction = async ({
   validation,
   bedAudit,
   patchRecord,
+  ensureStaleDayEditAllowed,
 }: ExecuteBedManagementActionInput): Promise<boolean> => {
   if (!currentRecord) {
     return false;
@@ -218,6 +225,12 @@ export const executeBedManagementAction = async ({
   try {
     const patch = bedManagementReducer(currentRecord, validatedAction);
     if (!patch) {
+      return false;
+    }
+
+    // Wrong-day guard: only after we know there is a real patch (no prompt on no-ops)
+    // and before any local/remote mutation, so a cancel aborts cleanly.
+    if (ensureStaleDayEditAllowed && !(await ensureStaleDayEditAllowed(currentRecord.date))) {
       return false;
     }
 

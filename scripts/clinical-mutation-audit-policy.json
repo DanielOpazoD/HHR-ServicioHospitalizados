@@ -59,6 +59,10 @@
   ],
   "bestEffortObservable": [
     {
+      "action": "PREVIOUS_DAY_EDIT_CONFIRMED",
+      "justification": "Observational UI event: the user explicitly confirmed editing a previous clinical day. Emitted fire-and-forget via useAudit.logEvent from the stale-day edit guard; it records the override for traceability (Ley 20.584) but does not gate the edit, so an audit-write failure must not block clinical care."
+    },
+    {
       "action": "PATIENT_CLEARED",
       "justification": "Reclassified after verifying the emitter: audited via the hook fire-and-forget logger (useAudit.logEvent); the outcome is reported via telemetry (reportAuditOutcome) but the mutation is not gated. True fail-closed would require re-plumbing to a use-case (Scope C)."
     },

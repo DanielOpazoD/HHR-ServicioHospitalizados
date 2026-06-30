@@ -11,6 +11,7 @@ import { useRepositories } from '@/services/RepositoryContext';
 import { useNotification } from '@/context/UIContext';
 import { buildDailyRecordContextValue } from '@/hooks/controllers/dailyRecordController';
 import { useDailyRecordDomainModules } from '@/hooks/useDailyRecordDomainModules';
+import type { StaleDayEditGuard } from '@/hooks/useStaleDayEditGuard';
 import { useDailyRecordCopyActions } from '@/hooks/useDailyRecordCopyActions';
 import type { RemoteSyncRuntimeStatus } from '@/services/repositories/repositoryConfig';
 
@@ -24,7 +25,8 @@ import { DailyRecordContextType } from '@/context/dailyRecordContextContracts';
 export const useDailyRecord = (
   currentDateString: string,
   isOfflineMode: boolean = false,
-  remoteSyncStatus: RemoteSyncRuntimeStatus = 'local_only'
+  remoteSyncStatus: RemoteSyncRuntimeStatus = 'local_only',
+  ensureStaleDayEditAllowed?: StaleDayEditGuard
 ): DailyRecordContextType => {
   const { dailyRecord } = useRepositories();
   const { warning } = useNotification();
@@ -65,7 +67,7 @@ export const useDailyRecord = (
     staffingManagement,
     cmaManagement,
     handoffManagement,
-  } = useDailyRecordDomainModules(record, saveAndUpdate, patchRecord);
+  } = useDailyRecordDomainModules(record, saveAndUpdate, patchRecord, ensureStaleDayEditAllowed);
 
   // ========================================================================
   // Cross-date Copy

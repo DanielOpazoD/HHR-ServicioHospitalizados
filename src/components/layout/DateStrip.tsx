@@ -4,7 +4,7 @@
  */
 
 import React, { useRef } from 'react';
-import { Search } from 'lucide-react';
+import { CalendarClock, Search } from 'lucide-react';
 import { PdfButtons } from './date-strip/actions/PdfButtons';
 import { SaveDropdown } from './date-strip/actions/SaveDropdown';
 import { HandoffSaveDropdown } from './date-strip/actions/HandoffSaveDropdown';
@@ -29,6 +29,10 @@ export interface DateNavigationProps {
   selectedDay: number;
   setSelectedDay: React.Dispatch<React.SetStateAction<number>>;
   currentDateString: string;
+  /** Active clinical day (08:00/09:00 shift rollover) — drives the HOY marker. */
+  clinicalToday?: string;
+  /** Jump the selection back to the clinical day (the "Ir a hoy" affordance). */
+  goToClinicalToday?: () => void;
   daysInMonth: number;
   existingDaysInMonth: number[];
   navigateDays: (delta: number) => void;
@@ -85,7 +89,9 @@ export const DateStrip: React.FC<DateStripProps> = ({
   setSelectedMonth,
   selectedDay,
   setSelectedDay,
-  currentDateString: _currentDateString,
+  currentDateString,
+  clinicalToday,
+  goToClinicalToday,
   navigateDays,
   daysInMonth,
   existingDaysInMonth,
@@ -135,6 +141,12 @@ export const DateStrip: React.FC<DateStripProps> = ({
   const isHandoffModule =
     currentModule === 'NURSING_HANDOFF' || currentModule === 'MEDICAL_HANDOFF';
   const canShowRoleRestrictedActions = !isGuest && !specialistCensusAccess;
+
+  // "Ir a hoy" is census-only (where editing the wrong day corrupts a clinical
+  // record) and only when the viewed day is not the clinical today.
+  const isViewingClinicalToday = !clinicalToday || currentDateString === clinicalToday;
+  const showGoToToday =
+    currentModule === 'CENSUS' && !isViewingClinicalToday && Boolean(goToClinicalToday);
 
   useDateStripWheelNavigation({ containerRef: daysContainerRef, navigateDays });
 
@@ -216,9 +228,22 @@ export const DateStrip: React.FC<DateStripProps> = ({
               selectedMonth={selectedMonth}
               isCurrentMonth={isCurrentMonth}
               today={today}
+              clinicalToday={clinicalToday}
               currentModule={currentModule}
             />
           </div>
+
+          {showGoToToday && (
+            <button
+              onClick={goToClinicalToday}
+              aria-label="Ir a hoy"
+              className="flex h-[30px] shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-0 text-[10px] font-semibold text-amber-700 transition-colors hover:bg-amber-100"
+              title="Volver al día de hoy"
+            >
+              <CalendarClock size={13} aria-hidden="true" />
+              <span className="hidden sm:inline">Ir a hoy</span>
+            </button>
+          )}
 
           <div className="h-4 w-px bg-slate-200/70" />
 
