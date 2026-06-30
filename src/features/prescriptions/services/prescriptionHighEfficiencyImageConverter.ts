@@ -1,8 +1,30 @@
 const HIGH_EFFICIENCY_IMAGE_DECODE_ERROR =
   'La foto está en formato HEIC/HEIF y este navegador no pudo convertirla. En Samsung, cambia "Imágenes de alta eficiencia" a desactivado o comparte la foto como JPEG e intenta nuevamente.';
 
-export const buildHighEfficiencyImageDecodeError = (): Error =>
-  new Error(HIGH_EFFICIENCY_IMAGE_DECODE_ERROR);
+const HIGH_EFFICIENCY_IMAGE_CONVERTER_LOAD_ERROR =
+  'No se pudo cargar el conversor HEIC/HEIF. Revisa la conexión, abre la app con internet e intenta nuevamente.';
+
+const dynamicImportLoadErrorPattern =
+  /chunkloaderror|failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|loading chunk [^ ]+ failed/i;
+
+export const buildHighEfficiencyImageDecodeError = (cause?: unknown): Error =>
+  new Error(HIGH_EFFICIENCY_IMAGE_DECODE_ERROR, { cause });
+
+export const buildHighEfficiencyImageConverterLoadError = (cause?: unknown): Error =>
+  new Error(HIGH_EFFICIENCY_IMAGE_CONVERTER_LOAD_ERROR, { cause });
+
+const findDynamicImportLoadError = (error: unknown): unknown | null => {
+  if (error instanceof TypeError && dynamicImportLoadErrorPattern.test(error.message)) {
+    return error;
+  }
+
+  const cause = error instanceof Error ? error.cause : undefined;
+  if (cause instanceof TypeError && dynamicImportLoadErrorPattern.test(cause.message)) {
+    return cause;
+  }
+
+  return null;
+};
 
 export const withJpegExtension = (fileName: string): string => {
   const baseName = fileName.includes('.') ? fileName.replace(/\.[^.]+$/, '') : fileName;
@@ -26,7 +48,12 @@ export const convertHighEfficiencyImageToJpeg = async (file: File): Promise<File
       type: 'image/jpeg',
       lastModified: file.lastModified || Date.now(),
     });
-  } catch {
-    throw buildHighEfficiencyImageDecodeError();
+  } catch (error) {
+    const loadError = findDynamicImportLoadError(error);
+    if (loadError) {
+      throw buildHighEfficiencyImageConverterLoadError(loadError);
+    }
+
+    throw buildHighEfficiencyImageDecodeError(error);
   }
 };

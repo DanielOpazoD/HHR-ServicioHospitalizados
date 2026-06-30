@@ -20,7 +20,7 @@
     "^assets/terminologyService-.*\\.js$",
     "^assets/fonasaDatabase-.*\\.js$",
     "^assets/clinicalDocumentTemplateEditorController-.*\\.js$",
-    "^assets/heic2any-.*\\.js$"
+    "^assets/vendor-heic2any-.*\\.js$"
   ],
   "forbiddenAssetPatterns": ["^assets/exceljs\\.min-.*\\.js$"],
   "assetPatternBudgets": [
@@ -90,7 +90,7 @@
       "maxBytes": 750000
     },
     {
-      "pattern": "^heic2any-.*\\.js$",
+      "pattern": "^vendor-heic2any-.*\\.js$",
       "_comment": "HEIC/HEIF conversion is loaded only for high-efficiency mobile prescription photos and kept out of the PWA precache. A dedicated ceiling preserves release visibility without relaxing the global chunk budget.",
       "maxBytes": 1450000
     }

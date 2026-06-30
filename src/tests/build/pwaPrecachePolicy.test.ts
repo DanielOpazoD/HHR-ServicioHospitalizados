@@ -36,7 +36,7 @@ describe('PWA precache policy', () => {
     expect(viteConfig).toContain('**/assets/terminologyService-*.js');
     expect(viteConfig).toContain('**/assets/fonasaDatabase-*.js');
     expect(viteConfig).toContain('**/assets/clinicalDocumentTemplateEditorController-*.js');
-    expect(viteConfig).toContain('**/assets/heic2any-*.js');
+    expect(viteConfig).toContain('**/assets/vendor-heic2any-*.js');
   });
 
   it('keeps HEIC and PDF.js runtimes excluded from both PWA config and bundle budget precache accounting', () => {
@@ -44,9 +44,9 @@ describe('PWA precache policy', () => {
     const bundleBudgetConfig = readBundleBudgetConfig();
 
     expect(viteConfig).toContain('**/assets/vendor-pdfjs-*.js');
-    expect(viteConfig).toContain('**/assets/heic2any-*.js');
+    expect(viteConfig).toContain('**/assets/vendor-heic2any-*.js');
     expect(bundleBudgetConfig.precacheIgnoredAssetPatterns).toEqual(
-      expect.arrayContaining(['^assets/vendor-pdfjs-.*\\.js$', '^assets/heic2any-.*\\.js$'])
+      expect.arrayContaining(['^assets/vendor-pdfjs-.*\\.js$', '^assets/vendor-heic2any-.*\\.js$'])
     );
   });
 });

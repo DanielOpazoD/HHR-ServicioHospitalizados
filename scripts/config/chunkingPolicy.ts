@@ -86,7 +86,7 @@ export const chunkForModule = (moduleId: string): string | undefined => {
     }
 
     if (has('/node_modules/heic2any/')) {
-      return 'heic2any';
+      return 'vendor-heic2any';
     }
 
     if (has('/node_modules/pdfjs-dist/')) {

@@ -277,7 +277,9 @@ describe('chunkingPolicy', () => {
     expect(chunkForModule('/repo/node_modules/pdfjs-dist/legacy/build/pdf.mjs')).toBe(
       'vendor-pdfjs'
     );
-    expect(chunkForModule('/repo/node_modules/heic2any/dist/heic2any.min.js')).toBe('heic2any');
+    expect(chunkForModule('/repo/node_modules/heic2any/dist/heic2any.min.js')).toBe(
+      'vendor-heic2any'
+    );
   });
 
   it('keeps HEIC conversion behind its dedicated loader boundary', () => {

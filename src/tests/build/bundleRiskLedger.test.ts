@@ -10,7 +10,7 @@ describe('bundle risk ledger', () => {
     const ledger = readDoc('docs/BUNDLE_RISK_LEDGER.md');
 
     for (const surface of [
-      'heic2any',
+      'vendor-heic2any',
       'vendor-pdfjs',
       'vendor-pdf-lib',
       'app-authenticated-shell',
