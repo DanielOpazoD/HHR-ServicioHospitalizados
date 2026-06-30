@@ -8,7 +8,10 @@
  * never happens without traceability.
  */
 
-import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
+import {
+  loadExecuteWriteAuditEvent,
+  type WriteAuditEvent,
+} from '@/application/audit/writeAuditEventUseCaseLoader';
 import {
   defaultPrescriptionPort,
   type PrescriptionPort,
@@ -23,7 +26,7 @@ export interface DeletePrescriptionInput {
 
 interface DeletePrescriptionDeps {
   prescriptionPort?: PrescriptionPort;
-  writeAuditEvent?: typeof executeWriteAuditEvent;
+  writeAuditEvent?: WriteAuditEvent;
 }
 
 const resolveRecordDate = (iso: string | undefined): string | undefined => {
@@ -40,7 +43,7 @@ export const executeDeletePrescription = async (
   dependencies: DeletePrescriptionDeps = {}
 ): Promise<void> => {
   const port = dependencies.prescriptionPort || defaultPrescriptionPort;
-  const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+  const writeAuditEvent = dependencies.writeAuditEvent || (await loadExecuteWriteAuditEvent());
   const record = await port.get(input.prescriptionId, input.hospitalId);
   const deletedAt = input.deletedAt || new Date().toISOString();
   const auditOutcome = await writeAuditEvent({

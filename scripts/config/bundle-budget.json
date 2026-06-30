@@ -9,6 +9,7 @@
     "^vendor/exceljs\\.bare\\.min\\.js$",
     "^assets/exceljs\\.min-.*\\.js$",
     "^assets/pdf\\.worker-.*\\.mjs$",
+    "^assets/vendor-pdfjs-.*\\.js$",
     "^assets/pdf-.*\\.js$",
     "^assets/vendor-pdf-.*\\.js$",
     "^assets/docxtemplater-.*\\.js$",
@@ -19,7 +20,7 @@
     "^assets/terminologyService-.*\\.js$",
     "^assets/fonasaDatabase-.*\\.js$",
     "^assets/clinicalDocumentTemplateEditorController-.*\\.js$",
-    "^assets/heic2any-.*\\.js$"
+    "^assets/vendor-heic2any-.*\\.js$"
   ],
   "forbiddenAssetPatterns": ["^assets/exceljs\\.min-.*\\.js$"],
   "assetPatternBudgets": [
@@ -75,6 +76,11 @@
       "maxBytes": 560000
     },
     {
+      "pattern": "^vendor-pdfjs-.*\\.js$",
+      "_comment": "PDF.js text/import runtime is async and must stay out of the PWA precache. This dedicated budget keeps PDF.js drift visible separately from app-level PDF chunks.",
+      "maxBytes": 520000
+    },
+    {
       "pattern": "^vendor-pdf-.*\\.js$",
       "_comment": "PDF vendor chunks are async but among the largest payloads; keep a dedicated ceiling so PDF library drift stays visible before it reaches the global chunk budget.",
       "maxBytes": 430000
@@ -84,7 +90,7 @@
       "maxBytes": 750000
     },
     {
-      "pattern": "^heic2any-.*\\.js$",
+      "pattern": "^vendor-heic2any-.*\\.js$",
       "_comment": "HEIC/HEIF conversion is loaded only for high-efficiency mobile prescription photos and kept out of the PWA precache. A dedicated ceiling preserves release visibility without relaxing the global chunk budget.",
       "maxBytes": 1450000
     }

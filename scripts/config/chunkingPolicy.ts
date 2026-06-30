@@ -85,6 +85,14 @@ export const chunkForModule = (moduleId: string): string | undefined => {
       return 'vendor-canvas';
     }
 
+    if (has('/node_modules/heic2any/')) {
+      return 'vendor-heic2any';
+    }
+
+    if (has('/node_modules/pdfjs-dist/')) {
+      return 'vendor-pdfjs';
+    }
+
     if (has('/node_modules/exceljs/lib/xlsx/')) {
       return 'vendor-excel-xlsx';
     }

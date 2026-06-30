@@ -21,7 +21,10 @@
  * useBedAudit / patient-flow hooks onto it without rewriting the contract.
  */
 
-import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
+import {
+  loadExecuteWriteAuditEvent,
+  type WriteAuditEvent,
+} from '@/application/audit/writeAuditEventUseCaseLoader';
 import { isAnonymousActor } from '@/application/audit/auditActorPolicy';
 import {
   createApplicationDegraded,
@@ -62,7 +65,7 @@ export interface AdmitPatientPort {
 
 export interface AdmitPatientCommandDependencies {
   port: AdmitPatientPort;
-  writeAuditEvent?: typeof executeWriteAuditEvent;
+  writeAuditEvent?: WriteAuditEvent;
   createClinicalEpisodeId?: () => string;
 }
 
@@ -141,7 +144,7 @@ export const executeAdmitPatientCommand = async (
     };
   }
 
-  const writeAudit = deps.writeAuditEvent ?? executeWriteAuditEvent;
+  const writeAudit = deps.writeAuditEvent ?? (await loadExecuteWriteAuditEvent());
   const auditOutcome = await writeAudit({
     userId: input.actor,
     action: 'PATIENT_ADMITTED',

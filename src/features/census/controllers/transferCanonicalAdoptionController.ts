@@ -14,7 +14,10 @@
  * ADR_CANONICAL_WRITE_ADOPTION_FACADES.
  */
 
-import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
+import {
+  loadExecuteWriteAuditEvent,
+  type WriteAuditEvent,
+} from '@/application/audit/writeAuditEventUseCaseLoader';
 import { isAnonymousActor } from '@/application/audit/auditActorPolicy';
 import {
   createApplicationDegraded,
@@ -54,7 +57,7 @@ export interface TransferCanonicalDispatchOutcome {
 }
 
 export interface TransferCanonicalDispatchDeps {
-  writeAuditEvent?: typeof executeWriteAuditEvent;
+  writeAuditEvent?: WriteAuditEvent;
 }
 
 export const dispatchCanonicalTransfer = async (
@@ -100,7 +103,7 @@ export const dispatchCanonicalTransfer = async (
     };
   }
 
-  const writeAudit = deps.writeAuditEvent ?? executeWriteAuditEvent;
+  const writeAudit = deps.writeAuditEvent ?? (await loadExecuteWriteAuditEvent());
   const auditOutcome = await writeAudit({
     userId: input.actor,
     action: 'PATIENT_TRANSFERRED',

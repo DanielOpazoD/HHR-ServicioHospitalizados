@@ -1,4 +1,7 @@
-import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
+import {
+  loadExecuteWriteAuditEvent,
+  type WriteAuditEvent,
+} from '@/application/audit/writeAuditEventUseCaseLoader';
 import {
   defaultMedicalIndicationRecordPort,
   defaultMedicalIndicationTemplatePort,
@@ -17,18 +20,7 @@ import {
   type MedicalIndicationsPatientOption,
 } from '@/shared/contracts/medicalIndications';
 
-interface AuditWriterInput {
-  userId: string;
-  action: Parameters<typeof executeWriteAuditEvent>[0]['action'];
-  entityType: Parameters<typeof executeWriteAuditEvent>[0]['entityType'];
-  entityId: string;
-  details: Record<string, unknown>;
-  patientRut?: string;
-  recordDate?: string;
-  authors?: string;
-}
-
-type AuditWriter = (input: AuditWriterInput) => ReturnType<typeof executeWriteAuditEvent>;
+type AuditWriter = WriteAuditEvent;
 
 interface MedicalIndicationUseCaseDeps {
   templatePort?: MedicalIndicationTemplatePort;
@@ -119,7 +111,7 @@ export const executeCreateMedicalIndicationTemplate = async (
   };
 
   const templatePort = dependencies.templatePort || defaultMedicalIndicationTemplatePort;
-  const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+  const writeAuditEvent = dependencies.writeAuditEvent || (await loadExecuteWriteAuditEvent());
 
   // Fail closed: audit BEFORE creating, so a template is never persisted without an audit trail
   // (an anonymous actor or an audit-write failure aborts here). See docs/CLINICAL_MUTATION_AUDIT_POLICY.md.
@@ -154,7 +146,7 @@ export const executeUpdateMedicalIndicationTemplate = async (
   }
 
   const templatePort = dependencies.templatePort || defaultMedicalIndicationTemplatePort;
-  const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+  const writeAuditEvent = dependencies.writeAuditEvent || (await loadExecuteWriteAuditEvent());
 
   // Fail closed: audit before mutating.
   await assertAuditPersisted(
@@ -186,7 +178,7 @@ export const executeArchiveMedicalIndicationTemplate = async (
 ): Promise<void> => {
   const now = input.now || defaultNow();
   const templatePort = dependencies.templatePort || defaultMedicalIndicationTemplatePort;
-  const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+  const writeAuditEvent = dependencies.writeAuditEvent || (await loadExecuteWriteAuditEvent());
 
   // Fail closed: audit before mutating.
   await assertAuditPersisted(
@@ -212,7 +204,7 @@ export const executeMarkMedicalIndicationTemplateUsed = async (
 ): Promise<void> => {
   const now = input.now || defaultNow();
   const templatePort = dependencies.templatePort || defaultMedicalIndicationTemplatePort;
-  const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+  const writeAuditEvent = dependencies.writeAuditEvent || (await loadExecuteWriteAuditEvent());
 
   // Fail closed: audit before mutating.
   await assertAuditPersisted(

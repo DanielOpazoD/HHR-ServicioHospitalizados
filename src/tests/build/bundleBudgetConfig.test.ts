@@ -46,7 +46,7 @@ describe('bundle budget config', () => {
     expect(findBudget(config, '^vendor-pdf-.*\\.js$')).toMatchObject({
       maxBytes: 430000,
     });
-    expect(findBudget(config, '^heic2any-.*\\.js$')).toMatchObject({
+    expect(findBudget(config, '^vendor-heic2any-.*\\.js$')).toMatchObject({
       maxBytes: 1450000,
     });
   });
@@ -73,6 +73,7 @@ describe('bundle budget config', () => {
         '^vendor/exceljs\\.bare\\.min\\.js$',
         '^assets/exceljs\\.min-.*\\.js$',
         '^assets/pdf\\.worker-.*\\.mjs$',
+        '^assets/vendor-pdfjs-.*\\.js$',
         '^assets/pdf-.*\\.js$',
         '^assets/vendor-pdf-.*\\.js$',
         '^assets/docxtemplater-.*\\.js$',
@@ -83,7 +84,7 @@ describe('bundle budget config', () => {
         '^assets/terminologyService-.*\\.js$',
         '^assets/fonasaDatabase-.*\\.js$',
         '^assets/clinicalDocumentTemplateEditorController-.*\\.js$',
-        '^assets/heic2any-.*\\.js$',
+        '^assets/vendor-heic2any-.*\\.js$',
       ])
     );
   });

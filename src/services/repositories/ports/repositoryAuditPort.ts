@@ -1,4 +1,4 @@
-import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
+import { loadExecuteWriteAuditEvent } from '@/application/audit/writeAuditEventUseCaseLoader';
 import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 
 export interface ConflictAuditDetails {
@@ -37,6 +37,7 @@ export const logRepositoryConflictAutoMerged = async (
     return;
   }
 
+  const executeWriteAuditEvent = await loadExecuteWriteAuditEvent();
   const outcome = await executeWriteAuditEvent({
     userId: getCurrentUserEmail(),
     action: 'CONFLICT_AUTO_MERGED',
@@ -78,6 +79,7 @@ export const logRepositoryConflictVersionRestored = async (
   // executeWriteAuditEvent never throws: it returns a failed ApplicationOutcome for an anonymous
   // clinical actor or an underlying write error. Surface that as a throw so the restore caller can
   // fail closed instead of silently overwriting the record without an audit row.
+  const executeWriteAuditEvent = await loadExecuteWriteAuditEvent();
   const outcome = await executeWriteAuditEvent({
     userId: getCurrentUserEmail(),
     action: 'CONFLICT_VERSION_RESTORED',

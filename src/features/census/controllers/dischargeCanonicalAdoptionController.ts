@@ -26,7 +26,10 @@
  *      is suppressed in the caller when the flag is on).
  */
 
-import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
+import {
+  loadExecuteWriteAuditEvent,
+  type WriteAuditEvent,
+} from '@/application/audit/writeAuditEventUseCaseLoader';
 import { isAnonymousActor } from '@/application/audit/auditActorPolicy';
 import { executeLockClinicalDocumentsByEpisode } from '@/application/clinical-documents/lockClinicalDocumentsByEpisodeUseCase';
 import { resolveClinicalEpisodeIdentifier } from '@/application/patient-flow/clinicalEpisode';
@@ -160,7 +163,7 @@ const buildClinicalDocumentLockedAuditEvent = (
 });
 
 export interface DischargeCanonicalDispatchDeps {
-  writeAuditEvent?: typeof executeWriteAuditEvent;
+  writeAuditEvent?: WriteAuditEvent;
   /**
    * Allows tests (or future alternate implementations) to inject a
    * different lock implementation. Defaults to the production use case.
@@ -226,7 +229,7 @@ export const dispatchCanonicalDischarge = async (
     };
   }
 
-  const writeAudit = deps.writeAuditEvent ?? executeWriteAuditEvent;
+  const writeAudit = deps.writeAuditEvent ?? (await loadExecuteWriteAuditEvent());
   const lockDocuments = deps.lockDocumentsByEpisodeKey ?? defaultLockDocumentsByEpisodeKey;
   const auditFailures: string[] = [];
   const lockFailures: string[] = [];

@@ -16,13 +16,16 @@ import {
   defaultClinicalDocumentPort,
   type ClinicalDocumentPort,
 } from '@/application/ports/clinicalDocumentPort';
-import { executeWriteAuditEvent } from '@/application/audit/writeAuditEventUseCase';
+import {
+  loadExecuteWriteAuditEvent,
+  type WriteAuditEvent,
+} from '@/application/audit/writeAuditEventUseCaseLoader';
 
 type PersistReason = 'autosave' | 'manual' | 'admin_fix';
 
 interface ClinicalDocumentUseCaseDependencies {
   clinicalDocumentPort?: ClinicalDocumentPort;
-  writeAuditEvent?: typeof executeWriteAuditEvent;
+  writeAuditEvent?: WriteAuditEvent;
 }
 
 /** Audit context for a fail-closed clinical-document deletion. */
@@ -158,7 +161,7 @@ export const executeDeleteClinicalDocument = async (
   dependencies: ClinicalDocumentUseCaseDependencies = {}
 ): Promise<ApplicationOutcome<null>> => {
   const clinicalDocumentPort = dependencies.clinicalDocumentPort || defaultClinicalDocumentPort;
-  const writeAuditEvent = dependencies.writeAuditEvent || executeWriteAuditEvent;
+  const writeAuditEvent = dependencies.writeAuditEvent || (await loadExecuteWriteAuditEvent());
 
   // Fail closed: audit BEFORE deleting, so a clinical document is never removed without a guaranteed
   // audit trail (Ley 20.584). A failed audit (anonymous actor or write error) aborts the delete and

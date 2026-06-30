@@ -29,8 +29,8 @@ import { useClinicalDocumentAuditLoggers } from '@/hooks/controllers/useClinical
 import { useCudyrAuditLoggers } from '@/hooks/controllers/useCudyrAuditLoggers';
 import { useHandoffAuditLoggers } from '@/hooks/controllers/useHandoffAuditLoggers';
 import { usePatientLifecycleAuditLoggers } from '@/hooks/controllers/usePatientLifecycleAuditLoggers';
+import { loadWriteAuditEventUseCase } from '@/application/audit/writeAuditEventUseCaseLoader';
 
-const loadWriteAuditEventUseCase = () => import('@/application/audit/writeAuditEventUseCase');
 const loadFetchAuditLogsUseCase = () => import('@/application/audit/fetchAuditLogsUseCase');
 
 const getViewThrottleState = (): ViewThrottleState => {

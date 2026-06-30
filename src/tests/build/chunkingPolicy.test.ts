@@ -6,6 +6,9 @@ import { chunkForModule } from '../../../scripts/config/chunkingPolicy';
 const readSource = (relativePath: string): string =>
   fs.readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 
+const directAuditWriterImportPattern =
+  /import\s+\{[\s\S]*executeWriteAuditEvent[\s\S]*\}\s+from ['"][^'"]*application\/audit\/writeAuditEventUseCase(?:\.ts)?['"]/;
+
 const collectProductionSourceFiles = (directory: string): string[] => {
   const entries = fs.readdirSync(directory, { withFileTypes: true });
   return entries.flatMap(entry => {
@@ -214,6 +217,28 @@ describe('chunkingPolicy', () => {
     );
   });
 
+  it('routes audit writer defaults through the lazy use-case loader instead of value-importing the use case', () => {
+    const sourceFiles = collectProductionSourceFiles(path.resolve(process.cwd(), 'src'));
+    const allowedFiles = new Set([
+      path.resolve(process.cwd(), 'src/application/audit/writeAuditEventUseCase.ts'),
+      path.resolve(process.cwd(), 'src/application/audit/writeAuditEventUseCaseLoader.ts'),
+    ]);
+    const offenders = sourceFiles
+      .filter(file => !allowedFiles.has(file))
+      .filter(file =>
+        readSource(path.relative(process.cwd(), file)).match(directAuditWriterImportPattern)
+      )
+      .map(file => path.relative(process.cwd(), file));
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('detects direct audit writer imports even when they use a relative module path', () => {
+    expect(
+      "import { executeWriteAuditEvent } from '../../application/audit/writeAuditEventUseCase';"
+    ).toMatch(directAuditWriterImportPattern);
+  });
+
   it('keeps census runtime hooks off legacy audit services during startup', () => {
     const guardedFiles = ['src/hooks/useBedAudit.ts', 'src/hooks/usePatientMovementAudit.ts'];
 
@@ -249,6 +274,27 @@ describe('chunkingPolicy', () => {
       'vendor-firebase-aux'
     );
     expect(chunkForModule('/repo/node_modules/jspdf/dist/jspdf.es.min.js')).toBe('vendor-pdf-core');
+    expect(chunkForModule('/repo/node_modules/pdfjs-dist/legacy/build/pdf.mjs')).toBe(
+      'vendor-pdfjs'
+    );
+    expect(chunkForModule('/repo/node_modules/heic2any/dist/heic2any.min.js')).toBe(
+      'vendor-heic2any'
+    );
+  });
+
+  it('keeps HEIC conversion behind its dedicated loader boundary', () => {
+    const compressionServiceSource = readSource(
+      'src/features/prescriptions/services/prescriptionImageCompressionService.ts'
+    );
+    const heicConverterSource = readSource(
+      'src/features/prescriptions/services/prescriptionHighEfficiencyImageConverter.ts'
+    );
+
+    expect(compressionServiceSource).not.toContain("import('heic2any')");
+    expect(compressionServiceSource).toContain(
+      "from '@/features/prescriptions/services/prescriptionHighEfficiencyImageConverter'"
+    );
+    expect(heicConverterSource).toContain("import('heic2any')");
   });
 
   it('keeps the node-only ExcelJS loader invisible to the browser bundler', () => {
