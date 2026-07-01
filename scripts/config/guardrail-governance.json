@@ -40,6 +40,7 @@
       "requiredScripts": [
         "check:bundle-budget",
         "check:chunk-graph",
+        "check:runtime-asset-margin",
         "test:e2e:preview:census-bootstrap:built"
       ],
       "purpose": "Valida budgets, chunk graph aciclico y que el bundle productivo monte correctamente en preview local."
@@ -85,6 +86,11 @@
       "id": "bundle_risk_ledger",
       "script": "report:bundle-risk-ledger",
       "artifact": "reports/bundle-risk-ledger.md"
+    },
+    {
+      "id": "runtime_asset_margin",
+      "script": "report:runtime-asset-margin",
+      "artifact": "reports/runtime-asset-margin.md"
     },
     {
       "id": "system_confidence",

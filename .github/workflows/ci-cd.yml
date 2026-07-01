@@ -379,6 +379,9 @@ jobs:
       - name: Validate chunk import graph (no vendor↔feature cycles)
         run: npm run check:chunk-graph
 
+      - name: Validate runtime asset margin
+        run: npm run check:runtime-asset-margin
+
       - name: Install Playwright browsers for preview bootstrap smoke
         run: npx playwright install --with-deps chromium
 
