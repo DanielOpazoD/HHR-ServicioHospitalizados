@@ -82,6 +82,11 @@
       "artifact": "reports/operational-health.md"
     },
     {
+      "id": "bundle_risk_ledger",
+      "script": "report:bundle-risk-ledger",
+      "artifact": "reports/bundle-risk-ledger.md"
+    },
+    {
       "id": "system_confidence",
       "script": "report:system-confidence",
       "artifact": "reports/system-confidence.md"
@@ -90,6 +95,11 @@
       "id": "compatibility_governance",
       "script": "report:compatibility-governance",
       "artifact": "reports/compatibility-governance.md"
+    },
+    {
+      "id": "legacy_retirement_debt",
+      "script": "report:legacy-retirement-debt",
+      "artifact": "reports/legacy-retirement-debt.md"
     },
     {
       "id": "serverless_sensitive_coverage",
@@ -163,6 +173,9 @@
       { "id": "check:legacy-localstorage-imports", "group": "boundaries" },
       { "id": "check:legacy-bridge-boundary", "group": "boundaries" },
       { "id": "check:legacy-read-gating", "group": "boundaries" },
+      { "id": "report:legacy-bridge", "group": "governance-inputs" },
+      { "id": "report:compatibility-governance", "group": "governance-inputs" },
+      { "id": "check:legacy-retirement-debt", "group": "governance" },
       { "id": "check:compatibility-import-governance", "group": "governance" },
       { "id": "check:schema-governance", "group": "governance" },
       { "id": "check:runtime-contracts", "group": "governance" },
@@ -200,7 +213,8 @@
       { "id": "check:source-any", "group": "type-safety" },
       { "id": "check:repo-hygiene", "group": "hygiene" },
       { "id": "check:clinical-mutation-audit-policy", "group": "security" },
-      { "id": "check:security", "group": "security" }
+      { "id": "check:security", "group": "security" },
+      { "id": "check:bundle-risk-ledger", "group": "size" }
     ]
   },
   "guardrailPolicy": {

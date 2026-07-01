@@ -139,12 +139,14 @@ const buildReleaseHotspots = operationalHealth => {
 export const buildReleaseReadinessScorecard = root => {
   const sourceFiles = {
     qualityMetrics: 'reports/quality-metrics.json',
+    bundleRiskLedger: 'reports/bundle-risk-ledger.json',
     systemConfidence: 'reports/system-confidence.json',
     operationalHealth: 'reports/operational-health.json',
     releaseConfidenceMatrix: 'reports/release-confidence-matrix.json',
     technicalOwnershipMap: 'reports/technical-ownership-map.json',
     guardrailGovernance: 'reports/guardrail-governance.json',
     compatibilityImportGovernance: 'reports/compatibility-import-governance.json',
+    legacyRetirementDebt: 'reports/legacy-retirement-debt.json',
   };
 
   const sources = Object.fromEntries(
@@ -228,6 +230,19 @@ export const buildReleaseReadinessScorecard = root => {
     });
   }
 
+  const bundleRiskLedger = sources.bundleRiskLedger;
+  if (bundleRiskLedger) {
+    const bundleRiskLedgerOk = bundleRiskLedger.status === 'ok';
+    indicators.push({
+      name: 'bundle_risk_ledger',
+      ...statusFrom(
+        bundleRiskLedgerOk,
+        `surfaces=${bundleRiskLedger.surfaces?.length ?? 'n/a'}, issues=${bundleRiskLedger.issues?.length ?? 'n/a'}`,
+        `surfaces=${bundleRiskLedger.surfaces?.length ?? 'n/a'}, issues=${bundleRiskLedger.issues?.length ?? 'n/a'}`
+      ),
+    });
+  }
+
   const releaseConfidenceMatrix = sources.releaseConfidenceMatrix;
   if (releaseConfidenceMatrix) {
     const releaseConfidenceOk = releaseConfidenceMatrix.overall === 'ok';
@@ -278,6 +293,19 @@ export const buildReleaseReadinessScorecard = root => {
         compatibilityOk,
         `restrictedEntries=${compatibilityImportGovernance.checkedEntries ?? 'n/a'}, unauthorizedImports=${compatibilityImportGovernance.issues?.length ?? 'n/a'}`,
         `restrictedEntries=${compatibilityImportGovernance.checkedEntries ?? 'n/a'}, unauthorizedImports=${compatibilityImportGovernance.issues?.length ?? 'n/a'}`
+      ),
+    });
+  }
+
+  const legacyRetirementDebt = sources.legacyRetirementDebt;
+  if (legacyRetirementDebt) {
+    const legacyRetirementDebtOk = legacyRetirementDebt.status === 'ok';
+    indicators.push({
+      name: 'legacy_retirement_debt',
+      ...statusFrom(
+        legacyRetirementDebtOk,
+        `openSurfaces=${legacyRetirementDebt.openSurfaceCount ?? 'n/a'}/${legacyRetirementDebt.maxOpenSurfaces ?? 'n/a'}, issues=${legacyRetirementDebt.issues?.length ?? 'n/a'}`,
+        `openSurfaces=${legacyRetirementDebt.openSurfaceCount ?? 'n/a'}/${legacyRetirementDebt.maxOpenSurfaces ?? 'n/a'}, issues=${legacyRetirementDebt.issues?.length ?? 'n/a'}`
       ),
     });
   }
