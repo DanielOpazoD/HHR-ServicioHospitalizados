@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   EVIDENCE_DEPENDENCY_GRAPH,
+  getEvidenceReportDependencyFiles,
   getEvidenceReportDependencies,
 } from '../../../scripts/evidenceDependencyGraph.mjs';
 import {
@@ -115,6 +116,21 @@ describe('evidence dependency graph', () => {
   it('derives release readiness runner inputs from the evidence graph', () => {
     expect(RELEASE_READINESS_INPUTS).toEqual(
       getEvidenceReportDependencies('release-readiness-scorecard')
+    );
+  });
+
+  it('expands release readiness dependency files transitively', () => {
+    expect(getEvidenceReportDependencyFiles('release-readiness-scorecard')).toEqual(
+      expect.arrayContaining([
+        'reports/quality-metrics.json',
+        'reports/bundle-risk-ledger.json',
+        'reports/operational-health.json',
+        'reports/system-confidence.json',
+        'reports/critical-coverage.json',
+        'scripts/config/critical-coverage-thresholds.json',
+        'scripts/report-critical-coverage.mjs',
+        'reports/e2e/preview-bootstrap/report.json',
+      ])
     );
   });
 

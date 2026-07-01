@@ -1,0 +1,63 @@
+import crypto from 'node:crypto';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { getEvidenceReportDependencyFiles } from './evidenceDependencyGraph.mjs';
+
+const uniqueSorted = values => [...new Set(values.filter(Boolean))].sort();
+
+export const buildDependencyFingerprint = ({ root, dependencyFiles }) => {
+  const hash = crypto.createHash('sha256');
+  const files = [];
+  const missingFiles = [];
+
+  for (const dependencyFile of uniqueSorted(dependencyFiles)) {
+    const dependencyPath = path.join(root, dependencyFile);
+    hash.update(`${dependencyFile}\0`);
+    if (!fs.existsSync(dependencyPath)) {
+      missingFiles.push(dependencyFile);
+      hash.update('missing\0');
+      continue;
+    }
+
+    files.push(dependencyFile);
+    hash.update(fs.readFileSync(dependencyPath));
+    hash.update('\0');
+  }
+
+  return {
+    algorithm: 'sha256:dependency-files-v1',
+    value: hash.digest('hex'),
+    files,
+    missingFiles,
+  };
+};
+
+const getGitTreeHash = root => {
+  try {
+    return execSync('git rev-parse HEAD^{tree}', { cwd: root, encoding: 'utf8' }).trim();
+  } catch {
+    return 'unknown';
+  }
+};
+
+export const buildEvidenceProvenance = ({ root, reportId, gitState }) => {
+  const dependencies = getEvidenceReportDependencyFiles(reportId);
+
+  return {
+    gitSha: gitState.gitSha,
+    gitDirty: gitState.gitDirty,
+    treeHash: getGitTreeHash(root),
+    reportId,
+    dependencyFingerprint: buildDependencyFingerprint({
+      root,
+      dependencyFiles: dependencies,
+    }),
+  };
+};
+
+export const normalizeDependencyFingerprintValue = fingerprint => {
+  if (typeof fingerprint === 'string') return fingerprint;
+  if (typeof fingerprint?.value === 'string') return fingerprint.value;
+  return '';
+};

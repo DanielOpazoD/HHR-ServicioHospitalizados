@@ -104,6 +104,15 @@ describe('report freshness guardrail', () => {
     expect(() => run(root, 'node', [scriptPath])).not.toThrow();
   });
 
+  it('rejects direct merge-parent reports without dependency fingerprint in strict release mode', () => {
+    const { root, featureSha } = makeGitRepoWithMergeCommit();
+    writeReports(root, featureSha);
+
+    expect(() => run(root, 'node', [scriptPath, '--strict'])).toThrow(
+      /reports\/quality-metrics\.json was generated for direct merge parent .* without dependency fingerprint/
+    );
+  });
+
   it('treats stale reports as advisory outside strict release mode', () => {
     const { root } = makeGitRepoWithMergeCommit();
     const staleSha = run(root, 'git', ['rev-parse', '--short', 'HEAD^1^']);
@@ -118,7 +127,7 @@ describe('report freshness guardrail', () => {
     writeReports(root, staleSha);
 
     expect(() => run(root, 'node', [scriptPath, '--strict'])).toThrow(
-      /reports\/quality-metrics\.json was generated for/
+      /reports\/quality-metrics\.json is stale by commit ancestry/
     );
   });
 
@@ -127,7 +136,7 @@ describe('report freshness guardrail', () => {
     writeReports(root, previousSha);
 
     expect(() => run(root, 'node', [scriptPath, '--strict'])).toThrow(
-      /reports\/quality-metrics\.json was generated for/
+      /reports\/quality-metrics\.json is stale by commit ancestry/
     );
   });
 

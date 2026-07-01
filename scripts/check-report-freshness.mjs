@@ -4,13 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { getDirectMergeParentShas, getGitReportState } from './gitReportState.mjs';
-import { getEvidenceReportDependencies, resolveEvidenceDependencyFiles } from './evidenceDependencyGraph.mjs';
+import { getEvidenceReportDependencyFiles } from './evidenceDependencyGraph.mjs';
+import {
+  buildDependencyFingerprint,
+  normalizeDependencyFingerprintValue,
+} from './evidenceProvenanceSupport.mjs';
 
 const ROOT = process.cwd();
 const strictMode =
   process.argv.includes('--strict') || process.env.REPORT_FRESHNESS_STRICT === '1';
-const dependencyFilesFor = reportId =>
-  getEvidenceReportDependencies(reportId).flatMap(resolveEvidenceDependencyFiles);
+const dependencyFilesFor = reportId => getEvidenceReportDependencyFiles(reportId);
 
 const trackedReports = [
   {
@@ -90,6 +93,9 @@ const isSameCommit = (reportSha, currentSha) =>
 const matchesAnyAllowedCommit = (reportSha, allowedShas) =>
   allowedShas.some(allowedSha => isSameCommit(reportSha, allowedSha));
 
+const findMatchingAllowedCommit = (reportSha, allowedShas) =>
+  allowedShas.find(allowedSha => isSameCommit(reportSha, allowedSha)) || '';
+
 const runGit = args => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
 
 const governedReportFiles = new Set(
@@ -131,6 +137,7 @@ if (!currentGitSha) {
   fail(['Could not resolve current git commit.']);
 }
 const baseAllowedReportShas = [currentGitSha, ...getDirectMergeParentShas(ROOT)];
+const directMergeParentShas = getDirectMergeParentShas(ROOT);
 let evidenceOnlyAllowedReportShas;
 const getEvidenceOnlyAllowedReportShas = () => {
   if (evidenceOnlyAllowedReportShas === undefined) {
@@ -173,8 +180,27 @@ for (const report of trackedReports) {
     !matchesAnyAllowedCommit(reportSha, getEvidenceOnlyAllowedReportShas())
   ) {
     issues.push(
-      `${report.file} was generated for ${reportSha}, current HEAD is ${currentGitSha}.`
+      `${report.file} is stale by commit ancestry: generated for ${reportSha}, current HEAD is ${currentGitSha}; refresh with npm run ${report.refreshScript}.`
     );
+  }
+
+  const matchingMergeParentSha = findMatchingAllowedCommit(reportSha, directMergeParentShas);
+  if (matchingMergeParentSha) {
+    const expectedFingerprint = buildDependencyFingerprint({
+      root: ROOT,
+      dependencyFiles: report.dependsOn || [],
+    });
+    const recordedFingerprint = parsedReport?.generatedFor?.dependencyFingerprint;
+    const recordedFingerprintValue = normalizeDependencyFingerprintValue(recordedFingerprint);
+    if (!recordedFingerprintValue) {
+      issues.push(
+        `${report.file} was generated for direct merge parent ${matchingMergeParentSha} without dependency fingerprint; refresh with npm run ${report.refreshScript} or run npm run postmerge:evidence on main.`
+      );
+    } else if (recordedFingerprintValue !== expectedFingerprint.value) {
+      issues.push(
+        `${report.file} is stale by real dependency fingerprint: generated for direct merge parent ${matchingMergeParentSha} with ${recordedFingerprintValue}, expected ${expectedFingerprint.value}; refresh with npm run ${report.refreshScript}.`
+      );
+    }
   }
 
   if (
