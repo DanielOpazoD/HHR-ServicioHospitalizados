@@ -2,6 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { classifyBuildAssetBudget } from './bundleBudgetSupport.mjs';
 
 const readJson = filePath => JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
@@ -30,67 +31,24 @@ const readBuildAssetsFromDist = root => {
   }
 
   const bundleBudget = readBundleBudgetConfig(root);
-  const chunkMaxBytes = Number(bundleBudget?.chunkMaxBytes || 0);
-  const startupBudgets = Array.isArray(bundleBudget?.startupChunkBudgets)
-    ? bundleBudget.startupChunkBudgets
-    : [];
-  const chunkPatternBudgets = Array.isArray(bundleBudget?.chunkPatternBudgets)
-    ? bundleBudget.chunkPatternBudgets
-    : [];
-
-  const resolveAssetBudget = assetName => {
-    const matchBudget = budgets =>
-      budgets.find(budget => {
-        const pattern = typeof budget?.pattern === 'string' ? budget.pattern : '';
-        if (!pattern) return false;
-
-        try {
-          return new RegExp(pattern).test(assetName);
-        } catch {
-          return false;
-        }
-      });
-
-    const startupBudget = matchBudget(startupBudgets);
-    if (startupBudget) {
-      return {
-        maxBytes: Number(startupBudget.maxBytes || 0),
-        severity: startupBudget.severity === 'warn' ? 'warn' : 'error',
-      };
-    }
-
-    const patternBudget = matchBudget(chunkPatternBudgets);
-    if (patternBudget) {
-      return {
-        maxBytes: Number(patternBudget.maxBytes || 0),
-        severity: 'error',
-      };
-    }
-
-    return {
-      maxBytes: chunkMaxBytes || null,
-      severity: 'error',
-    };
-  };
-
   return fs
     .readdirSync(assetsDir, { withFileTypes: true })
     .filter(entry => entry.isFile() && entry.name.endsWith('.js'))
     .map(entry => {
       const filePath = path.join(assetsDir, entry.name);
-      const budget = resolveAssetBudget(entry.name);
-      const maxBytes = Number(budget.maxBytes || 0) || null;
-      const status =
-        maxBytes && fs.statSync(filePath).size > maxBytes
-          ? budget.severity === 'warn'
-            ? 'warn'
-            : 'error'
-          : 'ok';
-      return {
+      const classified = classifyBuildAssetBudget({
         file: path.join('dist', 'assets', entry.name),
         sizeBytes: fs.statSync(filePath).size,
-        maxBytes,
-        status,
+        budgetConfig: bundleBudget,
+      });
+      return {
+        ...classified,
+        status:
+          classified.status === 'blocking'
+            ? classified.severity === 'warn'
+              ? 'warn'
+              : 'error'
+            : 'ok',
       };
     })
     .sort((a, b) => b.sizeBytes - a.sizeBytes);
