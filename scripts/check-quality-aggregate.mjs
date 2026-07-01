@@ -22,6 +22,13 @@ const readArgValue = flag => {
 };
 
 const requestedGroup = readArgValue('--group');
+if (process.argv.includes('--group') && !requestedGroup) {
+  console.error(
+    `[quality] --group flag requires a value. Expected one of: ${getQualityGroupNames().join(', ')}`
+  );
+  process.exit(1);
+}
+
 const runGit = args => {
   const result = spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' });
   return result.status === 0 ? result.stdout.trim() : 'unknown';

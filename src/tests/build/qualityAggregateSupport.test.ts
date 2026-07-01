@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -41,6 +43,16 @@ describe('quality aggregate support', () => {
     expect(selectQualitySteps(checks, { group: 'reports' })).toEqual([
       { id: 'check:report-freshness', group: 'reports', reportOnly: true },
     ]);
+  });
+
+  it('fails fast when the CLI group flag has no value', () => {
+    expect(() =>
+      execFileSync('node', ['scripts/check-quality-aggregate.mjs', '--group'], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+    ).toThrow(/--group flag requires a value/);
   });
 
   it('builds a duration profile with blocking and advisory failures separated', () => {
