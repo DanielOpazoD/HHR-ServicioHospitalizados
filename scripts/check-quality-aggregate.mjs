@@ -3,9 +3,29 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  buildQualityProfile,
+  getQualityGroupNames,
+  selectQualitySteps,
+  writeQualityProfileFiles,
+} from './qualityAggregateSupport.mjs';
 
 const ROOT = process.cwd();
 const GOVERNANCE_CONFIG_PATH = path.join(ROOT, 'scripts/config/guardrail-governance.json');
+
+const readArgValue = flag => {
+  const flagIndex = process.argv.indexOf(flag);
+  if (flagIndex === -1) {
+    return '';
+  }
+  return process.argv[flagIndex + 1] || '';
+};
+
+const requestedGroup = readArgValue('--group');
+const runGit = args => {
+  const result = spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' });
+  return result.status === 0 ? result.stdout.trim() : 'unknown';
+};
 
 if (!fs.existsSync(GOVERNANCE_CONFIG_PATH)) {
   console.error('[quality] Missing scripts/config/guardrail-governance.json');
@@ -22,21 +42,57 @@ if (QUALITY_STEPS.length === 0) {
   process.exit(1);
 }
 
+let selectedSteps;
+try {
+  selectedSteps = selectQualitySteps(QUALITY_STEPS, { group: requestedGroup });
+} catch (error) {
+  console.error(`[quality] ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
+}
+
+if (selectedSteps.length === 0) {
+  console.error(
+    requestedGroup
+      ? `[quality] No quality checks mapped to group "${requestedGroup}".`
+      : '[quality] No quality checks selected.'
+  );
+  process.exit(1);
+}
+
+if (requestedGroup) {
+  console.log(
+    `[quality] Running group "${requestedGroup}" (${selectedSteps.length} checks). Available groups: ${getQualityGroupNames().join(', ')}`
+  );
+}
+
 const failures = [];
 const advisoryFailures = [];
+const results = [];
+const startedAt = new Date().toISOString();
 
-for (const entry of QUALITY_STEPS) {
+for (const entry of selectedSteps) {
   const step = entry.id;
   const isReportOnly = entry.reportOnly === true;
   const label = isReportOnly ? `${step} (advisory)` : step;
   console.log(`\n[quality] Running ${label}`);
+  const stepStartedAt = Date.now();
   const result = spawnSync('npm', ['run', step], {
     cwd: ROOT,
     stdio: 'inherit',
     shell: process.platform === 'win32',
   });
+  const durationMs = Date.now() - stepStartedAt;
+  const status = result.status === 0 ? 'passed' : 'failed';
 
-  if (result.status !== 0) {
+  results.push({
+    id: step,
+    group: entry.group,
+    status,
+    durationMs,
+    reportOnly: isReportOnly,
+  });
+
+  if (status === 'failed') {
     if (isReportOnly) {
       advisoryFailures.push(step);
     } else {
@@ -57,6 +113,24 @@ if (failures.length > 0) {
   for (const step of failures) {
     console.error(`- ${step}`);
   }
+}
+
+const profile = buildQualityProfile({
+  scope: requestedGroup || 'all',
+  gitSha: runGit(['rev-parse', '--short', 'HEAD']),
+  startedAt,
+  completedAt: new Date().toISOString(),
+  results,
+});
+const writtenProfile = writeQualityProfileFiles(profile, { root: ROOT });
+console.log(
+  `\n[quality] Profile written: ${path.relative(ROOT, writtenProfile.jsonPath)} and ${path.relative(
+    ROOT,
+    writtenProfile.mdPath
+  )}`
+);
+
+if (failures.length > 0) {
   process.exit(1);
 }
 

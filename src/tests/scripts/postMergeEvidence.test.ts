@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildPostMergeEvidenceSummary,
+  findPostMergeEvidenceIssues,
   POST_MERGE_EVIDENCE_COMMANDS,
+  REQUIRED_POST_MERGE_EVIDENCE_RESULTS,
 } from '../../../scripts/postMergeEvidenceSupport.mjs';
 
 describe('postMergeEvidenceSupport', () => {
@@ -38,5 +40,47 @@ describe('postMergeEvidenceSupport', () => {
     expect(summary).toContain('Commit: `abc1234`');
     expect(summary).toContain('Freshness estricta: verde');
     expect(summary).toContain('| quality-metrics | passed |');
+  });
+
+  it('detects stale or incomplete post-merge evidence payloads', () => {
+    const issues = findPostMergeEvidenceIssues({
+      currentCommit: 'def5678',
+      evidence: {
+        commit: 'abc1234',
+        results: REQUIRED_POST_MERGE_EVIDENCE_RESULTS.filter(
+          name => name !== 'operational-health'
+        ).map(name => ({
+          name,
+          command: `npm run ${name}`,
+          status: name === 'report-freshness-strict' ? 'failed' : 'passed',
+        })),
+      },
+    });
+
+    expect(issues).toContain(
+      'reports/postmerge-evidence.json was generated for abc1234, current HEAD is def5678.'
+    );
+    expect(issues).toContain(
+      'reports/postmerge-evidence.json is missing result operational-health.'
+    );
+    expect(issues).toContain(
+      'reports/postmerge-evidence.json records report-freshness-strict as failed.'
+    );
+  });
+
+  it('accepts complete post-merge evidence for the current commit', () => {
+    expect(
+      findPostMergeEvidenceIssues({
+        currentCommit: 'abc1234',
+        evidence: {
+          commit: 'abc1234',
+          results: REQUIRED_POST_MERGE_EVIDENCE_RESULTS.map(name => ({
+            name,
+            command: `npm run ${name}`,
+            status: 'passed',
+          })),
+        },
+      })
+    ).toEqual([]);
   });
 });
