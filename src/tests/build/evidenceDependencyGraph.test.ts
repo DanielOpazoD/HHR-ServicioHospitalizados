@@ -9,6 +9,7 @@ import {
 } from '../../../scripts/evidenceDependencyGraph.mjs';
 import {
   buildReleaseReadinessPlan,
+  getCriticalCoverageReuseInputs,
   isCriticalCoverageArtifactReusable,
   RELEASE_READINESS_INPUTS,
 } from '../../../scripts/releaseReadinessRunnerSupport.mjs';
@@ -58,6 +59,12 @@ const writeReusableCriticalCoverage = (root: string, overrides: Record<string, u
   });
   writeText(root, 'reports/critical-coverage.md', '# Critical Coverage Report\n');
   writeText(root, 'scripts/config/critical-coverage-thresholds.json', '{"zones":{}}\n');
+  writeText(
+    root,
+    'scripts/criticalCoverageSupport.mjs',
+    'export const buildReport = () => ({});\n'
+  );
+  writeText(root, 'scripts/report-critical-coverage.mjs', '#!/usr/bin/env node\n');
   writeText(root, 'vitest.critical-coverage.config.ts', 'export default {};\n');
   writeText(root, 'scripts/run-critical-coverage.mjs', '#!/usr/bin/env node\n');
 
@@ -69,6 +76,8 @@ const writeReusableCriticalCoverage = (root: string, overrides: Record<string, u
     'scripts/config/critical-coverage-thresholds.json',
     new Date('2026-07-01T09:00:00.000Z')
   );
+  touch(root, 'scripts/criticalCoverageSupport.mjs', new Date('2026-07-01T09:00:00.000Z'));
+  touch(root, 'scripts/report-critical-coverage.mjs', new Date('2026-07-01T09:00:00.000Z'));
   touch(root, 'vitest.critical-coverage.config.ts', new Date('2026-07-01T09:00:00.000Z'));
   touch(root, 'scripts/run-critical-coverage.mjs', new Date('2026-07-01T09:00:00.000Z'));
 };
@@ -112,6 +121,10 @@ describe('evidence dependency graph', () => {
   it('accepts critical coverage reuse only for matching sha, clean/dirty state and fresh dependencies', () => {
     const root = makeTempRoot();
     writeReusableCriticalCoverage(root);
+
+    for (const dependency of getCriticalCoverageReuseInputs().dependencies) {
+      expect(fs.existsSync(path.join(root, dependency))).toBe(true);
+    }
 
     expect(
       isCriticalCoverageArtifactReusable(root, {
