@@ -10,9 +10,18 @@ import {
 import {
   buildReleaseReadinessPlan,
   isCriticalCoverageArtifactReusable,
+  RELEASE_READINESS_INPUTS,
 } from '../../../scripts/releaseReadinessRunnerSupport.mjs';
 
 const tempRoots: string[] = [];
+
+type ReleaseReadinessStep = {
+  command: string;
+};
+
+type ReleaseReadinessPlan = {
+  steps: ReleaseReadinessStep[];
+};
 
 const makeTempRoot = () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'evidence-graph-'));
@@ -35,6 +44,9 @@ const writeText = (root: string, relativePath: string, value: string) => {
 const touch = (root: string, relativePath: string, date: Date) => {
   fs.utimesSync(path.join(root, relativePath), date, date);
 };
+
+const findCriticalCoverageStep = (plan: ReleaseReadinessPlan) =>
+  plan.steps.find(step => step.command === 'report:critical-coverage');
 
 const writeReusableCriticalCoverage = (root: string, overrides: Record<string, unknown> = {}) => {
   writeJson(root, 'reports/critical-coverage.json', {
@@ -88,6 +100,12 @@ describe('evidence dependency graph', () => {
         'guardrail-governance',
         'compatibility-import-governance',
       ])
+    );
+  });
+
+  it('derives release readiness runner inputs from the evidence graph', () => {
+    expect(RELEASE_READINESS_INPUTS).toEqual(
+      getEvidenceReportDependencies('release-readiness-scorecard')
     );
   });
 
@@ -160,9 +178,7 @@ describe('evidence dependency graph', () => {
       gitSha: 'abc1234',
       gitDirty: false,
     });
-    expect(
-      reusablePlan.steps.find(step => step.command === 'report:critical-coverage')
-    ).toMatchObject({
+    expect(findCriticalCoverageStep(reusablePlan)).toMatchObject({
       action: 'reuse',
     });
 
@@ -170,10 +186,8 @@ describe('evidence dependency graph', () => {
       gitSha: 'new5678',
       gitDirty: false,
     });
-    expect(stalePlan.steps.find(step => step.command === 'report:critical-coverage')).toMatchObject(
-      {
-        action: 'run',
-      }
-    );
+    expect(findCriticalCoverageStep(stalePlan)).toMatchObject({
+      action: 'run',
+    });
   });
 });

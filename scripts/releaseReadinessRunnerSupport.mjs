@@ -1,23 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { getEvidenceNode, resolveEvidenceDependencyFiles } from './evidenceDependencyGraph.mjs';
-
-export const RELEASE_READINESS_INPUTS = [
-  'quality-metrics',
-  'bundle-risk-ledger',
-  'legacy-bridge',
-  'compatibility-governance',
-  'legacy-retirement-debt',
-  'compatibility-import-governance',
-  'critical-coverage',
-  'operational-health',
-  'system-confidence',
-  'release-confidence-matrix',
-  'technical-ownership-map',
-  'guardrail-governance',
-];
+import {
+  getEvidenceNode,
+  getEvidenceReportDependencies,
+  resolveEvidenceDependencyFiles,
+} from './evidenceDependencyGraph.mjs';
 
 const CRITICAL_COVERAGE_ID = 'critical-coverage';
+const RELEASE_READINESS_SCORECARD_ID = 'release-readiness-scorecard';
+
+export const RELEASE_READINESS_INPUTS = getEvidenceReportDependencies(RELEASE_READINESS_SCORECARD_ID);
 
 const readJson = filePath => JSON.parse(fs.readFileSync(filePath, 'utf8'));
 

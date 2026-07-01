@@ -38,12 +38,12 @@ const writeProfile = completedAt => {
 
 for (const step of getGovernanceSnapshotSteps()) {
   console.log(`::group::${step.command}`);
-  const startedAt = Date.now();
+  const stepStartMs = Date.now();
   const result = spawnSync('npm', ['run', step.command], {
     stdio: 'inherit',
     shell: process.platform === 'win32',
   });
-  const durationMs = Date.now() - startedAt;
+  const durationMs = Date.now() - stepStartMs;
   const elapsedSeconds = (durationMs / 1000).toFixed(1);
   console.log(`::endgroup::`);
   console.log(`[governance-snapshots] ${step.command} finished in ${elapsedSeconds}s`);

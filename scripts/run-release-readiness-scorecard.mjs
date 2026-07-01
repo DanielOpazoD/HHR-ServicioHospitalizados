@@ -10,8 +10,7 @@ const plan = buildReleaseReadinessPlan(root, getGitReportState(root));
 console.log(formatReleaseReadinessPlanSummary(plan));
 
 const runNpmScript = command => {
-  const script = command.replace(/^report:/, 'report:');
-  const result = spawnSync('npm', ['run', script], {
+  const result = spawnSync('npm', ['run', command], {
     cwd: root,
     stdio: 'inherit',
     shell: process.platform === 'win32',
