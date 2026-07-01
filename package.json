@@ -158,7 +158,7 @@
     "report:bundle-risk-ledger": "node scripts/report-bundle-risk-ledger.mjs",
     "report:release-confidence-matrix": "node scripts/report-release-confidence-matrix.mjs",
     "report:release-evidence": "npm run test:e2e:clinical-visual-release && npm run report:quality-metrics && npm run report:system-confidence && npm run report:operational-health && npm run report:clinical-release-validation && npm run report:clinical-release-signoff && npm run report:release-readiness-scorecard && npm run report:maintenance-debt-scorecard",
-    "report:release-readiness-scorecard": "npm run report:quality-metrics && npm run report:bundle-risk-ledger && npm run report:legacy-bridge && npm run report:compatibility-governance && npm run report:legacy-retirement-debt && npm run report:compatibility-import-governance && npm run report:critical-coverage && npm run report:operational-health && npm run report:system-confidence && npm run report:release-confidence-matrix && npm run report:technical-ownership-map && npm run report:guardrail-governance && node scripts/report-release-readiness-scorecard.mjs",
+    "report:release-readiness-scorecard": "node scripts/run-release-readiness-scorecard.mjs",
     "report:guardrail-governance": "node scripts/report-guardrail-governance.mjs",
     "report:todos": "node scripts/scan-todos.mjs",
     "report:sustainable-change-policy": "node scripts/report-sustainable-change-policy.mjs",

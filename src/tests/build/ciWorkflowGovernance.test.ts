@@ -19,15 +19,25 @@ describe('CI workflow governance', () => {
   it('uses the logged governance snapshot runner so CI exposes long report substeps', () => {
     const scripts = readPackageScripts();
     const runner = readText('scripts/run-governance-snapshots.mjs');
+    const support = readText('scripts/governanceSnapshotSupport.mjs');
 
     expect(scripts['report:governance-snapshots']).toBe(
       'node scripts/run-governance-snapshots.mjs'
     );
-    expect(runner).toContain('report:release-readiness-scorecard');
-    expect(runner).toContain('report:clinical-release-signoff');
-    expect(runner).toContain('report:runtime-contracts');
-    expect(runner).toContain('report:maintenance-debt-scorecard');
+    expect(support).toContain('release-readiness-scorecard');
+    expect(support).toContain('clinical-release-signoff');
+    expect(support).toContain('runtime-contracts');
+    expect(support).toContain('maintenance-debt-scorecard');
     expect(runner).toContain('::group::');
+    expect(support).toContain('ci-governance-snapshot-profile');
+  });
+
+  it('keeps release readiness generation behind a cache-aware runner instead of an opaque npm chain', () => {
+    const scripts = readPackageScripts();
+
+    expect(scripts['report:release-readiness-scorecard']).toBe(
+      'node scripts/run-release-readiness-scorecard.mjs'
+    );
   });
 
   it('enforces strict report freshness immediately after regenerating governance snapshots', () => {
@@ -42,15 +52,30 @@ describe('CI workflow governance', () => {
   it('splits quality-static into governed groups while preserving an aggregate quality-static check', () => {
     const workflow = readText('.github/workflows/ci-cd.yml');
 
+    expect(workflow).toContain('quality-static-governance-snapshots:');
     expect(workflow).toContain('quality-static-groups:');
     expect(workflow).toContain('name: quality-static-${{ matrix.group }}');
     expect(workflow).toContain('group: [boundaries, governance, security, size, tests, reports]');
     expect(workflow).toContain('run: npm run check:quality:group -- ${{ matrix.group }}');
     expect(workflow).toContain('quality-static:');
-    expect(workflow).toContain('needs: [quality-static-base, quality-static-groups]');
+    expect(workflow).toContain(
+      'needs: [quality-static-governance-snapshots, quality-static-groups]'
+    );
     expect(workflow).toContain('Quality static gates passed');
     expect(workflow).toContain('name: quality-static-governance-snapshots');
     expect(workflow).toContain("if: matrix.group == 'governance'");
+  });
+
+  it('persists critical coverage as an explicit artifact for governance snapshots', () => {
+    const workflow = readText('.github/workflows/ci-cd.yml');
+
+    expect(workflow).toContain('critical-coverage-report:');
+    expect(workflow).toContain('name: critical-coverage-report');
+    expect(workflow).toContain('run: npm run report:critical-coverage');
+    expect(workflow).toContain('name: critical-coverage');
+    expect(workflow).toContain('path: reports/critical-coverage.*');
+    expect(workflow).toContain('uses: actions/download-artifact@v7');
+    expect(workflow).toContain('reports/ci-governance-snapshot-profile.*');
   });
 
   it('keeps Firefox compatibility out of PR CI unless Firefox becomes a supported browser', () => {
