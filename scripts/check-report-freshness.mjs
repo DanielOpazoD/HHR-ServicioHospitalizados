@@ -2,6 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { getDirectMergeParentShas, getGitReportState } from './gitReportState.mjs';
 
 const ROOT = process.cwd();
@@ -89,12 +90,52 @@ const isSameCommit = (reportSha, currentSha) =>
 const matchesAnyAllowedCommit = (reportSha, allowedShas) =>
   allowedShas.some(allowedSha => isSameCommit(reportSha, allowedSha));
 
+const runGit = args => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
+
+const governedReportFiles = new Set(
+  [
+    ...trackedReports.map(report => report.file),
+    'reports/clinical-release-validation.json',
+  ].flatMap(file => [file, file.replace(/\.json$/, '.md')])
+);
+
+const getDirectParentSha = () => {
+  try {
+    return runGit(['rev-parse', '--short', 'HEAD^']);
+  } catch {
+    return '';
+  }
+};
+
+const getHeadChangedFiles = () => {
+  try {
+    return runGit(['diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD'])
+      .split('\n')
+      .map(file => file.trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+};
+
+const isGovernedReportOnlyHead = () => {
+  const changedFiles = getHeadChangedFiles();
+  return (
+    changedFiles.length > 0 &&
+    changedFiles.every(file => governedReportFiles.has(file))
+  );
+};
+
 const currentGitState = getGitReportState(ROOT);
 const currentGitSha = currentGitState.gitSha;
 if (!currentGitSha) {
   fail(['Could not resolve current git commit.']);
 }
-const allowedReportShas = [currentGitSha, ...getDirectMergeParentShas(ROOT)];
+const allowedReportShas = [
+  currentGitSha,
+  ...getDirectMergeParentShas(ROOT),
+  ...(isGovernedReportOnlyHead() ? [getDirectParentSha()].filter(Boolean) : []),
+];
 
 const issues = [];
 
@@ -161,5 +202,5 @@ if (issues.length > 0) {
 }
 
 console.log(
-  `[report-freshness] OK (${trackedReports.length} reports match ${currentGitSha} or a direct merge parent, worktree=${currentGitState.gitDirty ? 'dirty' : 'clean'})`
+  `[report-freshness] OK (${trackedReports.length} reports match ${currentGitSha}, a direct merge parent, or an evidence-only direct parent, worktree=${currentGitState.gitDirty ? 'dirty' : 'clean'})`
 );
