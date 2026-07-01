@@ -289,13 +289,14 @@ Artifacts operativos publicados por CI:
 - `operational-health`
 - `runtime-contracts`
 - `critical-coverage`
+- `governance-snapshot-profile`
 - `flow-performance-budget`
 
 ## Baseline de Calidad
 
 `reports/` está en `.gitignore`. La regla del repo es regenerar los reportes desde el código en cada validación:
 
-- En CI lo hace el job `quality-static` corriendo `npm run report:governance-snapshots` antes de `npm run check:quality`, y publica los archivos como artifacts.
+- En CI, `critical-coverage-report` genera `reports/critical-coverage.*` como artifact explícito. Luego `quality-static-governance-snapshots` lo descarga, corre `npm run report:governance-snapshots`, valida `npm run check:report-freshness:strict` y publica `reports/ci-governance-snapshot-profile.*`.
 - En local hay que regenerarlos antes de tratarlos como evidencia.
 
 Snapshots versionados explícitamente (excepción documentada al `.gitignore`, mantenidos a mano):
@@ -308,12 +309,34 @@ Flujo local recomendado antes de citar cualquier otro `reports/*.md` como eviden
 
 ```bash
 git status --short
+npm run report:critical-coverage
 npm run report:governance-snapshots
-npm run report:maintenance-debt-scorecard
 npm run check:report-freshness
 ```
 
+Flujo local rapido cuando `reports/critical-coverage.*` ya fue generado para el mismo `gitSha` y el mismo estado clean/dirty:
+
+```bash
+git status --short
+npm run report:governance-snapshots
+npm run check:report-freshness:strict
+```
+
+`report:release-readiness-scorecard` reutiliza `reports/critical-coverage.*` solo si:
+
+- `reports/critical-coverage.json` declara el `gitSha` actual.
+- El estado `gitDirty` coincide con el worktree actual.
+- `reports/critical-coverage.json` y `.md` existen.
+- Las dependencias de cobertura critica (`scripts/config/critical-coverage-thresholds.json`, runner, soporte y config Vitest) no son mas nuevas que el artifact.
+
+Si cualquiera de esas condiciones falla, el runner recalcula `npm run report:critical-coverage`. Esta politica evita cache opaco: el artifact es descargable desde CI y la razon de reuso o recalculo queda visible en consola y en `reports/ci-governance-snapshot-profile.*`.
+
 Si `check:report-freshness` falla o el árbol está sucio, los reportes dejan de ser fuente confiable para describir el estado actual.
+
+Riesgos residuales:
+
+- Si cambia la matriz clinica de tests sin tocar los archivos gobernados de cobertura critica, hay que forzar `npm run report:critical-coverage` antes de publicar evidencia.
+- `critical-coverage-report` corre en paralelo con lint/typecheck para bajar tiempo de pared, pero sigue siendo un gate completo; no elimina cobertura ni relaja `check:report-freshness:strict`.
 
 ## Notas Operativas Recientes
 

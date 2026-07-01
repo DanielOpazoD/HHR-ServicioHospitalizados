@@ -4,62 +4,62 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { getDirectMergeParentShas, getGitReportState } from './gitReportState.mjs';
+import { getEvidenceReportDependencies, resolveEvidenceDependencyFiles } from './evidenceDependencyGraph.mjs';
 
 const ROOT = process.cwd();
 const strictMode =
   process.argv.includes('--strict') || process.env.REPORT_FRESHNESS_STRICT === '1';
+const dependencyFilesFor = reportId =>
+  getEvidenceReportDependencies(reportId).flatMap(resolveEvidenceDependencyFiles);
+
 const trackedReports = [
   {
+    id: 'quality-metrics',
     file: 'reports/quality-metrics.json',
     field: 'gitSha',
     refreshScript: 'report:quality-metrics',
   },
   {
+    id: 'system-confidence',
     file: 'reports/system-confidence.json',
     field: 'gitSha',
     refreshScript: 'report:system-confidence',
-    dependsOn: [
-      'reports/critical-coverage.json',
-      'reports/operational-health.json',
-      'reports/quality-metrics.json',
-    ],
+    dependsOn: dependencyFilesFor('system-confidence'),
   },
   {
+    id: 'operational-health',
     file: 'reports/operational-health.json',
     field: 'gitSha',
     refreshScript: 'report:operational-health',
-    dependsOn: ['reports/e2e/preview-bootstrap/report.json'],
+    dependsOn: dependencyFilesFor('operational-health'),
   },
   {
+    id: 'clinical-release-signoff',
     file: 'reports/clinical-release-signoff.json',
     field: 'gitSha',
     refreshScript: 'report:clinical-release-signoff',
-    dependsOn: ['scripts/config/clinical-release-signoff.json'],
+    dependsOn: dependencyFilesFor('clinical-release-signoff'),
   },
   {
+    id: 'release-confidence-matrix',
     file: 'reports/release-confidence-matrix.json',
     field: 'gitSha',
     refreshScript: 'report:release-confidence-matrix',
+    dependsOn: dependencyFilesFor('release-confidence-matrix'),
   },
   {
+    id: 'release-readiness-scorecard',
     file: 'reports/release-readiness-scorecard.json',
     field: 'gitSha',
     refreshScript: 'report:release-readiness-scorecard',
-    dependsOn: [
-      'reports/quality-metrics.json',
-      'reports/system-confidence.json',
-      'reports/operational-health.json',
-      'reports/release-confidence-matrix.json',
-      'reports/technical-ownership-map.json',
-      'reports/guardrail-governance.json',
-      'reports/compatibility-import-governance.json',
-    ],
+    dependsOn: dependencyFilesFor('release-readiness-scorecard'),
   },
   {
+    id: 'maintenance-debt-scorecard',
     file: 'reports/maintenance-debt-scorecard.json',
     field: 'gitSha',
     refreshScript: 'report:maintenance-debt-scorecard',
-    dependsOn: ['reports/quality-metrics.json'],
+    dependsOn: dependencyFilesFor('maintenance-debt-scorecard'),
   },
 ];
 
