@@ -131,11 +131,14 @@ const currentGitSha = currentGitState.gitSha;
 if (!currentGitSha) {
   fail(['Could not resolve current git commit.']);
 }
-const allowedReportShas = [
-  currentGitSha,
-  ...getDirectMergeParentShas(ROOT),
-  ...(isGovernedReportOnlyHead() ? [getDirectParentSha()].filter(Boolean) : []),
-];
+const baseAllowedReportShas = [currentGitSha, ...getDirectMergeParentShas(ROOT)];
+let evidenceOnlyAllowedReportShas;
+const getEvidenceOnlyAllowedReportShas = () => {
+  evidenceOnlyAllowedReportShas ??= isGovernedReportOnlyHead()
+    ? [getDirectParentSha()].filter(Boolean)
+    : [];
+  return evidenceOnlyAllowedReportShas;
+};
 
 const issues = [];
 
@@ -163,7 +166,10 @@ for (const report of trackedReports) {
     continue;
   }
 
-  if (!matchesAnyAllowedCommit(reportSha, allowedReportShas)) {
+  if (
+    !matchesAnyAllowedCommit(reportSha, baseAllowedReportShas) &&
+    !matchesAnyAllowedCommit(reportSha, getEvidenceOnlyAllowedReportShas())
+  ) {
     issues.push(
       `${report.file} was generated for ${reportSha}, current HEAD is ${currentGitSha}.`
     );

@@ -16,8 +16,7 @@ const ALLOWED_NON_CLINICAL_COMPOSITE_KEY_BUILDERS = new Set([
 ]);
 
 const MANUAL_TEMPLATE_KEY_PATTERN = /\$\{[^`]*\}__\$\{[^`]*\}/;
-const MANUAL_LEGACY_EPISODE_KEY_READ_PATTERN =
-  /episodeKey\.split\(['"]__['"]\)|\.includes\(['"]__['"]\)/;
+const MANUAL_LEGACY_EPISODE_KEY_READ_PATTERN = /episodeKey\.(?:split|includes)\(['"]__['"]\)/;
 
 const collectSourceFiles = (dir: string): string[] => {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
