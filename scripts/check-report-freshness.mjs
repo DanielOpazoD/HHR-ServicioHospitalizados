@@ -150,6 +150,34 @@ const getEvidenceOnlyAllowedReportShas = () => {
 };
 
 const issues = [];
+const advisories = [];
+
+const pushProvenanceIssues = ({ report, parsedReport, reportSha }) => {
+  const provenance = parsedReport?.generatedFor;
+  if (!provenance || typeof provenance !== 'object') {
+    return;
+  }
+
+  const malformedReasons = [];
+  if (typeof provenance.reportId === 'string' && provenance.reportId !== report.id) {
+    malformedReasons.push(`reportId=${provenance.reportId}`);
+  }
+  if (typeof provenance.gitSha === 'string' && !isSameCommit(provenance.gitSha, reportSha)) {
+    malformedReasons.push(`gitSha=${provenance.gitSha}`);
+  }
+
+  if (malformedReasons.length > 0) {
+    issues.push(
+      `${report.file} has malformed provenance (${malformedReasons.join(', ')}); refresh with npm run ${report.refreshScript}.`
+    );
+  }
+
+  if (typeof provenance.treeHash !== 'string' || !provenance.treeHash) {
+    advisories.push(
+      `${report.file} provenance does not declare treeHash; refresh with npm run ${report.refreshScript} to improve audit traceability.`
+    );
+  }
+};
 
 for (const report of trackedReports) {
   const reportPath = path.join(ROOT, report.file);
@@ -174,6 +202,8 @@ for (const report of trackedReports) {
     issues.push(`${report.file} does not declare ${report.field}.`);
     continue;
   }
+
+  pushProvenanceIssues({ report, parsedReport, reportSha });
 
   if (
     !matchesAnyAllowedCommit(reportSha, baseAllowedReportShas) &&
@@ -233,6 +263,13 @@ if (issues.length > 0 && strictMode) {
 if (issues.length > 0) {
   warn(issues);
   process.exit(0);
+}
+
+if (advisories.length > 0) {
+  console.warn('[report-freshness] Provenance advisories:');
+  for (const advisory of advisories) {
+    console.warn(`- ${advisory}`);
+  }
 }
 
 console.log(

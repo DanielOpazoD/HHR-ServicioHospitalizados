@@ -516,16 +516,21 @@ ${Object.entries(summary.conflictContexts)
     : 'none'
 }
 
-| Critical startup asset | Size (bytes) | Max (bytes) | Budget | Status |
-| --- | ---: | ---: | --- | --- |
+| Critical startup asset | Size (bytes) | Max (bytes) | Utilization | Budget | Status |
+| --- | ---: | ---: | ---: | --- | --- |
 ${
   summary.frontendStartup?.criticalAssets?.length
     ? summary.frontendStartup.criticalAssets
         .map(
-          asset => `| \`${asset.file}\` | ${asset.sizeBytes} | ${asset.maxBytes ?? '-'} | ${asset.budgetLabel ?? asset.budgetSource ?? '-'} | ${asset.status} |`
+          asset =>
+            `| \`${asset.file}\` | ${asset.sizeBytes} | ${asset.maxBytes ?? '-'} | ${
+              typeof asset.budgetUtilizationPct === 'number'
+                ? `${asset.budgetUtilizationPct}%`
+                : '-'
+            } | ${asset.budgetLabel ?? asset.budgetSource ?? '-'} | ${asset.status} |`
         )
         .join('\n')
-    : '| `unavailable` | - | - | - | missing |'
+    : '| `unavailable` | - | - | - | - | missing |'
 }
 
 ## Incident Signals To Watch
@@ -584,17 +589,21 @@ ${
 
 - Chunk budget max (bytes): ${summary.buildAssets.chunkMaxBytes ?? 'unknown'}
 
-| Asset | Size (bytes) | Max (bytes) | Budget | Status |
-| --- | ---: | ---: | --- | --- |
+| Asset | Size (bytes) | Max (bytes) | Utilization | Budget | Status |
+| --- | ---: | ---: | ---: | --- | --- |
 ${
   summary.buildAssets.largestAssets.length > 0
     ? summary.buildAssets.largestAssets
         .map(
           asset =>
-            `| \`${asset.file}\` | ${asset.sizeBytes} | ${asset.maxBytes ?? '-'} | ${asset.budgetLabel ?? asset.budgetSource ?? '-'} | ${asset.status} |`
+            `| \`${asset.file}\` | ${asset.sizeBytes} | ${asset.maxBytes ?? '-'} | ${
+              typeof asset.budgetUtilizationPct === 'number'
+                ? `${asset.budgetUtilizationPct}%`
+                : '-'
+            } | ${asset.budgetLabel ?? asset.budgetSource ?? '-'} | ${asset.status} |`
         )
         .join('\n')
-    : '| `unavailable` | - | - | - | missing |'
+    : '| `unavailable` | - | - | - | - | missing |'
 }
 
 ## Repository Performance Thresholds

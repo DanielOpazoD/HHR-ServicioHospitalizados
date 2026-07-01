@@ -87,15 +87,19 @@ export const resolveBuildAssetBudget = ({ file, budgetConfig }) => {
 export const classifyBuildAssetBudget = ({ file, sizeBytes, budgetConfig }) => {
   const budget = resolveBuildAssetBudget({ file, budgetConfig });
   const maxBytes = Number(budget.maxBytes || 0) || null;
+  const numericSizeBytes = Number(sizeBytes || 0);
+  const budgetUtilizationPct = maxBytes
+    ? Number(((numericSizeBytes / maxBytes) * 100).toFixed(1))
+    : null;
   const status =
-    maxBytes && Number(sizeBytes || 0) > maxBytes
+    maxBytes && numericSizeBytes > maxBytes
       ? budget.severity === 'warn'
         ? 'target-miss'
         : 'blocking'
       : budget.budgetSource === 'chunkPatternBudget'
         ? 'ok'
         : classifyBudgetStatus({
-            actual: Number(sizeBytes || 0),
+            actual: numericSizeBytes,
             target: maxBytes,
             enforced: maxBytes,
           });
@@ -105,6 +109,7 @@ export const classifyBuildAssetBudget = ({ file, sizeBytes, budgetConfig }) => {
     sizeBytes,
     ...budget,
     maxBytes,
+    budgetUtilizationPct,
     status,
   };
 };

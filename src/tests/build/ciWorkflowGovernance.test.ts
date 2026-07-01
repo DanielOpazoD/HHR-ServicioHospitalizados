@@ -78,6 +78,21 @@ describe('CI workflow governance', () => {
     expect(workflow).toContain('reports/ci-governance-snapshot-profile.*');
   });
 
+  it('self-checks post-merge evidence before uploading the main artifact', () => {
+    const workflow = readText('.github/workflows/ci-cd.yml');
+    const generateStep = workflow.indexOf('npm run postmerge:evidence');
+    const checkStep = workflow.indexOf('npm run check:postmerge-evidence:strict');
+    const uploadStep = workflow.indexOf('name: postmerge-release-evidence');
+
+    expect(workflow).toContain('postmerge-evidence:');
+    expect(workflow).toContain(
+      "if: github.event_name == 'push' && github.ref == 'refs/heads/main'"
+    );
+    expect(generateStep).toBeGreaterThanOrEqual(0);
+    expect(checkStep).toBeGreaterThan(generateStep);
+    expect(uploadStep).toBeGreaterThan(checkStep);
+  });
+
   it('keeps Firefox compatibility out of PR CI unless Firefox becomes a supported browser', () => {
     const workflow = readText('.github/workflows/ci-cd.yml');
 

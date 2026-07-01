@@ -6,6 +6,25 @@ import { getEvidenceReportDependencyFiles } from './evidenceDependencyGraph.mjs'
 
 const uniqueSorted = values => [...new Set(values.filter(Boolean))].sort();
 
+const readFingerprintPayload = dependencyPath => {
+  const content = fs.readFileSync(dependencyPath);
+  if (!dependencyPath.endsWith('.json')) {
+    return content;
+  }
+
+  try {
+    const parsed = JSON.parse(content.toString('utf8'));
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const { generatedFor, ...semanticPayload } = parsed;
+      return `${JSON.stringify(semanticPayload)}\n`;
+    }
+  } catch {
+    return content;
+  }
+
+  return content;
+};
+
 export const buildDependencyFingerprint = ({ root, dependencyFiles }) => {
   const hash = crypto.createHash('sha256');
   const files = [];
@@ -21,7 +40,7 @@ export const buildDependencyFingerprint = ({ root, dependencyFiles }) => {
     }
 
     files.push(dependencyFile);
-    hash.update(fs.readFileSync(dependencyPath));
+    hash.update(readFingerprintPayload(dependencyPath));
     hash.update('\0');
   }
 

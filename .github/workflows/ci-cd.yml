@@ -480,6 +480,9 @@ jobs:
       - name: Generate post-merge release evidence
         run: npm run postmerge:evidence
 
+      - name: Verify post-merge release evidence
+        run: npm run check:postmerge-evidence:strict
+
       - name: Upload post-merge release evidence
         if: always()
         uses: actions/upload-artifact@v7
