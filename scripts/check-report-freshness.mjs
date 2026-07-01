@@ -118,8 +118,7 @@ const getHeadChangedFiles = () => {
   }
 };
 
-const isGovernedReportOnlyHead = () => {
-  const changedFiles = getHeadChangedFiles();
+const hasOnlyGovernedReportFiles = changedFiles => {
   return (
     changedFiles.length > 0 &&
     changedFiles.every(file => governedReportFiles.has(file))
@@ -134,9 +133,12 @@ if (!currentGitSha) {
 const baseAllowedReportShas = [currentGitSha, ...getDirectMergeParentShas(ROOT)];
 let evidenceOnlyAllowedReportShas;
 const getEvidenceOnlyAllowedReportShas = () => {
-  evidenceOnlyAllowedReportShas ??= isGovernedReportOnlyHead()
-    ? [getDirectParentSha()].filter(Boolean)
-    : [];
+  if (evidenceOnlyAllowedReportShas === undefined) {
+    const changedFiles = getHeadChangedFiles();
+    evidenceOnlyAllowedReportShas = hasOnlyGovernedReportFiles(changedFiles)
+      ? [getDirectParentSha()].filter(Boolean)
+      : [];
+  }
   return evidenceOnlyAllowedReportShas;
 };
 
