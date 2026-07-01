@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "unitSuiteScript": "test:ci:unit",
+  "unitSuiteScript": "test:ci:unit:shard",
   "criticalFiles": [
     "src/tests/integration/sync-resilience.test.ts",
     "src/tests/integration/sync-ui-resilience.test.tsx",
@@ -30,7 +30,7 @@
   ],
   "excludedFromUnitSuite": [
     "src/tests/security/firestore-rules.test.ts",
-    "src/tests/emulator/",
-    "src/tests/emulator-ui/"
+    "src/tests/emulator/**",
+    "src/tests/emulator-ui/**"
   ]
 }

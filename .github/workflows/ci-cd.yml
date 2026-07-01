@@ -120,6 +120,15 @@ jobs:
         env:
           CI: true
 
+      - name: Upload test coverage shard artifact (optional)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report-${{ matrix.shard }}
+          path: coverage/
+          retention-days: 7
+        continue-on-error: true
+
   unit-risk:
     name: unit-risk
     runs-on: ubuntu-latest
