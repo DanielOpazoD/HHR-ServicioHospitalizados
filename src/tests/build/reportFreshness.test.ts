@@ -4,18 +4,21 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { getEvidenceReportDependencyFiles } from '../../../scripts/evidenceDependencyGraph.mjs';
+import { buildDependencyFingerprint } from '../../../scripts/evidenceProvenanceSupport.mjs';
+
 const scriptPath = path.join(process.cwd(), 'scripts/check-report-freshness.mjs');
 const tempRoots: string[] = [];
 
 const trackedReports = [
-  'reports/quality-metrics.json',
-  'reports/system-confidence.json',
-  'reports/operational-health.json',
-  'reports/clinical-release-validation.json',
-  'reports/clinical-release-signoff.json',
-  'reports/release-confidence-matrix.json',
-  'reports/release-readiness-scorecard.json',
-  'reports/maintenance-debt-scorecard.json',
+  { id: 'quality-metrics', file: 'reports/quality-metrics.json' },
+  { id: 'system-confidence', file: 'reports/system-confidence.json' },
+  { id: 'operational-health', file: 'reports/operational-health.json' },
+  { id: 'clinical-release-validation', file: 'reports/clinical-release-validation.json' },
+  { id: 'clinical-release-signoff', file: 'reports/clinical-release-signoff.json' },
+  { id: 'release-confidence-matrix', file: 'reports/release-confidence-matrix.json' },
+  { id: 'release-readiness-scorecard', file: 'reports/release-readiness-scorecard.json' },
+  { id: 'maintenance-debt-scorecard', file: 'reports/maintenance-debt-scorecard.json' },
 ];
 
 const run = (root: string, command: string, args: string[] = []) =>
@@ -80,13 +83,43 @@ const makeGitRepoWithLinearCommit = () => {
   return { root, previousSha };
 };
 
-const writeReports = (root: string, gitSha: string) => {
+const writeReports = (
+  root: string,
+  gitSha: string,
+  options: {
+    includeGeneratedFor?: boolean;
+    generatedForOverrides?: Record<string, Record<string, unknown>>;
+  } = {}
+) => {
   for (const report of trackedReports) {
-    write(root, report, `${JSON.stringify({ gitSha, gitDirty: false }, null, 2)}\n`);
+    write(root, report.file, `${JSON.stringify({ gitSha, gitDirty: false }, null, 2)}\n`);
   }
+
+  if (options.includeGeneratedFor) {
+    for (const report of trackedReports) {
+      const dependencyFingerprint = buildDependencyFingerprint({
+        root,
+        dependencyFiles: getEvidenceReportDependencyFiles(report.id),
+      });
+      const generatedFor = {
+        gitSha,
+        gitDirty: false,
+        treeHash: 'fixture-tree',
+        reportId: report.id,
+        dependencyFingerprint,
+        ...(options.generatedForOverrides?.[report.id] ?? {}),
+      };
+      write(
+        root,
+        report.file,
+        `${JSON.stringify({ gitSha, gitDirty: false, generatedFor }, null, 2)}\n`
+      );
+    }
+  }
+
   const generatedAt = new Date('2026-05-10T12:00:00.000Z');
   for (const report of trackedReports) {
-    fs.utimesSync(path.join(root, report), generatedAt, generatedAt);
+    fs.utimesSync(path.join(root, report.file), generatedAt, generatedAt);
   }
 };
 
@@ -104,6 +137,39 @@ describe('report freshness guardrail', () => {
     expect(() => run(root, 'node', [scriptPath])).not.toThrow();
   });
 
+  it('rejects direct merge-parent reports without dependency fingerprint in strict release mode', () => {
+    const { root, featureSha } = makeGitRepoWithMergeCommit();
+    writeReports(root, featureSha);
+
+    expect(() => run(root, 'node', [scriptPath, '--strict'])).toThrow(
+      /reports\/quality-metrics\.json was generated for direct merge parent .* without dependency fingerprint/
+    );
+  });
+
+  it('accepts direct merge-parent reports with matching dependency fingerprints in strict release mode', () => {
+    const { root, featureSha } = makeGitRepoWithMergeCommit();
+    writeReports(root, featureSha, { includeGeneratedFor: true });
+
+    expect(() => run(root, 'node', [scriptPath, '--strict'])).not.toThrow();
+  });
+
+  it('rejects malformed provenance when report id and git sha do not match the report', () => {
+    const { root, featureSha } = makeGitRepoWithMergeCommit();
+    writeReports(root, featureSha, {
+      includeGeneratedFor: true,
+      generatedForOverrides: {
+        'quality-metrics': {
+          reportId: 'operational-health',
+          gitSha: 'wrongsha',
+        },
+      },
+    });
+
+    expect(() => run(root, 'node', [scriptPath, '--strict'])).toThrow(
+      /reports\/quality-metrics\.json has malformed provenance/
+    );
+  });
+
   it('treats stale reports as advisory outside strict release mode', () => {
     const { root } = makeGitRepoWithMergeCommit();
     const staleSha = run(root, 'git', ['rev-parse', '--short', 'HEAD^1^']);
@@ -118,7 +184,7 @@ describe('report freshness guardrail', () => {
     writeReports(root, staleSha);
 
     expect(() => run(root, 'node', [scriptPath, '--strict'])).toThrow(
-      /reports\/quality-metrics\.json was generated for/
+      /reports\/quality-metrics\.json is stale by commit ancestry/
     );
   });
 
@@ -127,7 +193,7 @@ describe('report freshness guardrail', () => {
     writeReports(root, previousSha);
 
     expect(() => run(root, 'node', [scriptPath, '--strict'])).toThrow(
-      /reports\/quality-metrics\.json was generated for/
+      /reports\/quality-metrics\.json is stale by commit ancestry/
     );
   });
 

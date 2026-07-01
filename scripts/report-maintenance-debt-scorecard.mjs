@@ -3,6 +3,7 @@ import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { formatWorktreeState, getGitReportState } from './gitReportState.mjs';
 import { buildFirestoreRulesGovernanceReport } from './firestoreRulesGovernanceSupport.mjs';
+import { buildEvidenceProvenance } from './evidenceProvenanceSupport.mjs';
 import {
   buildLegacyRetirementDebtRows,
   buildMaintenanceDebtWatchlistRows,
@@ -122,6 +123,11 @@ const gitState = getGitReportState(ROOT);
 const payload = {
   generatedAt: new Date().toISOString(),
   ...gitState,
+  generatedFor: buildEvidenceProvenance({
+    root: ROOT,
+    reportId: 'maintenance-debt-scorecard',
+    gitState,
+  }),
   pendingHotspots,
   watchlist,
   tests: {

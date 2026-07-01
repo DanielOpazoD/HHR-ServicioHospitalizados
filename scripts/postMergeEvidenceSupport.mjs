@@ -49,6 +49,44 @@ export const findPostMergeEvidenceIssues = ({ evidence, currentCommit }) => {
   return issues;
 };
 
+export const buildPostMergeEvidencePayload = ({
+  generatedAt,
+  branch,
+  commit,
+  workflow = {},
+  results,
+}) => {
+  const safeResults = Array.isArray(results) ? results : [];
+  const freshness = safeResults.find(result => result.name === 'report-freshness-strict');
+  const passedBlocks = safeResults.filter(result => result.status === 'passed').length;
+  const failedBlocks = safeResults.filter(result => result.status !== 'passed').length;
+
+  return {
+    generatedAt,
+    branch,
+    commit,
+    provenance: {
+      evidenceKind: 'post-merge-main',
+      generatedFor: {
+        branch,
+        gitSha: commit,
+      },
+      workflow: {
+        eventName: workflow.eventName || 'local',
+        runId: workflow.runId || 'local',
+        runAttempt: workflow.runAttempt || '1',
+      },
+    },
+    summary: {
+      totalBlocks: safeResults.length,
+      passedBlocks,
+      failedBlocks,
+      freshnessStrictStatus: freshness?.status || 'missing',
+    },
+    results: safeResults,
+  };
+};
+
 export const buildPostMergeEvidenceSummary = ({ generatedAt, branch, commit, results }) => {
   const freshness = results.find(result => result.name === 'report-freshness-strict');
   const lines = [

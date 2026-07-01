@@ -135,3 +135,40 @@ export const resolveEvidenceDependencyFiles = dependency => {
   const node = getEvidenceNode(dependency);
   return node ? node.artifacts : [dependency];
 };
+
+const appendUnique = (target, values) => {
+  for (const value of values) {
+    if (value && !target.includes(value)) {
+      target.push(value);
+    }
+  }
+};
+
+export const getEvidenceReportDependencyFiles = (id, { transitive = true } = {}) => {
+  const files = [];
+  const visitedNodes = new Set();
+
+  const visitDependency = dependency => {
+    const node = getEvidenceNode(dependency);
+    if (!node) {
+      appendUnique(files, [dependency]);
+      return;
+    }
+
+    appendUnique(files, node.artifacts);
+    if (!transitive || visitedNodes.has(dependency)) {
+      return;
+    }
+
+    visitedNodes.add(dependency);
+    for (const childDependency of node.dependencies || []) {
+      visitDependency(childDependency);
+    }
+  };
+
+  for (const dependency of getEvidenceReportDependencies(id)) {
+    visitDependency(dependency);
+  }
+
+  return files;
+};

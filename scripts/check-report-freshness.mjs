@@ -4,13 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { getDirectMergeParentShas, getGitReportState } from './gitReportState.mjs';
-import { getEvidenceReportDependencies, resolveEvidenceDependencyFiles } from './evidenceDependencyGraph.mjs';
+import { getEvidenceReportDependencyFiles } from './evidenceDependencyGraph.mjs';
+import {
+  buildDependencyFingerprint,
+  normalizeDependencyFingerprintValue,
+} from './evidenceProvenanceSupport.mjs';
 
 const ROOT = process.cwd();
 const strictMode =
   process.argv.includes('--strict') || process.env.REPORT_FRESHNESS_STRICT === '1';
-const dependencyFilesFor = reportId =>
-  getEvidenceReportDependencies(reportId).flatMap(resolveEvidenceDependencyFiles);
+const dependencyFilesFor = reportId => getEvidenceReportDependencyFiles(reportId);
 
 const trackedReports = [
   {
@@ -90,6 +93,9 @@ const isSameCommit = (reportSha, currentSha) =>
 const matchesAnyAllowedCommit = (reportSha, allowedShas) =>
   allowedShas.some(allowedSha => isSameCommit(reportSha, allowedSha));
 
+const findMatchingAllowedCommit = (reportSha, allowedShas) =>
+  allowedShas.find(allowedSha => isSameCommit(reportSha, allowedSha)) || '';
+
 const runGit = args => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
 
 const governedReportFiles = new Set(
@@ -131,6 +137,7 @@ if (!currentGitSha) {
   fail(['Could not resolve current git commit.']);
 }
 const baseAllowedReportShas = [currentGitSha, ...getDirectMergeParentShas(ROOT)];
+const directMergeParentShas = getDirectMergeParentShas(ROOT);
 let evidenceOnlyAllowedReportShas;
 const getEvidenceOnlyAllowedReportShas = () => {
   if (evidenceOnlyAllowedReportShas === undefined) {
@@ -143,6 +150,34 @@ const getEvidenceOnlyAllowedReportShas = () => {
 };
 
 const issues = [];
+const advisories = [];
+
+const pushProvenanceIssues = ({ report, parsedReport, reportSha }) => {
+  const provenance = parsedReport?.generatedFor;
+  if (!provenance || typeof provenance !== 'object') {
+    return;
+  }
+
+  const malformedReasons = [];
+  if (typeof provenance.reportId === 'string' && provenance.reportId !== report.id) {
+    malformedReasons.push(`reportId=${provenance.reportId}`);
+  }
+  if (typeof provenance.gitSha === 'string' && !isSameCommit(provenance.gitSha, reportSha)) {
+    malformedReasons.push(`gitSha=${provenance.gitSha}`);
+  }
+
+  if (malformedReasons.length > 0) {
+    issues.push(
+      `${report.file} has malformed provenance (${malformedReasons.join(', ')}); refresh with npm run ${report.refreshScript}.`
+    );
+  }
+
+  if (typeof provenance.treeHash !== 'string' || !provenance.treeHash) {
+    advisories.push(
+      `${report.file} provenance does not declare treeHash; refresh with npm run ${report.refreshScript} to improve audit traceability.`
+    );
+  }
+};
 
 for (const report of trackedReports) {
   const reportPath = path.join(ROOT, report.file);
@@ -168,13 +203,34 @@ for (const report of trackedReports) {
     continue;
   }
 
+  pushProvenanceIssues({ report, parsedReport, reportSha });
+
   if (
     !matchesAnyAllowedCommit(reportSha, baseAllowedReportShas) &&
     !matchesAnyAllowedCommit(reportSha, getEvidenceOnlyAllowedReportShas())
   ) {
     issues.push(
-      `${report.file} was generated for ${reportSha}, current HEAD is ${currentGitSha}.`
+      `${report.file} is stale by commit ancestry: generated for ${reportSha}, current HEAD is ${currentGitSha}; refresh with npm run ${report.refreshScript}.`
     );
+  }
+
+  const matchingMergeParentSha = findMatchingAllowedCommit(reportSha, directMergeParentShas);
+  if (matchingMergeParentSha) {
+    const expectedFingerprint = buildDependencyFingerprint({
+      root: ROOT,
+      dependencyFiles: report.dependsOn || [],
+    });
+    const recordedFingerprint = parsedReport?.generatedFor?.dependencyFingerprint;
+    const recordedFingerprintValue = normalizeDependencyFingerprintValue(recordedFingerprint);
+    if (!recordedFingerprintValue) {
+      issues.push(
+        `${report.file} was generated for direct merge parent ${matchingMergeParentSha} without dependency fingerprint; refresh with npm run ${report.refreshScript} or run npm run postmerge:evidence on main.`
+      );
+    } else if (recordedFingerprintValue !== expectedFingerprint.value) {
+      issues.push(
+        `${report.file} is stale by real dependency fingerprint: generated for direct merge parent ${matchingMergeParentSha} with ${recordedFingerprintValue}, expected ${expectedFingerprint.value}; refresh with npm run ${report.refreshScript}.`
+      );
+    }
   }
 
   if (
@@ -207,6 +263,13 @@ if (issues.length > 0 && strictMode) {
 if (issues.length > 0) {
   warn(issues);
   process.exit(0);
+}
+
+if (advisories.length > 0) {
+  console.warn('[report-freshness] Provenance advisories:');
+  for (const advisory of advisories) {
+    console.warn(`- ${advisory}`);
+  }
 }
 
 console.log(

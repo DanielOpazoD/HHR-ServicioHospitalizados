@@ -2,8 +2,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
 import { buildReleaseConfidenceMatrixReport } from './releaseConfidenceMatrixSupport.mjs';
+import { buildEvidenceProvenance } from './evidenceProvenanceSupport.mjs';
+import { getGitReportState } from './gitReportState.mjs';
 
 const ROOT = process.cwd();
 const SRC_ROOT = path.join(ROOT, 'src');
@@ -111,14 +112,6 @@ const walkFiles = dirPath => {
 };
 
 const countLines = text => (text.length === 0 ? 0 : text.split('\n').length);
-
-const getGitSha = () => {
-  try {
-    return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
-  } catch {
-    return 'unknown';
-  }
-};
 
 const isTestFile = relative =>
   relative.includes('/tests/') || TEST_FILE_PATTERN.test(relative) || relative.includes('.spec.');
@@ -598,9 +591,17 @@ const getConvergenceSignals = () => {
 
 const generatedAt = new Date().toISOString();
 const releaseConfidenceMatrix = buildReleaseConfidenceMatrixReport(ROOT);
+const gitState = getGitReportState(ROOT);
+const gitSha = gitState.gitSha;
 const metrics = {
   generatedAt,
-  gitSha: getGitSha(),
+  gitSha,
+  gitDirty: gitState.gitDirty,
+  generatedFor: buildEvidenceProvenance({
+    root: ROOT,
+    reportId: 'quality-metrics',
+    gitState,
+  }),
   source: getSourceMetrics(),
   moduleSize: getModuleSizeMetrics(),
   folderDependencyDebt: getFolderDependencyDebtMetrics(),

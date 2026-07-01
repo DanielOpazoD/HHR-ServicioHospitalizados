@@ -256,6 +256,42 @@ describe('buildReleaseReadinessScorecard', () => {
     expect(markdown).not.toContain('vendor-excel-core-BNwEF2Ha.js');
   });
 
+  it('keeps startup budget target misses degraded when dist assets are available', () => {
+    const root = createScorecardRoot();
+    writeJson(root, 'reports/compatibility-import-governance.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      checkedEntries: 0,
+      issues: [],
+    });
+    writeJson(root, 'scripts/config/bundle-budget.json', {
+      chunkMaxBytes: 1_250_000,
+      startupChunkBudgets: [
+        {
+          label: 'app-authenticated-shell',
+          pattern: '^app-authenticated-shell-.*\\.js$',
+          maxBytes: 600,
+          severity: 'warn',
+        },
+      ],
+    });
+    writeText(root, 'dist/assets/app-authenticated-shell-real.js', 'x'.repeat(800));
+
+    const report = buildReleaseReadinessScorecard(root);
+    const operationalIndicator = report.indicators.find(
+      indicator => indicator.name === 'operational_readiness'
+    );
+
+    expect(report.overallStatus).toBe('degraded');
+    expect(operationalIndicator).toMatchObject({
+      status: 'degraded',
+      summary: 'flow=passing, bundle=degraded',
+    });
+    expect(report.releaseHotspots?.assets?.[0]).toMatchObject({
+      file: 'dist/assets/app-authenticated-shell-real.js',
+      status: 'warn',
+    });
+  });
+
   it('falls back to operational health assets when dist assets are absent', () => {
     const root = createScorecardRoot();
     writeJson(root, 'reports/compatibility-import-governance.json', {
