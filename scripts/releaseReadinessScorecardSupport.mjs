@@ -48,7 +48,11 @@ const readBuildAssetsFromDist = root => {
             ? classified.severity === 'warn'
               ? 'warn'
               : 'error'
-            : 'ok',
+            : classified.status === 'target-miss'
+              ? 'warn'
+              : classified.status === 'unknown'
+                ? 'ok'
+                : classified.status,
       };
     })
     .sort((a, b) => b.sizeBytes - a.sizeBytes);

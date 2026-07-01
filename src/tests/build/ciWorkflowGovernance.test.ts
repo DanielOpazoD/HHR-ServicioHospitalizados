@@ -80,15 +80,20 @@ describe('CI workflow governance', () => {
 
   it('self-checks post-merge evidence before uploading the main artifact', () => {
     const workflow = readText('.github/workflows/ci-cd.yml');
-    const generateStep = workflow.indexOf('npm run postmerge:evidence');
-    const checkStep = workflow.indexOf('npm run check:postmerge-evidence:strict');
-    const uploadStep = workflow.indexOf('name: postmerge-release-evidence');
+    const postmergeJob = workflow.slice(workflow.indexOf('postmerge-evidence:'));
+    const downloadDistStep = postmergeJob.indexOf('name: dist');
+    const generateStep = postmergeJob.indexOf('npm run postmerge:evidence');
+    const checkStep = postmergeJob.indexOf('npm run check:postmerge-evidence:strict');
+    const uploadStep = postmergeJob.indexOf('name: postmerge-release-evidence');
 
-    expect(workflow).toContain('postmerge-evidence:');
-    expect(workflow).toContain(
+    expect(postmergeJob).toContain('postmerge-evidence:');
+    expect(postmergeJob).toContain(
       "if: github.event_name == 'push' && github.ref == 'refs/heads/main'"
     );
+    expect(postmergeJob).toContain('uses: actions/download-artifact@v7');
+    expect(downloadDistStep).toBeGreaterThanOrEqual(0);
     expect(generateStep).toBeGreaterThanOrEqual(0);
+    expect(generateStep).toBeGreaterThan(downloadDistStep);
     expect(checkStep).toBeGreaterThan(generateStep);
     expect(uploadStep).toBeGreaterThan(checkStep);
   });

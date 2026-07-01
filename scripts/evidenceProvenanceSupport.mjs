@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getEvidenceReportDependencyFiles } from './evidenceDependencyGraph.mjs';
@@ -54,7 +54,10 @@ export const buildDependencyFingerprint = ({ root, dependencyFiles }) => {
 
 const getGitTreeHash = root => {
   try {
-    return execSync('git rev-parse HEAD^{tree}', { cwd: root, encoding: 'utf8' }).trim();
+    return execFileSync('git', ['rev-parse', 'HEAD^{tree}'], {
+      cwd: root,
+      encoding: 'utf8',
+    }).trim();
   } catch {
     return 'unknown';
   }

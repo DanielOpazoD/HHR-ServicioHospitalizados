@@ -63,7 +63,7 @@ describe('bundleBudgetSupport', () => {
     });
   });
 
-  it('does not mark HEIC as blocking while it is inside its dedicated ledger budget', () => {
+  it('surfaces HEIC as near-limit, not blocking, while it is inside its dedicated ledger budget', () => {
     expect(
       classifyBuildAssetBudget({
         file: 'dist/assets/vendor-heic2any-ClJ2fQYX.js',
@@ -75,7 +75,7 @@ describe('bundleBudgetSupport', () => {
       budgetLabel: 'vendor-heic2any',
       budgetSource: 'chunkPatternBudget',
       budgetUtilizationPct: 93.1,
-      status: 'ok',
+      status: 'near-limit',
     });
   });
 
@@ -83,7 +83,7 @@ describe('bundleBudgetSupport', () => {
     expect(
       classifyBuildAssetBudget({
         file: 'dist/assets/vendor-pdfjs-C4G2Lk1-.js',
-        sizeBytes: 466_000,
+        sizeBytes: 400_000,
         budgetConfig,
       })
     ).toMatchObject({

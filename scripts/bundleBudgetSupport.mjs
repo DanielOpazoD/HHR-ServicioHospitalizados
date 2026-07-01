@@ -96,13 +96,11 @@ export const classifyBuildAssetBudget = ({ file, sizeBytes, budgetConfig }) => {
       ? budget.severity === 'warn'
         ? 'target-miss'
         : 'blocking'
-      : budget.budgetSource === 'chunkPatternBudget'
-        ? 'ok'
-        : classifyBudgetStatus({
-            actual: numericSizeBytes,
-            target: maxBytes,
-            enforced: maxBytes,
-          });
+      : classifyBudgetStatus({
+          actual: numericSizeBytes,
+          target: maxBytes,
+          enforced: maxBytes,
+        });
 
   return {
     file,

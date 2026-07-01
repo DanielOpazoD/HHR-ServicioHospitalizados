@@ -477,6 +477,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Download build artifacts
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+
       - name: Generate post-merge release evidence
         run: npm run postmerge:evidence
 

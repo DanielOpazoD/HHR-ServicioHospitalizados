@@ -90,6 +90,17 @@ afterEach(() => {
 });
 
 describe('evidence dependency graph', () => {
+  it('uses shell-free git execution when building provenance metadata', () => {
+    const support = fs.readFileSync(
+      path.join(process.cwd(), 'scripts/evidenceProvenanceSupport.mjs'),
+      'utf8'
+    );
+
+    expect(support).toContain("import { execFileSync } from 'node:child_process'");
+    expect(support).toContain("execFileSync('git', ['rev-parse', 'HEAD^{tree}']");
+    expect(support).not.toContain("execSync('git rev-parse HEAD^{tree}'");
+  });
+
   it('declares release readiness dependencies including critical coverage artifacts', () => {
     expect(EVIDENCE_DEPENDENCY_GRAPH['release-readiness-scorecard']).toMatchObject({
       command: 'report:release-readiness-scorecard',
