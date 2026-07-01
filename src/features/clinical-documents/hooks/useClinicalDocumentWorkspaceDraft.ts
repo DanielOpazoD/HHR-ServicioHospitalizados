@@ -4,7 +4,7 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { ClinicalDocumentRecord } from '@/features/clinical-documents/domain/entities';
 import { validateClinicalDocument } from '@/features/clinical-documents/controllers/clinicalDocumentValidationController';
 import {
-  hydrateLegacyClinicalDocument,
+  hydrateClinicalDocumentWorkspaceRecord,
   serializeClinicalDocument,
 } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import {
@@ -78,7 +78,7 @@ export interface ClinicalDocumentWorkspaceDraftState {
 const hydrateIncomingDocument = (
   document: ClinicalDocumentRecord | null
 ): ClinicalDocumentRecord | null =>
-  document ? hydrateLegacyClinicalDocument(structuredClone(document)) : null;
+  document ? hydrateClinicalDocumentWorkspaceRecord(structuredClone(document)) : null;
 
 export const useClinicalDocumentWorkspaceDraft = ({
   documents,

@@ -15,8 +15,8 @@ import type {
 } from '@/features/census/components/global-search/globalSearchContracts';
 import { buildPatientEpisodeTimelineState } from '@/features/census/components/global-search/patientEpisodeTimelineController';
 import {
-  buildClinicalDocumentEpisodeKeyCandidates,
-  parseCompositeEpisodeKey,
+  buildPatientSelectionDocumentLookupKeys,
+  parsePatientSelectionEpisodeLookupKey,
   summarizeClinicalDocuments,
 } from '@/features/census/components/global-search/patientSelectionDocumentController';
 import { globalPatientSearchLogger } from '@/hooks/hookLoggers';
@@ -144,7 +144,7 @@ export function usePatientSelection(): UsePatientSelectionReturn {
   }, []);
 
   const loadEpisodeDocuments = useCallback(async (compositeKey: string) => {
-    const parsed = parseCompositeEpisodeKey(compositeKey);
+    const parsed = parsePatientSelectionEpisodeLookupKey(compositeKey);
     if (!parsed) {
       globalPatientSearchLogger.warn(`Malformed episode key: ${compositeKey}`);
       return;
@@ -158,7 +158,7 @@ export function usePatientSelection(): UsePatientSelectionReturn {
 
     try {
       const docMod = await loadClinicalDocRepo();
-      const candidateKeys = buildClinicalDocumentEpisodeKeyCandidates(parsed);
+      const candidateKeys = buildPatientSelectionDocumentLookupKeys(parsed);
 
       let foundDocs: ClinicalDocSummary[] = [];
       for (const candidateKey of candidateKeys) {

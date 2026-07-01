@@ -14,7 +14,7 @@
  */
 
 import {
-  buildClinicalEpisodeKeyCandidates,
+  buildClinicalEpisodeLookupKeys,
   buildPatientPresenceSnapshot,
 } from '@/application/patient-flow/clinicalEpisode';
 import type { UnifiedBedRow } from '@/features/census/types/censusTableTypes';
@@ -73,7 +73,7 @@ export const buildBedEpisodeBindings = (unifiedRows: UnifiedBedRow[]): BedEpisod
         {
           bedId: snapshot.bedId,
           episodeKey: snapshot.episodeKey,
-          episodeKeys: buildClinicalEpisodeKeyCandidates(row.data, snapshot.episodeKey),
+          episodeKeys: buildClinicalEpisodeLookupKeys(row.data, snapshot.episodeKey),
           currentPatientRut: snapshot.patientRut,
         },
       ];

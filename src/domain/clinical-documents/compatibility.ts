@@ -15,6 +15,11 @@ const LEGACY_AUDIT_ACTOR_DEFAULTS: ClinicalDocumentAuditActor = {
   role: 'legacy_unknown',
 };
 
+const normalizeClinicalDocumentSectionTitle = (title: string, fallback: string): string => {
+  const normalized = title.trim().replace(/\s+/g, ' ');
+  return normalized || fallback;
+};
+
 export const resolveClinicalDocumentSchemaVersion = (
   record: Partial<ClinicalDocumentRecord> | null | undefined
 ): number => {
@@ -53,10 +58,15 @@ const applyClinicalDocumentDefinitionDefaults = (
     // and survives both reads and persistence.
     isLocked: Boolean(record.lockedReason),
     patientFields,
-    sections: normalizedSections,
+    sections: normalizedSections.map((section, index) => ({
+      ...section,
+      title: normalizeClinicalDocumentSectionTitle(section.title, `Sección ${index + 1}`),
+    })),
     patientInfoTitle: record.patientInfoTitle || 'Información del Paciente',
     footerMedicoLabel: record.footerMedicoLabel || 'Médico',
     footerEspecialidadLabel: record.footerEspecialidadLabel || 'Especialidad',
+    annexIncludedInPrint: record.annexIncludedInPrint ?? true,
+    includePatientSignature: record.includePatientSignature ?? true,
     audit: {
       ...record.audit,
       signatureRevocations: Array.isArray(audit?.signatureRevocations)

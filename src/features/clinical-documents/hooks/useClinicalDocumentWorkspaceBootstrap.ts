@@ -6,7 +6,7 @@ import type {
 } from '@/features/clinical-documents/domain/entities';
 import { listActiveClinicalDocumentTemplates } from '@/features/clinical-documents/controllers/clinicalDocumentTemplateController';
 import { buildClinicalDocumentEpisodeContext } from '@/features/clinical-documents/controllers/clinicalDocumentEpisodeController';
-import { hydrateLegacyClinicalDocument } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
+import { hydrateClinicalDocumentWorkspaceRecord } from '@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController';
 import {
   executeListActiveClinicalDocumentTemplates,
   executeSeedClinicalDocumentTemplates,
@@ -69,8 +69,8 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
     [bedId, currentDateString, patient]
   );
   const episodeKeys = useMemo(
-    () => Array.from(new Set([episode.episodeKey, ...(episode.alternateEpisodeKeys || [])])),
-    [episode.alternateEpisodeKeys, episode.episodeKey]
+    () => Array.from(new Set([episode.episodeKey, ...(episode.documentLookupEpisodeKeys || [])])),
+    [episode.documentLookupEpisodeKeys, episode.episodeKey]
   );
 
   const resolvedSelectedTemplateId = useMemo(() => {
@@ -167,7 +167,7 @@ export const useClinicalDocumentWorkspaceBootstrap = ({
     const unsubscribe = subscribeClinicalDocumentsByEpisodeKeys(
       episodeKeys,
       docs => {
-        const hydrated = docs.map(document => hydrateLegacyClinicalDocument(document));
+        const hydrated = docs.map(document => hydrateClinicalDocumentWorkspaceRecord(document));
         const currentEpisodeDocuments = filterClinicalDocumentsForCurrentEpisode({
           documents: hydrated,
           currentEpisodeKey: episode.episodeKey,

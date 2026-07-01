@@ -2,6 +2,7 @@ import type {
   ClinicalDocumentRecord,
   ClinicalDocumentTemplate,
 } from '@/features/clinical-documents/domain/entities';
+import { isLegacyClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
 
 export const resolveSelectedClinicalTemplateId = (
   templates: ClinicalDocumentTemplate[],
@@ -30,8 +31,6 @@ export const shouldSeedClinicalDocumentTemplates = ({
   hasLoadedRemoteTemplates &&
   remoteTemplateCount !== null &&
   remoteTemplateCount === 0;
-
-const isLegacyEpisodeKey = (episodeKey: string): boolean => episodeKey.includes('__');
 
 const normalizePatientRut = (rut?: string): string =>
   String(rut || '')
@@ -76,7 +75,7 @@ export const filterClinicalDocumentsForCurrentEpisode = ({
   allowedEpisodeKeys: string[];
   currentPatientRut?: string;
 }): ClinicalDocumentRecord[] => {
-  if (!isLegacyEpisodeKey(currentEpisodeKey)) {
+  if (!isLegacyClinicalEpisodeKey(currentEpisodeKey)) {
     return filterDocumentsForCurrentPatientIdentity(
       documents.filter(document => document.episodeKey === currentEpisodeKey),
       currentPatientRut
