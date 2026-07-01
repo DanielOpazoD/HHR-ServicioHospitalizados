@@ -5,28 +5,28 @@ env:
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   quality-static:
     name: quality-static
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run ESLint (release-blocking)
         run: npm run lint -- --max-warnings 0
 
@@ -94,51 +94,59 @@ jobs:
             reports/maintenance-debt-scorecard.*
           retention-days: 30
 
-  unit-risk:
-    name: unit-risk
+  unit-risk-shards:
+    name: unit-risk-shard-${{ matrix.shard }}
     runs-on: ubuntu-latest
-    needs: [quality-static]
-    
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
-      - name: Run unit and integration tests once
-        run: npm run test:ci:unit
+
+      - name: Run unit shard
+        run: npm run test:ci:unit:shard -- ${{ matrix.shard }}/4
         env:
           CI: true
 
+  unit-risk:
+    name: unit-risk
+    runs-on: ubuntu-latest
+    needs: [unit-risk-shards]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
       - name: Prove critical risk packs are included in the unit suite
         run: npm run check:ci-risk-pack-membership
-      
-      - name: Upload test coverage (optional)
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 7
-        continue-on-error: true
 
       - name: Enforce test run contract
         run: |
-          echo "Unit/integration test suite completed via test:ci:unit (without emulator-only suites)."
+          echo "Unit/integration test suite completed through unit-risk-shards (without emulator-only suites)."
           echo "Critical risk packs remain covered by check:ci-risk-pack-membership."
           echo "Firestore rules + emulator sync/UI suites are enforced in dedicated firestore-rules job."
 
   rules-emulator:
     name: rules-emulator
     runs-on: ubuntu-latest
-    needs: [quality-static]
 
     steps:
       - name: Checkout code
@@ -174,7 +182,6 @@ jobs:
   e2e-critical-emulator:
     name: e2e-critical
     runs-on: ubuntu-latest
-    needs: [quality-static]
 
     steps:
       - name: Checkout code
@@ -231,20 +238,20 @@ jobs:
     name: build-budget
     runs-on: ubuntu-latest
     needs: [quality-static, unit-risk, rules-emulator, e2e-critical-emulator]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build production bundle
         run: npm run build
         env:
@@ -327,7 +334,7 @@ jobs:
           echo "rules-emulator: passed"
           echo "e2e-critical: passed"
           echo "build-budget: passed"
-      
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -342,26 +349,26 @@ jobs:
     name: API Documentation
     runs-on: ubuntu-latest
     needs: [quality-static, unit-risk, rules-emulator, e2e-critical-emulator]
-    
+
     permissions:
       contents: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Generate API Documentation
         run: npm run docs:generate
-      
+
       - name: Upload documentation artifact
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
         uses: actions/upload-artifact@v7
