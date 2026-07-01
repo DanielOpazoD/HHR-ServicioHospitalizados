@@ -45,6 +45,7 @@
 - Preserve a final aggregate `quality-static` job that depends on the base job and every group job, so branch protection keeps watching the same stable status.
 - Generate `reports/ci-quality-static-profile.json` for full local runs and `reports/ci-quality-static-profile-${group}.json/.md` for grouped runs.
 - Keep stale report evidence advisory in the local/static loop, while `quality-static-base` continues to regenerate governance snapshots and enforce `check:report-freshness:strict`.
+- Pass regenerated `reports/**` from `quality-static-base` to the `governance` matrix lane as an artifact, because `check:operational-runbooks` and `check:guardrail-governance` intentionally validate generated governance evidence without rerunning the expensive snapshot pack.
 
 **Expected impact:**
 
