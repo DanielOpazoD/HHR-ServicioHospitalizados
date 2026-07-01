@@ -1,3 +1,5 @@
+import { loadPdfJsTextRuntime } from '@/services/pdf/pdfJsTextRuntime';
+
 const normalizePdfText = (text: string): string =>
   text
     .replace(/\u00a2/g, 'ó')
@@ -52,11 +54,7 @@ const groupTextItemsIntoLines = (items: unknown[]): string[] => {
 };
 
 export const extractPdfText = async (buffer: ArrayBuffer): Promise<string> => {
-  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/legacy/build/pdf.worker.mjs',
-    import.meta.url
-  ).toString();
+  const pdfjs = await loadPdfJsTextRuntime();
 
   const document = await pdfjs.getDocument({
     data: new Uint8Array(buffer),

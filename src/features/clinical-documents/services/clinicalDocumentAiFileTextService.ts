@@ -10,6 +10,7 @@ import {
   validateClinicalDocumentAiImportFile,
   validateClinicalDocumentAiImportSourceText,
 } from '@/features/clinical-documents/controllers/clinicalDocumentAiImportController';
+import { loadPdfJsTextRuntime } from '@/services/pdf/pdfJsTextRuntime';
 
 const normalizePdfText = (text: string): string =>
   normalizeClinicalDocumentAiImportText(
@@ -64,11 +65,7 @@ const groupTextItemsIntoLines = (items: unknown[]): string[] => {
 };
 
 const extractPdfText = async (buffer: ArrayBuffer): Promise<string> => {
-  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/legacy/build/pdf.worker.mjs',
-    import.meta.url
-  ).toString();
+  const pdfjs = await loadPdfJsTextRuntime();
 
   const document = await pdfjs.getDocument({
     data: new Uint8Array(buffer),
