@@ -1,7 +1,7 @@
 # Clinical Release Validation
 
-Generated at: 2026-05-27T20:35:11.344Z
-Commit: 1d181dce
+Generated at: 2026-07-01T01:28:38.096Z
+Commit: bbe41ced
 Worktree: clean
 Overall: ok
 Runbook: docs/runbooks/deployment-checklist.md (ok)
