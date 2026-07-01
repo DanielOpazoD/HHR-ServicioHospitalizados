@@ -267,7 +267,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Validate production preview bootstrap
-        run: npm run ci:preview-gate
+        run: npm run ci:preview-smoke:built
         env:
           CI: true
           PLAYWRIGHT_SKIP_PREVIEW_BUILD: '1'
