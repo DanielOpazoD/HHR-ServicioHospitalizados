@@ -14,6 +14,7 @@ import { PatientEpisodeTimeline } from '@/features/census/components/global-sear
 import { SearchResultsSkeleton } from '@/features/census/components/global-search/SearchResultsSkeleton';
 import type { ClinicalDocSummary } from '@/features/census/components/global-search/globalSearchContracts';
 import type { PatientData } from '@/features/clinical-documents';
+import { resolveAdmissionDateFromClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
 
 const LazyClinicalDocumentsModal = lazy(() =>
   import('@/features/clinical-documents').then(module => ({
@@ -36,13 +37,6 @@ interface ActiveClinicalDocumentsViewer {
   currentDateString: string;
   bedId: string;
 }
-
-const LEGACY_EPISODE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-const resolveAdmissionDateFromEpisodeKey = (episodeKey: string): string | undefined => {
-  const [, admissionDate] = episodeKey.split('__');
-  return LEGACY_EPISODE_DATE_PATTERN.test(admissionDate || '') ? admissionDate : undefined;
-};
 
 // ---------------------------------------------------------------------------
 // Component
@@ -75,7 +69,7 @@ export const GlobalPatientSearchModal: React.FC<GlobalPatientSearchModalProps> =
       if (!patient) return;
 
       const admissionDate =
-        resolveAdmissionDateFromEpisodeKey(doc.episodeKey) ||
+        resolveAdmissionDateFromClinicalEpisodeKey(doc.episodeKey) ||
         patient.lastAdmission ||
         search.selectedPatient?.history?.firstSeen;
 

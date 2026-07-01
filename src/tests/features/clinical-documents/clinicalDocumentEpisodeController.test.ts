@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildClinicalDocumentEpisodeContext,
-  buildClinicalDocumentEpisodeKeyCandidates,
+  buildClinicalDocumentEpisodeLookupKeys,
   buildClinicalDocumentPatientFieldValues,
   buildClinicalEpisodeKey,
   getCurrentDateValue,
@@ -47,7 +47,7 @@ describe('clinicalDocumentEpisodeController', () => {
       firstSeenDate: '2026-03-04',
     });
 
-    const keys = buildClinicalDocumentEpisodeKeyCandidates(patient, 'ep_canonical_1');
+    const keys = buildClinicalDocumentEpisodeLookupKeys(patient, 'ep_canonical_1');
 
     expect(keys).toEqual(['ep_canonical_1']);
   });
@@ -60,10 +60,7 @@ describe('clinicalDocumentEpisodeController', () => {
       firstSeenDate: '2026-03-04',
     });
 
-    const keys = buildClinicalDocumentEpisodeKeyCandidates(
-      patient,
-      '11.111.111-1__2026-03-04__11:45'
-    );
+    const keys = buildClinicalDocumentEpisodeLookupKeys(patient, '11.111.111-1__2026-03-04__11:45');
 
     expect(keys).toEqual([
       '11.111.111-1__2026-03-04__11:45',

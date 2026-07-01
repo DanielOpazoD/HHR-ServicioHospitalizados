@@ -110,6 +110,26 @@ describe('clinicalDocumentCompatibilityController', () => {
     expect(hydrated.includePatientSignature).toBe(true);
   });
 
+  it('preserves episode-close locks while clearing retired bare locks', () => {
+    const closedEpisodeDocument = {
+      ...buildDocument(),
+      isLocked: true,
+      lockedReason: 'episode_closed' as const,
+      lockedAt: '2026-03-06T12:00:00.000Z',
+    };
+    const retiredSignatureLockDocument = {
+      ...buildDocument(),
+      isLocked: true,
+    };
+
+    expect(hydrateLegacyClinicalDocument(closedEpisodeDocument)).toMatchObject({
+      isLocked: true,
+      lockedReason: 'episode_closed',
+      lockedAt: '2026-03-06T12:00:00.000Z',
+    });
+    expect(hydrateLegacyClinicalDocument(retiredSignatureLockDocument).isLocked).toBe(false);
+  });
+
   it('hydrates incomplete legacy audit actors for workspace compatibility', () => {
     const legacyActor = {
       uid: 'legacy-user',

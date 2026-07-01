@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildClinicalDocumentEpisodeKeyCandidates,
-  parseCompositeEpisodeKey,
+  buildPatientSelectionDocumentLookupKeys,
+  parsePatientSelectionEpisodeLookupKey,
   summarizeClinicalDocuments,
 } from '@/features/census/components/global-search/patientSelectionDocumentController';
 
 describe('patientSelectionDocumentController', () => {
   it('parses composite episode keys with optional admission time', () => {
-    expect(parseCompositeEpisodeKey('13.545.665-9__2026-04-15__08:30')).toEqual({
+    expect(parsePatientSelectionEpisodeLookupKey('13.545.665-9__2026-04-15__08:30')).toEqual({
       rut: '13.545.665-9',
       admissionDate: '2026-04-15',
       admissionTime: '08:30',
     });
-    expect(parseCompositeEpisodeKey('__2026-04-15')).toBeNull();
+    expect(parsePatientSelectionEpisodeLookupKey('__2026-04-15')).toBeNull();
   });
 
   it('builds de-duplicated document episode candidates around the admission date', () => {
     expect(
-      buildClinicalDocumentEpisodeKeyCandidates({
+      buildPatientSelectionDocumentLookupKeys({
         rut: '13.545.665-9',
         admissionDate: '2026-04-15',
       })

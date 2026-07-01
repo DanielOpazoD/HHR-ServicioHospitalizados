@@ -42,6 +42,12 @@ export interface ClinicalEpisodeResolutionOptions {
   onFallback?: (event: ClinicalEpisodeFallbackEvent) => void;
 }
 
+export interface LegacyClinicalEpisodeKeyParts {
+  rut: string;
+  admissionDate: string;
+  admissionTime?: string;
+}
+
 export const normalizeClinicalEpisodeTime = (admissionTime?: string): string =>
   String(admissionTime || '').trim();
 
@@ -60,6 +66,30 @@ export const normalizeClinicalEpisodeId = (clinicalEpisodeId?: string): string =
 
 export const isCanonicalClinicalEpisodeId = (clinicalEpisodeId?: string): boolean =>
   normalizeClinicalEpisodeId(clinicalEpisodeId).startsWith('ep_');
+
+export const isLegacyClinicalEpisodeKey = (episodeKey: string): boolean =>
+  episodeKey.includes('__');
+
+export const parseLegacyClinicalEpisodeKey = (
+  episodeKey: string
+): LegacyClinicalEpisodeKeyParts | null => {
+  const [rut, admissionDate, admissionTime] = episodeKey.split('__');
+  if (!rut || !admissionDate) {
+    return null;
+  }
+  return { rut, admissionDate, admissionTime };
+};
+
+const ISO_DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export const resolveAdmissionDateFromClinicalEpisodeKey = (
+  episodeKey: string
+): string | undefined => {
+  const parsed = parseLegacyClinicalEpisodeKey(episodeKey);
+  return parsed && ISO_DATE_ONLY_PATTERN.test(parsed.admissionDate)
+    ? parsed.admissionDate
+    : undefined;
+};
 
 /**
  * Clinical documents and episode snapshots should anchor to the first observed
@@ -106,6 +136,45 @@ export const buildClinicalEpisodeKeyCandidates = (
       ? buildClinicalEpisodeKey(rutWithoutDots, admissionDate)
       : undefined,
   ]);
+};
+
+export const buildClinicalEpisodeLookupKeys = (
+  patient: PatientEpisodeContract,
+  primaryEpisodeKey?: string
+): string[] => buildClinicalEpisodeKeyCandidates(patient, primaryEpisodeKey);
+
+const shiftIsoDate = (isoDate: string, deltaDays: number): string | null => {
+  if (!ISO_DATE_ONLY_PATTERN.test(isoDate)) return null;
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setUTCDate(date.getUTCDate() + deltaDays);
+  return date.toISOString().slice(0, 10);
+};
+
+export const buildLegacyClinicalDocumentEpisodeLookupKeys = ({
+  rut,
+  admissionDate,
+  admissionTime,
+}: LegacyClinicalEpisodeKeyParts): string[] => {
+  const rutWithoutDots = stripRutDots(rut);
+  const admissionDates = [
+    admissionDate,
+    shiftIsoDate(admissionDate, 1),
+    shiftIsoDate(admissionDate, -1),
+  ].filter((date): date is string => Boolean(date));
+
+  return uniqueNonEmpty(
+    admissionDates.flatMap(date => [
+      buildClinicalEpisodeKey(rut, date, admissionTime),
+      rutWithoutDots && rutWithoutDots !== rut
+        ? buildClinicalEpisodeKey(rutWithoutDots, date, admissionTime)
+        : undefined,
+      buildClinicalEpisodeKey(rut, date),
+      rutWithoutDots && rutWithoutDots !== rut
+        ? buildClinicalEpisodeKey(rutWithoutDots, date)
+        : undefined,
+    ])
+  );
 };
 
 export const resolveClinicalEpisodeIdentifier = (

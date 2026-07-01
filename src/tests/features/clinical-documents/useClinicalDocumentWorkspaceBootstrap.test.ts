@@ -10,7 +10,7 @@ import * as clinicalDocumentUseCases from '@/application/clinical-documents/clin
 const controllerMocks = vi.hoisted(() => ({
   listActiveClinicalDocumentTemplates: vi.fn(),
   buildClinicalDocumentEpisodeContext: vi.fn(),
-  hydrateLegacyClinicalDocument: vi.fn(),
+  hydrateClinicalDocumentWorkspaceRecord: vi.fn(),
 }));
 
 vi.mock('@/features/clinical-documents/controllers/clinicalDocumentTemplateController', () => ({
@@ -22,7 +22,7 @@ vi.mock('@/features/clinical-documents/controllers/clinicalDocumentEpisodeContro
 }));
 
 vi.mock('@/features/clinical-documents/controllers/clinicalDocumentWorkspaceController', () => ({
-  hydrateLegacyClinicalDocument: controllerMocks.hydrateLegacyClinicalDocument,
+  hydrateClinicalDocumentWorkspaceRecord: controllerMocks.hydrateClinicalDocumentWorkspaceRecord,
 }));
 
 vi.mock('@/application/clinical-documents/clinicalDocumentTemplateUseCases', async () => {
@@ -137,11 +137,11 @@ describe('useClinicalDocumentWorkspaceBootstrap', () => {
     controllerMocks.listActiveClinicalDocumentTemplates.mockReturnValue([localTemplate]);
     controllerMocks.buildClinicalDocumentEpisodeContext.mockReturnValue({
       episodeKey: '11.111.111-1__2026-03-06',
-      alternateEpisodeKeys: ['11111111-1__2026-03-06'],
+      documentLookupEpisodeKeys: ['11111111-1__2026-03-06'],
       sourceDailyRecordDate: '2026-03-06',
       specialty: 'Medicina',
     });
-    controllerMocks.hydrateLegacyClinicalDocument.mockImplementation(document => document);
+    controllerMocks.hydrateClinicalDocumentWorkspaceRecord.mockImplementation(document => document);
     vi.mocked(templateUseCases.executeListActiveClinicalDocumentTemplates).mockResolvedValue({
       status: 'success',
       data: [remoteTemplate],
@@ -208,7 +208,7 @@ describe('useClinicalDocumentWorkspaceBootstrap', () => {
   it('ignores legacy alternate-key documents when the current patient has a canonical episode id', async () => {
     controllerMocks.buildClinicalDocumentEpisodeContext.mockReturnValue({
       episodeKey: 'episode-current-patient',
-      alternateEpisodeKeys: ['11.111.111-1__2026-03-06'],
+      documentLookupEpisodeKeys: ['11.111.111-1__2026-03-06'],
       patientRut: '11.111.111-1',
       sourceDailyRecordDate: '2026-03-06',
       specialty: 'Medicina',
@@ -255,14 +255,14 @@ describe('useClinicalDocumentWorkspaceBootstrap', () => {
       return rut === '22.222.222-2'
         ? {
             episodeKey: 'ep_new_patient',
-            alternateEpisodeKeys: [],
+            documentLookupEpisodeKeys: [],
             patientRut: '22.222.222-2',
             sourceDailyRecordDate: '2026-03-06',
             specialty: 'Medicina',
           }
         : {
             episodeKey: 'ep_old_patient',
-            alternateEpisodeKeys: [],
+            documentLookupEpisodeKeys: [],
             patientRut: '11.111.111-1',
             sourceDailyRecordDate: '2026-03-06',
             specialty: 'Medicina',

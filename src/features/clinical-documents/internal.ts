@@ -14,7 +14,7 @@ export type { PatientData } from './contracts/clinicalDocumentsPatientContract';
 export type { ClinicalDocumentDraftBaseState } from './hooks/clinicalDocumentDraftReducer';
 export {
   buildClinicalDocumentActor,
-  hydrateLegacyClinicalDocument,
+  hydrateClinicalDocumentWorkspaceRecord,
   serializeClinicalDocument,
 } from './controllers/clinicalDocumentWorkspaceController';
 export {

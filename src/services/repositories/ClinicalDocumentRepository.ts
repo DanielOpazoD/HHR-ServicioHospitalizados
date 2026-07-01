@@ -9,9 +9,9 @@ import {
   buildClinicalDocumentRenderedText,
 } from '@/domain/clinical-documents/rendering';
 import {
-  hydrateLegacyClinicalDocument,
-  normalizeClinicalDocumentForPersistence,
-} from '@/domain/clinical-documents/compatibility';
+  hydrateClinicalDocumentRecord,
+  normalizeClinicalDocumentRecordForStorage,
+} from '@/application/ports/clinicalDocumentCompatibilityPort';
 import {
   formatClinicalDocumentContractIssues,
   parseClinicalDocumentRecord,
@@ -160,7 +160,7 @@ const deleteLocalClinicalDocument = (documentId: string, hospitalId: string): vo
 };
 
 const enrichRecord = (record: ClinicalDocumentRecord): ClinicalDocumentRecord => {
-  const hydrated = parseClinicalDocumentRecord(normalizeClinicalDocumentForPersistence(record));
+  const hydrated = parseClinicalDocumentRecord(normalizeClinicalDocumentRecordForStorage(record));
   const renderedText = buildClinicalDocumentRenderedText(hydrated);
   return {
     ...hydrated,
@@ -170,7 +170,7 @@ const enrichRecord = (record: ClinicalDocumentRecord): ClinicalDocumentRecord =>
 };
 
 const validateReadRecord = (record: ClinicalDocumentRecord): ClinicalDocumentRecord | null => {
-  const parsed = safeParseClinicalDocumentRecord(hydrateLegacyClinicalDocument(record));
+  const parsed = safeParseClinicalDocumentRecord(hydrateClinicalDocumentRecord(record));
   if (!parsed.success) {
     recordOperationalTelemetry({
       category: 'clinical_document',

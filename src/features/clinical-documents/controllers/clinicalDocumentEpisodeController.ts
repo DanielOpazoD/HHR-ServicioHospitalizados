@@ -2,7 +2,7 @@ import type { ClinicalDocumentEpisodeContext } from '@/features/clinical-documen
 import type { PatientData } from '@/features/clinical-documents/contracts/clinicalDocumentsPatientContract';
 import {
   buildClinicalEpisodeKey as buildClinicalEpisodeKeyFromApplication,
-  buildClinicalEpisodeKeyCandidates as buildClinicalEpisodeKeyCandidatesFromApplication,
+  buildClinicalEpisodeLookupKeys,
   type ClinicalEpisodeFallbackEvent,
   resolveClinicalEpisode,
   resolveClinicalEpisodeAdmissionDate,
@@ -40,10 +40,10 @@ const resolveClinicalDocumentDischargeDateValue = (patient: PatientData): string
   normalizeCalendarDate(patient.transferDate) ||
   getCurrentDateValue();
 
-export const buildClinicalDocumentEpisodeKeyCandidates = (
+export const buildClinicalDocumentEpisodeLookupKeys = (
   patient: PatientData,
   primaryEpisodeKey?: string
-): string[] => buildClinicalEpisodeKeyCandidatesFromApplication(patient, primaryEpisodeKey);
+): string[] => buildClinicalEpisodeLookupKeys(patient, primaryEpisodeKey);
 
 const recordClinicalDocumentEpisodeFallback = (
   event: ClinicalEpisodeFallbackEvent,
@@ -87,12 +87,12 @@ export const buildClinicalDocumentEpisodeContext = (
         recordClinicalDocumentEpisodeFallback(event, { sourceDailyRecordDate, sourceBedId }),
     }
   );
-  const candidateKeys = buildClinicalDocumentEpisodeKeyCandidates(patient, episode.episodeKey);
-  const alternateEpisodeKeys = candidateKeys.filter(key => key !== episode.episodeKey);
+  const lookupKeys = buildClinicalDocumentEpisodeLookupKeys(patient, episode.episodeKey);
+  const documentLookupEpisodeKeys = lookupKeys.filter(key => key !== episode.episodeKey);
 
   return {
     ...episode,
-    ...(alternateEpisodeKeys.length > 0 ? { alternateEpisodeKeys } : {}),
+    ...(documentLookupEpisodeKeys.length > 0 ? { documentLookupEpisodeKeys } : {}),
   };
 };
 

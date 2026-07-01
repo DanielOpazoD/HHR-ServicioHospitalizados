@@ -25,7 +25,7 @@ export {
 } from './controllers/clinicalDocumentTemplateEditorController';
 export {
   buildClinicalDocumentActor,
-  hydrateLegacyClinicalDocument,
+  hydrateClinicalDocumentWorkspaceRecord,
   serializeClinicalDocument,
 } from './controllers/clinicalDocumentWorkspaceController';
 export {
