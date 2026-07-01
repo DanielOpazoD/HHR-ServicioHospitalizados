@@ -112,38 +112,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Run unit and integration tests (excluding Firestore rules)
+      - name: Run unit and integration tests once
         run: npm run test:ci:unit
         env:
           CI: true
 
-      - name: Run critical sync resilience tests
-        run: npm run test:resilience
-        env:
-          CI: true
-
-      - name: Run admin health risk tests
-        run: npm run test:risk:admin-health
-        env:
-          CI: true
-
-      - name: Run auth risk tests (popup/redirect/lock)
-        run: npm run test:risk:auth
-        env:
-          CI: true
-
-      - name: Run platform risk tests (auth lock + netlify headers + backup contracts)
-        run: npm run test:risk:platform
-        env:
-          CI: true
-
-      - name: Run sync queue load baseline
-        run: npm run test:sync-load
-        env:
-          CI: true
-          SYNC_QUEUE_LOAD_VOLUME: 120
-          SYNC_QUEUE_RETRY_VOLUME: 40
-          SYNC_QUEUE_LOAD_MAX_MS: 8000
+      - name: Prove critical risk packs are included in the unit suite
+        run: npm run check:ci-risk-pack-membership
       
       - name: Upload test coverage (optional)
         if: always()
@@ -157,6 +132,7 @@ jobs:
       - name: Enforce test run contract
         run: |
           echo "Unit/integration test suite completed via test:ci:unit (without emulator-only suites)."
+          echo "Critical risk packs remain covered by check:ci-risk-pack-membership."
           echo "Firestore rules + emulator sync/UI suites are enforced in dedicated firestore-rules job."
 
   rules-emulator:
