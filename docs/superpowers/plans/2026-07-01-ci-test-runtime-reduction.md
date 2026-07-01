@@ -27,6 +27,54 @@
 - `e2e-critical` currently runs a build before E2E because `test:e2e:flow-performance:built` needs `dist/`. That can be moved to the build job, which already produces `dist/`.
 - `build-budget` runs bundle and chunk checks directly, then calls `ci:preview-gate`, which runs the same bundle and chunk checks again.
 
+## Follow-up PR 139: Quality Static Decomposition
+
+**Goal:** Reduce the remaining `quality-static` bottleneck without lowering the static quality bar or changing the protected aggregate check name.
+
+**Design:**
+
+- Keep the release-blocking check contract as `quality-static`.
+- Split the internal static aggregate into six governed groups:
+  - `boundaries`: architecture, feature, storage, runtime, legacy bridge, localStorage, and module dependency boundaries.
+  - `governance`: generated governance inputs plus schema, runtime contracts, serverless governance, docs drift, runbooks, and guardrail governance.
+  - `security`: secret/rules/security checks plus explicit-any and repo hygiene policies.
+  - `size`: module-size, hotspot, bundle-risk, and growth budgets.
+  - `tests`: trivial-test, governance, failure catalog, and flaky quarantine checks.
+  - `reports`: advisory report freshness only.
+- Run groups in a GitHub Actions matrix as `quality-static-${group}` after a shared `quality-static-base` job.
+- Preserve a final aggregate `quality-static` job that depends on the base job and every group job, so branch protection keeps watching the same stable status.
+- Generate `reports/ci-quality-static-profile.json` for full local runs and `reports/ci-quality-static-profile-${group}.json/.md` for grouped runs.
+- Keep stale report evidence advisory in the local/static loop, while `quality-static-base` continues to regenerate governance snapshots and enforce `check:report-freshness:strict`.
+- Pass regenerated `reports/**` from `quality-static-base` to the `governance` matrix lane as an artifact, because `check:operational-runbooks` and `check:guardrail-governance` intentionally validate generated governance evidence without rerunning the expensive snapshot pack.
+
+**Expected impact:**
+
+- The previous 15m `quality-static` job becomes:
+  - one base lane for lint, typecheck, governance snapshot generation, and strict freshness,
+  - six parallel static lanes for the existing guardrails.
+- Wall-clock improvement depends on the slowest group, but the change removes the artificial serialization across unrelated static checks.
+- The generated profile artifacts give the next PR exact data for moving or trimming the new slowest group instead of guessing.
+
+**Evidence commands:**
+
+```bash
+npm run check:quality:group -- reports
+npm run check:quality:group -- tests
+npx vitest run src/tests/build/qualityAggregateSupport.test.ts src/tests/build/ciWorkflowGovernance.test.ts src/tests/scripts/postMergeEvidence.test.ts
+```
+
+**Post-merge evidence freshness:**
+
+- `npm run postmerge:evidence` remains the command that regenerates the formal post-merge evidence bundle.
+- `npm run check:postmerge-evidence` is advisory and detects whether `reports/postmerge-evidence.json` is stale, incomplete, or records a failed evidence block.
+- `npm run check:postmerge-evidence:strict` is available for explicit release verification, but it is not added as a new PR-blocking gate because normal pull requests do not necessarily generate post-merge artifacts.
+
+**Residual risk:**
+
+- CI still pays repeated `npm ci` setup cost for each matrix lane. That is acceptable for this PR because it keeps lanes isolated and avoids shared-state coupling.
+- `quality-static-base` still includes `lint`, `typecheck`, snapshot generation, and strict freshness; future optimization should profile that lane before splitting further.
+- Advisory report freshness still reports dirty worktree differences locally when reports are stale. That is intentional: it surfaces debt without blocking normal development.
+
 ## File Structure
 
 - Modify `.github/workflows/ci-cd.yml`: parallelize independent jobs, add unit sharding, keep stable aggregate check names, and avoid duplicated build/preview checks.

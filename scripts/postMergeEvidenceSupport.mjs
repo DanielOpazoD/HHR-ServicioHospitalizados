@@ -9,7 +9,45 @@ export const POST_MERGE_EVIDENCE_COMMANDS = [
   { name: 'report-freshness-strict', command: 'npm run check:report-freshness:strict' },
 ];
 
+export const REQUIRED_POST_MERGE_EVIDENCE_RESULTS = POST_MERGE_EVIDENCE_COMMANDS.map(
+  command => command.name
+);
+
 const statusLabel = status => (status === 'passed' ? 'verde' : 'revisar');
+
+const isSameCommit = (recordedCommit, currentCommit) =>
+  recordedCommit === currentCommit ||
+  recordedCommit.startsWith(currentCommit) ||
+  currentCommit.startsWith(recordedCommit);
+
+export const findPostMergeEvidenceIssues = ({ evidence, currentCommit }) => {
+  const issues = [];
+  const recordedCommit = typeof evidence?.commit === 'string' ? evidence.commit : '';
+  const results = Array.isArray(evidence?.results) ? evidence.results : [];
+
+  if (!recordedCommit) {
+    issues.push('reports/postmerge-evidence.json does not declare commit.');
+  } else if (currentCommit && !isSameCommit(recordedCommit, currentCommit)) {
+    issues.push(
+      `reports/postmerge-evidence.json was generated for ${recordedCommit}, current HEAD is ${currentCommit}.`
+    );
+  }
+
+  const resultByName = new Map(results.map(result => [result.name, result]));
+  for (const requiredName of REQUIRED_POST_MERGE_EVIDENCE_RESULTS) {
+    const result = resultByName.get(requiredName);
+    if (!result) {
+      issues.push(`reports/postmerge-evidence.json is missing result ${requiredName}.`);
+      continue;
+    }
+
+    if (result.status !== 'passed') {
+      issues.push(`reports/postmerge-evidence.json records ${requiredName} as ${result.status}.`);
+    }
+  }
+
+  return issues;
+};
 
 export const buildPostMergeEvidenceSummary = ({ generatedAt, branch, commit, results }) => {
   const freshness = results.find(result => result.name === 'report-freshness-strict');

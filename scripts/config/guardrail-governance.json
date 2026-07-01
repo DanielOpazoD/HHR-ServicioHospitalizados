@@ -205,7 +205,7 @@
       { "id": "check:guardrail-governance", "group": "governance" },
       {
         "id": "check:report-freshness",
-        "group": "governance",
+        "group": "reports",
         "reportOnly": true,
         "rationale": "Surfaces stale report artifacts as advisory in the inner loop; ci:release-gate already regenerates and enforces them blocking. Avoids forcing a 30s+ regeneration on every check:quality run."
       },

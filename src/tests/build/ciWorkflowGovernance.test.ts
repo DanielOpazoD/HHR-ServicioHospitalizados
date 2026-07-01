@@ -39,6 +39,20 @@ describe('CI workflow governance', () => {
     expect(freshnessStep).toBeGreaterThan(snapshotStep);
   });
 
+  it('splits quality-static into governed groups while preserving an aggregate quality-static check', () => {
+    const workflow = readText('.github/workflows/ci-cd.yml');
+
+    expect(workflow).toContain('quality-static-groups:');
+    expect(workflow).toContain('name: quality-static-${{ matrix.group }}');
+    expect(workflow).toContain('group: [boundaries, governance, security, size, tests, reports]');
+    expect(workflow).toContain('run: npm run check:quality:group -- ${{ matrix.group }}');
+    expect(workflow).toContain('quality-static:');
+    expect(workflow).toContain('needs: [quality-static-base, quality-static-groups]');
+    expect(workflow).toContain('Quality static gates passed');
+    expect(workflow).toContain('name: quality-static-governance-snapshots');
+    expect(workflow).toContain("if: matrix.group == 'governance'");
+  });
+
   it('keeps Firefox compatibility out of PR CI unless Firefox becomes a supported browser', () => {
     const workflow = readText('.github/workflows/ci-cd.yml');
 
