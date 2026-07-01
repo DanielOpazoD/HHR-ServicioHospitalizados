@@ -51,7 +51,9 @@ Estos son los entrypoints recomendados para trabajo normal.
 
 `check:report-freshness` es advisory para uso diario: muestra drift de reportes sin bloquear ramas operativas. Para release real, usar `npm run check:release-evidence`: ejecuta `check:report-freshness:strict` y además bloquea reportes generados desde un checkout con cambios locales significativos.
 La evidencia de release también exige el artefacto dedicado del smoke visual clínico en `reports/e2e/clinical-visual-release-report.json`; `npm run report:release-evidence` lo genera antes de refrescar los reportes ejecutivos.
-`check:report-freshness:strict` considera frescos los reportes generados para `HEAD` o para un padre directo de un merge commit; no acepta ancestros antiguos ni el padre de un commit lineal normal.
+`check:report-freshness:strict` considera frescos los reportes generados para `HEAD`. Los reportes generados para un padre directo de un merge commit solo pasan si incluyen `generatedFor.dependencyFingerprint` y el fingerprint coincide con las dependencias transitivas actuales; esto distingue un drift inocuo de merge commit de un cambio real en la evidencia. Ancestros antiguos, padres de commits lineales normales y fingerprints divergentes bloquean el gate con un comando de recuperación concreto.
+
+Después de un merge a `main`, usar `npm run postmerge:evidence` para generar `reports/postmerge-evidence.{json,md}`. En GitHub Actions, el job `postmerge-evidence` lo ejecuta solo en `push` a `main` y sube el artifact `postmerge-release-evidence`.
 
 ### Si tocas reglas, runbooks o documentación operativa
 

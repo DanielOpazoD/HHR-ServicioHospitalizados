@@ -458,6 +458,36 @@ jobs:
           path: dist/
           retention-days: 7
 
+  postmerge-evidence:
+    name: postmerge-evidence
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [ci-strict-summary]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate post-merge release evidence
+        run: npm run postmerge:evidence
+
+      - name: Upload post-merge release evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: postmerge-release-evidence
+          path: reports/postmerge-evidence.*
+          retention-days: 30
+
   # ============================================
   # JOB 6: DOCUMENTATION
   # ============================================

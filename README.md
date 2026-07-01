@@ -290,6 +290,7 @@ Artifacts operativos publicados por CI:
 - `runtime-contracts`
 - `critical-coverage`
 - `governance-snapshot-profile`
+- `postmerge-release-evidence` (solo `push` a `main`)
 - `flow-performance-budget`
 
 ## Baseline de Calidad
@@ -297,6 +298,7 @@ Artifacts operativos publicados por CI:
 `reports/` está en `.gitignore`. La regla del repo es regenerar los reportes desde el código en cada validación:
 
 - En CI, `critical-coverage-report` genera `reports/critical-coverage.*` como artifact explícito. Luego `quality-static-governance-snapshots` lo descarga, corre `npm run report:governance-snapshots`, valida `npm run check:report-freshness:strict` y publica `reports/ci-governance-snapshot-profile.*`.
+- Tras un merge a `main`, el job `postmerge-evidence` corre `npm run postmerge:evidence` y publica `reports/postmerge-evidence.*` como artifact formal del merge commit. Esta evidencia no reemplaza los gates del PR: deja trazabilidad del estado ya integrado en `main`.
 - En local hay que regenerarlos antes de tratarlos como evidencia.
 
 Snapshots versionados explícitamente (excepción documentada al `.gitignore`, mantenidos a mano):
@@ -321,6 +323,8 @@ git status --short
 npm run report:governance-snapshots
 npm run check:report-freshness:strict
 ```
+
+`check:report-freshness:strict` acepta evidencia generada para `HEAD`. Si un reporte fue generado para un padre directo de un merge commit, solo se acepta como evidencia transitoria cuando declara `generatedFor.dependencyFingerprint` y ese fingerprint coincide con las dependencias transitivas actuales del reporte. Si falla por `stale by commit ancestry`, hay que regenerar el reporte para el commit actual. Si falla por `stale by real dependency fingerprint`, cambió una entrada real del grafo y corresponde correr el comando sugerido por el guardrail o `npm run postmerge:evidence` en `main`.
 
 `report:release-readiness-scorecard` reutiliza `reports/critical-coverage.*` solo si:
 

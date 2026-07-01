@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildPostMergeEvidenceSummary,
+  buildPostMergeEvidencePayload,
   findPostMergeEvidenceIssues,
   POST_MERGE_EVIDENCE_COMMANDS,
   REQUIRED_POST_MERGE_EVIDENCE_RESULTS,
@@ -40,6 +41,44 @@ describe('postMergeEvidenceSupport', () => {
     expect(summary).toContain('Commit: `abc1234`');
     expect(summary).toContain('Freshness estricta: verde');
     expect(summary).toContain('| quality-metrics | passed |');
+  });
+
+  it('builds a post-merge payload with main evidence provenance', () => {
+    const payload = buildPostMergeEvidencePayload({
+      generatedAt: '2026-07-01T12:00:00.000Z',
+      branch: 'main',
+      commit: 'abc1234',
+      workflow: {
+        eventName: 'push',
+        runId: '123456',
+        runAttempt: '2',
+      },
+      results: REQUIRED_POST_MERGE_EVIDENCE_RESULTS.map(name => ({
+        name,
+        command: `npm run ${name}`,
+        status: 'passed',
+        exitCode: 0,
+      })),
+    });
+
+    expect(payload.provenance).toMatchObject({
+      evidenceKind: 'post-merge-main',
+      generatedFor: {
+        branch: 'main',
+        gitSha: 'abc1234',
+      },
+      workflow: {
+        eventName: 'push',
+        runId: '123456',
+        runAttempt: '2',
+      },
+    });
+    expect(payload.summary).toMatchObject({
+      totalBlocks: REQUIRED_POST_MERGE_EVIDENCE_RESULTS.length,
+      passedBlocks: REQUIRED_POST_MERGE_EVIDENCE_RESULTS.length,
+      failedBlocks: 0,
+      freshnessStrictStatus: 'passed',
+    });
   });
 
   it('detects stale or incomplete post-merge evidence payloads', () => {
