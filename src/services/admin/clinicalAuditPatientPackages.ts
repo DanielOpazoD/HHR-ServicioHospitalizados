@@ -1,20 +1,26 @@
 import type { AuditAction } from '@/types/auditActionTypes';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 import {
-  buildClinicalAuditPresentation,
-  type ClinicalAuditPresentation,
-} from '@/services/admin/clinicalAuditPresentation';
-import {
   buildActorsFromLogProjections,
   buildLogPackageProjection,
 } from '@/services/admin/clinicalAuditPatientPackageProjection';
 import {
   PATIENT_PACKAGE_WINDOW_MS,
-  UNKNOWN_AUDIT_SUBJECT,
   type ClinicalAuditPackageChange,
   type ClinicalAuditPackageFlags,
   type ClinicalAuditPatientPackage,
 } from '@/services/admin/clinicalAuditPatientPackageTypes';
+import {
+  asAuditText,
+  getAuditLogDetails,
+  getBedLabelParts,
+  getClinicalAuditPatientRut,
+  getClinicalAuditRecordDate,
+  getPatientNameFromPresentation,
+  getPrimaryBedLabelForLog,
+  parseAuditTimestampMs,
+  resolveClinicalAuditPackageKey,
+} from '@/services/admin/clinicalAuditPatientPackageKey';
 import {
   DOCUMENT_AUDIT_ACTIONS,
   MEDICATION_AUDIT_ACTIONS,
@@ -28,165 +34,14 @@ export type {
   ClinicalAuditPatientPackageActor,
 } from '@/services/admin/clinicalAuditPatientPackageTypes';
 
+export { resolveClinicalAuditPackageKey } from '@/services/admin/clinicalAuditPatientPackageKey';
+
 interface PackageDraft {
   baseKey: string;
   firstTimestampMs: number;
   lastTimestampMs: number;
   logs: AuditLogEntry[];
 }
-
-const asText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
-
-const normalizeKeyPart = (value: string): string =>
-  value
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ');
-
-const normalizeIdentifier = (value: string): string =>
-  normalizeKeyPart(value).replace(/[.\s]/g, '');
-
-const parseTimestampMs = (timestamp: unknown): number => {
-  const date =
-    typeof timestamp === 'string' || typeof timestamp === 'number'
-      ? new Date(timestamp)
-      : timestamp instanceof Date
-        ? timestamp
-        : new Date(0);
-
-  const time = date.getTime();
-  return Number.isNaN(time) ? 0 : time;
-};
-
-const timestampToDate = (timestamp: unknown): string => {
-  const time = parseTimestampMs(timestamp);
-  if (!time) return '';
-  return new Date(time).toISOString().slice(0, 10);
-};
-
-const getDetails = (log: AuditLogEntry): Record<string, unknown> => log.details || {};
-
-const getRecordDate = (log: AuditLogEntry): string => {
-  const details = getDetails(log);
-  const detailRecordDate = asText(details.recordDate);
-  if (asText(log.recordDate)) return asText(log.recordDate);
-  if (detailRecordDate) return detailRecordDate;
-  if (log.entityType === 'dailyRecord' && /^\d{4}-\d{2}-\d{2}$/.test(log.entityId)) {
-    return log.entityId;
-  }
-  return timestampToDate(log.timestamp) || 'fecha-desconocida';
-};
-
-const getPatientName = (log: AuditLogEntry): string => {
-  const details = getDetails(log);
-  const presentation = buildClinicalAuditPresentation(log);
-  return getPatientNameFromPresentation(log, presentation, details);
-};
-
-const getPatientNameFromPresentation = (
-  log: AuditLogEntry,
-  presentation: ClinicalAuditPresentation,
-  details = getDetails(log)
-): string => {
-  return (
-    asText(details.patientName) ||
-    (log.entityType === 'patient' || log.entityType === 'discharge' || log.entityType === 'transfer'
-      ? asText(presentation.affectedSubject)
-      : '') ||
-    UNKNOWN_AUDIT_SUBJECT
-  );
-};
-
-const getPatientRut = (log: AuditLogEntry): string | undefined => {
-  const details = getDetails(log);
-  return asText(details.rut) || asText(log.patientIdentifier) || undefined;
-};
-
-const getEpisodeKey = (log: AuditLogEntry): string | undefined => {
-  const details = getDetails(log);
-  return (
-    asText(details.episodeKey) ||
-    asText(details.clinicalEpisodeId) ||
-    asText(details.movementId) ||
-    undefined
-  );
-};
-
-const looksLikeDate = (value: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(value);
-
-const getBedLabelParts = (log: AuditLogEntry): string[] => {
-  const details = getDetails(log);
-  const parts = [
-    asText(details.bedId),
-    asText(details.sourceBed),
-    asText(details.targetBed),
-    asText(details.restoredBed),
-  ];
-
-  if (
-    (log.entityType === 'patient' ||
-      log.entityType === 'discharge' ||
-      log.entityType === 'transfer') &&
-    asText(log.entityId) &&
-    !looksLikeDate(asText(log.entityId))
-  ) {
-    parts.push(asText(log.entityId));
-  }
-
-  return [...new Set(parts.filter(Boolean))];
-};
-
-const getPrimaryBedLabelForLog = (log: AuditLogEntry): string | undefined => {
-  const details = getDetails(log);
-  const sourceBed = asText(details.sourceBed);
-  const targetBed = asText(details.targetBed);
-  if (sourceBed && targetBed) return `${sourceBed} -> ${targetBed}`;
-
-  const changes = details.changes;
-  if (changes && typeof changes === 'object' && !Array.isArray(changes)) {
-    const bedChange = (changes as Record<string, { old?: unknown; new?: unknown }>).bedId;
-    const oldBed = asText(bedChange?.old);
-    const newBed = asText(bedChange?.new);
-    if (oldBed && newBed) return `${oldBed} -> ${newBed}`;
-  }
-
-  return getBedLabelParts(log)[0];
-};
-
-const resolveIdentityPart = (log: AuditLogEntry): string => {
-  const episodeKey = getEpisodeKey(log);
-  const rut = getPatientRut(log);
-  const patientName = getPatientName(log);
-  const entityId = asText(log.entityId);
-
-  if (episodeKey) return `episode:${normalizeIdentifier(episodeKey)}`;
-  if (rut) return `rut:${normalizeIdentifier(rut)}`;
-  if (asText(log.patientIdentifier)) {
-    return `patient-id:${normalizeIdentifier(asText(log.patientIdentifier))}`;
-  }
-  if (patientName && patientName !== UNKNOWN_AUDIT_SUBJECT) {
-    return `patient-name:${normalizeKeyPart(patientName)}`;
-  }
-  if (entityId) return `entity:${normalizeKeyPart(`${log.entityType}:${entityId}`)}`;
-  return `unknown:${normalizeKeyPart(log.action)}`;
-};
-
-export const resolveClinicalAuditPackageKey = (log: AuditLogEntry): string => {
-  const recordDate = getRecordDate(log);
-  const identityPart = resolveIdentityPart(log);
-  const details = getDetails(log);
-  const hasStrongIdentity =
-    Boolean(getEpisodeKey(log)) ||
-    Boolean(getPatientRut(log)) ||
-    Boolean(asText(log.patientIdentifier));
-  const bedLabel = asText(details.bedId) || getBedLabelParts(log)[0];
-
-  return [recordDate, identityPart, !hasStrongIdentity && bedLabel ? `bed:${bedLabel}` : '']
-    .filter(Boolean)
-    .join('|');
-};
 
 const hasAction = (log: AuditLogEntry, action: AuditAction): boolean => log.action === action;
 
@@ -209,7 +64,7 @@ const inferModulesForLog = (
   log: AuditLogEntry,
   changes: ClinicalAuditPackageChange[]
 ): string[] => {
-  const details = getDetails(log);
+  const details = getAuditLogDetails(log);
   const modules: string[] = [];
 
   if (hasAction(log, 'PATIENT_ADMITTED')) pushUnique(modules, 'Ingreso');
@@ -237,7 +92,7 @@ const buildFlags = (
   const discharge = logs.some(log => hasAction(log, 'PATIENT_DISCHARGED'));
   const transfer = logs.some(log => hasAction(log, 'PATIENT_TRANSFERRED'));
   const internalMovement = logs.some(log => {
-    const details = getDetails(log);
+    const details = getAuditLogDetails(log);
     return hasAction(log, 'PATIENT_BED_CHANGED') || details.movementKind === 'move';
   });
   const conflict = logs.some(logHasConflictEvidence);
@@ -246,7 +101,7 @@ const buildFlags = (
     logs.some(log => log.action.includes('DIAGNOSIS')) ||
     changes.some(change => change.fieldLabel === 'Diagnóstico');
   const status = changes.some(change => change.fieldLabel === 'Estado');
-  const cma = logs.some(log => valueMentionsCma(getDetails(log)));
+  const cma = logs.some(log => valueMentionsCma(getAuditLogDetails(log)));
 
   return {
     admission,
@@ -279,10 +134,10 @@ const buildPackageFromLogs = (
   logs: AuditLogEntry[]
 ): ClinicalAuditPatientPackage => {
   const chronologicalLogs = [...logs].sort(
-    (a, b) => parseTimestampMs(a.timestamp) - parseTimestampMs(b.timestamp)
+    (a, b) => parseAuditTimestampMs(a.timestamp) - parseAuditTimestampMs(b.timestamp)
   );
   const rawLogs = [...chronologicalLogs].sort(
-    (a, b) => parseTimestampMs(b.timestamp) - parseTimestampMs(a.timestamp)
+    (a, b) => parseAuditTimestampMs(b.timestamp) - parseAuditTimestampMs(a.timestamp)
   );
   const firstLog = chronologicalLogs[0];
   const lastLog = chronologicalLogs[chronologicalLogs.length - 1];
@@ -311,18 +166,18 @@ const buildPackageFromLogs = (
       .join(', ') ||
     undefined;
   const patientName = getPatientNameFromPresentation(firstLog, projections[0].presentation);
-  const patientRut = getPatientRut(firstLog);
+  const patientRut = getClinicalAuditPatientRut(firstLog);
   const ipAddresses = [
-    ...new Set(chronologicalLogs.map(log => asText(log.ipAddress)).filter(Boolean)),
+    ...new Set(chronologicalLogs.map(log => asAuditText(log.ipAddress)).filter(Boolean)),
   ];
 
   return {
-    id: `patient-package-${baseKey}-${parseTimestampMs(firstLog.timestamp)}`,
+    id: `patient-package-${baseKey}-${parseAuditTimestampMs(firstLog.timestamp)}`,
     packageKey: baseKey,
     patientName,
     patientRut,
-    patientIdentifier: asText(firstLog.patientIdentifier) || patientRut,
-    recordDate: getRecordDate(firstLog),
+    patientIdentifier: asAuditText(firstLog.patientIdentifier) || patientRut,
+    recordDate: getClinicalAuditRecordDate(firstLog),
     primaryBedLabel,
     startedAt: firstLog.timestamp,
     endedAt: lastLog.timestamp,
@@ -349,12 +204,12 @@ export const buildClinicalAuditPatientPackages = (
   const drafts: PackageDraft[] = [];
   const draftsByBaseKey = new Map<string, PackageDraft[]>();
   const sortedLogs = [...logs].sort(
-    (a, b) => parseTimestampMs(a.timestamp) - parseTimestampMs(b.timestamp)
+    (a, b) => parseAuditTimestampMs(a.timestamp) - parseAuditTimestampMs(b.timestamp)
   );
 
   sortedLogs.forEach(log => {
     const baseKey = resolveClinicalAuditPackageKey(log);
-    const logTime = parseTimestampMs(log.timestamp);
+    const logTime = parseAuditTimestampMs(log.timestamp);
     const keyDrafts = draftsByBaseKey.get(baseKey) || [];
     const existingDraft = keyDrafts.find(draft => {
       return (
@@ -383,5 +238,5 @@ export const buildClinicalAuditPatientPackages = (
 
   return drafts
     .map(draft => buildPackageFromLogs(draft.baseKey, draft.logs))
-    .sort((a, b) => parseTimestampMs(b.endedAt) - parseTimestampMs(a.endedAt));
+    .sort((a, b) => parseAuditTimestampMs(b.endedAt) - parseAuditTimestampMs(a.endedAt));
 };
