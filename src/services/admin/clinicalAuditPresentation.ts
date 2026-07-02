@@ -53,6 +53,13 @@ const UNKNOWN_USER = 'Usuario no identificado';
 const FIELD_LABELS: Record<string, string> = {
   note: 'Nota clínica',
   novedades: 'Novedades',
+  handoffNote: 'Nota de entrega de enfermería',
+  handoffNoteDayShift: 'Nota de entrega de enfermería - turno día',
+  handoffNoteNightShift: 'Nota de entrega de enfermería - turno noche',
+  handoffNovedadesDayShift: 'Novedades de entrega de enfermería - turno día',
+  handoffNovedadesNightShift: 'Novedades de entrega de enfermería - turno noche',
+  medicalHandoffNote: 'Nota de entrega médica',
+  medicalHandoffNovedades: 'Novedades de entrega médica',
   specialty: 'Especialidad',
   secondarySpecialty: 'Especialidad secundaria',
   diagnosis: 'Diagnóstico',

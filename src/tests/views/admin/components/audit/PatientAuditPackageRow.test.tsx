@@ -48,12 +48,52 @@ const packageFixture = buildClinicalAuditPatientPackages([
   }),
 ])[0];
 
-const renderRow = (isExpanded = false, onToggle = vi.fn()) =>
+const longNovedadesBaseline =
+  'Mantener orden de ficha clínica al momento de que paciente se vaya de alta, SIEMPRE debe ser supervisado por Enfermero. Puerta de vía de evacuación en mal estado.';
+
+const longNovedadesFinal =
+  'Mantener orden de ficha clínica al momento de que paciente se vaya de alta, SIEMPRE debe ser supervisado por Enfermero. Puerta de vía de evacuación en mal estado. Viernes 03 de julio a las 15:00 horas, se realizarán pruebas técnicas en los botones de pánico del Hospital.';
+
+const novedadesPackageFixture = buildClinicalAuditPatientPackages([
+  baseLog({
+    id: 'novedades-1',
+    action: 'HANDOFF_NOVEDADES_MODIFIED',
+    details: {
+      patientName: 'Paciente Novedades',
+      rut: '25DF52626',
+      bedId: 'H4C1',
+      changes: {
+        novedades: {
+          old: '-',
+          new: longNovedadesBaseline,
+        },
+      },
+    },
+  }),
+  baseLog({
+    id: 'novedades-2',
+    action: 'HANDOFF_NOVEDADES_MODIFIED',
+    timestamp: '2026-07-01T19:38:29.000Z',
+    details: {
+      patientName: 'Paciente Novedades',
+      rut: '25DF52626',
+      bedId: 'H4C1',
+      changes: {
+        novedades: {
+          old: longNovedadesBaseline,
+          new: longNovedadesFinal,
+        },
+      },
+    },
+  }),
+])[0];
+
+const renderRow = (isExpanded = false, onToggle = vi.fn(), auditPackage = packageFixture) =>
   render(
     <table>
       <tbody>
         <PatientAuditPackageRow
-          auditPackage={packageFixture}
+          auditPackage={auditPackage}
           isExpanded={isExpanded}
           onToggle={onToggle}
           compactView={false}
@@ -80,6 +120,22 @@ describe('PatientAuditPackageRow', () => {
       screen.getByText(/Daniel Opazo Damiani cambió Diagnóstico de - a ICC en cama H4C1/i)
     ).toBeInTheDocument();
     expect(screen.queryByText('PATIENT_DIAGNOSIS_CHANGED')).not.toBeInTheDocument();
+  });
+
+  it('condenses repeated long text changes without duplicating the visible evidence', () => {
+    renderRow(false, vi.fn(), novedadesPackageFixture);
+
+    expect(
+      screen.getByText(/Daniel Opazo Damiani actualizó Novedades en cama H4C1/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/2 eventos integrados/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 cambios integrados/i)).toBeInTheDocument();
+    expect(screen.queryByText(longNovedadesFinal)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Mantener orden de ficha clínica al momento/i)
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/Agregado:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Viernes 03 de julio/i)).toBeInTheDocument();
   });
 
   it('keeps raw audit events available only after expansion', () => {

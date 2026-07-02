@@ -1,11 +1,28 @@
-import type { ClinicalAuditPatientPackage } from '@/services/admin/clinicalAuditPatientPackages';
+import type {
+  ClinicalAuditPackageChange,
+  ClinicalAuditPatientPackage,
+} from '@/services/admin/clinicalAuditPatientPackages';
 import { formatTimestamp } from './auditUIUtils';
+
+const INLINE_VALUE_PREVIEW_LENGTH = 96;
+const VERBOSE_VALUE_THRESHOLD = 72;
 
 export const formatAuditPackageValue = (value: unknown): string => {
   if (value === undefined || value === null || value === '') return '-';
   if (Array.isArray(value)) return value.join(', ');
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
+};
+
+export const formatAuditPackageValuePreview = (value: unknown): string => {
+  const text = formatAuditPackageValue(value).replace(/\s+/g, ' ').trim();
+  if (text.length <= INLINE_VALUE_PREVIEW_LENGTH) return text;
+  return `${text.slice(0, INLINE_VALUE_PREVIEW_LENGTH).trimEnd()}...`;
+};
+
+export const isVerboseAuditPackageValue = (value: unknown): boolean => {
+  const text = formatAuditPackageValue(value);
+  return text.length > VERBOSE_VALUE_THRESHOLD || /\n/.test(text);
 };
 
 export const displayTimestampParts = (timestamp: string): { date: string; time: string } => {
@@ -19,6 +36,7 @@ export const getAuditPackageActorSummary = (auditPackage: ClinicalAuditPatientPa
 const CHANGE_PRIORITY = [
   'Diagnóstico',
   'Diagnóstico de egreso',
+  'Novedades',
   'Alta',
   'Traslado',
   'Movimiento interno',
@@ -27,15 +45,49 @@ const CHANGE_PRIORITY = [
   'Estado',
 ];
 
+const getChangePriority = (change: ClinicalAuditPackageChange): number => {
+  const index = CHANGE_PRIORITY.indexOf(change.fieldLabel);
+  return index === -1 ? CHANGE_PRIORITY.length : index;
+};
+
+const shouldShowLatestVerboseTransition = (
+  existing: ClinicalAuditPackageChange,
+  next: ClinicalAuditPackageChange
+): boolean => {
+  return (
+    isVerboseAuditPackageValue(existing.newValue) ||
+    isVerboseAuditPackageValue(next.oldValue) ||
+    isVerboseAuditPackageValue(next.newValue)
+  );
+};
+
+export const buildAuditPackageDisplayChanges = (
+  auditPackage: ClinicalAuditPatientPackage
+): ClinicalAuditPackageChange[] => {
+  const changesByField = new Map<string, ClinicalAuditPackageChange>();
+
+  auditPackage.changes.forEach(change => {
+    const existing = changesByField.get(change.fieldLabel);
+    if (!existing) {
+      changesByField.set(change.fieldLabel, change);
+      return;
+    }
+
+    changesByField.set(change.fieldLabel, {
+      ...change,
+      oldValue: shouldShowLatestVerboseTransition(existing, change)
+        ? existing.newValue
+        : existing.oldValue,
+    });
+  });
+
+  return Array.from(changesByField.values()).sort(
+    (left, right) => getChangePriority(left) - getChangePriority(right)
+  );
+};
+
 const pickNarrativeChange = (auditPackage: ClinicalAuditPatientPackage) => {
-  return [...auditPackage.changes].sort((left, right) => {
-    const leftIndex = CHANGE_PRIORITY.indexOf(left.fieldLabel);
-    const rightIndex = CHANGE_PRIORITY.indexOf(right.fieldLabel);
-    return (
-      (leftIndex === -1 ? CHANGE_PRIORITY.length : leftIndex) -
-      (rightIndex === -1 ? CHANGE_PRIORITY.length : rightIndex)
-    );
-  })[0];
+  return buildAuditPackageDisplayChanges(auditPackage)[0];
 };
 
 const resolveActionVerb = (auditPackage: ClinicalAuditPatientPackage): string => {
@@ -56,6 +108,14 @@ export const buildClinicalAuditPackageNarrative = (
   const change = pickNarrativeChange(auditPackage);
 
   if (change) {
+    const hasVerboseValue =
+      isVerboseAuditPackageValue(change.oldValue) || isVerboseAuditPackageValue(change.newValue);
+    if (hasVerboseValue) {
+      const eventText =
+        auditPackage.eventCount > 1 ? ` (${auditPackage.eventCount} eventos integrados)` : '';
+      return `${actor} actualizó ${change.fieldLabel}${bed}${eventText}`;
+    }
+
     return `${actor} cambió ${change.fieldLabel} de ${formatAuditPackageValue(
       change.oldValue
     )} a ${formatAuditPackageValue(change.newValue)}${bed}`;

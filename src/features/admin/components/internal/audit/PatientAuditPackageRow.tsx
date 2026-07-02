@@ -18,14 +18,18 @@ import { buildClinicalAuditPresentation } from '@/services/admin/clinicalAuditPr
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import {
+  buildAuditPackageDisplayChanges,
   buildAuditPackageCopySummary,
   buildClinicalAuditPackageNarrative,
   displayTimestampParts,
-  formatAuditPackageValue,
   getAuditPackageActorSummary,
   getRawAuditPackageEventsJson,
   isAuditPackageViewAction,
 } from './patientAuditPackageRowUtils';
+import {
+  AuditPackageExpandedChanges,
+  AuditPackageVisibleChanges,
+} from './AuditPackageChangeSummary';
 
 interface PatientAuditPackageRowProps {
   auditPackage: ClinicalAuditPatientPackage;
@@ -45,8 +49,10 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
   const startedAt = displayTimestampParts(auditPackage.startedAt);
   const endedAt = displayTimestampParts(auditPackage.endedAt);
   const hasTimeRange = startedAt.time && endedAt.time && startedAt.time !== endedAt.time;
-  const visibleChanges = auditPackage.changes.slice(0, compactView ? 2 : 4);
-  const hiddenChangeCount = Math.max(0, auditPackage.changes.length - visibleChanges.length);
+  const displayChanges = buildAuditPackageDisplayChanges(auditPackage);
+  const visibleChanges = displayChanges.slice(0, compactView ? 2 : 4);
+  const hiddenChangeCount = Math.max(0, displayChanges.length - visibleChanges.length);
+  const integratedChangeCount = Math.max(0, auditPackage.changes.length - displayChanges.length);
   const rawEventsJson = getRawAuditPackageEventsJson(auditPackage);
   const detailsId = `patient-audit-package-${auditPackage.id}`;
   const includedEventsId = `${detailsId}-included-events`;
@@ -173,32 +179,12 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
             {clinicalNarrative}
           </p>
           {visibleChanges.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {visibleChanges.map(change => (
-                <div
-                  key={`${change.sourceLogId}-${change.fieldLabel}`}
-                  className="min-w-[120px] rounded-lg border border-slate-200 bg-white px-2 py-1 shadow-sm"
-                >
-                  <p className="text-[10px] font-black uppercase text-slate-500">
-                    {change.fieldLabel}
-                  </p>
-                  <p className="text-[11px] leading-tight text-slate-500">
-                    <span className="text-rose-700">
-                      {formatAuditPackageValue(change.oldValue)}
-                    </span>
-                    <span className="px-1 text-slate-300">-&gt;</span>
-                    <span className="font-bold text-emerald-700">
-                      {formatAuditPackageValue(change.newValue)}
-                    </span>
-                  </p>
-                </div>
-              ))}
-              {hiddenChangeCount > 0 && (
-                <span className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-500">
-                  +{hiddenChangeCount} cambios
-                </span>
-              )}
-            </div>
+            <AuditPackageVisibleChanges
+              changes={visibleChanges}
+              hiddenChangeCount={hiddenChangeCount}
+              integratedChangeCount={integratedChangeCount}
+              totalChangeCount={auditPackage.changes.length}
+            />
           ) : (
             <p className="max-w-[420px] text-xs font-medium text-slate-700">
               {auditPackage.summary}
@@ -262,31 +248,10 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                     {auditPackage.eventCount} eventos · {getAuditPackageActorSummary(auditPackage)}
                   </span>
                 </div>
-                <div className="grid gap-2 p-3 md:grid-cols-2">
-                  {auditPackage.changes.length > 0 ? (
-                    auditPackage.changes.map(change => (
-                      <div
-                        key={`${change.sourceLogId}-${change.fieldLabel}-expanded`}
-                        className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2"
-                      >
-                        <p className="text-[10px] font-black uppercase text-slate-500">
-                          {change.fieldLabel}
-                        </p>
-                        <p className="mt-1 text-xs leading-tight text-slate-600">
-                          <span className="text-rose-700">
-                            {formatAuditPackageValue(change.oldValue)}
-                          </span>
-                          <span className="px-1 text-slate-300">-&gt;</span>
-                          <span className="font-bold text-emerald-700">
-                            {formatAuditPackageValue(change.newValue)}
-                          </span>
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs font-medium text-slate-700">{auditPackage.summary}</p>
-                  )}
-                </div>
+                <AuditPackageExpandedChanges
+                  changes={displayChanges}
+                  summary={auditPackage.summary}
+                />
               </section>
 
               <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
