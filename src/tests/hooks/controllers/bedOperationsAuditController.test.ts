@@ -52,10 +52,12 @@ describe('bedOperationsAuditController', () => {
     );
     expect(move.audit.details).toEqual(
       expect.objectContaining({
-        action: 'move',
+        movementKind: 'move',
         sourceBed: 'R1',
         targetBed: 'R2',
         diagnosis: 'Neumonía en tratamiento',
+        previousLocation: 'Sala 1',
+        newLocation: 'Sala 2',
       })
     );
     expect(toBedOperationAuditArgs(move)).toEqual([
@@ -63,7 +65,7 @@ describe('bedOperationsAuditController', () => {
       'patient',
       'R2',
       expect.objectContaining({
-        action: 'move',
+        movementKind: 'move',
         sourceBed: 'R1',
         targetBed: 'R2',
       }),

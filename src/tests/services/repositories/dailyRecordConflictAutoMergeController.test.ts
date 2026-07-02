@@ -5,7 +5,7 @@ import { attemptConflictAutoMergeRecovery } from '@/services/repositories/dailyR
 const {
   getRecordFromFirestoreMock,
   resolveConflictMock,
-  buildConflictAuditSummaryMock,
+  buildConflictAutoMergeAuditDetailsMock,
   logRepositoryConflictAutoMergedMock,
   queueSyncTaskMock,
   loggerWarnMock,
@@ -15,7 +15,7 @@ const {
 } = vi.hoisted(() => ({
   getRecordFromFirestoreMock: vi.fn(),
   resolveConflictMock: vi.fn(),
-  buildConflictAuditSummaryMock: vi.fn(),
+  buildConflictAutoMergeAuditDetailsMock: vi.fn(),
   logRepositoryConflictAutoMergedMock: vi.fn(),
   queueSyncTaskMock: vi.fn(),
   loggerWarnMock: vi.fn(),
@@ -33,7 +33,7 @@ vi.mock('@/services/repositories/conflictResolutionMatrix', () => ({
 }));
 
 vi.mock('@/services/repositories/conflictResolutionAuditSummary', () => ({
-  buildConflictAuditSummary: buildConflictAuditSummaryMock,
+  buildConflictAutoMergeAuditDetails: buildConflictAutoMergeAuditDetailsMock,
 }));
 
 vi.mock('@/services/repositories/ports/repositoryAuditPort', () => ({
@@ -91,7 +91,16 @@ describe('dailyRecordConflictAutoMergeController', () => {
       record,
       trace: { policyVersion: 'v1', entries: [] },
     });
-    buildConflictAuditSummaryMock.mockReturnValue({ summary: 'ok' });
+    buildConflictAutoMergeAuditDetailsMock.mockReturnValue({
+      summary: 'ok',
+      conflictId: 'conflict-1',
+      snapshotRecovery: {
+        status: 'saved',
+        snapshotIds: ['conflict-1__remote_premerge', 'conflict-1__incoming_premerge'],
+        origins: ['remote_premerge', 'incoming_premerge'],
+        expiresAt: '2026-04-17T12:00:00.000Z',
+      },
+    });
     queueSyncTaskMock.mockResolvedValue({ accepted: true });
 
     await expect(
@@ -124,7 +133,16 @@ describe('dailyRecordConflictAutoMergeController', () => {
   it('stays best-effort but observable: telemeters when the audit fails, still auto_merged', async () => {
     getRecordFromFirestoreMock.mockResolvedValue(record);
     resolveConflictMock.mockReturnValue({ record, trace: { policyVersion: 'v1', entries: [] } });
-    buildConflictAuditSummaryMock.mockReturnValue({ summary: 'ok' });
+    buildConflictAutoMergeAuditDetailsMock.mockReturnValue({
+      summary: 'ok',
+      conflictId: 'conflict-1',
+      snapshotRecovery: {
+        status: 'saved',
+        snapshotIds: ['conflict-1__remote_premerge', 'conflict-1__incoming_premerge'],
+        origins: ['remote_premerge', 'incoming_premerge'],
+        expiresAt: '2026-04-17T12:00:00.000Z',
+      },
+    });
     queueSyncTaskMock.mockResolvedValue({ accepted: true });
     logRepositoryConflictAutoMergedMock.mockRejectedValueOnce(new Error('audit down'));
 
@@ -147,7 +165,16 @@ describe('dailyRecordConflictAutoMergeController', () => {
       record,
       trace: { policyVersion: 'v1', entries: [] },
     });
-    buildConflictAuditSummaryMock.mockReturnValue({ summary: 'ok' });
+    buildConflictAutoMergeAuditDetailsMock.mockReturnValue({
+      summary: 'ok',
+      conflictId: 'conflict-1',
+      snapshotRecovery: {
+        status: 'saved',
+        snapshotIds: ['conflict-1__remote_premerge', 'conflict-1__incoming_premerge'],
+        origins: ['remote_premerge', 'incoming_premerge'],
+        expiresAt: '2026-04-17T12:00:00.000Z',
+      },
+    });
     queueSyncTaskMock.mockResolvedValue({ accepted: false });
 
     await expect(

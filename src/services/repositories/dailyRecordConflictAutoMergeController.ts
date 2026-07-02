@@ -2,7 +2,7 @@ import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { ConflictAutoMergeRecoveryResult } from '@/services/repositories/contracts/dailyRecordWriteRecoveryResult';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
-import { buildConflictAuditSummary } from '@/services/repositories/conflictResolutionAuditSummary';
+import { buildConflictAutoMergeAuditDetails } from '@/services/repositories/conflictResolutionAuditSummary';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
 import { dailyRecordWriteSupportLogger } from '@/services/repositories/repositoryLoggers';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
@@ -58,11 +58,13 @@ export const attemptConflictAutoMergeRecovery = async (
       }
     );
 
-    const auditDetails = {
-      ...buildConflictAuditSummary(effectiveChangedPaths, trace.policyVersion, trace.entries),
+    const auditDetails = buildConflictAutoMergeAuditDetails({
+      changedPaths: effectiveChangedPaths,
+      policyVersion: trace.policyVersion,
+      traceEntries: trace.entries,
       conflictId,
       snapshotRecovery,
-    };
+    });
 
     const queued = await queueMergedRecoveryTask(merged, changedPaths, remoteRecord.lastUpdated);
     if (!queued) {

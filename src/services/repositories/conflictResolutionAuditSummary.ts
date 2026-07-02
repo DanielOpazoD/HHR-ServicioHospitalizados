@@ -26,6 +26,22 @@ export interface ConflictAuditSummary {
   assessment: ConflictResolutionAssessment;
 }
 
+export interface ConflictAutoMergeSnapshotRecovery {
+  status: 'saved' | 'failed';
+  snapshotIds: string[];
+  origins: string[];
+  expiresAt?: string;
+  ttlMs?: number;
+}
+
+export interface ConflictAutoMergeAuditDetailsInput {
+  changedPaths: string[];
+  policyVersion: string;
+  traceEntries: ConflictResolutionTraceEntry[];
+  conflictId: string;
+  snapshotRecovery: ConflictAutoMergeSnapshotRecovery;
+}
+
 const countBy = (items: string[]): Record<string, number> =>
   items.reduce<Record<string, number>>((acc, item) => {
     acc[item] = (acc[item] || 0) + 1;
@@ -49,4 +65,19 @@ export const buildConflictAuditSummary = (
     .slice(0, 20)
     .map(({ path, strategy, winner, reason }) => ({ path, strategy, winner, reason })),
   assessment: assessConflictResolutionTrace(changedPaths, traceEntries),
+});
+
+export const buildConflictAutoMergeAuditDetails = ({
+  changedPaths,
+  policyVersion,
+  traceEntries,
+  conflictId,
+  snapshotRecovery,
+}: ConflictAutoMergeAuditDetailsInput): ConflictAuditSummary & {
+  conflictId: string;
+  snapshotRecovery: ConflictAutoMergeSnapshotRecovery;
+} => ({
+  ...buildConflictAuditSummary(changedPaths, policyVersion, traceEntries),
+  conflictId,
+  snapshotRecovery,
 });

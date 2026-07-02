@@ -30,6 +30,7 @@ import {
   loadExecuteWriteAuditEvent,
   type WriteAuditEvent,
 } from '@/application/audit/writeAuditEventUseCaseLoader';
+import { buildPatientDischargedAuditDetails } from '@/services/admin/auditClinicalEventCatalog';
 import { isAnonymousActor } from '@/application/audit/auditActorPolicy';
 import { executeLockClinicalDocumentsByEpisode } from '@/application/clinical-documents/lockClinicalDocumentsByEpisodeUseCase';
 import { resolveClinicalEpisodeIdentifier } from '@/application/patient-flow/clinicalEpisode';
@@ -152,28 +153,12 @@ const buildDischargeAuditEvent = (
   recordDate: string,
   entry: DischargeCanonicalAuditEntry
 ) => {
-  const details = Object.fromEntries(
-    Object.entries({
-      patientName: entry.patientName,
-      status: entry.status,
-      bedId: entry.bedId,
-      rut: entry.rut,
-      episodeKey: entry.episodeKey,
-      movementDate: entry.movementDate,
-      time: entry.time,
-      diagnosis: entry.diagnosis,
-      dischargeType: entry.dischargeType,
-      dischargeTypeOther: entry.dischargeTypeOther,
-      dischargeTarget: entry.dischargeTarget,
-    }).filter(([, value]) => value !== undefined)
-  );
-
   return {
     userId: actor,
     action: 'PATIENT_DISCHARGED' as const,
     entityType: 'discharge' as const,
     entityId: entry.bedId,
-    details,
+    details: buildPatientDischargedAuditDetails(entry),
     patientRut: entry.rut,
     recordDate,
   };
