@@ -6,6 +6,7 @@ import type {
   AuditStats,
 } from '@/types/auditLogTypes';
 import type { AuditSectionConfig } from '@/services/admin/auditViewConfig';
+import { DEFAULT_PATIENT_PACKAGE_INTENT } from '@/services/admin/clinicalAuditPatientPackageFilters';
 
 export const buildDefaultAuditStats = (): AuditStats => ({
   todayCount: 0,
@@ -43,7 +44,7 @@ export const shouldResetAuditPagination = (params: {
     params.groupedView ||
     (params.activePatientPackageFilter && params.activePatientPackageFilter !== 'ALL') ||
     (params.activePatientPackageIntent &&
-      params.activePatientPackageIntent !== 'CLINICAL_OPERATIONS')
+      params.activePatientPackageIntent !== DEFAULT_PATIENT_PACKAGE_INTENT)
   );
 
 export const buildAuditSectionActionsMap = (

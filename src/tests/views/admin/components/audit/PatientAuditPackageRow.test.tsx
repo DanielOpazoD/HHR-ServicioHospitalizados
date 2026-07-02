@@ -89,23 +89,42 @@ describe('PatientAuditPackageRow', () => {
     expect(screen.queryByText('Diagnóstico actualizado')).not.toBeInTheDocument();
     expect(screen.queryByText(/PATIENT_DIAGNOSIS_CHANGED/)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /ver eventos incluidos/i }));
+    const includedEventsButton = screen.getByRole('button', { name: /ver eventos incluidos/i });
+    expect(
+      document.getElementById(includedEventsButton.getAttribute('aria-controls') || '')
+    ).toBeInTheDocument();
+
+    fireEvent.click(includedEventsButton);
 
     expect(screen.getByText('Eventos clínicos y administrativos')).toBeInTheDocument();
     expect(screen.getByText('Diagnóstico actualizado')).toBeInTheDocument();
     expect(screen.queryByText(/PATIENT_DIAGNOSIS_CHANGED/)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /ver payload técnico/i }));
+    const technicalPayloadButton = screen.getByRole('button', { name: /ver payload técnico/i });
+    expect(
+      document.getElementById(technicalPayloadButton.getAttribute('aria-controls') || '')
+    ).toBeInTheDocument();
+
+    fireEvent.click(technicalPayloadButton);
 
     expect(screen.getByText('Detalle técnico avanzado')).toBeInTheDocument();
     expect(screen.getByText(/PATIENT_DIAGNOSIS_CHANGED/)).toBeInTheDocument();
   });
 
-  it('keeps row toggle behavior', () => {
+  it('keeps expansion on a single explicit button target', () => {
     const onToggle = vi.fn();
     renderRow(false, onToggle);
+    const expandButton = screen.getByRole('button', {
+      name: /abrir detalle de auditoría de anastasio hey riroroko/i,
+    });
+    const controlledRow = document.getElementById(expandButton.getAttribute('aria-controls') || '');
+    const parentRow = expandButton.closest('tr');
 
-    fireEvent.click(screen.getByText('Anastasio Hey Riroroko'));
+    expect(parentRow).not.toHaveAttribute('aria-expanded');
+    expect(parentRow).not.toHaveAttribute('tabindex');
+    expect(controlledRow).toBeInTheDocument();
+
+    fireEvent.click(expandButton);
 
     expect(onToggle).toHaveBeenCalledTimes(1);
   });

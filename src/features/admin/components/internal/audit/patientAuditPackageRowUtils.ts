@@ -28,19 +28,18 @@ const CHANGE_PRIORITY = [
 ];
 
 const pickNarrativeChange = (auditPackage: ClinicalAuditPatientPackage) => {
-  return (
-    [...auditPackage.changes].sort((left, right) => {
-      const leftIndex = CHANGE_PRIORITY.indexOf(left.fieldLabel);
-      const rightIndex = CHANGE_PRIORITY.indexOf(right.fieldLabel);
-      return (
-        (leftIndex === -1 ? CHANGE_PRIORITY.length : leftIndex) -
-        (rightIndex === -1 ? CHANGE_PRIORITY.length : rightIndex)
-      );
-    })[0] || auditPackage.changes[0]
-  );
+  return [...auditPackage.changes].sort((left, right) => {
+    const leftIndex = CHANGE_PRIORITY.indexOf(left.fieldLabel);
+    const rightIndex = CHANGE_PRIORITY.indexOf(right.fieldLabel);
+    return (
+      (leftIndex === -1 ? CHANGE_PRIORITY.length : leftIndex) -
+      (rightIndex === -1 ? CHANGE_PRIORITY.length : rightIndex)
+    );
+  })[0];
 };
 
 const resolveActionVerb = (auditPackage: ClinicalAuditPatientPackage): string => {
+  if (auditPackage.flags.admission) return 'registró ingreso';
   if (auditPackage.flags.discharge) return 'registró alta';
   if (auditPackage.flags.transfer) return 'registró traslado';
   if (auditPackage.flags.internalMovement) return 'registró movimiento interno';

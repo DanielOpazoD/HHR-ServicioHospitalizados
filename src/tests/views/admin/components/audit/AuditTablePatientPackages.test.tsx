@@ -105,7 +105,11 @@ describe('AuditTable patient-centered packages', () => {
     expect(screen.getByText('Estable')).toBeInTheDocument();
     expect(screen.getByText('ICC')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('Anastasio Hey Riroroko'));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /abrir detalle de auditoría de anastasio hey riroroko/i,
+      })
+    );
 
     expect(toggleRow).toHaveBeenCalledWith(patientPackages[0].id);
   });
@@ -152,12 +156,19 @@ describe('AuditTable patient-centered packages', () => {
       'aria-selected',
       'true'
     );
-    expect(screen.getByRole('tab', { name: /visualizaciones 0/i })).toHaveAttribute(
-      'aria-selected',
-      'false'
-    );
+    const activeTab = screen.getByRole('tab', {
+      name: /cambios clínicos\/operacionales 1/i,
+    });
+    const viewTab = screen.getByRole('tab', { name: /visualizaciones 0/i });
+    const panel = screen.getByRole('tabpanel');
 
-    fireEvent.click(screen.getByRole('tab', { name: /visualizaciones 0/i }));
+    expect(activeTab).toHaveAttribute('tabindex', '0');
+    expect(viewTab).toHaveAttribute('aria-selected', 'false');
+    expect(viewTab).toHaveAttribute('tabindex', '-1');
+    expect(activeTab).toHaveAttribute('aria-controls', panel.id);
+    expect(panel).toHaveAttribute('aria-labelledby', activeTab.id);
+
+    fireEvent.keyDown(activeTab, { key: 'ArrowRight' });
 
     expect(onPatientPackageIntentChange).toHaveBeenCalledWith('VIEW_ACTIVITY');
   });

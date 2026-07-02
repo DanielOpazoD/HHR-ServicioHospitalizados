@@ -43,6 +43,7 @@ import {
   type ClinicalAuditPatientPackage,
 } from '@/services/admin/clinicalAuditPatientPackages';
 import {
+  DEFAULT_PATIENT_PACKAGE_INTENT,
   buildClinicalAuditPatientPackageFilterOptions,
   buildClinicalAuditPatientPackageIntentOptions,
   filterClinicalAuditPatientPackages,
@@ -139,7 +140,7 @@ export function useAuditData(): UseAuditDataReturn {
   const [activePatientPackageFilter, setActivePatientPackageFilter] =
     useState<ClinicalAuditPatientPackageFilterId>('ALL');
   const [activePatientPackageIntent, setActivePatientPackageIntentState] =
-    useState<ClinicalAuditPatientPackageIntentId>('CLINICAL_OPERATIONS');
+    useState<ClinicalAuditPatientPackageIntentId>(DEFAULT_PATIENT_PACKAGE_INTENT);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);

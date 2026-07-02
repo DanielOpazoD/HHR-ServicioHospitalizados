@@ -182,4 +182,65 @@ describe('clinicalAuditPatientPackageFilters', () => {
 
     expect(result.patientName).toBe('Paciente Indicacion');
   });
+
+  it('keeps mixed conflict document and medication packages in clinical operations', () => {
+    const mixedPackages = buildClinicalAuditPatientPackages([
+      baseLog({
+        id: 'document-conflict',
+        action: 'CONFLICT_AUTO_MERGED',
+        entityType: 'dailyRecord',
+        entityId: '2026-07-01',
+        details: {
+          patientName: 'Paciente Documento Conflicto',
+          rut: '77.777.777-7',
+          bedId: 'H10C1',
+        },
+      }),
+      baseLog({
+        id: 'document-edit',
+        action: 'CLINICAL_DOCUMENT_EDITED',
+        timestamp: '2026-07-01T19:37:29.000Z',
+        entityType: 'clinicalDocument',
+        details: {
+          patientName: 'Paciente Documento Conflicto',
+          rut: '77.777.777-7',
+          bedId: 'H10C1',
+        },
+      }),
+      baseLog({
+        id: 'medication-conflict',
+        action: 'CONFLICT_AUTO_MERGED',
+        timestamp: '2026-07-01T20:36:29.000Z',
+        entityType: 'dailyRecord',
+        entityId: '2026-07-01',
+        details: {
+          patientName: 'Paciente Indicacion Conflicto',
+          rut: '88.888.888-8',
+          bedId: 'H11C1',
+        },
+      }),
+      baseLog({
+        id: 'medication-edit',
+        action: 'MEDICAL_INDICATION_RECORD_CREATED',
+        timestamp: '2026-07-01T20:37:29.000Z',
+        entityType: 'medicalIndicationRecord',
+        details: {
+          patientName: 'Paciente Indicacion Conflicto',
+          rut: '88.888.888-8',
+          bedId: 'H11C1',
+        },
+      }),
+    ]);
+
+    expect(
+      filterClinicalAuditPatientPackages(mixedPackages, {
+        activeIntent: 'SYSTEM_SYNC',
+      }).map(auditPackage => auditPackage.patientName)
+    ).toEqual([]);
+    expect(
+      filterClinicalAuditPatientPackages(mixedPackages, {
+        activeIntent: 'CLINICAL_OPERATIONS',
+      }).map(auditPackage => auditPackage.patientName)
+    ).toEqual(['Paciente Indicacion Conflicto', 'Paciente Documento Conflicto']);
+  });
 });

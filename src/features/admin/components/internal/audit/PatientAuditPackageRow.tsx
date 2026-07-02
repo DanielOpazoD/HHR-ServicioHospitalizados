@@ -65,13 +65,6 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
     void writeClipboardText(buildAuditPackageCopySummary(auditPackage)).catch(() => undefined);
   };
 
-  const handleRowKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    onToggle();
-  };
-
   const renderEventList = (logs: typeof auditPackage.rawLogs) => (
     <div className="divide-y divide-slate-100">
       {logs.map(log => {
@@ -92,14 +85,9 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
     <>
       <tr
         className={clsx(
-          'group cursor-pointer transition-all hover:bg-slate-50/90',
+          'group transition-all hover:bg-slate-50/90',
           isExpanded ? 'bg-sky-50/30' : ''
         )}
-        onClick={onToggle}
-        onKeyDown={handleRowKeyDown}
-        tabIndex={0}
-        aria-expanded={isExpanded}
-        aria-controls={detailsId}
       >
         <td className="px-5 py-3 align-top">
           <button
@@ -258,8 +246,8 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
         )}
       </tr>
 
-      {isExpanded && (
-        <tr id={detailsId} className="bg-slate-50/70">
+      <tr id={detailsId} hidden={!isExpanded} className="bg-slate-50/70">
+        {isExpanded && (
           <td colSpan={compactView ? 4 : 6} className="border-l-4 border-sky-500/40 px-10 py-4">
             <div className="space-y-3">
               <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -339,39 +327,49 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                   </div>
                 </div>
 
-                {showIncludedEvents && (
-                  <div id={includedEventsId} className="space-y-3 border-t border-slate-100 p-3">
-                    <div className="rounded-lg border border-slate-100 bg-white">
-                      <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
-                        <History size={14} className="text-sky-600" />
-                        <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-600">
-                          Eventos clínicos y administrativos
-                        </h5>
-                      </div>
-                      {clinicalEvents.length > 0 ? (
-                        renderEventList(clinicalEvents)
-                      ) : (
-                        <p className="px-3 py-2 text-xs text-slate-500">
-                          No hay eventos de edición en este paquete.
-                        </p>
-                      )}
-                    </div>
-
-                    {viewEvents.length > 0 && (
-                      <div className="rounded-lg border border-blue-100 bg-blue-50/30">
-                        <div className="border-b border-blue-100 px-3 py-2">
-                          <h5 className="text-[10px] font-black uppercase tracking-widest text-blue-700">
-                            Visualizaciones registradas
+                <div
+                  id={includedEventsId}
+                  hidden={!showIncludedEvents}
+                  className="space-y-3 border-t border-slate-100 p-3"
+                >
+                  {showIncludedEvents && (
+                    <>
+                      <div className="rounded-lg border border-slate-100 bg-white">
+                        <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
+                          <History size={14} className="text-sky-600" />
+                          <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                            Eventos clínicos y administrativos
                           </h5>
                         </div>
-                        {renderEventList(viewEvents)}
+                        {clinicalEvents.length > 0 ? (
+                          renderEventList(clinicalEvents)
+                        ) : (
+                          <p className="px-3 py-2 text-xs text-slate-500">
+                            No hay eventos de edición en este paquete.
+                          </p>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
 
-                {showTechnicalJson && (
-                  <div id={technicalJsonId} className="border-t border-slate-100 p-3">
+                      {viewEvents.length > 0 && (
+                        <div className="rounded-lg border border-blue-100 bg-blue-50/30">
+                          <div className="border-b border-blue-100 px-3 py-2">
+                            <h5 className="text-[10px] font-black uppercase tracking-widest text-blue-700">
+                              Visualizaciones registradas
+                            </h5>
+                          </div>
+                          {renderEventList(viewEvents)}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div
+                  id={technicalJsonId}
+                  hidden={!showTechnicalJson}
+                  className="border-t border-slate-100 p-3"
+                >
+                  {showTechnicalJson && (
                     <div className="rounded-lg border border-slate-200 bg-white">
                       <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
                         <FileJson size={14} className="text-slate-400" />
@@ -383,13 +381,13 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                         {rawEventsJson}
                       </pre>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </section>
             </div>
           </td>
-        </tr>
-      )}
+        )}
+      </tr>
     </>
   );
 };

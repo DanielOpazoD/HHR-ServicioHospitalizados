@@ -29,6 +29,9 @@ export type ClinicalAuditPatientPackageIntentId =
   | 'VIEW_ACTIVITY'
   | 'SYSTEM_SYNC';
 
+export const DEFAULT_PATIENT_PACKAGE_INTENT: ClinicalAuditPatientPackageIntentId =
+  'CLINICAL_OPERATIONS';
+
 export interface ClinicalAuditPatientPackageFilterOption {
   id: ClinicalAuditPatientPackageFilterId;
   label: string;
@@ -127,24 +130,36 @@ const packageHasOnlyActions = (
 ): boolean =>
   auditPackage.actions.length > 0 && auditPackage.actions.every(action => actions.has(action));
 
+const packageHasOperationalImpact = (auditPackage: ClinicalAuditPatientPackage): boolean =>
+  auditPackage.flags.admission ||
+  auditPackage.flags.discharge ||
+  auditPackage.flags.transfer ||
+  auditPackage.flags.internalMovement ||
+  auditPackage.flags.cma ||
+  auditPackage.flags.diagnosis ||
+  auditPackage.flags.status ||
+  packageHasAnyAction(auditPackage, DOCUMENT_AUDIT_ACTIONS) ||
+  packageHasAnyAction(auditPackage, MEDICATION_AUDIT_ACTIONS);
+
+const packageHasOnlyConflictSyncEvidence = (auditPackage: ClinicalAuditPatientPackage): boolean =>
+  auditPackage.flags.conflict &&
+  !packageHasOperationalImpact(auditPackage) &&
+  auditPackage.actions.length > 0 &&
+  auditPackage.actions.every(
+    action => SYSTEM_SYNC_ACTIONS.has(action) || action.includes('CONFLICT')
+  );
+
 export const resolveClinicalAuditPatientPackageIntent = (
   auditPackage: ClinicalAuditPatientPackage
 ): ClinicalAuditPatientPackageIntentId => {
   if (packageHasOnlyActions(auditPackage, VIEW_AUDIT_ACTIONS)) return 'VIEW_ACTIVITY';
-  if (
-    packageHasOnlyActions(auditPackage, SYSTEM_SYNC_ACTIONS) ||
-    (auditPackage.flags.conflict &&
-      !auditPackage.flags.admission &&
-      !auditPackage.flags.discharge &&
-      !auditPackage.flags.transfer &&
-      !auditPackage.flags.internalMovement &&
-      !auditPackage.flags.cma &&
-      !auditPackage.flags.diagnosis &&
-      !auditPackage.flags.status)
-  ) {
+  if (packageHasOnlyActions(auditPackage, SYSTEM_SYNC_ACTIONS)) {
     return 'SYSTEM_SYNC';
   }
-  return 'CLINICAL_OPERATIONS';
+  if (packageHasOnlyConflictSyncEvidence(auditPackage)) {
+    return 'SYSTEM_SYNC';
+  }
+  return DEFAULT_PATIENT_PACKAGE_INTENT;
 };
 
 export const getClinicalAuditPatientPackageCategories = (
