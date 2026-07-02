@@ -40,6 +40,7 @@
       "requiredScripts": [
         "check:bundle-budget",
         "check:chunk-graph",
+        "check:runtime-asset-margin",
         "test:e2e:preview:census-bootstrap:built"
       ],
       "purpose": "Valida budgets, chunk graph aciclico y que el bundle productivo monte correctamente en preview local."

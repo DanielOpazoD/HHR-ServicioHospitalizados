@@ -289,12 +289,19 @@ describe('chunkingPolicy', () => {
     const heicConverterSource = readSource(
       'src/features/prescriptions/services/prescriptionHighEfficiencyImageConverter.ts'
     );
+    const heicLoaderSource = readSource(
+      'src/features/prescriptions/services/prescriptionHeicConverterLoader.ts'
+    );
 
     expect(compressionServiceSource).not.toContain("import('heic2any')");
     expect(compressionServiceSource).toContain(
       "from '@/features/prescriptions/services/prescriptionHighEfficiencyImageConverter'"
     );
-    expect(heicConverterSource).toContain("import('heic2any')");
+    expect(heicConverterSource).not.toContain("import('heic2any')");
+    expect(heicConverterSource).toContain(
+      "from '@/features/prescriptions/services/prescriptionHeicConverterLoader'"
+    );
+    expect(heicLoaderSource).toContain("import('heic2any')");
   });
 
   it('keeps the node-only ExcelJS loader invisible to the browser bundler', () => {

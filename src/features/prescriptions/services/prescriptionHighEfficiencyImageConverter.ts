@@ -1,3 +1,8 @@
+import {
+  HeicConverterLoadFailure,
+  loadHeicConverter,
+} from '@/features/prescriptions/services/prescriptionHeicConverterLoader';
+
 const HIGH_EFFICIENCY_IMAGE_DECODE_ERROR =
   'La foto está en formato HEIC/HEIF y este navegador no pudo convertirla. En Samsung, cambia "Imágenes de alta eficiencia" a desactivado o comparte la foto como JPEG e intenta nuevamente.';
 
@@ -33,7 +38,7 @@ export const withJpegExtension = (fileName: string): string => {
 
 export const convertHighEfficiencyImageToJpeg = async (file: File): Promise<File> => {
   try {
-    const { default: heic2any } = await import('heic2any');
+    const heic2any = await loadHeicConverter();
     const converted = await heic2any({
       blob: file,
       toType: 'image/jpeg',
@@ -49,6 +54,12 @@ export const convertHighEfficiencyImageToJpeg = async (file: File): Promise<File
       lastModified: file.lastModified || Date.now(),
     });
   } catch (error) {
+    if (error instanceof HeicConverterLoadFailure) {
+      throw buildHighEfficiencyImageConverterLoadError(
+        findDynamicImportLoadError(error.cause) ?? error.cause ?? error
+      );
+    }
+
     const loadError = findDynamicImportLoadError(error);
     if (loadError) {
       throw buildHighEfficiencyImageConverterLoadError(loadError);

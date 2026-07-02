@@ -81,6 +81,11 @@
       "maxBytes": 520000
     },
     {
+      "pattern": "^pdf\\.worker-.*\\.mjs$",
+      "_comment": "PDF.js worker is a large async runtime asset excluded from install-time precache. Keep it governed separately so worker drift is visible without misclassifying it under the generic JS chunk ceiling.",
+      "maxBytes": 2500000
+    },
+    {
       "pattern": "^vendor-pdf-.*\\.js$",
       "_comment": "PDF vendor chunks are async but among the largest payloads; keep a dedicated ceiling so PDF library drift stays visible before it reaches the global chunk budget.",
       "maxBytes": 430000

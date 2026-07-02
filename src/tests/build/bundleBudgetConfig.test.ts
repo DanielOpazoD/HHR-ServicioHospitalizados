@@ -46,6 +46,9 @@ describe('bundle budget config', () => {
     expect(findBudget(config, '^vendor-pdf-.*\\.js$')).toMatchObject({
       maxBytes: 430000,
     });
+    expect(findBudget(config, '^pdf\\.worker-.*\\.mjs$')).toMatchObject({
+      maxBytes: 2500000,
+    });
     expect(findBudget(config, '^vendor-heic2any-.*\\.js$')).toMatchObject({
       maxBytes: 1450000,
     });
