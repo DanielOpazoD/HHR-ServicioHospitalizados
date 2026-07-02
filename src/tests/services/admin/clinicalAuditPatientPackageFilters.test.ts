@@ -1,0 +1,153 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  buildClinicalAuditPatientPackageFilterOptions,
+  filterClinicalAuditPatientPackages,
+} from '@/services/admin/clinicalAuditPatientPackageFilters';
+import { buildClinicalAuditPatientPackages } from '@/services/admin/clinicalAuditPatientPackages';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
+
+const baseLog = (overrides: Partial<AuditLogEntry>): AuditLogEntry => ({
+  id: 'audit-1',
+  timestamp: '2026-07-01T19:36:29.000Z',
+  userId: 'user@hospital.cl',
+  userDisplayName: 'Usuario Clinico',
+  userUid: 'uid-123',
+  ipAddress: '10.0.0.1',
+  action: 'PATIENT_MODIFIED',
+  entityType: 'patient',
+  entityId: 'H4C1',
+  recordDate: '2026-07-01',
+  patientIdentifier: '25DF52626',
+  details: {
+    patientName: 'Paciente Base',
+    rut: '25DF52626',
+    bedId: 'H4C1',
+  },
+  ...overrides,
+});
+
+const packages = buildClinicalAuditPatientPackages([
+  baseLog({
+    id: 'discharge',
+    action: 'PATIENT_DISCHARGED',
+    entityType: 'discharge',
+    userDisplayName: 'Enfermera Alta',
+    ipAddress: '10.0.0.10',
+    details: {
+      patientName: 'Bernardo Orrego Llanos',
+      rut: '17.274.300-5',
+      bedId: 'H2C2',
+    },
+  }),
+  baseLog({
+    id: 'transfer',
+    action: 'PATIENT_TRANSFERRED',
+    timestamp: '2026-07-01T19:48:29.000Z',
+    entityType: 'transfer',
+    details: {
+      patientName: 'Paciente Traslado',
+      rut: '11.111.111-1',
+      sourceBed: 'H3C1',
+      targetBed: 'H3C2',
+    },
+  }),
+  baseLog({
+    id: 'cma',
+    action: 'PATIENT_MODIFIED',
+    timestamp: '2026-07-01T20:10:29.000Z',
+    details: {
+      patientName: 'Paciente CMA',
+      rut: '22.222.222-2',
+      bedId: 'H5C1',
+      changes: { specialty: { old: 'Medicina', new: 'CMA' } },
+    },
+  }),
+  baseLog({
+    id: 'conflict',
+    action: 'CONFLICT_AUTO_MERGED',
+    timestamp: '2026-07-01T20:30:29.000Z',
+    entityType: 'dailyRecord',
+    entityId: '2026-07-01',
+    details: {
+      patientName: 'Paciente Conflicto',
+      rut: '33.333.333-3',
+      bedId: 'H6C1',
+    },
+  }),
+  baseLog({
+    id: 'view',
+    action: 'VIEW_PATIENT',
+    timestamp: '2026-07-01T20:50:29.000Z',
+    details: {
+      patientName: 'Paciente Visualizado',
+      rut: '44.444.444-4',
+      bedId: 'H7C1',
+    },
+  }),
+  baseLog({
+    id: 'document',
+    action: 'CLINICAL_DOCUMENT_EDITED',
+    timestamp: '2026-07-01T21:10:29.000Z',
+    entityType: 'clinicalDocument',
+    details: {
+      patientName: 'Paciente Documento',
+      rut: '55.555.555-5',
+      bedId: 'H8C1',
+    },
+  }),
+  baseLog({
+    id: 'medication',
+    action: 'MEDICAL_INDICATION_RECORD_CREATED',
+    timestamp: '2026-07-01T21:30:29.000Z',
+    entityType: 'medicalIndicationRecord',
+    details: {
+      patientName: 'Paciente Indicacion',
+      rut: '66.666.666-6',
+      bedId: 'H9C1',
+    },
+  }),
+]);
+
+describe('clinicalAuditPatientPackageFilters', () => {
+  it('builds quick filter counters for operational audit categories', () => {
+    const options = buildClinicalAuditPatientPackageFilterOptions(packages);
+
+    expect(options.map(option => [option.id, option.count])).toEqual([
+      ['ALL', 7],
+      ['DISCHARGE', 1],
+      ['TRANSFER', 1],
+      ['INTERNAL_MOVEMENT', 0],
+      ['CMA', 1],
+      ['CONFLICT', 1],
+      ['VIEW_ACTIVITY', 1],
+      ['DOCUMENTS', 1],
+      ['MEDICATIONS', 1],
+    ]);
+  });
+
+  it('searches patient packages by patient, RUT, bed, user, IP and module', () => {
+    expect(filterClinicalAuditPatientPackages(packages, { searchTerm: 'Bernardo' })).toHaveLength(
+      1
+    );
+    expect(
+      filterClinicalAuditPatientPackages(packages, { searchTerm: '17.274.300-5' })
+    ).toHaveLength(1);
+    expect(filterClinicalAuditPatientPackages(packages, { searchTerm: 'H5C1' })).toHaveLength(1);
+    expect(
+      filterClinicalAuditPatientPackages(packages, { searchTerm: 'Enfermera Alta' })
+    ).toHaveLength(1);
+    expect(filterClinicalAuditPatientPackages(packages, { searchTerm: '10.0.0.10' })).toHaveLength(
+      1
+    );
+    expect(filterClinicalAuditPatientPackages(packages, { searchTerm: 'CMA' })).toHaveLength(1);
+  });
+
+  it('filters packages by a selected quick category', () => {
+    const [result] = filterClinicalAuditPatientPackages(packages, {
+      activeFilter: 'MEDICATIONS',
+    });
+
+    expect(result.patientName).toBe('Paciente Indicacion');
+  });
+});

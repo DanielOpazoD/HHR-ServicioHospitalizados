@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { generateAuditWorkbook } from '@/services/exporters/auditWorkbook';
+import { buildClinicalAuditPatientPackages } from '@/services/admin/clinicalAuditPatientPackages';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 const log: AuditLogEntry = {
@@ -50,5 +51,47 @@ describe('auditWorkbook', () => {
     expect(exportedValues).not.toContain('PATIENT_MODIFIED');
     expect(exportedValues).not.toContain('movementKind');
     expect(exportedValues).not.toContain('Movimiento técnico');
+  });
+
+  it('adds a patient-centered worksheet when patient packages are provided', async () => {
+    const patientPackages = buildClinicalAuditPatientPackages([
+      {
+        ...log,
+        id: 'status-1',
+        details: {
+          patientName: 'Juan Perez',
+          rut: '12.345.678-9',
+          bedId: 'Cama 6',
+          changes: { status: { old: '', new: 'Estable' } },
+        },
+      },
+      {
+        ...log,
+        id: 'diagnosis-1',
+        timestamp: '2026-05-28T10:17:30.000Z',
+        action: 'PATIENT_DIAGNOSIS_CHANGED',
+        details: {
+          patientName: 'Juan Perez',
+          rut: '12.345.678-9',
+          bedId: 'Cama 6',
+          changes: { diagnosis: { old: '', new: 'ICC' } },
+        },
+      },
+    ]);
+
+    const workbook = await generateAuditWorkbook([log], { patientPackages });
+    const patientSheet = workbook.getWorksheet('Auditoría por Paciente');
+    const rawSheet = workbook.getWorksheet('Eventos Crudos Clínicos');
+
+    expect(patientSheet).toBeDefined();
+    expect(rawSheet).toBeDefined();
+    expect(patientSheet?.getRow(1).values).toEqual(
+      expect.arrayContaining(['FECHA CENSO', 'PACIENTE', 'MÓDULO/VALOR', 'ANTES', 'DESPUÉS'])
+    );
+
+    const patientValues = JSON.stringify(patientSheet?.getRow(2).values);
+    expect(patientValues).toContain('Juan Perez');
+    expect(patientValues).toContain('Estable');
+    expect(patientValues).not.toContain('movementKind');
   });
 });

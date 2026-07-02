@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { AuditTable } from '@/features/admin/components/internal/audit/AuditTable';
 import { buildClinicalAuditPatientPackages } from '@/services/admin/clinicalAuditPatientPackages';
+import type { ClinicalAuditPatientPackageFilterOption } from '@/services/admin/clinicalAuditPatientPackageFilters';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 const statusLog: AuditLogEntry = {
@@ -51,6 +52,19 @@ const baseProps = {
   setCompactView: vi.fn(),
   groupedView: true,
   setGroupedView: vi.fn(),
+  patientPackageFilterOptions: [
+    { id: 'ALL', label: 'Todos', count: 1 },
+    { id: 'DISCHARGE', label: 'Altas', count: 0 },
+    { id: 'TRANSFER', label: 'Traslados', count: 0 },
+    { id: 'INTERNAL_MOVEMENT', label: 'Mov. internos', count: 0 },
+    { id: 'CMA', label: 'CMA', count: 0 },
+    { id: 'CONFLICT', label: 'Conflictos', count: 0 },
+    { id: 'VIEW_ACTIVITY', label: 'Visualizaciones', count: 0 },
+    { id: 'DOCUMENTS', label: 'Documentos', count: 0 },
+    { id: 'MEDICATIONS', label: 'Indicaciones', count: 0 },
+  ] satisfies ClinicalAuditPatientPackageFilterOption[],
+  activePatientPackageFilter: 'ALL' as const,
+  onPatientPackageFilterChange: vi.fn(),
   expandedRows: new Set<string>(),
   toggleRow: vi.fn(),
   onPdfExport: vi.fn(),
@@ -94,5 +108,21 @@ describe('AuditTable patient-centered packages', () => {
     fireEvent.click(screen.getByRole('button', { name: /cargar m[aá]s/i }));
 
     expect(onLoadMoreLogs).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows patient package quick filters with counts', () => {
+    const onPatientPackageFilterChange = vi.fn();
+    render(
+      <AuditTable {...baseProps} onPatientPackageFilterChange={onPatientPackageFilterChange} />
+    );
+
+    expect(screen.getByRole('button', { name: /todos 1/i })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /altas 0/i }));
+
+    expect(onPatientPackageFilterChange).toHaveBeenCalledWith('DISCHARGE');
   });
 });

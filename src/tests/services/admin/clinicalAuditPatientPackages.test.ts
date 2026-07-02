@@ -317,4 +317,30 @@ describe('clinicalAuditPatientPackages', () => {
     );
     expect(buildClinicalAuditPatientPackages([log])).toHaveLength(1);
   });
+
+  it('builds patient packages for a 2500-event operational window without losing identities', () => {
+    const logs = Array.from({ length: 2500 }, (_, index) =>
+      baseLog({
+        id: `volume-${index}`,
+        timestamp: `2026-07-01T${String(8 + Math.floor(index / 180)).padStart(2, '0')}:${String(
+          index % 60
+        ).padStart(2, '0')}:00.000Z`,
+        patientIdentifier: `rut-volume-${index}`,
+        entityId: `H${index % 12}C${index % 4}`,
+        details: {
+          patientName: `Paciente Volumen ${index}`,
+          rut: `rut-volume-${index}`,
+          bedId: `H${index % 12}C${index % 4}`,
+          changes: { status: { old: '', new: 'Estable' } },
+        },
+      })
+    );
+
+    const packages = buildClinicalAuditPatientPackages(logs);
+
+    expect(packages).toHaveLength(2500);
+    expect(new Set(packages.map(pkg => pkg.packageKey)).size).toBe(2500);
+    expect(packages.every(pkg => pkg.eventCount === 1)).toBe(true);
+    expect(packages.every(pkg => pkg.modules.includes('Estado'))).toBe(true);
+  });
 });

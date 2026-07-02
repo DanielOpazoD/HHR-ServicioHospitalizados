@@ -86,11 +86,15 @@ describe('PatientAuditPackageRow', () => {
     expect(screen.queryByText('Diagnóstico actualizado')).not.toBeInTheDocument();
     expect(screen.queryByText(/PATIENT_DIAGNOSIS_CHANGED/)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /ver logs técnicos incluidos/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ver eventos incluidos/i }));
 
     expect(screen.getByText('Eventos clínicos y administrativos')).toBeInTheDocument();
-    expect(screen.getByText('Detalle técnico avanzado')).toBeInTheDocument();
     expect(screen.getByText('Diagnóstico actualizado')).toBeInTheDocument();
+    expect(screen.queryByText(/PATIENT_DIAGNOSIS_CHANGED/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /ver json técnico/i }));
+
+    expect(screen.getByText('Detalle técnico avanzado')).toBeInTheDocument();
     expect(screen.getByText(/PATIENT_DIAGNOSIS_CHANGED/)).toBeInTheDocument();
   });
 
@@ -117,5 +121,21 @@ describe('PatientAuditPackageRow', () => {
     fireEvent.keyDown(expandButton, { key: ' ' });
 
     expect(onToggle).toHaveBeenCalledTimes(2);
+  });
+
+  it('can copy a concise patient-centered summary from the expanded row', () => {
+    const writeText = vi.fn();
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+
+    renderRow(true);
+
+    fireEvent.click(screen.getByRole('button', { name: /copiar resumen/i }));
+
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Anastasio Hey Riroroko'));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Estado'));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Diagnóstico'));
   });
 });
