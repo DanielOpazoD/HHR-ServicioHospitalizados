@@ -166,5 +166,8 @@ export const getConflictVersionSnapshot = async (
     snapshotId
   );
   const snap = await getDoc(snapshotRef);
-  return snap.exists() ? toConflictVersionSnapshot(snap.id, snap.data()) : null;
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  if (!isConflictSnapshotRecoverable(data, Date.now())) return null;
+  return toConflictVersionSnapshot(snap.id, data);
 };

@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockBatchSet, mockBatchCommit, mockGetDocs } = vi.hoisted(() => ({
+const { mockBatchSet, mockBatchCommit, mockGetDoc, mockGetDocs } = vi.hoisted(() => ({
   mockBatchSet: vi.fn(),
   mockBatchCommit: vi.fn().mockResolvedValue(undefined),
+  mockGetDoc: vi.fn(),
   mockGetDocs: vi.fn(),
 }));
 
@@ -17,6 +18,7 @@ vi.mock('firebase/firestore', async () => {
     ...actual,
     collection: vi.fn((...args: unknown[]) => ({ kind: 'collection', args })),
     doc: vi.fn((parent: unknown, id: string) => ({ kind: 'doc', parent, id })),
+    getDoc: (...args: unknown[]) => mockGetDoc(...args),
     getDocs: (...args: unknown[]) => mockGetDocs(...args),
     Timestamp: MockTimestamp,
     writeBatch: vi.fn(() => ({ set: mockBatchSet, commit: mockBatchCommit })),
@@ -40,9 +42,10 @@ vi.mock('@/services/observability/operationalTelemetryOutcomeRecorder', () => ({
 import { Timestamp } from 'firebase/firestore';
 import {
   buildConflictId,
-  saveConflictVersionSnapshots,
-  listConflictVersionSnapshots,
   CONFLICT_SNAPSHOT_TTL_MS,
+  getConflictVersionSnapshot,
+  listConflictVersionSnapshots,
+  saveConflictVersionSnapshots,
 } from '@/services/storage/firestore/dailyRecordConflictSnapshotService';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
@@ -124,7 +127,12 @@ describe('dailyRecordConflictSnapshotService', () => {
         remote: rec('a', 'R'),
         incoming: rec('b', 'L'),
       })
-    ).resolves.toBeUndefined();
+    ).resolves.toMatchObject({
+      status: 'failed',
+      snapshotIds: [],
+      origins: [],
+      ttlMs: CONFLICT_SNAPSHOT_TTL_MS,
+    });
 
     expect(mockTelemetry).toHaveBeenCalledWith(
       'firestore',
@@ -161,5 +169,23 @@ describe('dailyRecordConflictSnapshotService', () => {
     const result = await listConflictVersionSnapshots('2026-06-26');
 
     expect(result.map(s => s.id)).toEqual(['cid__remote_premerge']);
+  });
+
+  it('returns null for an expired snapshot read directly by id', async () => {
+    const ts = (millis: number) => ({ toMillis: () => millis });
+    const now = Date.now();
+    mockGetDoc.mockResolvedValueOnce({
+      exists: () => true,
+      id: 'cid__remote_premerge',
+      data: () => ({
+        origin: 'remote_premerge',
+        expireAt: ts(now - 60_000),
+        record: { date: '2026-06-26' },
+      }),
+    });
+
+    await expect(
+      getConflictVersionSnapshot('2026-06-26', 'cid__remote_premerge')
+    ).resolves.toBeNull();
   });
 });
