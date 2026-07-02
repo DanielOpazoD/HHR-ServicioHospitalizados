@@ -9,6 +9,11 @@ import {
   type ClinicalAuditPatientPackage,
   type ClinicalAuditPatientPackageActor,
 } from '@/services/admin/clinicalAuditPatientPackageTypes';
+import {
+  DOCUMENT_AUDIT_ACTIONS,
+  MEDICATION_AUDIT_ACTIONS,
+  VIEW_AUDIT_ACTIONS,
+} from '@/services/admin/clinicalAuditPatientPackageActionGroups';
 
 export type {
   ClinicalAuditPackageChange,
@@ -200,6 +205,9 @@ const inferModulesForLog = (
     pushUnique(modules, 'Movimiento interno');
   }
   if (logHasConflictEvidence(log)) pushUnique(modules, 'Conflicto');
+  if (VIEW_AUDIT_ACTIONS.has(log.action)) pushUnique(modules, 'Visualización');
+  if (DOCUMENT_AUDIT_ACTIONS.has(log.action)) pushUnique(modules, 'Documentos');
+  if (MEDICATION_AUDIT_ACTIONS.has(log.action)) pushUnique(modules, 'Indicaciones y recetas');
 
   changes.forEach(change => pushUnique(modules, change.fieldLabel));
 
