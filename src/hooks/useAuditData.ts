@@ -42,6 +42,13 @@ import {
   buildClinicalAuditPatientPackages,
   type ClinicalAuditPatientPackage,
 } from '@/services/admin/clinicalAuditPatientPackages';
+import {
+  buildClinicalAuditPatientPackageFilterOptions,
+  filterClinicalAuditPatientPackages,
+  type ClinicalAuditPatientPackageFilterId,
+  type ClinicalAuditPatientPackageFilterOption,
+} from '@/services/admin/clinicalAuditPatientPackageFilters';
+import { filterLogs as filterAuditLogs } from '@/services/admin/auditWorkerLogic';
 
 export { AUDIT_SECTIONS } from '@/services/admin/auditViewConfig';
 
@@ -55,6 +62,7 @@ export interface AuditFiltersState {
   activeSection: AuditSection;
   compactView: boolean;
   groupedView: boolean;
+  activePatientPackageFilter: ClinicalAuditPatientPackageFilterId;
 }
 
 export interface UseAuditDataReturn {
@@ -65,6 +73,7 @@ export interface UseAuditDataReturn {
   paginatedLogs: (AuditLogEntry | GroupedAuditLogEntry)[];
   patientPackages: ClinicalAuditPatientPackage[];
   paginatedPatientPackages: ClinicalAuditPatientPackage[];
+  patientPackageFilterOptions: ClinicalAuditPatientPackageFilterOption[];
   stats: AuditStats;
 
   // Loading state
@@ -83,6 +92,7 @@ export interface UseAuditDataReturn {
   setActiveSection: (value: AuditSection) => void;
   setCompactView: (value: boolean) => void;
   setGroupedView: (value: boolean) => void;
+  setActivePatientPackageFilter: (value: ClinicalAuditPatientPackageFilterId) => void;
 
   // Pagination
   currentPage: number;
@@ -120,6 +130,8 @@ export function useAuditData(): UseAuditDataReturn {
   const [activeSection, setActiveSection] = useState<AuditSection>('ALL');
   const [compactView, setCompactView] = useState(false);
   const [groupedView, setGroupedView] = useState(true);
+  const [activePatientPackageFilter, setActivePatientPackageFilter] =
+    useState<ClinicalAuditPatientPackageFilterId>('ALL');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -191,9 +203,37 @@ export function useAuditData(): UseAuditDataReturn {
 
   const { filteredLogs, displayLogs, stats: workerStats } = results;
 
+  const patientPackageSourceLogs = useMemo(() => {
+    const params: WorkerFilterParams = buildAuditWorkerFilterParams({
+      searchTerm: '',
+      filterAction,
+      startDate,
+      endDate,
+      activeSection,
+      sectionActions: buildAuditSectionActionsMap(AUDIT_SECTIONS),
+      groupedView,
+    });
+
+    return filterAuditLogs(logs, params);
+  }, [logs, filterAction, activeSection, startDate, endDate, groupedView]);
+
+  const unfilteredPatientPackages = useMemo(
+    () => buildClinicalAuditPatientPackages(patientPackageSourceLogs),
+    [patientPackageSourceLogs]
+  );
+
+  const patientPackageFilterOptions = useMemo(
+    () => buildClinicalAuditPatientPackageFilterOptions(unfilteredPatientPackages),
+    [unfilteredPatientPackages]
+  );
+
   const patientPackages = useMemo(
-    () => buildClinicalAuditPatientPackages(filteredLogs),
-    [filteredLogs]
+    () =>
+      filterClinicalAuditPatientPackages(unfilteredPatientPackages, {
+        searchTerm,
+        activeFilter: activePatientPackageFilter,
+      }),
+    [unfilteredPatientPackages, searchTerm, activePatientPackageFilter]
   );
 
   // Pagination
@@ -221,11 +261,20 @@ export function useAuditData(): UseAuditDataReturn {
         startDate,
         endDate,
         groupedView,
+        activePatientPackageFilter,
       })
     ) {
       setCurrentPage(1);
     }
-  }, [searchTerm, filterAction, activeSection, startDate, endDate, groupedView]);
+  }, [
+    searchTerm,
+    filterAction,
+    activeSection,
+    startDate,
+    endDate,
+    groupedView,
+    activePatientPackageFilter,
+  ]);
 
   // Use stats from worker
   const stats = (workerStats || buildDefaultAuditStats()) as AuditStats;
@@ -239,6 +288,7 @@ export function useAuditData(): UseAuditDataReturn {
     activeSection,
     compactView,
     groupedView,
+    activePatientPackageFilter,
   };
 
   return {
@@ -249,6 +299,7 @@ export function useAuditData(): UseAuditDataReturn {
     paginatedLogs,
     patientPackages,
     paginatedPatientPackages,
+    patientPackageFilterOptions,
     stats,
 
     // Loading
@@ -267,6 +318,7 @@ export function useAuditData(): UseAuditDataReturn {
     setActiveSection,
     setCompactView,
     setGroupedView,
+    setActivePatientPackageFilter,
 
     // Pagination
     currentPage,

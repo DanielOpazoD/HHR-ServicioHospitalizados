@@ -357,6 +357,7 @@ export const buildClinicalAuditPatientPackages = (
   logs: AuditLogEntry[]
 ): ClinicalAuditPatientPackage[] => {
   const drafts: PackageDraft[] = [];
+  const draftsByBaseKey = new Map<string, PackageDraft[]>();
   const sortedLogs = [...logs].sort(
     (a, b) => parseTimestampMs(a.timestamp) - parseTimestampMs(b.timestamp)
   );
@@ -364,8 +365,8 @@ export const buildClinicalAuditPatientPackages = (
   sortedLogs.forEach(log => {
     const baseKey = resolveClinicalAuditPackageKey(log);
     const logTime = parseTimestampMs(log.timestamp);
-    const existingDraft = drafts.find(draft => {
-      if (draft.baseKey !== baseKey) return false;
+    const keyDrafts = draftsByBaseKey.get(baseKey) || [];
+    const existingDraft = keyDrafts.find(draft => {
       return (
         logTime - draft.firstTimestampMs < PATIENT_PACKAGE_WINDOW_MS &&
         logTime - draft.lastTimestampMs < PATIENT_PACKAGE_WINDOW_MS
@@ -378,12 +379,16 @@ export const buildClinicalAuditPatientPackages = (
       return;
     }
 
-    drafts.push({
+    const newDraft = {
       baseKey,
       firstTimestampMs: logTime,
       lastTimestampMs: logTime,
       logs: [log],
-    });
+    };
+
+    drafts.push(newDraft);
+    keyDrafts.push(newDraft);
+    draftsByBaseKey.set(baseKey, keyDrafts);
   });
 
   return drafts

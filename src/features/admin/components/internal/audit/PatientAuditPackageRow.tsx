@@ -4,6 +4,7 @@ import {
   Bed,
   ChevronDown,
   ChevronRight,
+  Copy,
   FileJson,
   History,
   MonitorCheck,
@@ -15,7 +16,14 @@ import clsx from 'clsx';
 import type { ClinicalAuditPatientPackage } from '@/services/admin/clinicalAuditPatientPackages';
 import { buildClinicalAuditPresentation } from '@/services/admin/clinicalAuditPresentation';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
-import { formatTimestamp } from './auditUIUtils';
+import {
+  buildAuditPackageCopySummary,
+  displayTimestampParts,
+  formatAuditPackageValue,
+  getAuditPackageActorSummary,
+  getRawAuditPackageEventsJson,
+  isAuditPackageViewAction,
+} from './patientAuditPackageRowUtils';
 
 interface PatientAuditPackageRowProps {
   auditPackage: ClinicalAuditPatientPackage;
@@ -24,66 +32,32 @@ interface PatientAuditPackageRowProps {
   compactView?: boolean;
 }
 
-const formatValue = (value: unknown): string => {
-  if (value === undefined || value === null || value === '') return '-';
-  if (Array.isArray(value)) return value.join(', ');
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
-};
-
-const displayTimestampParts = (timestamp: string): { date: string; time: string } => {
-  const [date = '', time = ''] = formatTimestamp(timestamp).split(' ');
-  return { date, time };
-};
-
-const getActorSummary = (auditPackage: ClinicalAuditPatientPackage): string =>
-  auditPackage.actors.map(actor => actor.label).join(', ') || 'Usuario no identificado';
-
-const VIEW_ACTIONS = new Set([
-  'VIEW_PATIENT',
-  'PATIENT_VIEWED',
-  'VIEW_CUDYR',
-  'VIEW_NURSING_HANDOFF',
-  'VIEW_MEDICAL_HANDOFF',
-]);
-
-const getRawEventsJson = (auditPackage: ClinicalAuditPatientPackage): string =>
-  JSON.stringify(
-    auditPackage.rawLogs.map(log => ({
-      id: log.id,
-      timestamp: log.timestamp,
-      action: log.action,
-      entityType: log.entityType,
-      entityId: log.entityId,
-      recordDate: log.recordDate,
-      patientIdentifier: log.patientIdentifier,
-      details: log.details,
-    })),
-    null,
-    2
-  );
-
 export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
   auditPackage,
   isExpanded,
   onToggle,
   compactView,
 }) => {
-  const [showIncludedLogs, setShowIncludedLogs] = React.useState(false);
+  const [showIncludedEvents, setShowIncludedEvents] = React.useState(false);
+  const [showTechnicalJson, setShowTechnicalJson] = React.useState(false);
   const startedAt = displayTimestampParts(auditPackage.startedAt);
   const endedAt = displayTimestampParts(auditPackage.endedAt);
   const hasTimeRange = startedAt.time && endedAt.time && startedAt.time !== endedAt.time;
   const visibleChanges = auditPackage.changes.slice(0, compactView ? 2 : 4);
   const hiddenChangeCount = Math.max(0, auditPackage.changes.length - visibleChanges.length);
-  const rawEventsJson = getRawEventsJson(auditPackage);
+  const rawEventsJson = getRawAuditPackageEventsJson(auditPackage);
   const detailsId = `patient-audit-package-${auditPackage.id}`;
-  const viewEvents = auditPackage.rawLogs.filter(log => VIEW_ACTIONS.has(log.action));
-  const clinicalEvents = auditPackage.rawLogs.filter(log => !VIEW_ACTIONS.has(log.action));
+  const viewEvents = auditPackage.rawLogs.filter(log => isAuditPackageViewAction(log.action));
+  const clinicalEvents = auditPackage.rawLogs.filter(log => !isAuditPackageViewAction(log.action));
 
   const handleExpandKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
     onToggle();
+  };
+
+  const handleCopySummary = () => {
+    void navigator.clipboard?.writeText(buildAuditPackageCopySummary(auditPackage));
   };
 
   const renderEventList = (logs: typeof auditPackage.rawLogs) => (
@@ -202,10 +176,12 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                     {change.fieldLabel}
                   </p>
                   <p className="text-[11px] leading-tight text-slate-500">
-                    <span className="text-rose-700">{formatValue(change.oldValue)}</span>
+                    <span className="text-rose-700">
+                      {formatAuditPackageValue(change.oldValue)}
+                    </span>
                     <span className="px-1 text-slate-300">-&gt;</span>
                     <span className="font-bold text-emerald-700">
-                      {formatValue(change.newValue)}
+                      {formatAuditPackageValue(change.newValue)}
                     </span>
                   </p>
                 </div>
@@ -228,8 +204,11 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
                 <UserRound size={13} className="text-slate-400" />
-                <span className="max-w-[180px] truncate" title={getActorSummary(auditPackage)}>
-                  {getActorSummary(auditPackage)}
+                <span
+                  className="max-w-[180px] truncate"
+                  title={getAuditPackageActorSummary(auditPackage)}
+                >
+                  {getAuditPackageActorSummary(auditPackage)}
                 </span>
               </div>
               {auditPackage.ipAddresses[0] && (
@@ -273,7 +252,7 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                     </h4>
                   </div>
                   <span className="text-[10px] font-bold text-slate-400">
-                    {auditPackage.eventCount} eventos · {getActorSummary(auditPackage)}
+                    {auditPackage.eventCount} eventos · {getAuditPackageActorSummary(auditPackage)}
                   </span>
                 </div>
                 <div className="grid gap-2 p-3 md:grid-cols-2">
@@ -287,10 +266,12 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                           {change.fieldLabel}
                         </p>
                         <p className="mt-1 text-xs leading-tight text-slate-600">
-                          <span className="text-rose-700">{formatValue(change.oldValue)}</span>
+                          <span className="text-rose-700">
+                            {formatAuditPackageValue(change.oldValue)}
+                          </span>
                           <span className="px-1 text-slate-300">-&gt;</span>
                           <span className="font-bold text-emerald-700">
-                            {formatValue(change.newValue)}
+                            {formatAuditPackageValue(change.newValue)}
                           </span>
                         </p>
                       </div>
@@ -309,16 +290,35 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                       Evidencia técnica
                     </h4>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowIncludedLogs(value => !value)}
-                    className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-500/10"
-                  >
-                    {showIncludedLogs ? 'Ocultar' : 'Ver'} logs técnicos incluidos
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCopySummary}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-500/10"
+                    >
+                      <Copy size={12} />
+                      Copiar resumen
+                    </button>
+                    <button
+                      type="button"
+                      aria-expanded={showIncludedEvents}
+                      onClick={() => setShowIncludedEvents(value => !value)}
+                      className="rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-bold text-sky-700 transition hover:bg-sky-100 focus:outline-none focus:ring-4 focus:ring-sky-500/10"
+                    >
+                      {showIncludedEvents ? 'Ocultar' : 'Ver'} eventos incluidos
+                    </button>
+                    <button
+                      type="button"
+                      aria-expanded={showTechnicalJson}
+                      onClick={() => setShowTechnicalJson(value => !value)}
+                      className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-500/10"
+                    >
+                      {showTechnicalJson ? 'Ocultar' : 'Ver'} JSON técnico
+                    </button>
+                  </div>
                 </div>
 
-                {showIncludedLogs && (
+                {showIncludedEvents && (
                   <div className="space-y-3 border-t border-slate-100 p-3">
                     <div className="rounded-lg border border-slate-100 bg-white">
                       <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
@@ -346,16 +346,22 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                         {renderEventList(viewEvents)}
                       </div>
                     )}
+                  </div>
+                )}
 
-                    <details className="rounded-lg border border-slate-200 bg-white">
-                      <summary className="flex cursor-pointer items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600">
+                {showTechnicalJson && (
+                  <div className="border-t border-slate-100 p-3">
+                    <div className="rounded-lg border border-slate-200 bg-white">
+                      <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
                         <FileJson size={14} className="text-slate-400" />
-                        Detalle técnico avanzado
-                      </summary>
+                        <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                          Detalle técnico avanzado
+                        </h5>
+                      </div>
                       <pre className="max-h-[360px] overflow-auto p-3 text-[10px] text-slate-500">
                         {rawEventsJson}
                       </pre>
-                    </details>
+                    </div>
                   </div>
                 )}
               </section>

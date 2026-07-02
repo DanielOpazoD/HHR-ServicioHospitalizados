@@ -29,6 +29,7 @@ export const AuditView: React.FC = () => {
     paginatedLogs,
     patientPackages,
     paginatedPatientPackages,
+    patientPackageFilterOptions,
     stats,
     loading,
     fetchLimit,
@@ -42,6 +43,7 @@ export const AuditView: React.FC = () => {
     setActiveSection,
     setCompactView,
     setGroupedView,
+    setActivePatientPackageFilter,
     expandedRows,
     toggleRow,
     fetchLogs,
@@ -53,8 +55,16 @@ export const AuditView: React.FC = () => {
     ITEMS_PER_PAGE,
   } = useAuditData();
 
-  const { searchTerm, filterAction, startDate, endDate, activeSection, compactView, groupedView } =
-    filters;
+  const {
+    searchTerm,
+    filterAction,
+    startDate,
+    endDate,
+    activeSection,
+    compactView,
+    groupedView,
+    activePatientPackageFilter,
+  } = filters;
 
   // Export and dialog state
   const [, setShowComplianceInfo] = useState(false);
@@ -65,6 +75,8 @@ export const AuditView: React.FC = () => {
   // Export hook
   const { isExporting, handleExcelExport, handlePdfExport } = useAuditExport({
     filteredLogs,
+    patientPackages,
+    exportMode: groupedView ? 'patient-packages' : 'raw-events',
     stats,
     startDate,
     endDate,
@@ -143,6 +155,9 @@ export const AuditView: React.FC = () => {
           paginatedLogs={paginatedLogs}
           patientPackages={patientPackages}
           paginatedPatientPackages={paginatedPatientPackages}
+          patientPackageFilterOptions={patientPackageFilterOptions}
+          activePatientPackageFilter={activePatientPackageFilter}
+          onPatientPackageFilterChange={setActivePatientPackageFilter}
           loading={loading}
           compactView={compactView}
           setCompactView={setCompactView}

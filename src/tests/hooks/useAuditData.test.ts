@@ -353,6 +353,60 @@ describe('useAuditData', () => {
     });
   });
 
+  it('filters patient-centered packages with operational quick chips', async () => {
+    const operationalLogs: AuditLogEntry[] = [
+      {
+        ...mockLogs[1],
+        id: 'discharge-1',
+        action: 'PATIENT_DISCHARGED',
+        timestamp: '2025-01-01T11:00:00Z',
+        details: {
+          patientName: 'Bernardo Orrego',
+          rut: '17.274.300-5',
+          bedId: 'H2C2',
+        },
+      },
+      {
+        ...mockLogs[1],
+        id: 'cma-1',
+        action: 'PATIENT_MODIFIED',
+        timestamp: '2025-01-01T11:20:00Z',
+        patientIdentifier: '22.222.222-2',
+        details: {
+          patientName: 'Paciente CMA',
+          rut: '22.222.222-2',
+          bedId: 'H5C1',
+          changes: { specialty: { old: 'Medicina', new: 'CMA' } },
+        },
+      },
+    ];
+    vi.mocked(fetchAuditLogsUseCase.executeFetchAuditLogs).mockResolvedValue({
+      status: 'success',
+      data: operationalLogs,
+      issues: [],
+    });
+
+    const { result } = renderHook(() => useAuditData());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.patientPackageFilterOptions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'ALL', count: 2 }),
+        expect.objectContaining({ id: 'DISCHARGE', count: 1 }),
+        expect.objectContaining({ id: 'CMA', count: 1 }),
+      ])
+    );
+
+    act(() => {
+      result.current.setActivePatientPackageFilter('CMA');
+    });
+
+    expect(result.current.filters.activePatientPackageFilter).toBe('CMA');
+    expect(result.current.patientPackages).toHaveLength(1);
+    expect(result.current.patientPackages[0].patientName).toBe('Paciente CMA');
+  });
+
   it('falls back to a stable empty list when fetch is degraded', async () => {
     const degradedResult: ApplicationOutcome<AuditLogEntry[]> = {
       status: 'degraded',

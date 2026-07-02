@@ -16,6 +16,10 @@ import { AuditLogRow } from './AuditLogRow';
 import { PatientAuditPackageRow } from './PatientAuditPackageRow';
 import { AuditSkeleton } from '@/components/shared/Skeleton';
 import type { ClinicalAuditPatientPackage } from '@/services/admin/clinicalAuditPatientPackages';
+import type {
+  ClinicalAuditPatientPackageFilterId,
+  ClinicalAuditPatientPackageFilterOption,
+} from '@/services/admin/clinicalAuditPatientPackageFilters';
 
 interface AuditTableProps {
   filteredLogs: AuditLogEntry[];
@@ -23,6 +27,9 @@ interface AuditTableProps {
   paginatedLogs: (AuditLogEntry | GroupedAuditLogEntry)[];
   patientPackages: ClinicalAuditPatientPackage[];
   paginatedPatientPackages: ClinicalAuditPatientPackage[];
+  patientPackageFilterOptions: ClinicalAuditPatientPackageFilterOption[];
+  activePatientPackageFilter: ClinicalAuditPatientPackageFilterId;
+  onPatientPackageFilterChange: (value: ClinicalAuditPatientPackageFilterId) => void;
   loading: boolean;
   compactView: boolean;
   setCompactView: (val: boolean) => void;
@@ -49,6 +56,9 @@ export const AuditTable: React.FC<AuditTableProps> = ({
   paginatedLogs,
   patientPackages,
   paginatedPatientPackages,
+  patientPackageFilterOptions,
+  activePatientPackageFilter,
+  onPatientPackageFilterChange,
   loading,
   compactView,
   setCompactView,
@@ -70,6 +80,9 @@ export const AuditTable: React.FC<AuditTableProps> = ({
   const isPatientPackageView = groupedView;
   const tableColSpan = isPatientPackageView ? (compactView ? 4 : 6) : compactView ? 4 : 7;
   const totalDisplayItems = isPatientPackageView ? patientPackages.length : filteredLogs.length;
+  const hasVisibleRows = isPatientPackageView
+    ? patientPackages.length > 0
+    : filteredLogs.length > 0;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -152,6 +165,42 @@ export const AuditTable: React.FC<AuditTableProps> = ({
         </div>
       </div>
 
+      {isPatientPackageView && (
+        <div
+          className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-white px-5 py-2"
+          aria-label="Filtros operacionales de paquetes por paciente"
+        >
+          {patientPackageFilterOptions.map(option => {
+            const isActive = activePatientPackageFilter === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-label={`${option.label} ${option.count}`}
+                aria-pressed={isActive}
+                onClick={() => onPatientPackageFilterChange(option.id)}
+                className={clsx(
+                  'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold transition focus:outline-none focus:ring-4',
+                  isActive
+                    ? 'border-sky-200 bg-sky-50 text-sky-700 focus:ring-sky-500/15'
+                    : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 focus:ring-slate-500/10'
+                )}
+              >
+                <span>{option.label}</span>
+                <span
+                  className={clsx(
+                    'rounded-md px-1.5 py-0.5 font-black',
+                    isActive ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-600'
+                  )}
+                >
+                  {option.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50/50 border-b border-slate-100">
@@ -183,7 +232,7 @@ export const AuditTable: React.FC<AuditTableProps> = ({
                   <AuditSkeleton entries={10} />
                 </td>
               </tr>
-            ) : filteredLogs.length === 0 ? (
+            ) : !hasVisibleRows ? (
               <tr>
                 <td colSpan={tableColSpan} className="px-4 py-20 text-center">
                   <div className="flex flex-col items-center gap-3 opacity-30">
