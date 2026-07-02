@@ -234,7 +234,7 @@ test.describe('Sync conflict resolution', () => {
       },
     });
 
-    await page.evaluate(date => {
+    await page.evaluate(async date => {
       const storageKey = 'hanga_roa_hospital_data';
       const records = JSON.parse(localStorage.getItem(storageKey) || '{}') as Record<
         string,
@@ -245,7 +245,7 @@ test.describe('Sync conflict resolution', () => {
       };
       const currentBeds = currentRecord.beds || {};
 
-      records[date] = {
+      const nextRecord = {
         ...currentRecord,
         lastUpdated: `${date}T12:00:00.000Z`,
         beds: {
@@ -258,8 +258,35 @@ test.describe('Sync conflict resolution', () => {
           },
         },
       };
+      records[date] = nextRecord;
       localStorage.setItem(storageKey, JSON.stringify(records));
+
+      const runtimeWindow = window as Window & {
+        __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
+      };
+      runtimeWindow.__HHR_E2E_OVERRIDE__ = {
+        ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
+        [date]: nextRecord,
+      };
+
+      const request = indexedDB.open('HangaRoaDB');
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+      try {
+        const transaction = db.transaction('dailyRecords', 'readwrite');
+        transaction.objectStore('dailyRecords').put(nextRecord);
+        await new Promise<void>((resolve, reject) => {
+          transaction.oncomplete = () => resolve();
+          transaction.onerror = () => reject(transaction.error);
+          transaction.onabort = () => reject(transaction.error);
+        });
+      } finally {
+        db.close();
+      }
     }, CONFLICT_DATE);
+    await page.waitForLoadState('domcontentloaded').catch(() => undefined);
 
     const remoteRecord = await page.evaluate(date => {
       const records = JSON.parse(localStorage.getItem('hanga_roa_hospital_data') || '{}') as Record<
