@@ -1,56 +1,21 @@
 import type { AuditAction } from '@/types/auditActionTypes';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
+import { buildClinicalAuditPresentation } from '@/services/admin/clinicalAuditPresentation';
 import {
-  buildClinicalAuditPresentation,
-  type ClinicalAuditChange,
-} from '@/services/admin/clinicalAuditPresentation';
+  PATIENT_PACKAGE_WINDOW_MS,
+  UNKNOWN_AUDIT_SUBJECT,
+  type ClinicalAuditPackageChange,
+  type ClinicalAuditPackageFlags,
+  type ClinicalAuditPatientPackage,
+  type ClinicalAuditPatientPackageActor,
+} from '@/services/admin/clinicalAuditPatientPackageTypes';
 
-const PATIENT_PACKAGE_WINDOW_MS = 10 * 60 * 1000;
-const UNKNOWN_PATIENT = 'Paciente no identificado';
-
-export interface ClinicalAuditPackageChange extends ClinicalAuditChange {
-  sourceLogId: string;
-}
-
-export interface ClinicalAuditPackageFlags {
-  admission: boolean;
-  discharge: boolean;
-  transfer: boolean;
-  internalMovement: boolean;
-  cma: boolean;
-  conflict: boolean;
-  diagnosis: boolean;
-  status: boolean;
-  risk: boolean;
-}
-
-export interface ClinicalAuditPatientPackageActor {
-  label: string;
-  secondary?: string;
-  userId?: string;
-  uid?: string;
-}
-
-export interface ClinicalAuditPatientPackage {
-  id: string;
-  packageKey: string;
-  patientName: string;
-  patientRut?: string;
-  patientIdentifier?: string;
-  recordDate: string;
-  primaryBedLabel?: string;
-  startedAt: string;
-  endedAt: string;
-  actors: ClinicalAuditPatientPackageActor[];
-  ipAddresses: string[];
-  actions: AuditAction[];
-  modules: string[];
-  changes: ClinicalAuditPackageChange[];
-  flags: ClinicalAuditPackageFlags;
-  eventCount: number;
-  summary: string;
-  rawLogs: AuditLogEntry[];
-}
+export type {
+  ClinicalAuditPackageChange,
+  ClinicalAuditPackageFlags,
+  ClinicalAuditPatientPackage,
+  ClinicalAuditPatientPackageActor,
+} from '@/services/admin/clinicalAuditPatientPackageTypes';
 
 interface PackageDraft {
   baseKey: string;
@@ -111,7 +76,7 @@ const getPatientName = (log: AuditLogEntry): string => {
     (log.entityType === 'patient' || log.entityType === 'discharge' || log.entityType === 'transfer'
       ? asText(presentation.affectedSubject)
       : '') ||
-    UNKNOWN_PATIENT
+    UNKNOWN_AUDIT_SUBJECT
   );
 };
 
@@ -182,7 +147,7 @@ const resolveIdentityPart = (log: AuditLogEntry): string => {
   if (asText(log.patientIdentifier)) {
     return `patient-id:${normalizeIdentifier(asText(log.patientIdentifier))}`;
   }
-  if (patientName && patientName !== UNKNOWN_PATIENT) {
+  if (patientName && patientName !== UNKNOWN_AUDIT_SUBJECT) {
     return `patient-name:${normalizeKeyPart(patientName)}`;
   }
   if (entityId) return `entity:${normalizeKeyPart(`${log.entityType}:${entityId}`)}`;
