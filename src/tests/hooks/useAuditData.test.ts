@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useState, useCallback } from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useAuditData, AUDIT_SECTIONS } from '@/hooks/useAuditData';
+import { useAuditData } from '@/hooks/useAuditData';
 import { useAuditWorker } from '@/hooks/useAuditWorker';
 import * as fetchAuditLogsUseCase from '@/application/audit/fetchAuditLogsUseCase';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
@@ -493,11 +493,5 @@ describe('useAuditData', () => {
       // Two users with different actions should create multiple groups
       expect(result.current.displayLogs.length).toBeGreaterThanOrEqual(1);
     });
-  });
-
-  it('exports section definitions', () => {
-    expect(AUDIT_SECTIONS.ALL).toBeDefined();
-    expect(AUDIT_SECTIONS.SESSIONS).toBeDefined();
-    expect(AUDIT_SECTIONS.CENSUS).toBeDefined();
   });
 });

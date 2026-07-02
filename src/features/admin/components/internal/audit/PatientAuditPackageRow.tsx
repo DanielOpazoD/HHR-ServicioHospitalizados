@@ -16,6 +16,7 @@ import clsx from 'clsx';
 import type { ClinicalAuditPatientPackage } from '@/services/admin/clinicalAuditPatientPackages';
 import { buildClinicalAuditPresentation } from '@/services/admin/clinicalAuditPresentation';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
+import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import {
   buildAuditPackageCopySummary,
   displayTimestampParts,
@@ -57,7 +58,7 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
   };
 
   const handleCopySummary = () => {
-    void navigator.clipboard?.writeText(buildAuditPackageCopySummary(auditPackage));
+    void writeClipboardText(buildAuditPackageCopySummary(auditPackage)).catch(() => undefined);
   };
 
   const renderEventList = (logs: typeof auditPackage.rawLogs) => (
