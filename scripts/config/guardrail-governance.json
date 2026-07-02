@@ -88,11 +88,6 @@
       "artifact": "reports/bundle-risk-ledger.md"
     },
     {
-      "id": "runtime_asset_margin",
-      "script": "report:runtime-asset-margin",
-      "artifact": "reports/runtime-asset-margin.md"
-    },
-    {
       "id": "system_confidence",
       "script": "report:system-confidence",
       "artifact": "reports/system-confidence.md"
