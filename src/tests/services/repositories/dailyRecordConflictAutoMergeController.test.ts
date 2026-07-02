@@ -63,6 +63,7 @@ const record = {
   date: '2026-04-15',
   schemaVersion: 1,
   beds: {},
+  lastUpdated: '2026-04-15T12:00:00.000Z',
 } as unknown as DailyRecord;
 
 describe('dailyRecordConflictAutoMergeController', () => {
@@ -112,8 +113,18 @@ describe('dailyRecordConflictAutoMergeController', () => {
       expect.objectContaining({
         origin: 'conflict_auto_merge',
         syncContract: expect.objectContaining({
+          expectedVersion: '2026-04-15T12:00:00.000Z',
           changedPaths: ['beds.R1.patientName'],
+          mutationId: expect.any(String),
+          clientId: expect.any(String),
+          tabId: expect.any(String),
         }),
+      })
+    );
+    const queuedContract = queueSyncTaskMock.mock.calls[0]?.[1]?.syncContract;
+    expect(buildConflictAutoMergeAuditDetailsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        syncContract: queuedContract,
       })
     );
     expect(logRepositoryConflictAutoMergedMock).toHaveBeenCalledWith(

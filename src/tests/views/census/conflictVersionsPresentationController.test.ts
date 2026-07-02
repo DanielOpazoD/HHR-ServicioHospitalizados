@@ -26,8 +26,47 @@ describe('resolveConflictSnapshotRecoveryState', () => {
         },
       })
     ).toMatchObject({
-      kind: 'expired_or_unavailable',
+      kind: 'saved_but_unavailable',
       title: 'Snapshots no disponibles',
+    });
+  });
+
+  it('distinguishes expired TTL from permission-denied snapshot recovery gaps', () => {
+    expect(
+      resolveConflictSnapshotRecoveryState({
+        date: '2026-07-01',
+        snapshotCount: 0,
+        snapshotRecovery: {
+          status: 'saved',
+          snapshotIds: ['cid__remote_premerge'],
+          origins: ['remote_premerge'],
+          ttlMs: 172800000,
+          expiresAt: '2026-07-02T00:00:00.000Z',
+        },
+        now: new Date('2026-07-03T00:00:00.000Z'),
+      })
+    ).toMatchObject({
+      kind: 'expired_ttl',
+      title: 'Snapshots expirados por TTL',
+      message: expect.stringContaining('TTL'),
+    });
+
+    expect(
+      resolveConflictSnapshotRecoveryState({
+        date: '2026-07-01',
+        snapshotCount: 0,
+        snapshotRecovery: {
+          status: 'saved',
+          snapshotIds: ['cid__remote_premerge'],
+          origins: ['remote_premerge'],
+          ttlMs: 172800000,
+          unavailableReason: 'permission_denied',
+        },
+      })
+    ).toMatchObject({
+      kind: 'permission_denied',
+      title: 'Snapshots sin permiso de lectura',
+      message: expect.stringContaining('permisos'),
     });
   });
 

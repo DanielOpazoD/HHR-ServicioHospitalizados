@@ -233,10 +233,10 @@ describe('dailyRecordRepositoryWriteService explicit census patch auto-merge', (
       expect.objectContaining({
         contexts: ['clinical'],
         origin: 'conflict_auto_merge',
-        syncContract: {
+        syncContract: expect.objectContaining({
           expectedVersion: '2026-02-15T10:05:00.000Z',
           changedPaths: Object.keys(patch),
-        },
+        }),
       })
     );
   });

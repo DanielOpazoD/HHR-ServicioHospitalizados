@@ -25,6 +25,16 @@ export interface ConflictVersionRecoveryModel {
   restore: (snapshotId: string) => Promise<void>;
 }
 
+const resolveSnapshotListUnavailableReason = (
+  error: unknown
+): ConflictSnapshotRecoveryEvidence['unavailableReason'] => {
+  const code = String((error as { code?: unknown })?.code || '').toLowerCase();
+  if (code.includes('permission-denied') || code.includes('permission_denied')) {
+    return 'permission_denied';
+  }
+  return 'unknown';
+};
+
 /**
  * Admin-only model for the census "conflict versions" affordance: lists the recoverable conflict
  * snapshots for a day and restores one (with confirmation + notifications). All restores are
@@ -62,16 +72,30 @@ export const useConflictVersionRecovery = ({
     if (!date) return;
     setLoading(true);
     try {
-      const [nextSnapshots, nextSnapshotRecovery] = await Promise.all([
+      const [snapshotsResult, recoveryResult] = await Promise.allSettled([
         port.listConflictVersionSnapshots(date),
         port.getLatestConflictSnapshotRecovery?.(date) ?? Promise.resolve(null),
       ]);
-      setSnapshots(nextSnapshots);
-      setSnapshotRecovery(nextSnapshotRecovery);
-    } catch {
+
+      const nextSnapshotRecovery =
+        recoveryResult.status === 'fulfilled' ? recoveryResult.value : null;
+
+      if (snapshotsResult.status === 'fulfilled') {
+        setSnapshots(snapshotsResult.value);
+        setSnapshotRecovery(nextSnapshotRecovery);
+        return;
+      }
+
       notifyError('No se pudieron cargar las versiones en conflicto.');
       setSnapshots([]);
-      setSnapshotRecovery(null);
+      setSnapshotRecovery(
+        nextSnapshotRecovery
+          ? {
+              ...nextSnapshotRecovery,
+              unavailableReason: resolveSnapshotListUnavailableReason(snapshotsResult.reason),
+            }
+          : null
+      );
     } finally {
       setLoading(false);
     }

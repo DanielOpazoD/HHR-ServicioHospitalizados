@@ -182,7 +182,7 @@ describeEmulator('Firestore emulator mutation idempotency', () => {
     expect(remote?.beds.R1.pathology).toBe('Diagnostico ya aplicado');
   });
 
-  it('replays a stale restarted movement outbox through authority without dropping multi-PC movement intents', async () => {
+  it('enforces the clinical truth contract through stale restarted multi-PC movement replay', async () => {
     const date = CURRENT_RECORD_DATE;
     const mutationId = 'mutation-restarted-movement-outbox';
     const base = buildRecord(date, isoAt(date, '09:55:00'));

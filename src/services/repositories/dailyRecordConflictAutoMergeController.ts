@@ -11,6 +11,8 @@ import {
   resolveEffectiveChangedPaths,
 } from '@/services/repositories/dailyRecordWriteRecoveryController';
 import { queueDailyRecordSyncTaskWithLocalRecord } from '@/services/storage/sync';
+import { buildDailyRecordSyncContract } from '@/services/storage/sync/syncTaskContractPolicy';
+import type { SyncTaskContract } from '@/services/storage/syncQueueTypes';
 import {
   buildConflictId,
   saveConflictVersionSnapshots,
@@ -20,12 +22,14 @@ const queueMergedRecoveryTask = async (
   record: DailyRecord,
   changedPaths: string[],
   expectedVersion?: string
-) => {
-  const result = await queueDailyRecordSyncTaskWithLocalRecord(
-    record,
-    buildRecoveryTaskMeta(changedPaths, 'conflict_auto_merge', expectedVersion)
-  );
-  return result.accepted;
+): Promise<{ accepted: boolean; syncContract: SyncTaskContract }> => {
+  const meta = buildRecoveryTaskMeta(changedPaths, 'conflict_auto_merge', expectedVersion);
+  const syncContract = buildDailyRecordSyncContract(record, meta.syncContract);
+  const result = await queueDailyRecordSyncTaskWithLocalRecord(record, {
+    ...meta,
+    syncContract,
+  });
+  return { accepted: result.accepted, syncContract };
 };
 
 export const attemptConflictAutoMergeRecovery = async (
@@ -58,18 +62,23 @@ export const attemptConflictAutoMergeRecovery = async (
       }
     );
 
+    const { accepted: queued, syncContract } = await queueMergedRecoveryTask(
+      merged,
+      effectiveChangedPaths,
+      remoteRecord.lastUpdated
+    );
+    if (!queued) {
+      return { status: 'not_possible' };
+    }
+
     const auditDetails = buildConflictAutoMergeAuditDetails({
       changedPaths: effectiveChangedPaths,
       policyVersion: trace.policyVersion,
       traceEntries: trace.entries,
       conflictId,
       snapshotRecovery,
+      syncContract,
     });
-
-    const queued = await queueMergedRecoveryTask(merged, changedPaths, remoteRecord.lastUpdated);
-    if (!queued) {
-      return { status: 'not_possible' };
-    }
 
     try {
       await logRepositoryConflictAutoMerged(date, auditDetails);

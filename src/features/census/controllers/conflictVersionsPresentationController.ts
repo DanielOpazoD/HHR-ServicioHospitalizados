@@ -3,7 +3,9 @@ import type { ConflictSnapshotRecoveryEvidence } from '@/application/ports/daily
 export type ConflictSnapshotRecoveryStateKind =
   | 'recoverable'
   | 'not_saved'
-  | 'expired_or_unavailable'
+  | 'expired_ttl'
+  | 'permission_denied'
+  | 'saved_but_unavailable'
   | 'unknown_empty';
 
 export interface ConflictSnapshotRecoveryState {
@@ -16,10 +18,12 @@ export const resolveConflictSnapshotRecoveryState = ({
   date,
   snapshotCount,
   snapshotRecovery,
+  now,
 }: {
   date?: string;
   snapshotCount: number;
   snapshotRecovery?: ConflictSnapshotRecoveryEvidence | null;
+  now?: Date;
 }): ConflictSnapshotRecoveryState => {
   const day = date || 'este día';
   if (snapshotCount > 0) {
@@ -41,8 +45,35 @@ export const resolveConflictSnapshotRecoveryState = ({
   }
 
   if (snapshotRecovery?.status === 'saved' && (snapshotRecovery.snapshotIds?.length || 0) > 0) {
+    const nowMs = now?.getTime() ?? Date.now();
+    const expiresAtMs = snapshotRecovery.expiresAt
+      ? new Date(snapshotRecovery.expiresAt).getTime()
+      : NaN;
+    if (
+      snapshotRecovery.unavailableReason === 'expired_ttl' ||
+      (Number.isFinite(expiresAtMs) && expiresAtMs <= nowMs)
+    ) {
+      return {
+        kind: 'expired_ttl',
+        title: 'Snapshots expirados por TTL',
+        message:
+          `Observabilidad registró snapshots de conflicto para ${day}, ` +
+          'pero la ventana recuperable expiró por TTL. La auditoría permanente sigue disponible.',
+      };
+    }
+
+    if (snapshotRecovery.unavailableReason === 'permission_denied') {
+      return {
+        kind: 'permission_denied',
+        title: 'Snapshots sin permiso de lectura',
+        message:
+          `Observabilidad registró snapshots de conflicto para ${day}, ` +
+          'pero el usuario actual no tiene permisos para leerlos. Reintenta con rol admin vigente.',
+      };
+    }
+
     return {
-      kind: 'expired_or_unavailable',
+      kind: 'saved_but_unavailable',
       title: 'Snapshots no disponibles',
       message:
         `Observabilidad registró snapshots de conflicto para ${day}, ` +

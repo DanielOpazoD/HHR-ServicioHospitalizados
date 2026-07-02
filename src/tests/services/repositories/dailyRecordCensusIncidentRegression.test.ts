@@ -114,6 +114,6 @@ describe('daily record census incident regression', () => {
       path: 'discharges',
       winner: 'merged',
     });
-    expect(recoveryState.kind).toBe('expired_or_unavailable');
+    expect(recoveryState.kind).toBe('saved_but_unavailable');
   });
 });
