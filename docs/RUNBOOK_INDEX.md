@@ -29,13 +29,15 @@ Usa cuando:
 - hay `failedSyncTasks`, `conflictSyncTasks` o colas atascadas
 - aparece fallback de IndexedDB o banner de resiliencia
 - hay dudas sobre conflictos de concurrencia o recuperación offline
+- un alta, traslado o conflicto del censo no coincide entre observabilidad y el estado visible
 
 Abrir en este orden:
 
 1. [RUNBOOK_DAILY_ADMIN_CHECKLIST.md](./RUNBOOK_DAILY_ADMIN_CHECKLIST.md)
-2. [RUNBOOK_SUPPORT_OPERATIONS.md](./RUNBOOK_SUPPORT_OPERATIONS.md)
-3. [RUNBOOK_SYNC_RESILIENCE.md](./RUNBOOK_SYNC_RESILIENCE.md)
-4. [RUNBOOK_OPERATIONAL_BUDGETS.md](./RUNBOOK_OPERATIONAL_BUDGETS.md)
+2. [RUNBOOK_DAILY_CENSUS_RECOVERY.md](./RUNBOOK_DAILY_CENSUS_RECOVERY.md)
+3. [RUNBOOK_SUPPORT_OPERATIONS.md](./RUNBOOK_SUPPORT_OPERATIONS.md)
+4. [RUNBOOK_SYNC_RESILIENCE.md](./RUNBOOK_SYNC_RESILIENCE.md)
+5. [RUNBOOK_OPERATIONAL_BUDGETS.md](./RUNBOOK_OPERATIONAL_BUDGETS.md)
 
 ### Reglas, Firestore/Storage o runtime sensible
 

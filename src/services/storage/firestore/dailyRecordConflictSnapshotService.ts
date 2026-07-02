@@ -26,6 +26,14 @@ export const CONFLICT_SNAPSHOT_TTL_MS = 48 * 60 * 60 * 1000;
 
 export type ConflictSnapshotOrigin = 'remote_premerge' | 'incoming_premerge';
 
+export interface ConflictSnapshotSaveResult {
+  status: 'saved' | 'failed';
+  snapshotIds: string[];
+  origins: ConflictSnapshotOrigin[];
+  expiresAt?: string;
+  ttlMs: number;
+}
+
 const sourceLastUpdatedOf = (record: DailyRecord): string =>
   typeof record.lastUpdated === 'string' ? record.lastUpdated : 'na';
 
@@ -50,7 +58,14 @@ export const saveConflictVersionSnapshots = async (
   conflictId: string,
   versions: { remote: DailyRecord; incoming: DailyRecord },
   runtime: FirestoreServiceRuntimePort = defaultFirestoreServiceRuntime
-): Promise<void> => {
+): Promise<ConflictSnapshotSaveResult> => {
+  const entries: { origin: ConflictSnapshotOrigin; record: DailyRecord }[] = [
+    { origin: 'remote_premerge', record: versions.remote },
+    { origin: 'incoming_premerge', record: versions.incoming },
+  ];
+  const snapshotIds = entries.map(({ origin }) => [conflictId, origin].join('__'));
+  const origins = entries.map(({ origin }) => origin);
+
   try {
     const db = runtime.getDb();
     const snapshotsRef = collection(
@@ -58,16 +73,12 @@ export const saveConflictVersionSnapshots = async (
       DAILY_RECORD_CONFLICT_SNAPSHOTS
     );
     const snapshotTimestamp = Timestamp.now();
-    const expireAt = Timestamp.fromMillis(Date.now() + CONFLICT_SNAPSHOT_TTL_MS);
-
-    const entries: { origin: ConflictSnapshotOrigin; record: DailyRecord }[] = [
-      { origin: 'remote_premerge', record: versions.remote },
-      { origin: 'incoming_premerge', record: versions.incoming },
-    ];
+    const expireAtMs = Date.now() + CONFLICT_SNAPSHOT_TTL_MS;
+    const expireAt = Timestamp.fromMillis(expireAtMs);
 
     const batch = writeBatch(db);
-    for (const { origin, record } of entries) {
-      batch.set(doc(snapshotsRef, [conflictId, origin].join('__')), {
+    entries.forEach(({ origin, record }, index) => {
+      batch.set(doc(snapshotsRef, snapshotIds[index]), {
         origin,
         conflictId,
         snapshotTimestamp,
@@ -75,8 +86,15 @@ export const saveConflictVersionSnapshots = async (
         sourceLastUpdated: sourceLastUpdatedOf(record),
         record: sanitizeForFirestore(record) as DocumentData,
       });
-    }
+    });
     await batch.commit();
+    return {
+      status: 'saved',
+      snapshotIds,
+      origins,
+      expiresAt: new Date(expireAtMs).toISOString(),
+      ttlMs: CONFLICT_SNAPSHOT_TTL_MS,
+    };
   } catch (error) {
     recordOperationalErrorTelemetry('firestore', 'save_conflict_version_snapshots', error, {
       code: 'firestore_conflict_snapshot_failed',
@@ -85,6 +103,12 @@ export const saveConflictVersionSnapshots = async (
       userSafeMessage: 'No se pudieron guardar los snapshots de versión en conflicto.',
       context: { date, conflictId },
     });
+    return {
+      status: 'failed',
+      snapshotIds: [],
+      origins: [],
+      ttlMs: CONFLICT_SNAPSHOT_TTL_MS,
+    };
   }
 };
 
@@ -142,5 +166,8 @@ export const getConflictVersionSnapshot = async (
     snapshotId
   );
   const snap = await getDoc(snapshotRef);
-  return snap.exists() ? toConflictVersionSnapshot(snap.id, snap.data()) : null;
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  if (!isConflictSnapshotRecoverable(data, Date.now())) return null;
+  return toConflictVersionSnapshot(snap.id, data);
 };

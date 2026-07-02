@@ -85,12 +85,21 @@ export const useCensusDischargeCommand = ({
       });
     };
 
-    const buildCanonicalAuditEntries = () =>
-      buildDischargeCanonicalAuditEntries({
+    const buildCanonicalAuditEntries = () => {
+      const dischargeState = dischargeStateRef.current;
+
+      return buildDischargeCanonicalAuditEntries({
         record: recordRef.current,
-        bedId: dischargeStateRef.current.bedId,
-        status: dischargeStateRef.current.status,
+        bedId: dischargeState.bedId,
+        status: dischargeState.status,
+        movementDate: data?.movementDate || dischargeState.movementDate,
+        time: data?.time || dischargeState.time,
+        diagnosis: data?.diagnosis || dischargeState.diagnosis,
+        dischargeType: data?.type || dischargeState.type,
+        dischargeTypeOther: data?.typeOther || dischargeState.typeOther,
+        dischargeTarget: data?.dischargeTarget || dischargeState.dischargeTarget,
       });
+    };
 
     const runLegacyDischarge = (): boolean => {
       const result = executeDischargeController({

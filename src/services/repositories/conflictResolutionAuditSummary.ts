@@ -8,6 +8,11 @@ import {
   type ConflictDomainContext,
 } from '@/services/repositories/conflictResolutionDomainPolicy';
 
+export type ConflictAuditDecisionSample = Pick<
+  ConflictResolutionTraceEntry,
+  'path' | 'strategy' | 'winner' | 'reason'
+>;
+
 export interface ConflictAuditSummary {
   changedPaths: string[];
   impactedContexts: ConflictDomainContext[];
@@ -17,7 +22,24 @@ export interface ConflictAuditSummary {
   winnerBreakdown: Record<string, number>;
   reasonBreakdown: Record<string, number>;
   samplePaths: string[];
+  sampleDecisions: ConflictAuditDecisionSample[];
   assessment: ConflictResolutionAssessment;
+}
+
+export interface ConflictAutoMergeSnapshotRecovery {
+  status: 'saved' | 'failed';
+  snapshotIds: string[];
+  origins: string[];
+  expiresAt?: string;
+  ttlMs?: number;
+}
+
+export interface ConflictAutoMergeAuditDetailsInput {
+  changedPaths: string[];
+  policyVersion: string;
+  traceEntries: ConflictResolutionTraceEntry[];
+  conflictId: string;
+  snapshotRecovery: ConflictAutoMergeSnapshotRecovery;
 }
 
 const countBy = (items: string[]): Record<string, number> =>
@@ -39,5 +61,23 @@ export const buildConflictAuditSummary = (
   winnerBreakdown: countBy(traceEntries.map(entry => entry.winner)),
   reasonBreakdown: countBy(traceEntries.map(entry => entry.reason)),
   samplePaths: Array.from(new Set(traceEntries.map(entry => entry.path))).slice(0, 20),
+  sampleDecisions: traceEntries
+    .slice(0, 20)
+    .map(({ path, strategy, winner, reason }) => ({ path, strategy, winner, reason })),
   assessment: assessConflictResolutionTrace(changedPaths, traceEntries),
+});
+
+export const buildConflictAutoMergeAuditDetails = ({
+  changedPaths,
+  policyVersion,
+  traceEntries,
+  conflictId,
+  snapshotRecovery,
+}: ConflictAutoMergeAuditDetailsInput): ConflictAuditSummary & {
+  conflictId: string;
+  snapshotRecovery: ConflictAutoMergeSnapshotRecovery;
+} => ({
+  ...buildConflictAuditSummary(changedPaths, policyVersion, traceEntries),
+  conflictId,
+  snapshotRecovery,
 });

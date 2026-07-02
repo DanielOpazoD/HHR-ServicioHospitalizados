@@ -22,7 +22,6 @@ import {
   ID_BASED_ARRAY_FIELDS,
   UNIQUE_ARRAY_FIELDS,
   mergeBeds,
-  mergeArrayById,
   mergeUniquePrimitiveArray,
   mergePatientData,
 } from '@/services/repositories/conflictResolutionMergeUtils';
@@ -221,9 +220,10 @@ const resolveByChangedPaths = (
     if (ID_BASED_ARRAY_FIELDS.has(root)) {
       const remoteMap = remote as unknown as Record<string, unknown>;
       const localMap = local as unknown as Record<string, unknown>;
-      (patches as Record<string, unknown>)[root] = mergeArrayById(
+      (patches as Record<string, unknown>)[root] = mergeMovementArrayById(
         remoteMap[root] as unknown[],
         localMap[root] as unknown[],
+        true,
         traceContext,
         root
       );

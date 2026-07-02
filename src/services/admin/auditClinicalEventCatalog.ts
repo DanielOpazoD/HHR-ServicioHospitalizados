@@ -14,6 +14,7 @@ interface BedMovementAuditDetailsInput {
   patientName: string;
   sourceBed: string;
   targetBed: string;
+  diagnosis?: string;
   previousLocation?: string;
   newLocation?: string;
 }
@@ -24,6 +25,20 @@ interface DischargeUndoAuditDetailsInput {
   restoredBed: string;
 }
 
+interface PatientDischargedAuditDetailsInput {
+  patientName: string;
+  status: 'Vivo' | 'Fallecido';
+  bedId: string;
+  rut: string;
+  episodeKey?: string;
+  movementDate?: string;
+  time?: string;
+  diagnosis?: string;
+  dischargeType?: string;
+  dischargeTypeOther?: string;
+  dischargeTarget?: string;
+}
+
 export interface PatientMovementAuditDetails extends Record<string, unknown> {
   clinicalEvent: string;
   movementKind: PatientMovementKind;
@@ -32,6 +47,7 @@ export interface PatientMovementAuditDetails extends Record<string, unknown> {
   targetBed?: string;
   previousLocation?: string;
   newLocation?: string;
+  diagnosis?: string;
   dischargeId?: string;
   restoredBed?: string;
 }
@@ -50,11 +66,27 @@ export interface DischargeDiagnosisChangeAuditDetails extends Record<string, unk
   };
 }
 
+export interface PatientDischargedAuditDetails extends Record<string, unknown> {
+  clinicalEvent: string;
+  patientName: string;
+  status: 'Vivo' | 'Fallecido';
+  bedId: string;
+  rut: string;
+  episodeKey?: string;
+  movementDate?: string;
+  time?: string;
+  diagnosis?: string;
+  dischargeType?: string;
+  dischargeTypeOther?: string;
+  dischargeTarget?: string;
+}
+
 export const buildBedMovementAuditDetails = ({
   movementKind,
   patientName,
   sourceBed,
   targetBed,
+  diagnosis,
   previousLocation,
   newLocation,
 }: BedMovementAuditDetailsInput): PatientMovementAuditDetails => ({
@@ -66,6 +98,7 @@ export const buildBedMovementAuditDetails = ({
   patientName,
   sourceBed,
   targetBed,
+  diagnosis,
   previousLocation,
   newLocation,
 });
@@ -81,6 +114,39 @@ export const buildDischargeUndoAuditDetails = ({
   patientName,
   restoredBed,
 });
+
+export const buildPatientDischargedAuditDetails = ({
+  patientName,
+  status,
+  bedId,
+  rut,
+  episodeKey,
+  movementDate,
+  time,
+  diagnosis,
+  dischargeType,
+  dischargeTypeOther,
+  dischargeTarget,
+}: PatientDischargedAuditDetailsInput): PatientDischargedAuditDetails => {
+  const details = {
+    clinicalEvent: 'Alta de paciente',
+    patientName,
+    status,
+    bedId,
+    rut,
+    episodeKey,
+    movementDate,
+    time,
+    diagnosis,
+    dischargeType,
+    dischargeTypeOther,
+    dischargeTarget,
+  };
+
+  return Object.fromEntries(
+    Object.entries(details).filter(([, value]) => value !== undefined)
+  ) as PatientDischargedAuditDetails;
+};
 
 export const buildDischargeDiagnosisChangeAuditDetails = ({
   patientName,

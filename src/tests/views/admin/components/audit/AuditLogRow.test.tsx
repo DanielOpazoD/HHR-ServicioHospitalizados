@@ -68,6 +68,8 @@ describe('AuditLogRow', () => {
     expect(screen.getByText('Origen de acceso')).toBeInTheDocument();
     expect(screen.getByText('Cambios relevantes')).toBeInTheDocument();
     expect(screen.getByText('Detalle técnico avanzado')).toBeInTheDocument();
+    expect(screen.getByText(/movementKind/)).toBeInTheDocument();
+    expect(screen.getByText(/targetBed/)).toBeInTheDocument();
   });
 
   it('keeps the row toggle behavior', () => {

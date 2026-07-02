@@ -12,6 +12,7 @@ import { defaultFirestoreServiceRuntime } from '@/services/storage/firestore/fir
 import type { FirestoreServiceRuntimePort } from '@/services/storage/firestore/ports/firestoreServiceRuntimePort';
 import { ConcurrencyError } from '@/services/storage/firestore/firestoreWriteSupport';
 import { resolveDailyRecordConflict } from '@/services/repositories/conflictResolutionMatrix';
+import { evaluateDailyRecordConflictPostMergeInvariants } from '@/services/repositories/dailyRecordConflictPostMergeInvariantChecker';
 import {
   applyDailyRecordClinicalConsistencyCheck,
   recordClinicalConsistencyTelemetry,
@@ -28,6 +29,7 @@ import {
 import { saveDailyRecordWithClinicalAuthorityCallable } from '@/services/storage/firestore/dailyRecordAuthorityCallableClient';
 
 const STRICT_REMOTE_DRIFT_TOLERANCE_MS = 0;
+const MERGEABLE_MOVEMENT_ARRAY_ROOTS = new Set(['discharges', 'transfers', 'cma']);
 
 /**
  * Blocks writes when the remote record is newer than the local copy. Without
@@ -55,8 +57,25 @@ const normalizeChangedPaths = (value: unknown): string[] =>
 const pathsOverlap = (left: string, right: string): boolean =>
   left === right || left.startsWith(`${right}.`) || right.startsWith(`${left}.`);
 
-const hasOverlappingChangedPath = (left: string[], right: string[]): boolean =>
-  left.some(leftPath => right.some(rightPath => pathsOverlap(leftPath, rightPath)));
+const getPathRoot = (path: string): string => path.split('.')[0] || '';
+
+const isMergeableMovementArrayOverlap = (left: string, right: string): boolean => {
+  const leftRoot = getPathRoot(left);
+  const rightRoot = getPathRoot(right);
+  return (
+    leftRoot === rightRoot &&
+    MERGEABLE_MOVEMENT_ARRAY_ROOTS.has(leftRoot) &&
+    pathsOverlap(left, right)
+  );
+};
+
+const hasBlockingOverlappingChangedPath = (left: string[], right: string[]): boolean =>
+  left.some(leftPath =>
+    right.some(
+      rightPath =>
+        pathsOverlap(leftPath, rightPath) && !isMergeableMovementArrayOverlap(leftPath, rightPath)
+    )
+  );
 
 const assertNoSamePathRemoteMutation = (
   task: SyncTask,
@@ -72,7 +91,7 @@ const assertNoSamePathRemoteMutation = (
   if (
     remoteChangedPaths.length > 0 &&
     localChangedPaths.length > 0 &&
-    hasOverlappingChangedPath(remoteChangedPaths, localChangedPaths)
+    hasBlockingOverlappingChangedPath(remoteChangedPaths, localChangedPaths)
   ) {
     throw new ConcurrencyError(
       `Sync queue: remote mutation changed the same changed path for ${String(task.key || 'daily record')}.`
@@ -144,7 +163,24 @@ const resolveRecordForSyncTask = async (
   const mergedRecord = resolveDailyRecordConflict(remoteRecord, record, {
     changedPaths: task.syncContract?.changedPaths,
   });
-  const consistency = applyDailyRecordClinicalConsistencyCheck(mergedRecord, {
+  const postMergeInvariants = evaluateDailyRecordConflictPostMergeInvariants({
+    remote: remoteRecord,
+    local: record,
+    resolved: mergedRecord,
+    context: {
+      date: record.date,
+      phase: 'sync_publish',
+    },
+  });
+
+  if (postMergeInvariants.status === 'blocked') {
+    throw new ConcurrencyError(
+      `Sync queue: post-merge invariants blocked stale task for ${record.date}: ` +
+        postMergeInvariants.violations.map(violation => violation.path).join(', ')
+    );
+  }
+
+  const consistency = applyDailyRecordClinicalConsistencyCheck(postMergeInvariants.record, {
     date: record.date,
     phase: 'sync_publish',
   });

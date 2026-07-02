@@ -2,6 +2,7 @@ import React from 'react';
 import { History } from 'lucide-react';
 import { BaseModalContent } from '@/components/shared/baseModalContent';
 import { useConflictVersionRecovery } from '@/features/census/hooks/useConflictVersionRecovery';
+import { resolveConflictSnapshotRecoveryState } from '@/features/census/controllers/conflictVersionsPresentationController';
 import type {
   ConflictVersionSnapshot,
   DailyRecordConflictRecoveryPort,
@@ -41,6 +42,12 @@ export const ConflictVersionsAdminControl: React.FC<ConflictVersionsAdminControl
     return null;
   }
 
+  const recoveryState = resolveConflictSnapshotRecoveryState({
+    date,
+    snapshotCount: model.snapshots.length,
+    snapshotRecovery: model.snapshotRecovery,
+  });
+
   return (
     <>
       <button
@@ -64,9 +71,10 @@ export const ConflictVersionsAdminControl: React.FC<ConflictVersionsAdminControl
         {model.loading ? (
           <p className="py-6 text-center text-sm text-slate-500">Cargando versiones…</p>
         ) : model.snapshots.length === 0 ? (
-          <p className="py-6 text-center text-sm text-slate-500">
-            No hay versiones en conflicto guardadas para este día.
-          </p>
+          <div className="py-6 text-center">
+            <p className="text-sm font-semibold text-slate-700">{recoveryState.title}</p>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">{recoveryState.message}</p>
+          </div>
         ) : (
           <ul className="divide-y divide-slate-100">
             {model.snapshots.map(snapshot => (

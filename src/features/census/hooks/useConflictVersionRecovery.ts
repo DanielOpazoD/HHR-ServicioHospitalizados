@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import {
   defaultDailyRecordConflictRecoveryPort,
+  type ConflictSnapshotRecoveryEvidence,
   type ConflictVersionSnapshot,
   type DailyRecordConflictRecoveryPort,
 } from '@/application/ports/dailyRecordConflictRecoveryPort';
@@ -18,6 +19,7 @@ export interface ConflictVersionRecoveryModel {
   loading: boolean;
   restoringId: string | null;
   snapshots: ConflictVersionSnapshot[];
+  snapshotRecovery: ConflictSnapshotRecoveryEvidence | null;
   open: () => void;
   close: () => void;
   restore: (snapshotId: string) => Promise<void>;
@@ -41,6 +43,9 @@ export const useConflictVersionRecovery = ({
   const [loading, setLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<ConflictVersionSnapshot[]>([]);
+  const [snapshotRecovery, setSnapshotRecovery] = useState<ConflictSnapshotRecoveryEvidence | null>(
+    null
+  );
 
   // CensusStaffHeader keeps this hook mounted across day changes (only the `date` prop changes).
   // Reset on date change so a stale, still-open list can never restore an old snapshotId against the
@@ -50,16 +55,23 @@ export const useConflictVersionRecovery = ({
     setLoading(false);
     setRestoringId(null);
     setSnapshots([]);
+    setSnapshotRecovery(null);
   }, [date]);
 
   const load = useCallback(async () => {
     if (!date) return;
     setLoading(true);
     try {
-      setSnapshots(await port.listConflictVersionSnapshots(date));
+      const [nextSnapshots, nextSnapshotRecovery] = await Promise.all([
+        port.listConflictVersionSnapshots(date),
+        port.getLatestConflictSnapshotRecovery?.(date) ?? Promise.resolve(null),
+      ]);
+      setSnapshots(nextSnapshots);
+      setSnapshotRecovery(nextSnapshotRecovery);
     } catch {
       notifyError('No se pudieron cargar las versiones en conflicto.');
       setSnapshots([]);
+      setSnapshotRecovery(null);
     } finally {
       setLoading(false);
     }
@@ -105,5 +117,15 @@ export const useConflictVersionRecovery = ({
     [date, port, confirm, success, notifyError, load]
   );
 
-  return { isAdmin, isOpen, loading, restoringId, snapshots, open, close, restore };
+  return {
+    isAdmin,
+    isOpen,
+    loading,
+    restoringId,
+    snapshots,
+    snapshotRecovery,
+    open,
+    close,
+    restore,
+  };
 };

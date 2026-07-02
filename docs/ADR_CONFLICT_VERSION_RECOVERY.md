@@ -3,7 +3,8 @@
 **Estado:** Aceptada (2026-06-26) — en implementación por etapas
 **Fecha:** 2026-06-26
 **Ámbito:** `dailyRecord` · resolución de conflictos / sync
-**Relacionado:** `docs/SYNC_CONCURRENCY_MODEL.md`, `docs/ADR_SYNC_OUTCOME_POLICY.md`
+**Relacionado:** `docs/SYNC_CONCURRENCY_MODEL.md`, `docs/ADR_SYNC_OUTCOME_POLICY.md`,
+`docs/ADR_DAILY_CENSUS_MOVEMENT_CONFLICT_INVARIANTS.md`
 
 ## Decisión
 

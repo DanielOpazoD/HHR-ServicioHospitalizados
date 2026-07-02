@@ -1,4 +1,5 @@
 import type { AuditLogEntry } from '@/types/auditLogTypes';
+import { buildConflictAutoMergedAuditNarrative } from '@/services/admin/clinicalAuditConflictNarratives';
 import { buildClinicalDocumentAuditNarrative } from '@/services/admin/clinicalAuditDocumentNarratives';
 import { buildMedicalIndicationAuditNarrative } from '@/services/admin/medicalIndicationAuditNarratives';
 import { buildPatientDiagnosisAuditNarrative } from '@/services/admin/clinicalAuditPatientNarratives';
@@ -299,13 +300,8 @@ export const buildKnownClinicalAuditNarrative = (
     };
   }
 
-  if (log.action === 'CONFLICT_AUTO_MERGED') {
-    return {
-      title: 'Conflicto sincronizado automáticamente',
-      narrative: `Se resolvió automáticamente un conflicto de datos en ${getRecordLabel(log)}.`,
-      affectedSubject: getRecordLabel(log),
-    };
-  }
+  const conflictAutoMergedNarrative = buildConflictAutoMergedAuditNarrative(log, details);
+  if (conflictAutoMergedNarrative) return conflictAutoMergedNarrative;
 
   const clinicalDocumentNarrative = buildClinicalDocumentAuditNarrative({
     log,

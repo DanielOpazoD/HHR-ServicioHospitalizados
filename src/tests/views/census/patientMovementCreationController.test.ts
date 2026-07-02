@@ -293,6 +293,49 @@ describe('patientMovementCreationController', () => {
     }
   });
 
+  it('returns discharge audit entries with enough movement metadata to reconstruct the daily discharge row', () => {
+    const record = DataFactory.createMockDailyRecord('2025-01-01');
+    record.beds.R1 = DataFactory.createMockPatient('R1', {
+      patientName: 'Bernardo Orrego Llanos',
+      rut: '17.274.300-5',
+      pathology: 'Neumonía adquirida en la comunidad',
+      clinicalEpisodeId: 'episode-bernardo',
+    });
+
+    const result = resolveAddDischargeMovement({
+      record,
+      bedId: 'R1',
+      payload: {
+        status: 'Vivo',
+        type: 'Domicilio (Habitual)',
+        time: '13:24',
+        movementDate: '2025-01-02',
+        dischargeTarget: 'mother',
+      },
+      bedsCatalog: BEDS,
+      createEmptyPatient,
+      createId: () => 'discharge-bernardo',
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.auditEntries).toEqual([
+        expect.objectContaining({
+          movementId: 'discharge-bernardo',
+          bedId: 'R1',
+          patientName: 'Bernardo Orrego Llanos',
+          rut: '17.274.300-5',
+          status: 'Vivo',
+          diagnosis: 'Neumonía adquirida en la comunidad',
+          movementDate: '2025-01-02',
+          time: '13:24',
+          dischargeType: 'Domicilio (Habitual)',
+          clinicalEpisodeId: 'episode-bernardo',
+        }),
+      ]);
+    }
+  });
+
   it('respects explicit movementDate when creating a transfer movement', () => {
     const record = DataFactory.createMockDailyRecord('2025-01-01');
     record.beds.R1 = DataFactory.createMockPatient('R1', {

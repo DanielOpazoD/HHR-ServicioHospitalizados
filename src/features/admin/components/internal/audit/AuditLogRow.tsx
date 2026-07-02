@@ -36,6 +36,7 @@ export const AuditLogRow: React.FC<AuditLogRowProps> = ({
       action: presentation.technical.action,
       entityType: presentation.technical.entityType,
       entityId: presentation.technical.entityId,
+      details: presentation.technical.details,
     },
     null,
     2

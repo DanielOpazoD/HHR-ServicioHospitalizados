@@ -97,13 +97,11 @@ export const shouldUseRemoteEpisodeScopedValue = (
 
 export const hasPatientIdentityOrClinicalContent = (patient: PatientData | undefined): boolean => {
   if (!patient) return false;
-  const normalizedStatus = String(patient.status || '').trim();
   return Boolean(
     String(patient.patientName || '').trim() ||
     String(patient.rut || '').trim() ||
     String(patient.pathology || '').trim() ||
-    String(patient.admissionDate || '').trim() ||
-    (normalizedStatus && normalizedStatus !== 'EMPTY')
+    String(patient.admissionDate || '').trim()
   );
 };
 
