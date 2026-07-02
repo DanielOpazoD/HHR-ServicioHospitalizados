@@ -115,15 +115,47 @@ describe('clinicalAuditPatientPackageFilters', () => {
 
     expect(options.map(option => [option.id, option.count])).toEqual([
       ['ALL', 7],
+      ['CENSUS', 7],
+      ['PATIENT', 7],
+      ['BED', 7],
       ['DISCHARGE', 1],
       ['TRANSFER', 1],
       ['INTERNAL_MOVEMENT', 0],
       ['CMA', 1],
+      ['DOCUMENTS', 1],
+      ['DIAGNOSIS', 0],
+      ['STATUS', 0],
       ['CONFLICT', 1],
       ['VIEW_ACTIVITY', 1],
-      ['DOCUMENTS', 1],
+      ['SYSTEM', 1],
       ['MEDICATIONS', 1],
     ]);
+  });
+
+  it('separates clinical operations from view-only and system-sync packages', () => {
+    expect(
+      filterClinicalAuditPatientPackages(packages, {
+        activeIntent: 'CLINICAL_OPERATIONS',
+      } as never).map(auditPackage => auditPackage.patientName)
+    ).toEqual([
+      'Paciente Indicacion',
+      'Paciente Documento',
+      'Paciente CMA',
+      'Paciente Traslado',
+      'Bernardo Orrego Llanos',
+    ]);
+
+    expect(
+      filterClinicalAuditPatientPackages(packages, {
+        activeIntent: 'VIEW_ACTIVITY',
+      } as never).map(auditPackage => auditPackage.patientName)
+    ).toEqual(['Paciente Visualizado']);
+
+    expect(
+      filterClinicalAuditPatientPackages(packages, {
+        activeIntent: 'SYSTEM_SYNC',
+      } as never).map(auditPackage => auditPackage.patientName)
+    ).toEqual(['Paciente Conflicto']);
   });
 
   it('searches patient packages by patient, RUT, bed, user, IP and module', () => {

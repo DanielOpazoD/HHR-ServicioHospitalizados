@@ -44,9 +44,12 @@ import {
 } from '@/services/admin/clinicalAuditPatientPackages';
 import {
   buildClinicalAuditPatientPackageFilterOptions,
+  buildClinicalAuditPatientPackageIntentOptions,
   filterClinicalAuditPatientPackages,
   type ClinicalAuditPatientPackageFilterId,
   type ClinicalAuditPatientPackageFilterOption,
+  type ClinicalAuditPatientPackageIntentId,
+  type ClinicalAuditPatientPackageIntentOption,
 } from '@/services/admin/clinicalAuditPatientPackageFilters';
 import { filterLogs as filterAuditLogs } from '@/services/admin/auditWorkerLogic';
 
@@ -63,6 +66,7 @@ export interface AuditFiltersState {
   compactView: boolean;
   groupedView: boolean;
   activePatientPackageFilter: ClinicalAuditPatientPackageFilterId;
+  activePatientPackageIntent: ClinicalAuditPatientPackageIntentId;
 }
 
 export interface UseAuditDataReturn {
@@ -74,6 +78,7 @@ export interface UseAuditDataReturn {
   patientPackages: ClinicalAuditPatientPackage[];
   paginatedPatientPackages: ClinicalAuditPatientPackage[];
   patientPackageFilterOptions: ClinicalAuditPatientPackageFilterOption[];
+  patientPackageIntentOptions: ClinicalAuditPatientPackageIntentOption[];
   stats: AuditStats;
 
   // Loading state
@@ -93,6 +98,7 @@ export interface UseAuditDataReturn {
   setCompactView: (value: boolean) => void;
   setGroupedView: (value: boolean) => void;
   setActivePatientPackageFilter: (value: ClinicalAuditPatientPackageFilterId) => void;
+  setActivePatientPackageIntent: (value: ClinicalAuditPatientPackageIntentId) => void;
 
   // Pagination
   currentPage: number;
@@ -132,6 +138,8 @@ export function useAuditData(): UseAuditDataReturn {
   const [groupedView, setGroupedView] = useState(true);
   const [activePatientPackageFilter, setActivePatientPackageFilter] =
     useState<ClinicalAuditPatientPackageFilterId>('ALL');
+  const [activePatientPackageIntent, setActivePatientPackageIntentState] =
+    useState<ClinicalAuditPatientPackageIntentId>('CLINICAL_OPERATIONS');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -201,6 +209,14 @@ export function useAuditData(): UseAuditDataReturn {
     setEndDate(range.endDate);
   }, []);
 
+  const setActivePatientPackageIntent = useCallback(
+    (value: ClinicalAuditPatientPackageIntentId) => {
+      setActivePatientPackageIntentState(value);
+      setActivePatientPackageFilter('ALL');
+    },
+    []
+  );
+
   const { filteredLogs, displayLogs, stats: workerStats } = results;
 
   const patientPackageSourceLogs = useMemo(() => {
@@ -222,18 +238,31 @@ export function useAuditData(): UseAuditDataReturn {
     [patientPackageSourceLogs]
   );
 
-  const patientPackageFilterOptions = useMemo(
-    () => buildClinicalAuditPatientPackageFilterOptions(unfilteredPatientPackages),
+  const patientPackageIntentOptions = useMemo(
+    () => buildClinicalAuditPatientPackageIntentOptions(unfilteredPatientPackages),
     [unfilteredPatientPackages]
+  );
+
+  const intentPatientPackages = useMemo(
+    () =>
+      filterClinicalAuditPatientPackages(unfilteredPatientPackages, {
+        activeIntent: activePatientPackageIntent,
+      }),
+    [unfilteredPatientPackages, activePatientPackageIntent]
+  );
+
+  const patientPackageFilterOptions = useMemo(
+    () => buildClinicalAuditPatientPackageFilterOptions(intentPatientPackages),
+    [intentPatientPackages]
   );
 
   const patientPackages = useMemo(
     () =>
-      filterClinicalAuditPatientPackages(unfilteredPatientPackages, {
+      filterClinicalAuditPatientPackages(intentPatientPackages, {
         searchTerm,
         activeFilter: activePatientPackageFilter,
       }),
-    [unfilteredPatientPackages, searchTerm, activePatientPackageFilter]
+    [intentPatientPackages, searchTerm, activePatientPackageFilter]
   );
 
   // Pagination
@@ -262,6 +291,7 @@ export function useAuditData(): UseAuditDataReturn {
         endDate,
         groupedView,
         activePatientPackageFilter,
+        activePatientPackageIntent,
       })
     ) {
       setCurrentPage(1);
@@ -274,6 +304,7 @@ export function useAuditData(): UseAuditDataReturn {
     endDate,
     groupedView,
     activePatientPackageFilter,
+    activePatientPackageIntent,
   ]);
 
   // Use stats from worker
@@ -289,6 +320,7 @@ export function useAuditData(): UseAuditDataReturn {
     compactView,
     groupedView,
     activePatientPackageFilter,
+    activePatientPackageIntent,
   };
 
   return {
@@ -300,6 +332,7 @@ export function useAuditData(): UseAuditDataReturn {
     patientPackages,
     paginatedPatientPackages,
     patientPackageFilterOptions,
+    patientPackageIntentOptions,
     stats,
 
     // Loading
@@ -319,6 +352,7 @@ export function useAuditData(): UseAuditDataReturn {
     setCompactView,
     setGroupedView,
     setActivePatientPackageFilter,
+    setActivePatientPackageIntent,
 
     // Pagination
     currentPage,

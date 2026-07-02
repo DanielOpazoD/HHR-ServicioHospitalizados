@@ -32,6 +32,7 @@ export const shouldResetAuditPagination = (params: {
   endDate: string;
   groupedView: boolean;
   activePatientPackageFilter?: string;
+  activePatientPackageIntent?: string;
 }): boolean =>
   Boolean(
     params.searchTerm ||
@@ -40,7 +41,9 @@ export const shouldResetAuditPagination = (params: {
     params.startDate ||
     params.endDate ||
     params.groupedView ||
-    (params.activePatientPackageFilter && params.activePatientPackageFilter !== 'ALL')
+    (params.activePatientPackageFilter && params.activePatientPackageFilter !== 'ALL') ||
+    (params.activePatientPackageIntent &&
+      params.activePatientPackageIntent !== 'CLINICAL_OPERATIONS')
   );
 
 export const buildAuditSectionActionsMap = (
