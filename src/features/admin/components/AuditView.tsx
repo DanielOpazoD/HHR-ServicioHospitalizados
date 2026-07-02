@@ -27,6 +27,8 @@ export const AuditView: React.FC = () => {
     filteredLogs,
     displayLogs,
     paginatedLogs,
+    patientPackages,
+    paginatedPatientPackages,
     stats,
     loading,
     filters,
@@ -136,6 +138,8 @@ export const AuditView: React.FC = () => {
           filteredLogs={filteredLogs}
           displayLogsCount={displayLogs.length}
           paginatedLogs={paginatedLogs}
+          patientPackages={patientPackages}
+          paginatedPatientPackages={paginatedPatientPackages}
           loading={loading}
           compactView={compactView}
           setCompactView={setCompactView}

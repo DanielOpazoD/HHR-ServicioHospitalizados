@@ -35,6 +35,10 @@ import {
   type AuditDateRangePreset,
 } from '@/services/admin/auditDateRangePresets';
 import { auditDataLogger } from '@/hooks/hookLoggers';
+import {
+  buildClinicalAuditPatientPackages,
+  type ClinicalAuditPatientPackage,
+} from '@/services/admin/clinicalAuditPatientPackages';
 
 export { AUDIT_SECTIONS } from '@/services/admin/auditViewConfig';
 
@@ -56,6 +60,8 @@ export interface UseAuditDataReturn {
   filteredLogs: AuditLogEntry[];
   displayLogs: (AuditLogEntry | GroupedAuditLogEntry)[];
   paginatedLogs: (AuditLogEntry | GroupedAuditLogEntry)[];
+  patientPackages: ClinicalAuditPatientPackage[];
+  paginatedPatientPackages: ClinicalAuditPatientPackage[];
   stats: AuditStats;
 
   // Loading state
@@ -172,12 +178,23 @@ export function useAuditData(): UseAuditDataReturn {
 
   const { filteredLogs, displayLogs, stats: workerStats } = results;
 
+  const patientPackages = useMemo(
+    () => buildClinicalAuditPatientPackages(filteredLogs),
+    [filteredLogs]
+  );
+
   // Pagination
-  const totalPages = Math.ceil(displayLogs.length / ITEMS_PER_PAGE);
+  const activeDisplayCount = groupedView ? patientPackages.length : displayLogs.length;
+  const totalPages = Math.ceil(activeDisplayCount / ITEMS_PER_PAGE);
 
   const paginatedLogs = useMemo(() => {
     return paginateAuditDisplayLogs(displayLogs, currentPage, ITEMS_PER_PAGE);
   }, [displayLogs, currentPage, ITEMS_PER_PAGE]);
+
+  const paginatedPatientPackages = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return patientPackages.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [patientPackages, currentPage, ITEMS_PER_PAGE]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -215,6 +232,8 @@ export function useAuditData(): UseAuditDataReturn {
     filteredLogs,
     displayLogs,
     paginatedLogs,
+    patientPackages,
+    paginatedPatientPackages,
     stats,
 
     // Loading

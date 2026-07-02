@@ -11,14 +11,18 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { AuditLogEntry } from '@/types/auditLogTypes';
+import { AuditLogEntry, GroupedAuditLogEntry } from '@/types/auditLogTypes';
 import { AuditLogRow } from './AuditLogRow';
+import { PatientAuditPackageRow } from './PatientAuditPackageRow';
 import { AuditSkeleton } from '@/components/shared/Skeleton';
+import type { ClinicalAuditPatientPackage } from '@/services/admin/clinicalAuditPatientPackages';
 
 interface AuditTableProps {
   filteredLogs: AuditLogEntry[];
   displayLogsCount: number;
-  paginatedLogs: AuditLogEntry[];
+  paginatedLogs: (AuditLogEntry | GroupedAuditLogEntry)[];
+  patientPackages: ClinicalAuditPatientPackage[];
+  paginatedPatientPackages: ClinicalAuditPatientPackage[];
   loading: boolean;
   compactView: boolean;
   setCompactView: (val: boolean) => void;
@@ -40,6 +44,8 @@ export const AuditTable: React.FC<AuditTableProps> = ({
   filteredLogs,
   displayLogsCount,
   paginatedLogs,
+  patientPackages,
+  paginatedPatientPackages,
   loading,
   compactView,
   setCompactView,
@@ -55,6 +61,10 @@ export const AuditTable: React.FC<AuditTableProps> = ({
   onPageChange,
   itemsPerPage,
 }) => {
+  const isPatientPackageView = groupedView;
+  const tableColSpan = isPatientPackageView ? (compactView ? 4 : 6) : compactView ? 4 : 7;
+  const totalDisplayItems = isPatientPackageView ? patientPackages.length : filteredLogs.length;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       {/* Table Toolbar */}
@@ -62,9 +72,11 @@ export const AuditTable: React.FC<AuditTableProps> = ({
         <div className="flex items-center gap-3">
           <span className="text-xs font-medium text-slate-500">
             {filteredLogs.length} registros
-            {groupedView && displayLogsCount < filteredLogs.length
-              ? ` / ${displayLogsCount} entradas visibles`
-              : ''}
+            {isPatientPackageView
+              ? ` / ${patientPackages.length} paquetes por paciente`
+              : groupedView && displayLogsCount < filteredLogs.length
+                ? ` / ${displayLogsCount} entradas visibles`
+                : ''}
           </span>
           {/* Compact View Toggle */}
           <button
@@ -89,10 +101,10 @@ export const AuditTable: React.FC<AuditTableProps> = ({
                 ? 'bg-amber-50 text-amber-700 border-amber-200'
                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
             )}
-            title={groupedView ? 'Vista individual' : 'Agrupar por sección/día'}
+            title={groupedView ? 'Vista de eventos crudos' : 'Agrupar por paciente'}
           >
             {groupedView ? <Box size={14} /> : <Boxes size={14} />}
-            {groupedView ? 'Agrupado' : 'Individual'}
+            {groupedView ? 'Paciente' : 'Eventos'}
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -119,26 +131,37 @@ export const AuditTable: React.FC<AuditTableProps> = ({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50/50 border-b border-slate-100">
-            <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-              <th className="px-6 py-4 text-left w-6"></th>
-              <th className="px-4 py-4 text-left">Momento</th>
-              <th className="px-4 py-4 text-left">Responsable</th>
-              {!compactView && <th className="px-4 py-4 text-left">Evento clínico</th>}
-              <th className="px-4 py-4 text-left">Relato clínico</th>
-              {!compactView && <th className="px-4 py-4 text-left">Afectado</th>}
-              {!compactView && <th className="px-4 py-4 text-left">Origen</th>}
-            </tr>
+            {isPatientPackageView ? (
+              <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                <th className="px-5 py-3 text-left w-6"></th>
+                <th className="px-3 py-3 text-left">Censo / momento</th>
+                <th className="px-3 py-3 text-left">Paciente</th>
+                <th className="px-3 py-3 text-left">Cambios visibles</th>
+                {!compactView && <th className="px-3 py-3 text-left">Responsable</th>}
+                {!compactView && <th className="px-3 py-3 text-left">Trazabilidad</th>}
+              </tr>
+            ) : (
+              <tr className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                <th className="px-6 py-4 text-left w-6"></th>
+                <th className="px-4 py-4 text-left">Momento</th>
+                <th className="px-4 py-4 text-left">Responsable</th>
+                {!compactView && <th className="px-4 py-4 text-left">Evento clínico</th>}
+                <th className="px-4 py-4 text-left">Relato clínico</th>
+                {!compactView && <th className="px-4 py-4 text-left">Afectado</th>}
+                {!compactView && <th className="px-4 py-4 text-left">Origen</th>}
+              </tr>
+            )}
           </thead>
           <tbody className="divide-y divide-slate-50">
             {loading ? (
               <tr>
-                <td colSpan={7} className="p-4">
+                <td colSpan={tableColSpan} className="p-4">
                   <AuditSkeleton entries={10} />
                 </td>
               </tr>
             ) : filteredLogs.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-20 text-center">
+                <td colSpan={tableColSpan} className="px-4 py-20 text-center">
                   <div className="flex flex-col items-center gap-3 opacity-30">
                     <Search size={48} className="text-slate-300" />
                     <p className="text-slate-500 font-bold">
@@ -147,6 +170,16 @@ export const AuditTable: React.FC<AuditTableProps> = ({
                   </div>
                 </td>
               </tr>
+            ) : isPatientPackageView ? (
+              paginatedPatientPackages.map(auditPackage => (
+                <PatientAuditPackageRow
+                  key={auditPackage.id}
+                  auditPackage={auditPackage}
+                  isExpanded={expandedRows.has(auditPackage.id)}
+                  onToggle={() => toggleRow(auditPackage.id)}
+                  compactView={compactView}
+                />
+              ))
             ) : (
               paginatedLogs.map(log => (
                 <AuditLogRow
@@ -167,7 +200,7 @@ export const AuditTable: React.FC<AuditTableProps> = ({
         <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/30">
           <span className="text-xs text-slate-500">
             Mostrando {(currentPage - 1) * itemsPerPage + 1} -{' '}
-            {Math.min(currentPage * itemsPerPage, filteredLogs.length)} de {filteredLogs.length}
+            {Math.min(currentPage * itemsPerPage, totalDisplayItems)} de {totalDisplayItems}
           </span>
           <div className="flex items-center gap-2">
             <button

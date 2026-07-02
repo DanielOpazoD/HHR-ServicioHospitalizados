@@ -15,6 +15,8 @@ vi.mock('@/hooks/useAuditData', () => ({
     filteredLogs: [{ id: 'log-1' }],
     displayLogs: [{ id: 'log-1' }],
     paginatedLogs: [{ id: 'log-1' }],
+    patientPackages: [],
+    paginatedPatientPackages: [],
     stats: {},
     loading: false,
     filters: {
