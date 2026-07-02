@@ -26,6 +26,20 @@ describe('conflictResolutionAuditSummary', () => {
     expect(summary.winnerBreakdown.remote).toBe(1);
     expect(summary.reasonBreakdown.clinical_local_priority).toBe(1);
     expect(summary.reasonBreakdown.admin_remote_priority).toBe(1);
+    expect(summary.sampleDecisions).toEqual([
+      {
+        path: 'beds.R1.pathology',
+        strategy: 'scalar_policy',
+        winner: 'local',
+        reason: 'clinical_local_priority',
+      },
+      {
+        path: 'beds.R1.location',
+        strategy: 'scalar_policy',
+        winner: 'remote',
+        reason: 'admin_remote_priority',
+      },
+    ]);
     expect(summary.assessment.riskLevel).toBe('low');
     expect(summary.assessment.reviewRecommended).toBe(false);
   });

@@ -134,4 +134,51 @@ describe('buildClinicalAuditPresentation', () => {
       ).title
     ).toBe('Cama bloqueada');
   });
+
+  it('explains conflict auto-merge decisions with changed paths and risk', () => {
+    const presentation = buildClinicalAuditPresentation(
+      baseLog({
+        action: 'CONFLICT_AUTO_MERGED',
+        entityType: 'dailyRecord',
+        entityId: '2026-07-01',
+        details: {
+          policyVersion: '2026.06.30',
+          entryCount: 4,
+          changedPaths: ['discharges', 'beds.H2C2'],
+          samplePaths: ['discharges', 'beds.H2C2.pathology'],
+          assessment: {
+            riskLevel: 'medium',
+            reviewRecommended: true,
+            reviewReasons: ['movements_changed'],
+            localDominantPaths: ['discharges'],
+            remoteProtectedPaths: ['beds.H2C2.location'],
+          },
+          sampleDecisions: [
+            {
+              path: 'discharges',
+              strategy: 'merge_array_by_id',
+              winner: 'merged',
+              reason: 'remote_snapshot_priority_preserve_local_movements',
+            },
+          ],
+          snapshotRecovery: {
+            status: 'saved',
+            snapshotIds: ['cid__remote_premerge', 'cid__incoming_premerge'],
+            origins: ['remote_premerge', 'incoming_premerge'],
+            expiresAt: '2026-07-03T19:34:18.000Z',
+          },
+          conflictId: 'c_2026-07-01_remote_local',
+        },
+      })
+    );
+
+    expect(presentation.title).toBe('Conflicto sincronizado automáticamente');
+    expect(presentation.narrative).toContain('4 decisiones');
+    expect(presentation.narrative).toContain('discharges');
+    expect(presentation.narrative).toContain('beds.H2C2');
+    expect(presentation.narrative).toContain('Riesgo medio');
+    expect(presentation.narrative).toContain('discharges -> merged');
+    expect(presentation.narrative).toContain('snapshots guardados');
+    expect(presentation.affectedSubject).toContain('2026-07-01');
+  });
 });

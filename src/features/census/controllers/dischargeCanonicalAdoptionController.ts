@@ -49,6 +49,12 @@ export interface DischargeCanonicalAuditEntry {
   patientName: string;
   rut: string;
   status: 'Vivo' | 'Fallecido';
+  movementDate?: string;
+  time?: string;
+  diagnosis?: string;
+  dischargeType?: string;
+  dischargeTypeOther?: string;
+  dischargeTarget?: string;
   /**
    * Hospitalization-episode identifier (`patientRut__admissionDate`).
    * When present, every clinical document under that episode is locked
@@ -65,6 +71,7 @@ interface DischargeCanonicalPatientSnapshot {
   bedId?: string;
   patientName?: string;
   rut?: string;
+  pathology?: string;
   admissionDate?: string;
   firstSeenDate?: string;
   admissionTime?: string;
@@ -81,6 +88,12 @@ export interface DischargeCanonicalAuditEntriesInput {
     | undefined;
   bedId?: string | null;
   status?: string;
+  movementDate?: string;
+  time?: string;
+  diagnosis?: string;
+  dischargeType?: string;
+  dischargeTypeOther?: string;
+  dischargeTarget?: string;
 }
 
 export interface DischargeCanonicalDispatchInput {
@@ -105,6 +118,12 @@ export const buildDischargeCanonicalAuditEntries = ({
   record,
   bedId,
   status,
+  movementDate,
+  time,
+  diagnosis,
+  dischargeType,
+  dischargeTypeOther,
+  dischargeTarget,
 }: DischargeCanonicalAuditEntriesInput): DischargeCanonicalAuditEntry[] => {
   if (!bedId) return [];
   const bed = record?.beds?.[bedId];
@@ -118,6 +137,12 @@ export const buildDischargeCanonicalAuditEntries = ({
       rut: bed.rut ?? '',
       status,
       episodeKey: resolveClinicalEpisodeIdentifier(bed),
+      movementDate,
+      time,
+      diagnosis: diagnosis ?? bed.pathology,
+      dischargeType,
+      dischargeTypeOther,
+      dischargeTarget,
     },
   ];
 };
@@ -126,20 +151,33 @@ const buildDischargeAuditEvent = (
   actor: string,
   recordDate: string,
   entry: DischargeCanonicalAuditEntry
-) => ({
-  userId: actor,
-  action: 'PATIENT_DISCHARGED' as const,
-  entityType: 'discharge' as const,
-  entityId: entry.bedId,
-  details: {
-    patientName: entry.patientName,
-    status: entry.status,
-    bedId: entry.bedId,
-    rut: entry.rut,
-  },
-  patientRut: entry.rut,
-  recordDate,
-});
+) => {
+  const details = Object.fromEntries(
+    Object.entries({
+      patientName: entry.patientName,
+      status: entry.status,
+      bedId: entry.bedId,
+      rut: entry.rut,
+      episodeKey: entry.episodeKey,
+      movementDate: entry.movementDate,
+      time: entry.time,
+      diagnosis: entry.diagnosis,
+      dischargeType: entry.dischargeType,
+      dischargeTypeOther: entry.dischargeTypeOther,
+      dischargeTarget: entry.dischargeTarget,
+    }).filter(([, value]) => value !== undefined)
+  );
+
+  return {
+    userId: actor,
+    action: 'PATIENT_DISCHARGED' as const,
+    entityType: 'discharge' as const,
+    entityId: entry.bedId,
+    details,
+    patientRut: entry.rut,
+    recordDate,
+  };
+};
 
 const buildClinicalDocumentLockedAuditEvent = (
   actor: string,

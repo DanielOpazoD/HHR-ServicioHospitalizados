@@ -44,6 +44,55 @@ describe('conflictResolutionMatrix', () => {
     expect(resolved.beds.R1.pathology).toBe('Diag remoto');
   });
 
+  it('preserves diagnosis when an explicit bed move merges over an empty remote target bed', () => {
+    const remote = makeRecord('2026-07-01', '2026-07-01T13:00:00.000Z');
+    remote.beds = {
+      H2C1: {
+        bedId: 'H2C1',
+        patientName: 'Pierre-jean',
+        rut: '25DF52626',
+        admissionDate: '2026-06-29',
+        pathology: 'Celulitis pie izquierdo',
+        location: 'Sala Hospitalizados',
+      } as unknown as DailyRecord['beds'][string],
+      H2C2: {
+        bedId: 'H2C2',
+        patientName: '',
+        rut: '',
+        pathology: '',
+        location: 'Sala Hospitalizados',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-07-01', '2026-07-01T13:05:00.000Z');
+    local.beds = {
+      H2C1: {
+        bedId: 'H2C1',
+        patientName: '',
+        rut: '',
+        pathology: '',
+        location: 'Sala Hospitalizados',
+      } as unknown as DailyRecord['beds'][string],
+      H2C2: {
+        bedId: 'H2C2',
+        patientName: 'Pierre-jean',
+        rut: '25DF52626',
+        admissionDate: '2026-06-29',
+        pathology: 'Celulitis pie izquierdo',
+        location: 'Sala Hospitalizados',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['beds.H2C1', 'beds.H2C2'],
+    });
+
+    expect(resolved.beds.H2C2.patientName).toBe('Pierre-jean');
+    expect(resolved.beds.H2C2.rut).toBe('25DF52626');
+    expect(resolved.beds.H2C2.pathology).toBe('Celulitis pie izquierdo');
+    expect(resolved.beds.H2C1.patientName).toBe('');
+  });
+
   it('merges movement arrays by id (union with local override)', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.transfers = [

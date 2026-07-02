@@ -41,6 +41,11 @@ describe('dispatchCanonicalDischarge', () => {
       },
       bedId: 'R1',
       status: 'Vivo',
+      movementDate: '2026-05-13',
+      time: '13:24',
+      dischargeType: 'Domicilio (Habitual)',
+      dischargeTarget: 'mother',
+      diagnosis: 'Diagnóstico de egreso',
     });
 
     expect(entries).toEqual([
@@ -50,6 +55,11 @@ describe('dispatchCanonicalDischarge', () => {
         rut: '11.111.111-1',
         status: 'Vivo',
         episodeKey: 'ep-afternoon',
+        movementDate: '2026-05-13',
+        time: '13:24',
+        dischargeType: 'Domicilio (Habitual)',
+        dischargeTarget: 'mother',
+        diagnosis: 'Diagnóstico de egreso',
       }),
     ]);
   });
@@ -148,11 +158,61 @@ describe('dispatchCanonicalDischarge', () => {
         action: 'PATIENT_DISCHARGED',
         entityType: 'discharge',
         entityId: 'R1',
-        details: expect.objectContaining({ status: 'Vivo' }),
+        details: expect.objectContaining({
+          status: 'Vivo',
+          bedId: 'R1',
+          rut: 'R-A',
+        }),
       })
     );
     expect(outcome.status.status).toBe('ready');
     expect(outcome.applicationOutcome.status).toBe('success');
+  });
+
+  it('writes enriched discharge audit details when movement metadata is available', async () => {
+    const writeAuditEvent = vi
+      .fn()
+      .mockResolvedValue({ status: 'success', data: null, issues: [] });
+
+    await dispatchCanonicalDischarge(
+      validInput({
+        entries: [
+          {
+            bedId: 'H2C2',
+            patientName: 'Bernardo Orrego Llanos',
+            rut: '17.274.300-5',
+            status: 'Vivo',
+            episodeKey: 'episode-bernardo',
+            movementDate: '2026-07-01',
+            time: '13:24',
+            diagnosis: 'Neumonía adquirida en la comunidad',
+            dischargeType: 'Domicilio (Habitual)',
+            dischargeTarget: 'mother',
+          },
+        ],
+      }),
+      { writeAuditEvent, lockDocumentsByEpisodeKey: vi.fn().mockResolvedValue([]) }
+    );
+
+    expect(writeAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'PATIENT_DISCHARGED',
+        entityType: 'discharge',
+        entityId: 'H2C2',
+        details: expect.objectContaining({
+          patientName: 'Bernardo Orrego Llanos',
+          rut: '17.274.300-5',
+          status: 'Vivo',
+          bedId: 'H2C2',
+          episodeKey: 'episode-bernardo',
+          movementDate: '2026-07-01',
+          time: '13:24',
+          diagnosis: 'Neumonía adquirida en la comunidad',
+          dischargeType: 'Domicilio (Habitual)',
+          dischargeTarget: 'mother',
+        }),
+      })
+    );
   });
 
   it('reports failed when the legacy persist throws and never emits audit', async () => {

@@ -14,6 +14,7 @@ interface BedMovementAuditDetailsInput {
   patientName: string;
   sourceBed: string;
   targetBed: string;
+  diagnosis?: string;
   previousLocation?: string;
   newLocation?: string;
 }
@@ -32,6 +33,7 @@ export interface PatientMovementAuditDetails extends Record<string, unknown> {
   targetBed?: string;
   previousLocation?: string;
   newLocation?: string;
+  diagnosis?: string;
   dischargeId?: string;
   restoredBed?: string;
 }
@@ -55,6 +57,7 @@ export const buildBedMovementAuditDetails = ({
   patientName,
   sourceBed,
   targetBed,
+  diagnosis,
   previousLocation,
   newLocation,
 }: BedMovementAuditDetailsInput): PatientMovementAuditDetails => ({
@@ -66,6 +69,7 @@ export const buildBedMovementAuditDetails = ({
   patientName,
   sourceBed,
   targetBed,
+  diagnosis,
   previousLocation,
   newLocation,
 });

@@ -180,6 +180,7 @@ const auditActionIntent = (
           sourceBed: action.sourceBedId,
           targetBed: action.targetBedId,
           patientName: sourceBed.patientName,
+          diagnosis: sourceBed.pathology,
           previousLocation: action.type === 'MOVE_PATIENT' ? sourceBed.location : undefined,
           newLocation: currentRecord.beds[action.targetBedId]?.location,
         }),

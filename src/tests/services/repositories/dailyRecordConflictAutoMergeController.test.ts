@@ -10,6 +10,8 @@ const {
   queueSyncTaskMock,
   loggerWarnMock,
   recordTelemetryMock,
+  buildConflictIdMock,
+  saveConflictVersionSnapshotsMock,
 } = vi.hoisted(() => ({
   getRecordFromFirestoreMock: vi.fn(),
   resolveConflictMock: vi.fn(),
@@ -18,6 +20,8 @@ const {
   queueSyncTaskMock: vi.fn(),
   loggerWarnMock: vi.fn(),
   recordTelemetryMock: vi.fn(),
+  buildConflictIdMock: vi.fn(() => 'conflict-1'),
+  saveConflictVersionSnapshotsMock: vi.fn(),
 }));
 
 vi.mock('@/services/storage/firestore/firestoreRecordQueries', () => ({
@@ -50,6 +54,11 @@ vi.mock('@/services/observability/operationalTelemetryOutcomeRecorder', () => ({
   recordOperationalErrorTelemetry: recordTelemetryMock,
 }));
 
+vi.mock('@/services/storage/firestore/dailyRecordConflictSnapshotService', () => ({
+  buildConflictId: buildConflictIdMock,
+  saveConflictVersionSnapshots: saveConflictVersionSnapshotsMock,
+}));
+
 const record = {
   date: '2026-04-15',
   schemaVersion: 1,
@@ -59,6 +68,13 @@ const record = {
 describe('dailyRecordConflictAutoMergeController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    buildConflictIdMock.mockReturnValue('conflict-1');
+    saveConflictVersionSnapshotsMock.mockResolvedValue({
+      status: 'saved',
+      snapshotIds: ['conflict-1__remote_premerge', 'conflict-1__incoming_premerge'],
+      origins: ['remote_premerge', 'incoming_premerge'],
+      expiresAt: '2026-04-17T12:00:00.000Z',
+    });
   });
 
   it('returns not_possible when no remote record exists', async () => {
@@ -91,7 +107,18 @@ describe('dailyRecordConflictAutoMergeController', () => {
         }),
       })
     );
-    expect(logRepositoryConflictAutoMergedMock).toHaveBeenCalled();
+    expect(logRepositoryConflictAutoMergedMock).toHaveBeenCalledWith(
+      '2026-04-15',
+      expect.objectContaining({
+        conflictId: 'conflict-1',
+        snapshotRecovery: {
+          status: 'saved',
+          snapshotIds: ['conflict-1__remote_premerge', 'conflict-1__incoming_premerge'],
+          origins: ['remote_premerge', 'incoming_premerge'],
+          expiresAt: '2026-04-17T12:00:00.000Z',
+        },
+      })
+    );
   });
 
   it('stays best-effort but observable: telemeters when the audit fails, still auto_merged', async () => {

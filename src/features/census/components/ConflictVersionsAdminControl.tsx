@@ -2,6 +2,7 @@ import React from 'react';
 import { History } from 'lucide-react';
 import { BaseModalContent } from '@/components/shared/baseModalContent';
 import { useConflictVersionRecovery } from '@/features/census/hooks/useConflictVersionRecovery';
+import { resolveConflictVersionsEmptyMessage } from '@/features/census/controllers/conflictVersionsPresentationController';
 import type {
   ConflictVersionSnapshot,
   DailyRecordConflictRecoveryPort,
@@ -65,7 +66,7 @@ export const ConflictVersionsAdminControl: React.FC<ConflictVersionsAdminControl
           <p className="py-6 text-center text-sm text-slate-500">Cargando versiones…</p>
         ) : model.snapshots.length === 0 ? (
           <p className="py-6 text-center text-sm text-slate-500">
-            No hay versiones en conflicto guardadas para este día.
+            {resolveConflictVersionsEmptyMessage(date)}
           </p>
         ) : (
           <ul className="divide-y divide-slate-100">

@@ -4,6 +4,14 @@ import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 export interface ConflictAuditDetails {
   /** Correlates the audit entry with the recoverable version snapshots in `conflictSnapshots/`. */
   conflictId?: string;
+  /** Whether recoverable pre-merge snapshots were stored for the admin conflict panel. */
+  snapshotRecovery?: {
+    status: 'saved' | 'failed';
+    snapshotIds: string[];
+    origins: string[];
+    expiresAt?: string;
+    ttlMs?: number;
+  };
   changedPaths: string[];
   policyVersion: string;
   entryCount: number;
@@ -11,6 +19,12 @@ export interface ConflictAuditDetails {
   winnerBreakdown: Record<string, number>;
   reasonBreakdown: Record<string, number>;
   samplePaths: string[];
+  sampleDecisions?: Array<{
+    path: string;
+    strategy: string;
+    winner: string;
+    reason: string;
+  }>;
   assessment: {
     riskLevel: 'low' | 'medium' | 'high';
     reviewRecommended: boolean;

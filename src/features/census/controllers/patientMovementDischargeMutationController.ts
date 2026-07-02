@@ -42,8 +42,9 @@ export const buildDischargeEntries = ({
 
   if (target === 'mother' || target === 'both') {
     const patientWithEpisodeId = ensurePatientClinicalEpisodeId(patient);
+    const movementId = createId();
     discharges.push({
-      id: createId(),
+      id: movementId,
       movementDate: resolvedMovementDate,
       admissionDate: patientWithEpisodeId.admissionDate,
       clinicalEpisodeId: patientWithEpisodeId.clinicalEpisodeId,
@@ -66,17 +67,25 @@ export const buildDischargeEntries = ({
       isNested: false,
     });
     auditEntries.push({
+      movementId,
       bedId,
       patientName: patient.patientName,
       rut: patient.rut,
       status,
+      diagnosis: patientWithEpisodeId.pathology,
+      movementDate: resolvedMovementDate,
+      time: time || '',
+      dischargeType: status === 'Vivo' ? dischargeType : undefined,
+      dischargeTypeOther: dischargeType === 'Otra' ? dischargeTypeOther : undefined,
+      clinicalEpisodeId: patientWithEpisodeId.clinicalEpisodeId,
     });
   }
 
   if ((target === 'baby' || target === 'both') && patient.clinicalCrib?.patientName && cribStatus) {
     const cribWithEpisodeId = ensurePatientClinicalEpisodeId(patient.clinicalCrib);
+    const movementId = createId();
     discharges.push({
-      id: createId(),
+      id: movementId,
       movementDate: resolvedMovementDate,
       admissionDate: cribWithEpisodeId.admissionDate,
       clinicalEpisodeId: cribWithEpisodeId.clinicalEpisodeId,
@@ -97,10 +106,17 @@ export const buildDischargeEntries = ({
       isNested: true,
     });
     auditEntries.push({
+      movementId,
       bedId,
       patientName: patient.clinicalCrib.patientName,
       rut: patient.clinicalCrib.rut,
       status: cribStatus,
+      diagnosis: cribWithEpisodeId.pathology,
+      movementDate: resolvedMovementDate,
+      time: time || '',
+      dischargeType: cribStatus === 'Vivo' ? dischargeType : undefined,
+      dischargeTypeOther: dischargeType === 'Otra' ? dischargeTypeOther : undefined,
+      clinicalEpisodeId: cribWithEpisodeId.clinicalEpisodeId,
     });
   }
 

@@ -60,6 +60,7 @@ const buildMoveOrCopyAuditDetails = (
     sourceBed: sourceBedId,
     targetBed: targetBedId,
     patientName: sourceData.patientName,
+    diagnosis: sourceData.pathology,
     changes: {
       location: {
         old: type === 'move' ? record.beds[sourceBedId].location : 'N/A',

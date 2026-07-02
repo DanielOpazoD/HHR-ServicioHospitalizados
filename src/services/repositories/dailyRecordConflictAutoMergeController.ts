@@ -45,7 +45,7 @@ export const attemptConflictAutoMergeRecovery = async (
     // Best-effort and placed before the merge so it covers every conflict path that reaches here
     // (auto-merge AND the unrecoverable block). See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
     const conflictId = buildConflictId(date, remoteRecord, localRecord);
-    await saveConflictVersionSnapshots(date, conflictId, {
+    const snapshotRecovery = await saveConflictVersionSnapshots(date, conflictId, {
       remote: remoteRecord,
       incoming: localRecord,
     });
@@ -61,6 +61,7 @@ export const attemptConflictAutoMergeRecovery = async (
     const auditDetails = {
       ...buildConflictAuditSummary(effectiveChangedPaths, trace.policyVersion, trace.entries),
       conflictId,
+      snapshotRecovery,
     };
 
     const queued = await queueMergedRecoveryTask(merged, changedPaths, remoteRecord.lastUpdated);
