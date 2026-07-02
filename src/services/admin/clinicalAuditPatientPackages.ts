@@ -172,7 +172,6 @@ const getPrimaryBedLabelForLog = (log: AuditLogEntry): string | undefined => {
 };
 
 const resolveIdentityPart = (log: AuditLogEntry): string => {
-  const details = getDetails(log);
   const episodeKey = getEpisodeKey(log);
   const rut = getPatientRut(log);
   const patientName = getPatientName(log);
