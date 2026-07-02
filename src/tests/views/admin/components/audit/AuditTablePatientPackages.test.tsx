@@ -91,7 +91,7 @@ describe('AuditTable patient-centered packages', () => {
     const onLoadMoreLogs = vi.fn();
     render(<AuditTable {...baseProps} canLoadMoreLogs onLoadMoreLogs={onLoadMoreLogs} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /cargar mas/i }));
+    fireEvent.click(screen.getByRole('button', { name: /cargar m[aá]s/i }));
 
     expect(onLoadMoreLogs).toHaveBeenCalledTimes(1);
   });

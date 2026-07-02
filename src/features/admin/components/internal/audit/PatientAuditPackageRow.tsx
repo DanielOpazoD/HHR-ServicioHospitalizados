@@ -39,6 +39,14 @@ const displayTimestampParts = (timestamp: string): { date: string; time: string 
 const getActorSummary = (auditPackage: ClinicalAuditPatientPackage): string =>
   auditPackage.actors.map(actor => actor.label).join(', ') || 'Usuario no identificado';
 
+const VIEW_ACTIONS = new Set([
+  'VIEW_PATIENT',
+  'PATIENT_VIEWED',
+  'VIEW_CUDYR',
+  'VIEW_NURSING_HANDOFF',
+  'VIEW_MEDICAL_HANDOFF',
+]);
+
 const getRawEventsJson = (auditPackage: ClinicalAuditPatientPackage): string =>
   JSON.stringify(
     auditPackage.rawLogs.map(log => ({
@@ -61,12 +69,38 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
   onToggle,
   compactView,
 }) => {
+  const [showIncludedLogs, setShowIncludedLogs] = React.useState(false);
   const startedAt = displayTimestampParts(auditPackage.startedAt);
   const endedAt = displayTimestampParts(auditPackage.endedAt);
   const hasTimeRange = startedAt.time && endedAt.time && startedAt.time !== endedAt.time;
   const visibleChanges = auditPackage.changes.slice(0, compactView ? 2 : 4);
   const hiddenChangeCount = Math.max(0, auditPackage.changes.length - visibleChanges.length);
   const rawEventsJson = getRawEventsJson(auditPackage);
+  const detailsId = `patient-audit-package-${auditPackage.id}`;
+  const viewEvents = auditPackage.rawLogs.filter(log => VIEW_ACTIONS.has(log.action));
+  const clinicalEvents = auditPackage.rawLogs.filter(log => !VIEW_ACTIONS.has(log.action));
+
+  const handleExpandKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onToggle();
+  };
+
+  const renderEventList = (logs: typeof auditPackage.rawLogs) => (
+    <div className="divide-y divide-slate-100">
+      {logs.map(log => {
+        const presentation = buildClinicalAuditPresentation(log);
+        const time = displayTimestampParts(log.timestamp).time;
+        return (
+          <div key={log.id} className="grid gap-2 px-3 py-2 md:grid-cols-[90px_1fr_1.2fr]">
+            <span className="font-mono text-[10px] text-slate-400">{time}</span>
+            <span className="text-xs font-bold text-slate-700">{presentation.title}</span>
+            <span className="text-xs text-slate-600">{presentation.narrative}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <>
@@ -78,11 +112,26 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
         onClick={onToggle}
       >
         <td className="px-5 py-3 align-top">
-          {isExpanded ? (
-            <ChevronDown size={18} className="text-sky-600" />
-          ) : (
-            <ChevronRight size={18} className="text-slate-300 group-hover:text-slate-500" />
-          )}
+          <button
+            type="button"
+            aria-expanded={isExpanded}
+            aria-controls={detailsId}
+            aria-label={`${isExpanded ? 'Cerrar' : 'Abrir'} detalle de auditoría de ${
+              auditPackage.patientName
+            }`}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-transparent text-slate-400 transition hover:border-slate-200 hover:bg-white hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-sky-500/15"
+            onClick={event => {
+              event.stopPropagation();
+              onToggle();
+            }}
+            onKeyDown={handleExpandKeyDown}
+          >
+            {isExpanded ? (
+              <ChevronDown size={18} className="text-sky-600" />
+            ) : (
+              <ChevronRight size={18} className="text-slate-300 group-hover:text-slate-500" />
+            )}
+          </button>
         </td>
 
         <td className="px-3 py-3 align-top whitespace-nowrap">
@@ -212,45 +261,104 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
       </tr>
 
       {isExpanded && (
-        <tr className="bg-slate-50/70">
+        <tr id={detailsId} className="bg-slate-50/70">
           <td colSpan={compactView ? 4 : 6} className="border-l-4 border-sky-500/40 px-10 py-4">
             <div className="space-y-3">
               <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
-                  <History size={14} className="text-sky-600" />
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600">
-                    Eventos crudos incluidos
-                  </h4>
+                <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <History size={14} className="text-sky-600" />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                      Cambios relevantes integrados
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400">
+                    {auditPackage.eventCount} eventos · {getActorSummary(auditPackage)}
+                  </span>
                 </div>
-                <div className="divide-y divide-slate-100">
-                  {auditPackage.rawLogs.map(log => {
-                    const presentation = buildClinicalAuditPresentation(log);
-                    const time = displayTimestampParts(log.timestamp).time;
-                    return (
+                <div className="grid gap-2 p-3 md:grid-cols-2">
+                  {auditPackage.changes.length > 0 ? (
+                    auditPackage.changes.map(change => (
                       <div
-                        key={log.id}
-                        className="grid gap-2 px-3 py-2 md:grid-cols-[90px_1fr_1fr]"
+                        key={`${change.sourceLogId}-${change.fieldLabel}-expanded`}
+                        className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2"
                       >
-                        <span className="font-mono text-[10px] text-slate-400">{time}</span>
-                        <span className="text-xs font-bold text-slate-700">
-                          {presentation.title}
-                        </span>
-                        <span className="text-xs text-slate-600">{presentation.narrative}</span>
+                        <p className="text-[10px] font-black uppercase text-slate-500">
+                          {change.fieldLabel}
+                        </p>
+                        <p className="mt-1 text-xs leading-tight text-slate-600">
+                          <span className="text-rose-700">{formatValue(change.oldValue)}</span>
+                          <span className="px-1 text-slate-300">-&gt;</span>
+                          <span className="font-bold text-emerald-700">
+                            {formatValue(change.newValue)}
+                          </span>
+                        </p>
                       </div>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    <p className="text-xs font-medium text-slate-700">{auditPackage.summary}</p>
+                  )}
                 </div>
               </section>
 
-              <details className="rounded-lg border border-slate-200 bg-white shadow-sm">
-                <summary className="flex cursor-pointer items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600">
-                  <FileJson size={14} className="text-sky-600" />
-                  Detalle técnico avanzado
-                </summary>
-                <pre className="max-h-[360px] overflow-auto p-3 text-[10px] text-slate-500">
-                  {rawEventsJson}
-                </pre>
-              </details>
+              <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <FileJson size={14} className="text-slate-400" />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      Evidencia técnica
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowIncludedLogs(value => !value)}
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-500/10"
+                  >
+                    {showIncludedLogs ? 'Ocultar' : 'Ver'} logs técnicos incluidos
+                  </button>
+                </div>
+
+                {showIncludedLogs && (
+                  <div className="space-y-3 border-t border-slate-100 p-3">
+                    <div className="rounded-lg border border-slate-100 bg-white">
+                      <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
+                        <History size={14} className="text-sky-600" />
+                        <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                          Eventos clínicos y administrativos
+                        </h5>
+                      </div>
+                      {clinicalEvents.length > 0 ? (
+                        renderEventList(clinicalEvents)
+                      ) : (
+                        <p className="px-3 py-2 text-xs text-slate-500">
+                          No hay eventos de edición en este paquete.
+                        </p>
+                      )}
+                    </div>
+
+                    {viewEvents.length > 0 && (
+                      <div className="rounded-lg border border-blue-100 bg-blue-50/30">
+                        <div className="border-b border-blue-100 px-3 py-2">
+                          <h5 className="text-[10px] font-black uppercase tracking-widest text-blue-700">
+                            Visualizaciones registradas
+                          </h5>
+                        </div>
+                        {renderEventList(viewEvents)}
+                      </div>
+                    )}
+
+                    <details className="rounded-lg border border-slate-200 bg-white">
+                      <summary className="flex cursor-pointer items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600">
+                        <FileJson size={14} className="text-slate-400" />
+                        Detalle técnico avanzado
+                      </summary>
+                      <pre className="max-h-[360px] overflow-auto p-3 text-[10px] text-slate-500">
+                        {rawEventsJson}
+                      </pre>
+                    </details>
+                  </div>
+                )}
+              </section>
             </div>
           </td>
         </tr>

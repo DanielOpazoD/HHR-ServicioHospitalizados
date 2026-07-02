@@ -87,6 +87,8 @@ export const AuditTable: React.FC<AuditTableProps> = ({
           </span>
           {/* Compact View Toggle */}
           <button
+            type="button"
+            aria-pressed={compactView}
             onClick={() => setCompactView(!compactView)}
             className={clsx(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
@@ -101,6 +103,8 @@ export const AuditTable: React.FC<AuditTableProps> = ({
           </button>
           {/* Grouped View Toggle */}
           <button
+            type="button"
+            aria-pressed={groupedView}
             onClick={() => setGroupedView(!groupedView)}
             className={clsx(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
@@ -108,25 +112,27 @@ export const AuditTable: React.FC<AuditTableProps> = ({
                 ? 'bg-amber-50 text-amber-700 border-amber-200'
                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
             )}
-            title={groupedView ? 'Vista de eventos crudos' : 'Agrupar por paciente'}
+            title={groupedView ? 'Ver eventos crudos' : 'Agrupar por paciente'}
           >
             {groupedView ? <Box size={14} /> : <Boxes size={14} />}
-            {groupedView ? 'Paciente' : 'Eventos'}
+            {groupedView ? 'Vista paciente' : 'Eventos crudos'}
           </button>
         </div>
         <div className="flex items-center gap-2">
           {canLoadMoreLogs && (
             <button
+              type="button"
               onClick={onLoadMoreLogs}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition-all"
               title="Ampliar historial de auditoria"
             >
               <Rows3 size={14} />
-              Cargar mas
+              Cargar más
             </button>
           )}
           {/* PDF Export Button */}
           <button
+            type="button"
             onClick={onPdfExport}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-all"
           >
@@ -135,6 +141,7 @@ export const AuditTable: React.FC<AuditTableProps> = ({
           </button>
           {/* Excel Export Button */}
           <button
+            type="button"
             onClick={onExcelExport}
             disabled={isExporting}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all disabled:opacity-50"
@@ -221,6 +228,7 @@ export const AuditTable: React.FC<AuditTableProps> = ({
           </span>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
@@ -242,6 +250,8 @@ export const AuditTable: React.FC<AuditTableProps> = ({
                 return (
                   <button
                     key={pageNum}
+                    type="button"
+                    aria-current={currentPage === pageNum ? 'page' : undefined}
                     onClick={() => onPageChange(pageNum)}
                     className={clsx(
                       'w-8 h-8 rounded-lg text-xs font-medium transition-all',
@@ -256,6 +266,7 @@ export const AuditTable: React.FC<AuditTableProps> = ({
               })}
             </div>
             <button
+              type="button"
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-all disabled:opacity-30 disabled:cursor-not-allowed"

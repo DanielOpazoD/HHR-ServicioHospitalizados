@@ -82,7 +82,13 @@ describe('PatientAuditPackageRow', () => {
   it('keeps raw audit events available only after expansion', () => {
     renderRow(true);
 
-    expect(screen.getByText('Eventos crudos incluidos')).toBeInTheDocument();
+    expect(screen.getByText('Cambios relevantes integrados')).toBeInTheDocument();
+    expect(screen.queryByText('Diagnóstico actualizado')).not.toBeInTheDocument();
+    expect(screen.queryByText(/PATIENT_DIAGNOSIS_CHANGED/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /ver logs técnicos incluidos/i }));
+
+    expect(screen.getByText('Eventos clínicos y administrativos')).toBeInTheDocument();
     expect(screen.getByText('Detalle técnico avanzado')).toBeInTheDocument();
     expect(screen.getByText('Diagnóstico actualizado')).toBeInTheDocument();
     expect(screen.getByText(/PATIENT_DIAGNOSIS_CHANGED/)).toBeInTheDocument();
@@ -95,5 +101,21 @@ describe('PatientAuditPackageRow', () => {
     fireEvent.click(screen.getByText('Anastasio Hey Riroroko'));
 
     expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('exposes an accessible expand control with keyboard support', () => {
+    const onToggle = vi.fn();
+    renderRow(false, onToggle);
+
+    const expandButton = screen.getByRole('button', {
+      name: /abrir detalle de auditoría de anastasio hey riroroko/i,
+    });
+
+    expect(expandButton).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.keyDown(expandButton, { key: 'Enter' });
+    fireEvent.keyDown(expandButton, { key: ' ' });
+
+    expect(onToggle).toHaveBeenCalledTimes(2);
   });
 });

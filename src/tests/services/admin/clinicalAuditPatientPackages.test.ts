@@ -110,6 +110,106 @@ describe('clinicalAuditPatientPackages', () => {
     expect(packages.map(pkg => pkg.patientName).sort()).toEqual(['Paciente Dos', 'Paciente Uno']);
   });
 
+  it('keeps same-patient edits from different users in one package with both actors visible', () => {
+    const packages = buildClinicalAuditPatientPackages([
+      baseLog({
+        id: 'nurse-edit',
+        userId: 'enfermera@hospitalhangaroa.cl',
+        userDisplayName: 'Enfermera Turno',
+        userUid: 'uid-nurse',
+        ipAddress: '10.0.0.10',
+        details: {
+          patientName: 'Pierre-Jean Test',
+          rut: '25DF52626',
+          bedId: 'H1C1',
+          changes: { status: { old: 'Observacion', new: 'Estable' } },
+        },
+      }),
+      baseLog({
+        id: 'doctor-edit',
+        timestamp: '2026-07-01T19:39:29.000Z',
+        userId: 'medico@hospitalhangaroa.cl',
+        userDisplayName: 'Medico Turno',
+        userUid: 'uid-doctor',
+        ipAddress: '10.0.0.11',
+        action: 'PATIENT_DIAGNOSIS_CHANGED',
+        details: {
+          patientName: 'Pierre-Jean Test',
+          rut: '25DF52626',
+          bedId: 'H1C1',
+          changes: { diagnosis: { old: '', new: 'Neumonia' } },
+        },
+      }),
+    ]);
+
+    expect(packages).toHaveLength(1);
+    expect(packages[0].eventCount).toBe(2);
+    expect(packages[0].actors.map(actor => actor.label)).toEqual([
+      'Enfermera Turno',
+      'Medico Turno',
+    ]);
+    expect(packages[0].ipAddresses).toEqual(['10.0.0.10', '10.0.0.11']);
+  });
+
+  it('does not merge similar patient names when RUT or episode key identify different records', () => {
+    const packages = buildClinicalAuditPatientPackages([
+      baseLog({
+        id: 'ana-a',
+        patientIdentifier: '11.111.111-1',
+        details: {
+          patientName: 'Ana Maria Riro',
+          rut: '11.111.111-1',
+          episodeKey: 'episode-ana-a',
+          bedId: 'H1C1',
+          changes: { diagnosis: { old: '', new: 'Asma' } },
+        },
+      }),
+      baseLog({
+        id: 'ana-b',
+        patientIdentifier: '22.222.222-2',
+        details: {
+          patientName: 'Ana Maria Riroko',
+          rut: '22.222.222-2',
+          episodeKey: 'episode-ana-b',
+          bedId: 'H1C2',
+          changes: { diagnosis: { old: '', new: 'EPOC' } },
+        },
+      }),
+    ]);
+
+    expect(packages).toHaveLength(2);
+    expect(packages.map(pkg => pkg.packageKey).sort()).toEqual([
+      '2026-07-01|episode:episode-ana-a',
+      '2026-07-01|episode:episode-ana-b',
+    ]);
+  });
+
+  it('keeps useful date, bed and patient context when a log has no RUT', () => {
+    const [pkg] = buildClinicalAuditPatientPackages([
+      baseLog({
+        id: 'no-rut-move',
+        patientIdentifier: undefined,
+        action: 'PATIENT_BED_CHANGED',
+        details: {
+          patientName: 'Paciente Sin Rut',
+          sourceBed: 'H2C1',
+          targetBed: 'H2C2',
+          movementKind: 'move',
+        },
+      }),
+    ]);
+
+    expect(pkg).toMatchObject({
+      patientName: 'Paciente Sin Rut',
+      recordDate: '2026-07-01',
+      primaryBedLabel: 'H2C1 -> H2C2',
+      patientIdentifier: undefined,
+    });
+    expect(pkg.summary).toContain('Paciente Sin Rut');
+    expect(pkg.summary).toContain('H2C1 -> H2C2');
+    expect(pkg.modules).toContain('Movimiento interno');
+  });
+
   it('extracts discharge, transfer, internal movement, CMA and conflict flags without losing raw logs', () => {
     const logs: AuditLogEntry[] = [
       baseLog({
