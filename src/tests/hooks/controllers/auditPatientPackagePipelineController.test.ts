@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildAuditPatientPackagePipeline,
+  buildAuditPatientPackagePipelineBase,
   buildIndexedClinicalAuditPatientPackages,
+  queryAuditPatientPackagePipeline,
 } from '@/hooks/controllers/auditPatientPackagePipelineController';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 
@@ -119,5 +121,41 @@ describe('auditPatientPackagePipelineController', () => {
     expect(new Set(indexedPackages.map(indexed => indexed.searchIndex)).size).toBe(
       basePackages.length
     );
+  });
+
+  it('reuses the source-log package build when only query state changes', () => {
+    const base = buildAuditPatientPackagePipelineBase({
+      sourceLogs: buildVolumeLogs().slice(0, 12),
+    });
+
+    const diagnosisQuery = queryAuditPatientPackagePipeline({
+      base,
+      searchTerm: 'orrego',
+      activeFilter: 'DIAGNOSIS',
+      activeIntent: 'CLINICAL_OPERATIONS',
+      currentPage: 1,
+      itemsPerPage: 10,
+    });
+    const nextSearchQuery = queryAuditPatientPackagePipeline({
+      base,
+      searchTerm: 'paciente clinico 8',
+      activeFilter: 'ALL',
+      activeIntent: 'CLINICAL_OPERATIONS',
+      currentPage: 1,
+      itemsPerPage: 10,
+    });
+
+    expect(base.unfilteredPatientPackages).toHaveLength(12);
+    expect(base.indexedPatientPackages).toHaveLength(12);
+    expect(diagnosisQuery.unfilteredPatientPackages).toBe(base.unfilteredPatientPackages);
+    expect(nextSearchQuery.unfilteredPatientPackages).toBe(base.unfilteredPatientPackages);
+    expect(diagnosisQuery.patientPackageIntentOptions).toBe(base.patientPackageIntentOptions);
+    expect(nextSearchQuery.patientPackageIntentOptions).toBe(base.patientPackageIntentOptions);
+    expect(diagnosisQuery.patientPackages.map(auditPackage => auditPackage.patientName)).toEqual([
+      'Paciente Clinico 7',
+    ]);
+    expect(nextSearchQuery.patientPackages.map(auditPackage => auditPackage.patientName)).toEqual([
+      'Paciente Clinico 8',
+    ]);
   });
 });

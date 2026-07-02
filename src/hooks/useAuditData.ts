@@ -25,7 +25,10 @@ import {
   shouldResetAuditPagination,
   toggleAuditRowState,
 } from '@/hooks/controllers/auditDataPolicyController';
-import { buildAuditPatientPackagePipeline } from '@/hooks/controllers/auditPatientPackagePipelineController';
+import {
+  buildAuditPatientPackagePipelineBase,
+  queryAuditPatientPackagePipeline,
+} from '@/hooks/controllers/auditPatientPackagePipelineController';
 import {
   AUDIT_DEFAULT_FETCH_LIMIT,
   AUDIT_FETCH_LIMIT_STEP,
@@ -229,10 +232,15 @@ export function useAuditData(): UseAuditDataReturn {
     return filterAuditLogs(logs, params);
   }, [logs, filterAction, activeSection, startDate, endDate, groupedView]);
 
+  const patientPackagePipelineBase = useMemo(
+    () => buildAuditPatientPackagePipelineBase({ sourceLogs: patientPackageSourceLogs }),
+    [patientPackageSourceLogs]
+  );
+
   const patientPackagePipeline = useMemo(
     () =>
-      buildAuditPatientPackagePipeline({
-        sourceLogs: patientPackageSourceLogs,
+      queryAuditPatientPackagePipeline({
+        base: patientPackagePipelineBase,
         searchTerm,
         activeFilter: activePatientPackageFilter,
         activeIntent: activePatientPackageIntent,
@@ -240,7 +248,7 @@ export function useAuditData(): UseAuditDataReturn {
         itemsPerPage: ITEMS_PER_PAGE,
       }),
     [
-      patientPackageSourceLogs,
+      patientPackagePipelineBase,
       searchTerm,
       activePatientPackageFilter,
       activePatientPackageIntent,

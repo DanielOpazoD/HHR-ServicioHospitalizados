@@ -88,6 +88,24 @@ const getEpisodeKey = (log: AuditLogEntry): string | undefined => {
 
 const looksLikeDate = (value: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(value);
 
+interface ClinicalAuditIdentitySignals {
+  episodeKey?: string;
+  rut?: string;
+  patientIdentifier?: string;
+  entityId: string;
+}
+
+const resolveIdentitySignals = (log: AuditLogEntry): ClinicalAuditIdentitySignals => {
+  const patientIdentifier = asAuditText(log.patientIdentifier);
+
+  return {
+    episodeKey: getEpisodeKey(log),
+    rut: getClinicalAuditPatientRut(log),
+    patientIdentifier: patientIdentifier || undefined,
+    entityId: asAuditText(log.entityId),
+  };
+};
+
 export const getBedLabelParts = (log: AuditLogEntry): string[] => {
   const details = getAuditLogDetails(log);
   const parts = [
@@ -127,32 +145,32 @@ export const getPrimaryBedLabelForLog = (log: AuditLogEntry): string | undefined
   return getBedLabelParts(log)[0];
 };
 
-const resolveIdentityPart = (log: AuditLogEntry): string => {
-  const episodeKey = getEpisodeKey(log);
-  const rut = getClinicalAuditPatientRut(log);
-  const patientName = getPatientName(log);
-  const entityId = asAuditText(log.entityId);
-
-  if (episodeKey) return `episode:${normalizeIdentifier(episodeKey)}`;
-  if (rut) return `rut:${normalizeIdentifier(rut)}`;
-  if (asAuditText(log.patientIdentifier)) {
-    return `patient-id:${normalizeIdentifier(asAuditText(log.patientIdentifier))}`;
+const resolveIdentityPart = (
+  log: AuditLogEntry,
+  identity = resolveIdentitySignals(log)
+): string => {
+  if (identity.episodeKey) return `episode:${normalizeIdentifier(identity.episodeKey)}`;
+  if (identity.rut) return `rut:${normalizeIdentifier(identity.rut)}`;
+  if (identity.patientIdentifier) {
+    return `patient-id:${normalizeIdentifier(identity.patientIdentifier)}`;
   }
+
+  const patientName = getPatientName(log);
   if (patientName && patientName !== UNKNOWN_AUDIT_SUBJECT) {
     return `patient-name:${normalizeKeyPart(patientName)}`;
   }
-  if (entityId) return `entity:${normalizeKeyPart(`${log.entityType}:${entityId}`)}`;
+  if (identity.entityId)
+    return `entity:${normalizeKeyPart(`${log.entityType}:${identity.entityId}`)}`;
   return `unknown:${normalizeKeyPart(log.action)}`;
 };
 
 export const resolveClinicalAuditPackageKey = (log: AuditLogEntry): string => {
   const recordDate = getClinicalAuditRecordDate(log);
-  const identityPart = resolveIdentityPart(log);
+  const identity = resolveIdentitySignals(log);
+  const identityPart = resolveIdentityPart(log, identity);
   const details = getAuditLogDetails(log);
   const hasStrongIdentity =
-    Boolean(getEpisodeKey(log)) ||
-    Boolean(getClinicalAuditPatientRut(log)) ||
-    Boolean(asAuditText(log.patientIdentifier));
+    Boolean(identity.episodeKey) || Boolean(identity.rut) || Boolean(identity.patientIdentifier);
   const bedLabel = asAuditText(details.bedId) || getBedLabelParts(log)[0];
 
   return [recordDate, identityPart, !hasStrongIdentity && bedLabel ? `bed:${bedLabel}` : '']
