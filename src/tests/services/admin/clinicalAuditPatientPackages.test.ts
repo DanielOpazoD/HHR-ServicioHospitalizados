@@ -1,0 +1,220 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  buildClinicalAuditPatientPackages,
+  resolveClinicalAuditPackageKey,
+} from '@/services/admin/clinicalAuditPatientPackages';
+import type { AuditLogEntry } from '@/types/auditLogTypes';
+
+const baseLog = (overrides: Partial<AuditLogEntry>): AuditLogEntry => ({
+  id: 'audit-1',
+  timestamp: '2026-07-01T19:36:29.000Z',
+  userId: 'daniel.opazo@hospitalhangaroa.cl',
+  userDisplayName: 'Daniel Opazo Damiani',
+  userUid: 'uid-123',
+  ipAddress: '148.227.67.162',
+  action: 'PATIENT_MODIFIED',
+  entityType: 'patient',
+  entityId: 'H4C1',
+  recordDate: '2026-07-01',
+  patientIdentifier: '25DF52626',
+  details: {
+    patientName: 'Anastasio Hey Riroroko',
+    rut: '25DF52626',
+    bedId: 'H4C1',
+  },
+  ...overrides,
+});
+
+describe('clinicalAuditPatientPackages', () => {
+  it('groups same-patient status and diagnosis changes in one compact clinical package', () => {
+    const logs: AuditLogEntry[] = [
+      baseLog({
+        id: 'status-1',
+        action: 'PATIENT_MODIFIED',
+        details: {
+          patientName: 'Anastasio Hey Riroroko',
+          rut: '25DF52626',
+          bedId: 'H4C1',
+          changes: {
+            status: { old: '', new: 'Estable' },
+          },
+        },
+      }),
+      baseLog({
+        id: 'diagnosis-1',
+        action: 'PATIENT_DIAGNOSIS_CHANGED',
+        timestamp: '2026-07-01T19:36:54.000Z',
+        details: {
+          patientName: 'Anastasio Hey Riroroko',
+          rut: '25DF52626',
+          bedId: 'H4C1',
+          changes: {
+            diagnosis: { old: '', new: 'ICC' },
+          },
+        },
+      }),
+    ];
+
+    const packages = buildClinicalAuditPatientPackages(logs);
+
+    expect(packages).toHaveLength(1);
+    expect(packages[0]).toMatchObject({
+      patientName: 'Anastasio Hey Riroroko',
+      patientRut: '25DF52626',
+      recordDate: '2026-07-01',
+      primaryBedLabel: 'H4C1',
+      eventCount: 2,
+      actions: ['PATIENT_MODIFIED', 'PATIENT_DIAGNOSIS_CHANGED'],
+      modules: ['Estado', 'Diagnóstico'],
+      flags: {
+        diagnosis: true,
+        status: true,
+      },
+    });
+    expect(packages[0].changes).toEqual([
+      { fieldLabel: 'Estado', oldValue: '', newValue: 'Estable', sourceLogId: 'status-1' },
+      { fieldLabel: 'Diagnóstico', oldValue: '', newValue: 'ICC', sourceLogId: 'diagnosis-1' },
+    ]);
+    expect(packages[0].summary).toContain('2 eventos');
+    expect(packages[0].summary).toContain('Estado');
+    expect(packages[0].summary).toContain('Diagnóstico');
+    expect(packages[0].rawLogs.map(log => log.id)).toEqual(['diagnosis-1', 'status-1']);
+  });
+
+  it('does not merge different patients even when user, IP and timestamp are equal', () => {
+    const packages = buildClinicalAuditPatientPackages([
+      baseLog({
+        id: 'patient-a',
+        patientIdentifier: '11111111-1',
+        details: {
+          patientName: 'Paciente Uno',
+          rut: '11111111-1',
+          bedId: 'H1',
+          changes: { diagnosis: { old: '', new: 'Neumonia' } },
+        },
+      }),
+      baseLog({
+        id: 'patient-b',
+        patientIdentifier: '22222222-2',
+        details: {
+          patientName: 'Paciente Dos',
+          rut: '22222222-2',
+          bedId: 'H2',
+          changes: { diagnosis: { old: '', new: 'ICC' } },
+        },
+      }),
+    ]);
+
+    expect(packages).toHaveLength(2);
+    expect(packages.map(pkg => pkg.patientName).sort()).toEqual(['Paciente Dos', 'Paciente Uno']);
+  });
+
+  it('extracts discharge, transfer, internal movement, CMA and conflict flags without losing raw logs', () => {
+    const logs: AuditLogEntry[] = [
+      baseLog({
+        id: 'discharge-1',
+        action: 'PATIENT_DISCHARGED',
+        entityType: 'discharge',
+        details: {
+          patientName: 'Bernardo Orrego Llanos',
+          rut: '17.274.300-5',
+          bedId: 'H2C2',
+          episodeKey: 'episode-bernardo',
+          diagnosis: 'EPOC',
+        },
+      }),
+      baseLog({
+        id: 'transfer-1',
+        action: 'PATIENT_TRANSFERRED',
+        timestamp: '2026-07-01T19:39:00.000Z',
+        entityType: 'transfer',
+        details: {
+          patientName: 'Bernardo Orrego Llanos',
+          rut: '17.274.300-5',
+          bedId: 'H2C2',
+          episodeKey: 'episode-bernardo',
+          destination: 'Hospital de referencia',
+        },
+      }),
+      baseLog({
+        id: 'move-1',
+        action: 'PATIENT_BED_CHANGED',
+        timestamp: '2026-07-01T19:41:00.000Z',
+        details: {
+          patientName: 'Bernardo Orrego Llanos',
+          rut: '17.274.300-5',
+          episodeKey: 'episode-bernardo',
+          movementKind: 'move',
+          sourceBed: 'H2C2',
+          targetBed: 'H3C1',
+        },
+      }),
+      baseLog({
+        id: 'cma-1',
+        action: 'PATIENT_MODIFIED',
+        timestamp: '2026-07-01T19:42:00.000Z',
+        details: {
+          patientName: 'Bernardo Orrego Llanos',
+          rut: '17.274.300-5',
+          episodeKey: 'episode-bernardo',
+          changes: {
+            specialty: { old: 'Medicina', new: 'CMA' },
+          },
+        },
+      }),
+      baseLog({
+        id: 'conflict-1',
+        action: 'CONFLICT_AUTO_MERGED',
+        timestamp: '2026-07-01T19:43:00.000Z',
+        entityType: 'dailyRecord',
+        entityId: '2026-07-01',
+        details: {
+          patientName: 'Bernardo Orrego Llanos',
+          rut: '17.274.300-5',
+          episodeKey: 'episode-bernardo',
+          changedPaths: ['discharges', 'transfers', 'cma'],
+        },
+      }),
+    ];
+
+    const [pkg] = buildClinicalAuditPatientPackages(logs);
+
+    expect(pkg.eventCount).toBe(5);
+    expect(pkg.primaryBedLabel).toBe('H2C2 -> H3C1');
+    expect(pkg.flags).toMatchObject({
+      discharge: true,
+      transfer: true,
+      internalMovement: true,
+      cma: true,
+      conflict: true,
+      risk: true,
+    });
+    expect(pkg.modules).toEqual([
+      'Alta',
+      'Traslado',
+      'Movimiento interno',
+      'Especialidad',
+      'CMA',
+      'Conflicto',
+    ]);
+    expect(pkg.rawLogs).toHaveLength(5);
+  });
+
+  it('uses a stable fallback key when patient identifiers are incomplete', () => {
+    const log = baseLog({
+      id: 'fallback-1',
+      patientIdentifier: undefined,
+      entityId: 'H5C1',
+      details: {
+        patientName: 'Paciente Sin Rut',
+        bedId: 'H5C1',
+      },
+    });
+
+    expect(resolveClinicalAuditPackageKey(log)).toBe(
+      '2026-07-01|patient-name:paciente sin rut|bed:H5C1'
+    );
+    expect(buildClinicalAuditPatientPackages([log])).toHaveLength(1);
+  });
+});
