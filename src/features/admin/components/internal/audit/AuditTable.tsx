@@ -33,6 +33,9 @@ interface AuditTableProps {
   onPdfExport: () => void;
   onExcelExport: () => void;
   isExporting: boolean;
+  fetchLimit: number;
+  canLoadMoreLogs: boolean;
+  onLoadMoreLogs: () => void;
   // Pagination
   currentPage: number;
   totalPages: number;
@@ -56,6 +59,9 @@ export const AuditTable: React.FC<AuditTableProps> = ({
   onPdfExport,
   onExcelExport,
   isExporting,
+  fetchLimit,
+  canLoadMoreLogs,
+  onLoadMoreLogs,
   currentPage,
   totalPages,
   onPageChange,
@@ -77,6 +83,7 @@ export const AuditTable: React.FC<AuditTableProps> = ({
               : groupedView && displayLogsCount < filteredLogs.length
                 ? ` / ${displayLogsCount} entradas visibles`
                 : ''}
+            {` / ventana ${fetchLimit}`}
           </span>
           {/* Compact View Toggle */}
           <button
@@ -108,6 +115,16 @@ export const AuditTable: React.FC<AuditTableProps> = ({
           </button>
         </div>
         <div className="flex items-center gap-2">
+          {canLoadMoreLogs && (
+            <button
+              onClick={onLoadMoreLogs}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition-all"
+              title="Ampliar historial de auditoria"
+            >
+              <Rows3 size={14} />
+              Cargar mas
+            </button>
+          )}
           {/* PDF Export Button */}
           <button
             onClick={onPdfExport}

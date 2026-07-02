@@ -7,6 +7,9 @@ export interface AuditSectionConfig {
 }
 
 export const AUDIT_ITEMS_PER_PAGE = 50;
+export const AUDIT_DEFAULT_FETCH_LIMIT = 500;
+export const AUDIT_FETCH_LIMIT_STEP = 500;
+export const AUDIT_MAX_FETCH_LIMIT = 2500;
 export const AUDIT_CLINICAL_SECTIONS: AuditSection[] = [
   'ALL',
   'TIMELINE',

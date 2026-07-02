@@ -19,6 +19,8 @@ vi.mock('@/hooks/useAuditData', () => ({
     paginatedPatientPackages: [],
     stats: {},
     loading: false,
+    fetchLimit: 500,
+    canLoadMoreLogs: false,
     filters: {
       searchTerm: '',
       filterAction: '',
@@ -39,6 +41,7 @@ vi.mock('@/hooks/useAuditData', () => ({
     expandedRows: {},
     toggleRow: vi.fn(),
     fetchLogs: vi.fn(),
+    loadMoreLogs: vi.fn(),
     sections: {},
     currentPage: 1,
     totalPages: 1,

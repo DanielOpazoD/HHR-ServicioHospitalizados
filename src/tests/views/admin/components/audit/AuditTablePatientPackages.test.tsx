@@ -56,6 +56,9 @@ const baseProps = {
   onPdfExport: vi.fn(),
   onExcelExport: vi.fn(),
   isExporting: false,
+  fetchLimit: 500,
+  canLoadMoreLogs: false,
+  onLoadMoreLogs: vi.fn(),
   currentPage: 1,
   totalPages: 1,
   onPageChange: vi.fn(),
@@ -82,5 +85,14 @@ describe('AuditTable patient-centered packages', () => {
 
     expect(screen.getByText('Evento clínico')).toBeInTheDocument();
     expect(screen.getByText('Diagnóstico actualizado')).toBeInTheDocument();
+  });
+
+  it('offers a bounded load-more action when the current audit window may be incomplete', () => {
+    const onLoadMoreLogs = vi.fn();
+    render(<AuditTable {...baseProps} canLoadMoreLogs onLoadMoreLogs={onLoadMoreLogs} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /cargar mas/i }));
+
+    expect(onLoadMoreLogs).toHaveBeenCalledTimes(1);
   });
 });

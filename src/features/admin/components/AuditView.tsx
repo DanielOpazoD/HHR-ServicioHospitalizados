@@ -31,6 +31,8 @@ export const AuditView: React.FC = () => {
     paginatedPatientPackages,
     stats,
     loading,
+    fetchLimit,
+    canLoadMoreLogs,
     filters,
     setSearchTerm,
     setFilterAction,
@@ -43,6 +45,7 @@ export const AuditView: React.FC = () => {
     expandedRows,
     toggleRow,
     fetchLogs,
+    loadMoreLogs,
     sections,
     currentPage,
     totalPages,
@@ -150,6 +153,9 @@ export const AuditView: React.FC = () => {
           onPdfExport={handlePdfExport}
           onExcelExport={handleExcelExport}
           isExporting={isExporting}
+          fetchLimit={fetchLimit}
+          canLoadMoreLogs={canLoadMoreLogs}
+          onLoadMoreLogs={loadMoreLogs}
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}

@@ -5,6 +5,10 @@ import { useAuditData, AUDIT_SECTIONS } from '@/hooks/useAuditData';
 import { useAuditWorker } from '@/hooks/useAuditWorker';
 import * as fetchAuditLogsUseCase from '@/application/audit/fetchAuditLogsUseCase';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
+import {
+  AUDIT_DEFAULT_FETCH_LIMIT,
+  AUDIT_FETCH_LIMIT_STEP,
+} from '@/services/admin/auditViewConfig';
 import { AuditLogEntry, WorkerFilterParams } from '@/types/auditLogTypes';
 import * as auditWorkerLogic from '@/services/admin/auditWorkerLogic';
 import type { ApplicationOutcome } from '@/shared/contracts/applicationOutcomeTypes';
@@ -132,8 +136,40 @@ describe('useAuditData', () => {
     });
 
     expect(result.current.logs).toHaveLength(3);
-    expect(fetchAuditLogsUseCase.executeFetchAuditLogs).toHaveBeenCalledWith({});
+    expect(fetchAuditLogsUseCase.executeFetchAuditLogs).toHaveBeenCalledWith({
+      limit: AUDIT_DEFAULT_FETCH_LIMIT,
+    });
     expect(result.current.filters.groupedView).toBe(true);
+  });
+
+  it('loads audit logs with a bounded default window and can request a larger window', async () => {
+    const limitedLogs = Array.from({ length: AUDIT_DEFAULT_FETCH_LIMIT }, (_, index) => ({
+      ...mockLogs[1],
+      id: `limited-${index}`,
+      timestamp: `2025-01-01T11:${String(index % 60).padStart(2, '0')}:00Z`,
+    }));
+    vi.mocked(fetchAuditLogsUseCase.executeFetchAuditLogs).mockResolvedValue({
+      status: 'success',
+      data: limitedLogs,
+      issues: [],
+    });
+
+    const { result } = renderHook(() => useAuditData());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.fetchLimit).toBe(AUDIT_DEFAULT_FETCH_LIMIT);
+    expect(result.current.canLoadMoreLogs).toBe(true);
+
+    act(() => {
+      result.current.loadMoreLogs();
+    });
+
+    await waitFor(() => {
+      expect(fetchAuditLogsUseCase.executeFetchAuditLogs).toHaveBeenCalledWith({
+        limit: AUDIT_DEFAULT_FETCH_LIMIT + AUDIT_FETCH_LIMIT_STEP,
+      });
+    });
   });
 
   describe('Filtering', () => {
