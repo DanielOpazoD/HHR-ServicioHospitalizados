@@ -30,10 +30,12 @@ const mergeMovementUnionById = <T>(
 ): T[] => {
   const remoteById = new Map<string, T>();
   const localById = new Map<string, T>();
+  const seen = new Set<string>();
   const sequence: string[] = [];
 
   const remember = (id: string) => {
-    if (!sequence.includes(id)) {
+    if (!seen.has(id)) {
+      seen.add(id);
       sequence.push(id);
     }
   };

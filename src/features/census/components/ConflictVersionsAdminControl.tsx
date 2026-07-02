@@ -45,6 +45,7 @@ export const ConflictVersionsAdminControl: React.FC<ConflictVersionsAdminControl
   const recoveryState = resolveConflictSnapshotRecoveryState({
     date,
     snapshotCount: model.snapshots.length,
+    snapshotRecovery: model.snapshotRecovery,
   });
 
   return (

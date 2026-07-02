@@ -1,18 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import {
-  resolveConflictSnapshotRecoveryState,
-  resolveConflictVersionsEmptyMessage,
-} from '@/features/census/controllers/conflictVersionsPresentationController';
+import { resolveConflictSnapshotRecoveryState } from '@/features/census/controllers/conflictVersionsPresentationController';
 
-describe('resolveConflictVersionsEmptyMessage', () => {
-  it('makes missing snapshots explicit instead of implying there was no conflict', () => {
-    expect(resolveConflictVersionsEmptyMessage('2026-07-01')).toContain(
-      'no hay snapshots recuperables'
-    );
-    expect(resolveConflictVersionsEmptyMessage('2026-07-01')).toContain('2026-07-01');
-    expect(resolveConflictVersionsEmptyMessage('2026-07-01')).toContain('observabilidad');
-  });
-
+describe('resolveConflictSnapshotRecoveryState', () => {
   it('classifies empty conflict recovery states using snapshot recovery evidence', () => {
     expect(
       resolveConflictSnapshotRecoveryState({
@@ -39,6 +28,19 @@ describe('resolveConflictVersionsEmptyMessage', () => {
     ).toMatchObject({
       kind: 'expired_or_unavailable',
       title: 'Snapshots no disponibles',
+    });
+  });
+
+  it('keeps the generic empty state explicit when no audit recovery evidence is available', () => {
+    expect(
+      resolveConflictSnapshotRecoveryState({
+        date: '2026-07-01',
+        snapshotCount: 0,
+      })
+    ).toMatchObject({
+      kind: 'unknown_empty',
+      title: 'Sin snapshots recuperables',
+      message: expect.stringContaining('observabilidad'),
     });
   });
 });

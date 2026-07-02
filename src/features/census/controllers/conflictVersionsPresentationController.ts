@@ -1,9 +1,4 @@
-type ConflictSnapshotRecoveryEvidence = {
-  status?: 'saved' | 'failed';
-  snapshotIds?: string[];
-  origins?: string[];
-  ttlMs?: number;
-};
+import type { ConflictSnapshotRecoveryEvidence } from '@/application/ports/dailyRecordConflictRecoveryPort';
 
 export type ConflictSnapshotRecoveryStateKind =
   | 'recoverable'
@@ -64,6 +59,3 @@ export const resolveConflictSnapshotRecoveryState = ({
       'haber expirado o no estar disponibles para el usuario actual.',
   };
 };
-
-export const resolveConflictVersionsEmptyMessage = (date?: string): string =>
-  resolveConflictSnapshotRecoveryState({ date, snapshotCount: 0 }).message;
