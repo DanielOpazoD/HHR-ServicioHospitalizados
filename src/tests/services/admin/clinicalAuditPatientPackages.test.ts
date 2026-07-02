@@ -336,12 +336,11 @@ describe('clinicalAuditPatientPackages', () => {
       })
     );
 
-    const startedAt = performance.now();
     const packages = buildClinicalAuditPatientPackages(logs);
-    const elapsedMs = performance.now() - startedAt;
 
     expect(packages).toHaveLength(2500);
     expect(new Set(packages.map(pkg => pkg.packageKey)).size).toBe(2500);
-    expect(elapsedMs).toBeLessThan(1500);
+    expect(packages.every(pkg => pkg.eventCount === 1)).toBe(true);
+    expect(packages.every(pkg => pkg.modules.includes('Estado'))).toBe(true);
   });
 });

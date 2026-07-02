@@ -1,13 +1,19 @@
 import type { AuditAction } from '@/types/auditActionTypes';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
-import { buildClinicalAuditPresentation } from '@/services/admin/clinicalAuditPresentation';
+import {
+  buildClinicalAuditPresentation,
+  type ClinicalAuditPresentation,
+} from '@/services/admin/clinicalAuditPresentation';
+import {
+  buildActorsFromLogProjections,
+  buildLogPackageProjection,
+} from '@/services/admin/clinicalAuditPatientPackageProjection';
 import {
   PATIENT_PACKAGE_WINDOW_MS,
   UNKNOWN_AUDIT_SUBJECT,
   type ClinicalAuditPackageChange,
   type ClinicalAuditPackageFlags,
   type ClinicalAuditPatientPackage,
-  type ClinicalAuditPatientPackageActor,
 } from '@/services/admin/clinicalAuditPatientPackageTypes';
 import {
   DOCUMENT_AUDIT_ACTIONS,
@@ -76,6 +82,14 @@ const getRecordDate = (log: AuditLogEntry): string => {
 const getPatientName = (log: AuditLogEntry): string => {
   const details = getDetails(log);
   const presentation = buildClinicalAuditPresentation(log);
+  return getPatientNameFromPresentation(log, presentation, details);
+};
+
+const getPatientNameFromPresentation = (
+  log: AuditLogEntry,
+  presentation: ClinicalAuditPresentation,
+  details = getDetails(log)
+): string => {
   return (
     asText(details.patientName) ||
     (log.entityType === 'patient' || log.entityType === 'discharge' || log.entityType === 'transfer'
@@ -216,12 +230,6 @@ const inferModulesForLog = (
   return modules;
 };
 
-const extractChangesForLog = (log: AuditLogEntry): ClinicalAuditPackageChange[] =>
-  buildClinicalAuditPresentation(log).importantChanges.map(change => ({
-    ...change,
-    sourceLogId: log.id,
-  }));
-
 const buildFlags = (
   logs: AuditLogEntry[],
   changes: ClinicalAuditPackageChange[]
@@ -253,25 +261,6 @@ const buildFlags = (
   };
 };
 
-const buildActors = (logs: AuditLogEntry[]): ClinicalAuditPatientPackageActor[] => {
-  const actors = new Map<string, ClinicalAuditPatientPackageActor>();
-
-  logs.forEach(log => {
-    const presentation = buildClinicalAuditPresentation(log);
-    const key = asText(log.userUid) || asText(log.userId) || presentation.actorLabel;
-    if (!actors.has(key)) {
-      actors.set(key, {
-        label: presentation.actorLabel,
-        secondary: presentation.actorSecondary,
-        userId: asText(log.userId) || undefined,
-        uid: asText(log.userUid) || undefined,
-      });
-    }
-  });
-
-  return [...actors.values()];
-};
-
 const buildSummary = (params: {
   patientName: string;
   eventCount: number;
@@ -297,13 +286,14 @@ const buildPackageFromLogs = (
   );
   const firstLog = chronologicalLogs[0];
   const lastLog = chronologicalLogs[chronologicalLogs.length - 1];
-  const allChanges = chronologicalLogs.flatMap(extractChangesForLog);
+  const projections = chronologicalLogs.map(log =>
+    buildLogPackageProjection(log, inferModulesForLog)
+  );
+  const allChanges = projections.flatMap(projection => projection.changes);
   const modules: string[] = [];
 
-  chronologicalLogs.forEach(log => {
-    inferModulesForLog(log, extractChangesForLog(log)).forEach(moduleName =>
-      pushUnique(modules, moduleName)
-    );
+  projections.forEach(projection => {
+    projection.modules.forEach(moduleName => pushUnique(modules, moduleName));
   });
 
   const actions: AuditAction[] = [];
@@ -320,7 +310,7 @@ const buildPackageFromLogs = (
       .slice(0, 2)
       .join(', ') ||
     undefined;
-  const patientName = getPatientName(firstLog);
+  const patientName = getPatientNameFromPresentation(firstLog, projections[0].presentation);
   const patientRut = getPatientRut(firstLog);
   const ipAddresses = [
     ...new Set(chronologicalLogs.map(log => asText(log.ipAddress)).filter(Boolean)),
@@ -336,7 +326,7 @@ const buildPackageFromLogs = (
     primaryBedLabel,
     startedAt: firstLog.timestamp,
     endedAt: lastLog.timestamp,
-    actors: buildActors(chronologicalLogs),
+    actors: buildActorsFromLogProjections(projections),
     ipAddresses,
     actions,
     modules,
