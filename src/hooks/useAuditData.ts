@@ -26,6 +26,9 @@ import {
   toggleAuditRowState,
 } from '@/hooks/controllers/auditDataPolicyController';
 import {
+  AUDIT_DEFAULT_FETCH_LIMIT,
+  AUDIT_FETCH_LIMIT_STEP,
+  AUDIT_MAX_FETCH_LIMIT,
   AUDIT_ITEMS_PER_PAGE,
   AUDIT_SECTIONS,
   type AuditSectionConfig,
@@ -35,6 +38,10 @@ import {
   type AuditDateRangePreset,
 } from '@/services/admin/auditDateRangePresets';
 import { auditDataLogger } from '@/hooks/hookLoggers';
+import {
+  buildClinicalAuditPatientPackages,
+  type ClinicalAuditPatientPackage,
+} from '@/services/admin/clinicalAuditPatientPackages';
 
 export { AUDIT_SECTIONS } from '@/services/admin/auditViewConfig';
 
@@ -56,11 +63,15 @@ export interface UseAuditDataReturn {
   filteredLogs: AuditLogEntry[];
   displayLogs: (AuditLogEntry | GroupedAuditLogEntry)[];
   paginatedLogs: (AuditLogEntry | GroupedAuditLogEntry)[];
+  patientPackages: ClinicalAuditPatientPackage[];
+  paginatedPatientPackages: ClinicalAuditPatientPackage[];
   stats: AuditStats;
 
   // Loading state
   loading: boolean;
   isProcessing: boolean;
+  fetchLimit: number;
+  canLoadMoreLogs: boolean;
 
   // Filters
   filters: AuditFiltersState;
@@ -86,6 +97,7 @@ export interface UseAuditDataReturn {
 
   // Actions
   fetchLogs: () => Promise<void>;
+  loadMoreLogs: () => void;
 
   // Constants
   sections: Record<AuditSection, SectionConfig>;
@@ -98,6 +110,7 @@ export function useAuditData(): UseAuditDataReturn {
   // Core data state
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchLimit, setFetchLimit] = useState(AUDIT_DEFAULT_FETCH_LIMIT);
 
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -122,7 +135,7 @@ export function useAuditData(): UseAuditDataReturn {
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await executeFetchAuditLogs({});
+      const result = await executeFetchAuditLogs({ limit: fetchLimit });
       setLogs(resolveAuditLogsFallback(result.data));
       if (result.status === 'failed') {
         auditDataLogger.error('Failed to fetch audit logs', result.issues[0]?.message);
@@ -133,6 +146,12 @@ export function useAuditData(): UseAuditDataReturn {
     } finally {
       setLoading(false);
     }
+  }, [fetchLimit]);
+
+  const loadMoreLogs = useCallback(() => {
+    setFetchLimit(currentLimit =>
+      Math.min(currentLimit + AUDIT_FETCH_LIMIT_STEP, AUDIT_MAX_FETCH_LIMIT)
+    );
   }, []);
 
   // Initial fetch
@@ -172,12 +191,25 @@ export function useAuditData(): UseAuditDataReturn {
 
   const { filteredLogs, displayLogs, stats: workerStats } = results;
 
+  const patientPackages = useMemo(
+    () => buildClinicalAuditPatientPackages(filteredLogs),
+    [filteredLogs]
+  );
+
   // Pagination
-  const totalPages = Math.ceil(displayLogs.length / ITEMS_PER_PAGE);
+  const activeDisplayCount = groupedView ? patientPackages.length : displayLogs.length;
+  const totalPages = Math.ceil(activeDisplayCount / ITEMS_PER_PAGE);
 
   const paginatedLogs = useMemo(() => {
     return paginateAuditDisplayLogs(displayLogs, currentPage, ITEMS_PER_PAGE);
   }, [displayLogs, currentPage, ITEMS_PER_PAGE]);
+
+  const paginatedPatientPackages = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return patientPackages.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [patientPackages, currentPage, ITEMS_PER_PAGE]);
+
+  const canLoadMoreLogs = logs.length >= fetchLimit && fetchLimit < AUDIT_MAX_FETCH_LIMIT;
 
   // Reset page when filters change
   useEffect(() => {
@@ -215,11 +247,15 @@ export function useAuditData(): UseAuditDataReturn {
     filteredLogs,
     displayLogs,
     paginatedLogs,
+    patientPackages,
+    paginatedPatientPackages,
     stats,
 
     // Loading
     loading,
     isProcessing,
+    fetchLimit,
+    canLoadMoreLogs,
 
     // Filters
     filters,
@@ -245,6 +281,7 @@ export function useAuditData(): UseAuditDataReturn {
 
     // Actions
     fetchLogs,
+    loadMoreLogs,
 
     // Constants
     sections: AUDIT_SECTIONS,

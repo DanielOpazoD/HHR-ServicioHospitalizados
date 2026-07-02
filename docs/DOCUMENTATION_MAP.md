@@ -1,6 +1,6 @@
 # Documentation Map
 
-Última actualización: 2026-05-03
+Última actualización: 2026-07-02
 
 > Índice único del repositorio. Si un documento nuevo no aparece aquí, o queda
 > sin categoría, debe añadirse en el mismo PR que lo crea. `check:docs-drift`
@@ -62,6 +62,7 @@ actualizar el `Estado` y apuntar al ADR reemplazante.
 - [ADR_DAILY_CENSUS_MOVEMENT_CONFLICT_INVARIANTS](ADR_DAILY_CENSUS_MOVEMENT_CONFLICT_INVARIANTS.md) — Vigente
 - [ADR_DEBOUNCED_INPUT_MULTITAB_SAFETY](ADR_DEBOUNCED_INPUT_MULTITAB_SAFETY.md) — Vigente
 - [ADR_HANDOFF_RUNTIME_SURFACES](ADR_HANDOFF_RUNTIME_SURFACES.md) — Vigente
+- [ADR_PATIENT_CENTERED_OBSERVABILITY](ADR_PATIENT_CENTERED_OBSERVABILITY.md) — Adoptado
 - [ADR_REPOSITORY_PROVIDER_REQUIRED](ADR_REPOSITORY_PROVIDER_REQUIRED.md) — Vigente
 - [ADR_SYNC_OUTCOME_POLICY](ADR_SYNC_OUTCOME_POLICY.md) — Vigente
 

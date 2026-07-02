@@ -58,10 +58,14 @@ export type AuditAction =
 export type AuditSection =
   | 'ALL'
   | 'TIMELINE'
+  | 'CLINICAL_EDITS'
+  | 'VIEW_ACTIVITY'
   | 'SESSIONS'
   | 'CENSUS'
   | 'CUDYR'
   | 'HANDOFF_NURSE'
   | 'HANDOFF_MEDICAL'
+  | 'CLINICAL_DOCUMENTS'
+  | 'MEDICATIONS'
   | 'EXPORT_KEYS'
   | 'MAINTENANCE';
