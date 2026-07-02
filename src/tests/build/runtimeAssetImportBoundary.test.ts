@@ -26,7 +26,12 @@ const collectProductionSourceFiles = (directory: string): string[] => {
 
 const toRelative = (absolutePath: string): string => path.relative(ROOT, absolutePath);
 
-const productionFiles = () => collectProductionSourceFiles(path.resolve(ROOT, 'src'));
+let productionFilesCache: string[] | null = null;
+
+const productionFiles = () => {
+  productionFilesCache ??= collectProductionSourceFiles(path.resolve(ROOT, 'src'));
+  return productionFilesCache;
+};
 
 const findsRuntimeImport = (source: string, moduleName: string): boolean => {
   const escapedModuleName = moduleName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

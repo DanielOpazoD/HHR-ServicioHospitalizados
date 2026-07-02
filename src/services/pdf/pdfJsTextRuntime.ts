@@ -1,5 +1,4 @@
-let pdfJsTextRuntimePromise: Promise<typeof import('pdfjs-dist/legacy/build/pdf.mjs')> | null =
-  null;
+import { createCachedRuntimeLoader } from '@/services/runtime/createCachedRuntimeLoader';
 
 const resolvePdfJsTextRuntime = async (): Promise<
   typeof import('pdfjs-dist/legacy/build/pdf.mjs')
@@ -12,14 +11,4 @@ const resolvePdfJsTextRuntime = async (): Promise<
   return pdfjs;
 };
 
-export const loadPdfJsTextRuntime = async (): Promise<
-  typeof import('pdfjs-dist/legacy/build/pdf.mjs')
-> => {
-  try {
-    pdfJsTextRuntimePromise ??= resolvePdfJsTextRuntime();
-    return await pdfJsTextRuntimePromise;
-  } catch (error) {
-    pdfJsTextRuntimePromise = null;
-    throw error;
-  }
-};
+export const loadPdfJsTextRuntime = createCachedRuntimeLoader(resolvePdfJsTextRuntime);

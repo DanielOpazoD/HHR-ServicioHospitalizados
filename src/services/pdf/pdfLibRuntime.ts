@@ -1,13 +1,7 @@
-let pdfLibRuntimePromise: Promise<typeof import('pdf-lib')> | null = null;
+import { createCachedRuntimeLoader } from '@/services/runtime/createCachedRuntimeLoader';
 
 const resolvePdfLibGenerationRuntime = (): Promise<typeof import('pdf-lib')> => import('pdf-lib');
 
-export const loadPdfLibGenerationRuntime = async (): Promise<typeof import('pdf-lib')> => {
-  try {
-    pdfLibRuntimePromise ??= resolvePdfLibGenerationRuntime();
-    return await pdfLibRuntimePromise;
-  } catch (error) {
-    pdfLibRuntimePromise = null;
-    throw error;
-  }
-};
+export const loadPdfLibGenerationRuntime = createCachedRuntimeLoader(
+  resolvePdfLibGenerationRuntime
+);

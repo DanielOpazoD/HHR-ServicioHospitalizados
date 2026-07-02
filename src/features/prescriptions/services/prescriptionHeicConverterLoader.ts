@@ -1,3 +1,5 @@
+import { createCachedRuntimeLoader } from '@/services/runtime/createCachedRuntimeLoader';
+
 export type HeicConverter = (options: {
   blob: Blob;
   toType: string;
@@ -11,19 +13,12 @@ export class HeicConverterLoadFailure extends Error {
   }
 }
 
-let heicConverterPromise: Promise<HeicConverter> | null = null;
-
 const resolveHeicConverter = async (): Promise<HeicConverter> => {
   const { default: heic2any } = await import('heic2any');
   return heic2any as HeicConverter;
 };
 
-export const loadHeicConverter = async (): Promise<HeicConverter> => {
-  try {
-    heicConverterPromise ??= resolveHeicConverter();
-    return await heicConverterPromise;
-  } catch (error) {
-    heicConverterPromise = null;
-    throw new HeicConverterLoadFailure(error);
-  }
-};
+export const loadHeicConverter = createCachedRuntimeLoader(
+  resolveHeicConverter,
+  error => new HeicConverterLoadFailure(error)
+);

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { classifyBuildAssetBudget, resolveBuildAssetBudget } from './bundleBudgetSupport.mjs';
+import { classifyBuildAssetBudget } from './bundleBudgetSupport.mjs';
 
 export const RUNTIME_ASSET_MARGIN_GENERATED_AT = 'stable:runtime-asset-margin';
 
@@ -39,18 +39,26 @@ const resolveSurfaceBudgetPattern = ({ surface, bundleBudgetConfig }) => {
 
 const resolveSurfaceBudget = ({ surface, bundleBudgetConfig }) => {
   const pattern = resolveSurfaceBudgetPattern({ surface, bundleBudgetConfig });
-  const syntheticFile = pattern
-    .replace(/^\^/, '')
-    .replace(/\.\*\\\.js\$$/, '-runtime.js')
-    .replace(/\.\*\\\.mjs\$$/, '-runtime.mjs')
-    .replace(/\\\./g, '.');
+  const startupBudget = asArray(bundleBudgetConfig?.startupChunkBudgets).find(
+    entry => entry?.pattern === pattern
+  );
+  const patternBudget = asArray(bundleBudgetConfig?.chunkPatternBudgets).find(
+    entry => entry?.pattern === pattern
+  );
+  const matchedBudget = startupBudget || patternBudget;
+  const budgetSource = startupBudget
+    ? 'startupChunkBudget'
+    : patternBudget
+      ? 'chunkPatternBudget'
+      : 'chunkMaxBytes';
 
   return {
     pattern,
-    ...resolveBuildAssetBudget({
-      file: syntheticFile || `${surface.id || 'runtime-asset'}.js`,
-      budgetConfig: bundleBudgetConfig,
-    }),
+    maxBytes:
+      Number(matchedBudget?.maxBytes || 0) || Number(bundleBudgetConfig?.chunkMaxBytes || 0) || null,
+    budgetLabel: matchedBudget?.label || budgetSource,
+    budgetSource,
+    severity: matchedBudget?.severity === 'warn' ? 'warn' : 'error',
   };
 };
 

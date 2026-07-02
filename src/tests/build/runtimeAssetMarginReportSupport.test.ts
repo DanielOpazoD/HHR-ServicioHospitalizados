@@ -171,6 +171,36 @@ describe('runtimeAssetMarginReportSupport', () => {
     );
   });
 
+  it('reports missing tracked surfaces with the directly configured budget', () => {
+    const report = buildRuntimeAssetMarginReport({
+      ledgerConfig,
+      bundleBudgetConfig,
+      assets: [
+        { file: 'dist/assets/vendor-heic2any-ClJ2fQYX.js', sizeBytes: 1_350_000 },
+        { file: 'dist/assets/vendor-pdfjs-C4G2Lk1-.js', sizeBytes: 400_000 },
+        { file: 'dist/assets/pdf.worker-2htIQpfR.mjs', sizeBytes: 2_350_000 },
+        { file: 'dist/assets/app-authenticated-shell-B_IbeW9R.js', sizeBytes: 550_000 },
+      ],
+    });
+
+    expect(report.status).toBe('blocking');
+    expect(report.trackedSurfaces).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'vendor-pdf-lib',
+          file: null,
+          sizeBytes: 0,
+          maxBytes: 430_000,
+          budgetLabel: 'vendor-pdf-lib',
+          budgetSource: 'chunkPatternBudget',
+          budgetUtilizationPct: null,
+          status: 'missing',
+          nextAction: expect.stringContaining('Intervene before merge'),
+        }),
+      ])
+    );
+  });
+
   it('escapes pipe characters in generated markdown table cells', () => {
     const report = buildRuntimeAssetMarginReport({
       ledgerConfig: {
