@@ -1,13 +1,13 @@
-import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import {
   buildClinicalAuditPatientPackages,
   type ClinicalAuditPatientPackage,
 } from '@/services/admin/clinicalAuditPatientPackages';
 import {
+  buildIndexedClinicalAuditPatientPackages,
   buildClinicalAuditPatientPackageFilterOptions,
   buildClinicalAuditPatientPackageIntentOptions,
-  getClinicalAuditPatientPackageCategories,
-  resolveClinicalAuditPatientPackageIntent,
+  filterIndexedClinicalAuditPatientPackages,
+  matchesClinicalAuditPatientPackageIntent,
   type ClinicalAuditPatientPackageFilterId,
   type ClinicalAuditPatientPackageFilterOption,
   type ClinicalAuditPatientPackageIntentId,
@@ -15,10 +15,7 @@ import {
 } from '@/services/admin/clinicalAuditPatientPackageFilters';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 
-export interface IndexedClinicalAuditPatientPackage {
-  auditPackage: ClinicalAuditPatientPackage;
-  searchIndex: string;
-}
+export { buildIndexedClinicalAuditPatientPackages };
 
 export interface AuditPatientPackagePipelineParams {
   sourceLogs: AuditLogEntry[];
@@ -39,84 +36,6 @@ export interface AuditPatientPackagePipelineResult {
   totalPages: number;
   activeDisplayCount: number;
 }
-
-const normalizePatientPackageSearch = (value: string): string =>
-  value
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ');
-
-const buildClinicalAuditPatientPackageSearchIndex = (
-  auditPackage: ClinicalAuditPatientPackage
-): string => {
-  const actionLabels = auditPackage.actions.map(action => AUDIT_ACTION_LABELS[action] || action);
-  const actorText = auditPackage.actors.flatMap(actor => [
-    actor.label,
-    actor.secondary,
-    actor.userId,
-    actor.uid,
-  ]);
-
-  return [
-    auditPackage.patientName,
-    auditPackage.patientRut,
-    auditPackage.patientIdentifier,
-    auditPackage.primaryBedLabel,
-    auditPackage.recordDate,
-    auditPackage.summary,
-    ...auditPackage.modules,
-    ...actionLabels,
-    ...actorText,
-    ...auditPackage.ipAddresses,
-    ...auditPackage.changes.flatMap(change => [
-      change.fieldLabel,
-      String(change.oldValue ?? ''),
-      String(change.newValue ?? ''),
-    ]),
-  ]
-    .filter((value): value is string => typeof value === 'string' && value.length > 0)
-    .map(normalizePatientPackageSearch)
-    .join(' ');
-};
-
-export const buildIndexedClinicalAuditPatientPackages = (
-  patientPackages: ClinicalAuditPatientPackage[],
-  buildSearchIndex = buildClinicalAuditPatientPackageSearchIndex
-): IndexedClinicalAuditPatientPackage[] =>
-  patientPackages.map(auditPackage => ({
-    auditPackage,
-    searchIndex: buildSearchIndex(auditPackage),
-  }));
-
-const matchesPatientPackageFilter = (
-  auditPackage: ClinicalAuditPatientPackage,
-  activeFilter: ClinicalAuditPatientPackageFilterId
-): boolean => getClinicalAuditPatientPackageCategories(auditPackage).includes(activeFilter);
-
-const matchesPatientPackageIntent = (
-  auditPackage: ClinicalAuditPatientPackage,
-  activeIntent: ClinicalAuditPatientPackageIntentId
-): boolean => resolveClinicalAuditPatientPackageIntent(auditPackage) === activeIntent;
-
-const filterIndexedPatientPackages = (
-  indexedPackages: IndexedClinicalAuditPatientPackage[],
-  params: Pick<AuditPatientPackagePipelineParams, 'searchTerm' | 'activeFilter' | 'activeIntent'>
-): ClinicalAuditPatientPackage[] => {
-  const search = normalizePatientPackageSearch(params.searchTerm);
-
-  return indexedPackages
-    .filter(({ auditPackage, searchIndex }) => {
-      const matchesSearch = !search || searchIndex.includes(search);
-      return (
-        matchesSearch &&
-        matchesPatientPackageIntent(auditPackage, params.activeIntent) &&
-        matchesPatientPackageFilter(auditPackage, params.activeFilter)
-      );
-    })
-    .map(({ auditPackage }) => auditPackage);
-};
 
 const paginatePatientPackages = (
   patientPackages: ClinicalAuditPatientPackage[],
@@ -141,11 +60,13 @@ export const buildAuditPatientPackagePipeline = ({
   const patientPackageIntentOptions =
     buildClinicalAuditPatientPackageIntentOptions(unfilteredPatientPackages);
   const intentPatientPackages = indexedPatientPackages
-    .filter(({ auditPackage }) => matchesPatientPackageIntent(auditPackage, activeIntent))
+    .filter(({ auditPackage }) =>
+      matchesClinicalAuditPatientPackageIntent(auditPackage, activeIntent)
+    )
     .map(({ auditPackage }) => auditPackage);
   const patientPackageFilterOptions =
     buildClinicalAuditPatientPackageFilterOptions(intentPatientPackages);
-  const patientPackages = filterIndexedPatientPackages(indexedPatientPackages, {
+  const patientPackages = filterIndexedClinicalAuditPatientPackages(indexedPatientPackages, {
     searchTerm,
     activeFilter,
     activeIntent,

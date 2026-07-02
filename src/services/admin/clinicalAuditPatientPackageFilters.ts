@@ -50,6 +50,11 @@ export interface ClinicalAuditPatientPackageFilterParams {
   activeIntent?: ClinicalAuditPatientPackageIntentId;
 }
 
+export interface IndexedClinicalAuditPatientPackage {
+  auditPackage: ClinicalAuditPatientPackage;
+  searchIndex: string;
+}
+
 const FILTER_LABELS: Record<ClinicalAuditPatientPackageFilterId, string> = {
   ALL: 'Todos',
   CENSUS: 'Censo',
@@ -111,7 +116,7 @@ const SYSTEM_SYNC_ACTIONS = new Set<AuditAction>([
   'SYSTEM_ERROR',
 ]);
 
-const normalizeSearch = (value: string): string =>
+export const normalizeClinicalAuditPatientPackageSearch = (value: string): string =>
   value
     .trim()
     .toLowerCase()
@@ -196,19 +201,21 @@ export const getClinicalAuditPatientPackageCategories = (
   return categories;
 };
 
-const matchesFilter = (
+export const matchesClinicalAuditPatientPackageFilter = (
   auditPackage: ClinicalAuditPatientPackage,
   activeFilter: ClinicalAuditPatientPackageFilterId
 ): boolean => {
   return getClinicalAuditPatientPackageCategories(auditPackage).includes(activeFilter);
 };
 
-const matchesIntent = (
+export const matchesClinicalAuditPatientPackageIntent = (
   auditPackage: ClinicalAuditPatientPackage,
   activeIntent: ClinicalAuditPatientPackageIntentId
 ): boolean => resolveClinicalAuditPatientPackageIntent(auditPackage) === activeIntent;
 
-const buildSearchText = (auditPackage: ClinicalAuditPatientPackage): string => {
+export const buildClinicalAuditPatientPackageSearchIndex = (
+  auditPackage: ClinicalAuditPatientPackage
+): string => {
   const actionLabels = auditPackage.actions.map(action => AUDIT_ACTION_LABELS[action] || action);
   const actorText = auditPackage.actors.flatMap(actor => [
     actor.label,
@@ -235,24 +242,49 @@ const buildSearchText = (auditPackage: ClinicalAuditPatientPackage): string => {
     ]),
   ]
     .filter((value): value is string => typeof value === 'string' && value.length > 0)
-    .map(normalizeSearch)
+    .map(normalizeClinicalAuditPatientPackageSearch)
     .join(' ');
+};
+
+export const buildIndexedClinicalAuditPatientPackages = (
+  patientPackages: ClinicalAuditPatientPackage[],
+  buildSearchIndex = buildClinicalAuditPatientPackageSearchIndex
+): IndexedClinicalAuditPatientPackage[] =>
+  patientPackages.map(auditPackage => ({
+    auditPackage,
+    searchIndex: buildSearchIndex(auditPackage),
+  }));
+
+export const filterIndexedClinicalAuditPatientPackages = (
+  indexedPackages: IndexedClinicalAuditPatientPackage[],
+  params: ClinicalAuditPatientPackageFilterParams
+): ClinicalAuditPatientPackage[] => {
+  const search = normalizeClinicalAuditPatientPackageSearch(params.searchTerm || '');
+  const activeFilter = params.activeFilter || 'ALL';
+  const activeIntent = params.activeIntent;
+
+  return indexedPackages
+    .filter(({ auditPackage, searchIndex }) => {
+      const matchesSearch = !search || searchIndex.includes(search);
+      const matchesActiveIntent =
+        !activeIntent || matchesClinicalAuditPatientPackageIntent(auditPackage, activeIntent);
+      return (
+        matchesSearch &&
+        matchesActiveIntent &&
+        matchesClinicalAuditPatientPackageFilter(auditPackage, activeFilter)
+      );
+    })
+    .map(({ auditPackage }) => auditPackage);
 };
 
 export const filterClinicalAuditPatientPackages = (
   patientPackages: ClinicalAuditPatientPackage[],
   params: ClinicalAuditPatientPackageFilterParams
-): ClinicalAuditPatientPackage[] => {
-  const search = normalizeSearch(params.searchTerm || '');
-  const activeFilter = params.activeFilter || 'ALL';
-  const activeIntent = params.activeIntent;
-
-  return patientPackages.filter(auditPackage => {
-    const matchesSearch = !search || buildSearchText(auditPackage).includes(search);
-    const matchesActiveIntent = !activeIntent || matchesIntent(auditPackage, activeIntent);
-    return matchesSearch && matchesActiveIntent && matchesFilter(auditPackage, activeFilter);
-  });
-};
+): ClinicalAuditPatientPackage[] =>
+  filterIndexedClinicalAuditPatientPackages(
+    buildIndexedClinicalAuditPatientPackages(patientPackages),
+    params
+  );
 
 export const buildClinicalAuditPatientPackageFilterOptions = (
   patientPackages: ClinicalAuditPatientPackage[]
@@ -260,7 +292,9 @@ export const buildClinicalAuditPatientPackageFilterOptions = (
   FILTER_ORDER.map(id => ({
     id,
     label: FILTER_LABELS[id],
-    count: patientPackages.filter(auditPackage => matchesFilter(auditPackage, id)).length,
+    count: patientPackages.filter(auditPackage =>
+      matchesClinicalAuditPatientPackageFilter(auditPackage, id)
+    ).length,
   }));
 
 export const buildClinicalAuditPatientPackageIntentOptions = (
@@ -269,5 +303,7 @@ export const buildClinicalAuditPatientPackageIntentOptions = (
   INTENT_ORDER.map(id => ({
     id,
     label: INTENT_LABELS[id],
-    count: patientPackages.filter(auditPackage => matchesIntent(auditPackage, id)).length,
+    count: patientPackages.filter(auditPackage =>
+      matchesClinicalAuditPatientPackageIntent(auditPackage, id)
+    ).length,
   }));
