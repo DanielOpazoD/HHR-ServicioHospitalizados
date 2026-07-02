@@ -67,6 +67,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   CONFLICT_AUTO_MERGED: 'Conflicto Auto-Resuelto',
   CONFLICT_VERSION_RESTORED: 'Versión Restaurada',
   DATA_ADMISSION_DATES_BACKFILLED: 'Corrección Fechas de Ingreso',
+  PATIENT_SPECIALTY_CHANGED: 'Cambio de Especialidad',
   WOUND_CARE_PHOTO_UPLOADED: 'Foto clínica subida',
   CLINICAL_DOCUMENT_EXPORTED: 'Documento clínico exportado',
   CLINICAL_DOCUMENT_PRINTED: 'Documento clínico impreso',

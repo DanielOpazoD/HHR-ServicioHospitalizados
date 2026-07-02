@@ -16,6 +16,24 @@ describe('auditDataPolicyController', () => {
     expect(sectionActions.SESSIONS).toEqual(AUDIT_SECTIONS.SESSIONS.actions);
   });
 
+  it('keeps daily census clinical actions classified under the census section', () => {
+    expect(AUDIT_SECTIONS.CENSUS.actions).toEqual(
+      expect.arrayContaining([
+        'PATIENT_BED_CHANGED',
+        'PATIENT_DIAGNOSIS_CHANGED',
+        'PATIENT_DISCHARGE_DIAGNOSIS_CHANGED',
+        'PATIENT_NOTE_UPDATED',
+        'PATIENT_SPECIALTY_CHANGED',
+        'CLINICAL_EVENT_ADDED',
+        'CLINICAL_EVENT_UPDATED',
+        'CLINICAL_EVENT_DELETED',
+        'PREVIOUS_DAY_EDIT_CONFIRMED',
+        'CONFLICT_AUTO_MERGED',
+        'CONFLICT_VERSION_RESTORED',
+      ])
+    );
+  });
+
   it('builds stable worker filter params', () => {
     expect(
       buildAuditWorkerFilterParams({
