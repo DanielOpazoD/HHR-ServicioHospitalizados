@@ -118,6 +118,12 @@ describe('conflictResolutionAuditSummary', () => {
         origins: ['remote_premerge', 'incoming_premerge'],
         ttlMs: 172800000,
       },
+      syncContract: {
+        mutationId: 'mutation-visible-123',
+        clientId: 'client-real-browser-id',
+        tabId: 'tab-real-browser-id',
+        changedPaths: ['discharges'],
+      },
     });
 
     expect(details).toMatchObject({
@@ -134,6 +140,26 @@ describe('conflictResolutionAuditSummary', () => {
         status: 'saved',
         snapshotIds: ['cid__remote_premerge', 'cid__incoming_premerge'],
       }),
+      conflictResolutionSummary: expect.objectContaining({
+        truthSource: 'authority_intent_invariants',
+        lastWriteWins: false,
+        mergedPaths: ['discharges'],
+        blockedPaths: [],
+        invariantChecks: expect.arrayContaining([
+          'movement_visible_after_merge',
+          'no_duplicate_active_patient',
+          'movement_tombstone_not_revived',
+        ]),
+        mutation: expect.objectContaining({
+          mutationId: 'mutation-visible-123',
+          clientId: expect.stringMatching(/^anon_/),
+          tabId: expect.stringMatching(/^anon_/),
+        }),
+      }),
     });
+    expect(JSON.stringify(details.conflictResolutionSummary)).not.toContain(
+      'client-real-browser-id'
+    );
+    expect(JSON.stringify(details.conflictResolutionSummary)).not.toContain('tab-real-browser-id');
   });
 });

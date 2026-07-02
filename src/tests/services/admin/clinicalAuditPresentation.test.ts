@@ -181,4 +181,55 @@ describe('buildClinicalAuditPresentation', () => {
     expect(presentation.narrative).toContain('snapshots guardados');
     expect(presentation.affectedSubject).toContain('2026-07-01');
   });
+
+  it('explains the selected clinical truth without exposing client or tab identifiers', () => {
+    const presentation = buildClinicalAuditPresentation(
+      baseLog({
+        action: 'CONFLICT_AUTO_MERGED',
+        entityType: 'dailyRecord',
+        entityId: '2026-07-01',
+        details: {
+          entryCount: 3,
+          changedPaths: ['discharges', 'transfers', 'cma', 'beds.R10'],
+          conflictResolutionSummary: {
+            truthSource: 'authority_intent_invariants',
+            lastWriteWins: false,
+            mergedPaths: ['discharges', 'transfers', 'cma', 'beds.R10'],
+            blockedPaths: ['beds.R1.location'],
+            invariantChecks: [
+              'movement_visible_after_merge',
+              'no_duplicate_active_patient',
+              'movement_tombstone_not_revived',
+            ],
+            mutation: {
+              mutationId: 'mutation-contract-1',
+              clientId: 'anon_client_7a3f',
+              tabId: 'anon_tab_2b90',
+            },
+          },
+          sampleDecisions: [
+            {
+              path: 'discharges',
+              strategy: 'merge_array_by_id',
+              winner: 'merged',
+              reason: 'movements_union_preserve_local_override',
+            },
+          ],
+        },
+      })
+    );
+
+    expect(presentation.narrative).toContain('autoridad transaccional');
+    expect(presentation.narrative).toContain('intención clínica');
+    expect(presentation.narrative).toContain('invariantes');
+    expect(presentation.narrative).toContain('no por el último navegador');
+    expect(presentation.narrative).toContain('discharges');
+    expect(presentation.narrative).toContain('beds.R1.location');
+    expect(presentation.narrative).not.toContain('client-real-browser-id');
+    expect(presentation.narrative).not.toContain('tab-real-browser-id');
+    expect(presentation.technical.details.conflictResolutionSummary).toMatchObject({
+      truthSource: 'authority_intent_invariants',
+      lastWriteWins: false,
+    });
+  });
 });

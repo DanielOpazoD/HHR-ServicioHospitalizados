@@ -2,7 +2,7 @@
 
 **Estado:** Vigente (2026-07-01)
 **Ámbito:** `dailyRecord` · censo diario · movimientos · conflictos
-**Relacionado:** `ADR_CONFLICT_VERSION_RECOVERY.md`, `RUNBOOK_DAILY_RECORD_MOVEMENT_TOMBSTONES.md`
+**Relacionado:** `ADR_DAILY_CENSUS_TRUTH_CONTRACT.md`, `ADR_CONFLICT_VERSION_RECOVERY.md`, `RUNBOOK_DAILY_RECORD_MOVEMENT_TOMBSTONES.md`
 
 ## Decisión
 
@@ -22,6 +22,8 @@ Por lo tanto:
    diagnóstico.
 6. Todo conflicto auto-mergeado debe dejar evidencia explicable: resumen de decisiones y, cuando
    sea posible, snapshots pre-merge recuperables.
+7. La verdad seleccionada no es `last write wins`; queda gobernada por autoridad transaccional,
+   intención clínica e invariantes según `ADR_DAILY_CENSUS_TRUTH_CONTRACT.md`.
 
 ## Motivo
 

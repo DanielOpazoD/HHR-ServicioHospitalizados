@@ -9,7 +9,9 @@ export type ConflictSnapshotRecoveryEvidence = {
   status?: 'saved' | 'failed';
   snapshotIds?: string[];
   origins?: string[];
+  expiresAt?: string;
   ttlMs?: number;
+  unavailableReason?: 'expired_ttl' | 'permission_denied' | 'not_found' | 'unknown';
 };
 
 const isSnapshotRecoveryEvidence = (value: unknown): value is ConflictSnapshotRecoveryEvidence => {

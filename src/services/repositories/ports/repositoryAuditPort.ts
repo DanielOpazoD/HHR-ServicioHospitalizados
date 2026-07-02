@@ -12,6 +12,20 @@ export interface ConflictAuditDetails {
     expiresAt?: string;
     ttlMs?: number;
   };
+  /** Explains why the selected clinical truth is authority + intent + invariants, not last writer. */
+  conflictResolutionSummary?: {
+    truthSource: 'authority_intent_invariants';
+    lastWriteWins: false;
+    mergedPaths: string[];
+    blockedPaths: string[];
+    invariantChecks: string[];
+    mutation?: {
+      mutationId?: string;
+      mutationIds?: string[];
+      clientId?: string;
+      tabId?: string;
+    };
+  };
   changedPaths: string[];
   policyVersion: string;
   entryCount: number;
