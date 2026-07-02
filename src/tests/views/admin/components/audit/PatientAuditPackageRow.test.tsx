@@ -76,6 +76,9 @@ describe('PatientAuditPackageRow', () => {
     expect(screen.getByText('ICC')).toBeInTheDocument();
     expect(screen.getByText('Daniel Opazo Damiani')).toBeInTheDocument();
     expect(screen.getByText('IP 148.227.67.162')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Daniel Opazo Damiani cambió Diagnóstico de - a ICC en cama H4C1/i)
+    ).toBeInTheDocument();
     expect(screen.queryByText('PATIENT_DIAGNOSIS_CHANGED')).not.toBeInTheDocument();
   });
 
@@ -92,7 +95,7 @@ describe('PatientAuditPackageRow', () => {
     expect(screen.getByText('Diagnóstico actualizado')).toBeInTheDocument();
     expect(screen.queryByText(/PATIENT_DIAGNOSIS_CHANGED/)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /ver json técnico/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ver payload técnico/i }));
 
     expect(screen.getByText('Detalle técnico avanzado')).toBeInTheDocument();
     expect(screen.getByText(/PATIENT_DIAGNOSIS_CHANGED/)).toBeInTheDocument();

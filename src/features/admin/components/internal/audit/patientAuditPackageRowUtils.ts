@@ -16,6 +16,55 @@ export const displayTimestampParts = (timestamp: string): { date: string; time: 
 export const getAuditPackageActorSummary = (auditPackage: ClinicalAuditPatientPackage): string =>
   auditPackage.actors.map(actor => actor.label).join(', ') || 'Usuario no identificado';
 
+const CHANGE_PRIORITY = [
+  'Diagnóstico',
+  'Diagnóstico de egreso',
+  'Alta',
+  'Traslado',
+  'Movimiento interno',
+  'CMA',
+  'Especialidad',
+  'Estado',
+];
+
+const pickNarrativeChange = (auditPackage: ClinicalAuditPatientPackage) => {
+  return (
+    [...auditPackage.changes].sort((left, right) => {
+      const leftIndex = CHANGE_PRIORITY.indexOf(left.fieldLabel);
+      const rightIndex = CHANGE_PRIORITY.indexOf(right.fieldLabel);
+      return (
+        (leftIndex === -1 ? CHANGE_PRIORITY.length : leftIndex) -
+        (rightIndex === -1 ? CHANGE_PRIORITY.length : rightIndex)
+      );
+    })[0] || auditPackage.changes[0]
+  );
+};
+
+const resolveActionVerb = (auditPackage: ClinicalAuditPatientPackage): string => {
+  if (auditPackage.flags.discharge) return 'registró alta';
+  if (auditPackage.flags.transfer) return 'registró traslado';
+  if (auditPackage.flags.internalMovement) return 'registró movimiento interno';
+  if (auditPackage.flags.cma) return 'marcó CMA';
+  if (auditPackage.flags.conflict) return 'resolvió conflicto';
+  return 'cambió';
+};
+
+export const buildClinicalAuditPackageNarrative = (
+  auditPackage: ClinicalAuditPatientPackage
+): string => {
+  const actor = getAuditPackageActorSummary(auditPackage);
+  const bed = auditPackage.primaryBedLabel ? ` en cama ${auditPackage.primaryBedLabel}` : '';
+  const change = pickNarrativeChange(auditPackage);
+
+  if (change) {
+    return `${actor} cambió ${change.fieldLabel} de ${formatAuditPackageValue(
+      change.oldValue
+    )} a ${formatAuditPackageValue(change.newValue)}${bed}`;
+  }
+
+  return `${actor} ${resolveActionVerb(auditPackage)} de ${auditPackage.patientName}${bed}`;
+};
+
 const VIEW_ACTIONS = new Set([
   'VIEW_PATIENT',
   'PATIENT_VIEWED',

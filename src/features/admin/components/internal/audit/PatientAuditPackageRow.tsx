@@ -19,6 +19,7 @@ import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import {
   buildAuditPackageCopySummary,
+  buildClinicalAuditPackageNarrative,
   displayTimestampParts,
   formatAuditPackageValue,
   getAuditPackageActorSummary,
@@ -48,6 +49,9 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
   const hiddenChangeCount = Math.max(0, auditPackage.changes.length - visibleChanges.length);
   const rawEventsJson = getRawAuditPackageEventsJson(auditPackage);
   const detailsId = `patient-audit-package-${auditPackage.id}`;
+  const includedEventsId = `${detailsId}-included-events`;
+  const technicalJsonId = `${detailsId}-technical-json`;
+  const clinicalNarrative = buildClinicalAuditPackageNarrative(auditPackage);
   const viewEvents = auditPackage.rawLogs.filter(log => isAuditPackageViewAction(log.action));
   const clinicalEvents = auditPackage.rawLogs.filter(log => !isAuditPackageViewAction(log.action));
 
@@ -59,6 +63,13 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
 
   const handleCopySummary = () => {
     void writeClipboardText(buildAuditPackageCopySummary(auditPackage)).catch(() => undefined);
+  };
+
+  const handleRowKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onToggle();
   };
 
   const renderEventList = (logs: typeof auditPackage.rawLogs) => (
@@ -85,6 +96,10 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
           isExpanded ? 'bg-sky-50/30' : ''
         )}
         onClick={onToggle}
+        onKeyDown={handleRowKeyDown}
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        aria-controls={detailsId}
       >
         <td className="px-5 py-3 align-top">
           <button
@@ -166,6 +181,9 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
         </td>
 
         <td className="px-3 py-3 align-top min-w-[300px]">
+          <p className="mb-2 max-w-[520px] text-xs font-semibold leading-snug text-slate-800">
+            {clinicalNarrative}
+          </p>
           {visibleChanges.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {visibleChanges.map(change => (
@@ -303,6 +321,7 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                     <button
                       type="button"
                       aria-expanded={showIncludedEvents}
+                      aria-controls={includedEventsId}
                       onClick={() => setShowIncludedEvents(value => !value)}
                       className="rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-bold text-sky-700 transition hover:bg-sky-100 focus:outline-none focus:ring-4 focus:ring-sky-500/10"
                     >
@@ -311,16 +330,17 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                     <button
                       type="button"
                       aria-expanded={showTechnicalJson}
+                      aria-controls={technicalJsonId}
                       onClick={() => setShowTechnicalJson(value => !value)}
                       className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-500/10"
                     >
-                      {showTechnicalJson ? 'Ocultar' : 'Ver'} JSON técnico
+                      {showTechnicalJson ? 'Ocultar' : 'Ver'} payload técnico
                     </button>
                   </div>
                 </div>
 
                 {showIncludedEvents && (
-                  <div className="space-y-3 border-t border-slate-100 p-3">
+                  <div id={includedEventsId} className="space-y-3 border-t border-slate-100 p-3">
                     <div className="rounded-lg border border-slate-100 bg-white">
                       <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
                         <History size={14} className="text-sky-600" />
@@ -351,7 +371,7 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                 )}
 
                 {showTechnicalJson && (
-                  <div className="border-t border-slate-100 p-3">
+                  <div id={technicalJsonId} className="border-t border-slate-100 p-3">
                     <div className="rounded-lg border border-slate-200 bg-white">
                       <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2">
                         <FileJson size={14} className="text-slate-400" />

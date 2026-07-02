@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { AuditTable } from '@/features/admin/components/internal/audit/AuditTable';
 import { buildClinicalAuditPatientPackages } from '@/services/admin/clinicalAuditPatientPackages';
-import type { ClinicalAuditPatientPackageFilterOption } from '@/services/admin/clinicalAuditPatientPackageFilters';
+import type {
+  ClinicalAuditPatientPackageFilterOption,
+  ClinicalAuditPatientPackageIntentOption,
+} from '@/services/admin/clinicalAuditPatientPackageFilters';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 const statusLog: AuditLogEntry = {
@@ -54,17 +57,30 @@ const baseProps = {
   setGroupedView: vi.fn(),
   patientPackageFilterOptions: [
     { id: 'ALL', label: 'Todos', count: 1 },
+    { id: 'CENSUS', label: 'Censo', count: 0 },
+    { id: 'PATIENT', label: 'Paciente', count: 1 },
+    { id: 'BED', label: 'Cama', count: 1 },
     { id: 'DISCHARGE', label: 'Altas', count: 0 },
     { id: 'TRANSFER', label: 'Traslados', count: 0 },
     { id: 'INTERNAL_MOVEMENT', label: 'Mov. internos', count: 0 },
     { id: 'CMA', label: 'CMA', count: 0 },
+    { id: 'DOCUMENTS', label: 'Documentos', count: 0 },
+    { id: 'DIAGNOSIS', label: 'Diagnóstico', count: 1 },
+    { id: 'STATUS', label: 'Estado', count: 1 },
     { id: 'CONFLICT', label: 'Conflictos', count: 0 },
     { id: 'VIEW_ACTIVITY', label: 'Visualizaciones', count: 0 },
-    { id: 'DOCUMENTS', label: 'Documentos', count: 0 },
+    { id: 'SYSTEM', label: 'Sistema', count: 0 },
     { id: 'MEDICATIONS', label: 'Indicaciones', count: 0 },
   ] satisfies ClinicalAuditPatientPackageFilterOption[],
   activePatientPackageFilter: 'ALL' as const,
   onPatientPackageFilterChange: vi.fn(),
+  patientPackageIntentOptions: [
+    { id: 'CLINICAL_OPERATIONS', label: 'Cambios clínicos/operacionales', count: 1 },
+    { id: 'VIEW_ACTIVITY', label: 'Visualizaciones', count: 0 },
+    { id: 'SYSTEM_SYNC', label: 'Sistema/sincronización', count: 0 },
+  ] satisfies ClinicalAuditPatientPackageIntentOption[],
+  activePatientPackageIntent: 'CLINICAL_OPERATIONS' as const,
+  onPatientPackageIntentChange: vi.fn(),
   expandedRows: new Set<string>(),
   toggleRow: vi.fn(),
   onPdfExport: vi.fn(),
@@ -124,5 +140,25 @@ describe('AuditTable patient-centered packages', () => {
     fireEvent.click(screen.getByRole('button', { name: /altas 0/i }));
 
     expect(onPatientPackageFilterChange).toHaveBeenCalledWith('DISCHARGE');
+  });
+
+  it('renders intention tabs so view-only events do not contaminate clinical edits', () => {
+    const onPatientPackageIntentChange = vi.fn();
+    render(
+      <AuditTable {...baseProps} onPatientPackageIntentChange={onPatientPackageIntentChange} />
+    );
+
+    expect(screen.getByRole('tab', { name: /cambios clínicos\/operacionales 1/i })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    expect(screen.getByRole('tab', { name: /visualizaciones 0/i })).toHaveAttribute(
+      'aria-selected',
+      'false'
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: /visualizaciones 0/i }));
+
+    expect(onPatientPackageIntentChange).toHaveBeenCalledWith('VIEW_ACTIVITY');
   });
 });
