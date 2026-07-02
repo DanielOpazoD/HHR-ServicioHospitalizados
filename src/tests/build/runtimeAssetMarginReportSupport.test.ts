@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildRuntimeAssetMarginReport } from '../../../scripts/runtimeAssetMarginReportSupport.mjs';
+import {
+  buildRuntimeAssetMarginReport,
+  formatRuntimeAssetMarginMarkdown,
+} from '../../../scripts/runtimeAssetMarginReportSupport.mjs';
 
 const ledgerConfig = {
   policyVersion: 'test-policy',
@@ -166,5 +169,31 @@ describe('runtimeAssetMarginReportSupport', () => {
         }),
       ])
     );
+  });
+
+  it('escapes pipe characters in generated markdown table cells', () => {
+    const report = buildRuntimeAssetMarginReport({
+      ledgerConfig: {
+        policyVersion: 'test-policy',
+        surfaces: [
+          {
+            id: 'vendor-pdfjs',
+            owner: 'clinical-documents | PDF runtime',
+            workflow: 'PDF text/import runtime',
+            loadReason: 'Keep behind loadPdfJsTextRuntime | loadPdfLibGenerationRuntime',
+            chunkBudgetPattern: '^vendor-pdfjs-.*\\.js$',
+            nextAction: 'Observe | split only with evidence.',
+          },
+        ],
+      },
+      bundleBudgetConfig,
+      assets: [{ file: 'dist/assets/vendor-pdfjs-C4G2Lk1-.js', sizeBytes: 400_000 }],
+    });
+
+    const markdown = formatRuntimeAssetMarginMarkdown(report);
+
+    expect(markdown).toContain('clinical-documents \\| PDF runtime');
+    expect(markdown).toContain('loadPdfJsTextRuntime \\| loadPdfLibGenerationRuntime');
+    expect(markdown).toContain('Observe \\| split only with evidence.');
   });
 });

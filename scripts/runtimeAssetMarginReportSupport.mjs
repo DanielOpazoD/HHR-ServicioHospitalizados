@@ -248,6 +248,11 @@ const formatBytes = value => `${Math.round(Number(value || 0) / 1024)} KB`;
 
 const formatPct = value => (value === null || value === undefined ? 'n/a' : `${value}%`);
 
+const markdownCell = value =>
+  String(value ?? 'n/a')
+    .replace(/\|/g, '\\|')
+    .replace(/\r?\n/g, '<br>');
+
 export const formatRuntimeAssetMarginMarkdown = report => {
   const lines = [
     '# Runtime Asset Margin',
@@ -265,11 +270,11 @@ export const formatRuntimeAssetMarginMarkdown = report => {
 
   for (const surface of report.trackedSurfaces || []) {
     lines.push(
-      `| ${surface.id} | ${surface.owner} | ${surface.loadReason || 'n/a'} | ${
-        surface.file || 'missing'
+      `| ${markdownCell(surface.id)} | ${markdownCell(surface.owner)} | ${markdownCell(surface.loadReason)} | ${
+        markdownCell(surface.file || 'missing')
       } | ${formatBytes(surface.sizeBytes)} | ${formatBytes(surface.maxBytes)} | ${formatPct(
         surface.budgetUtilizationPct
-      )} | ${surface.status} | ${surface.nextAction || 'n/a'} |`
+      )} | ${markdownCell(surface.status)} | ${markdownCell(surface.nextAction)} |`
     );
   }
 
@@ -283,10 +288,10 @@ export const formatRuntimeAssetMarginMarkdown = report => {
 
   for (const asset of report.topAssets || []) {
     lines.push(
-      `| ${asset.file} | ${asset.owner} | ${asset.loadReason} | ${formatBytes(
+      `| ${markdownCell(asset.file)} | ${markdownCell(asset.owner)} | ${markdownCell(asset.loadReason)} | ${formatBytes(
         asset.sizeBytes
       )} | ${formatBytes(asset.maxBytes)} | ${formatPct(asset.budgetUtilizationPct)} | ${
-        asset.status
+        markdownCell(asset.status)
       } |`
     );
   }
