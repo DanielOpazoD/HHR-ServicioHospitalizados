@@ -63,6 +63,53 @@ describe('conflictResolutionMatrix census movement policies', () => {
     expect(resolved.beds.H2C1.patientName).toBe('');
   });
 
+  it('preserves an explicit bed move over an empty target bed with residual clinical defaults', () => {
+    const remote = makeRecord('2026-07-01', '2026-07-01T13:00:00.000Z');
+    remote.beds = {
+      R5: {
+        bedId: 'R5',
+        patientName: 'Paciente Movimiento Local',
+        rut: '55.555.555-5',
+        admissionDate: '2026-06-30',
+        pathology: 'Diagnostico a conservar',
+        status: 'Estable',
+        specialty: 'Med Interna',
+        age: '40a',
+      } as unknown as DailyRecord['beds'][string],
+      R10: {
+        bedId: 'R10',
+        patientName: '',
+        rut: '',
+        admissionDate: '',
+        pathology: '',
+        status: 'Estable',
+        specialty: 'Med Interna',
+        age: '40a',
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-07-01', '2026-07-01T13:05:00.000Z');
+    local.beds = {
+      R5: {
+        ...remote.beds.R10,
+        bedId: 'R5',
+      },
+      R10: {
+        ...remote.beds.R5,
+        bedId: 'R10',
+      },
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['beds.R5', 'beds.R10'],
+    });
+
+    expect(resolved.beds.R10.patientName).toBe('Paciente Movimiento Local');
+    expect(resolved.beds.R10.rut).toBe('55.555.555-5');
+    expect(resolved.beds.R10.pathology).toBe('Diagnostico a conservar');
+    expect(resolved.beds.R5.patientName).toBe('');
+  });
+
   it('merges movement arrays by id (union with local override)', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.transfers = [

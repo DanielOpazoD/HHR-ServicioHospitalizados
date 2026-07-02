@@ -81,6 +81,15 @@ const buildPatient = (bedId: string, overrides: Partial<PatientData> = {}): Pati
   ...overrides,
 });
 
+const buildEmptyBed = (bedId: string): PatientData =>
+  buildPatient(bedId, {
+    patientName: '',
+    rut: '',
+    pathology: '',
+    admissionDate: '',
+    clinicalEpisodeId: '',
+  });
+
 describeEmulator('Firestore emulator mutation idempotency', () => {
   let testEnv: RulesTestEnvironment;
   let nurseDb: TestFirestore;
@@ -218,8 +227,8 @@ describeEmulator('Firestore emulator mutation idempotency', () => {
         rut: '88.888.888-8',
         clinicalEpisodeId: 'episode-local-cma',
       }),
-      R9: buildPatient('R9', { patientName: '', rut: '', pathology: '' }),
-      R10: buildPatient('R10', { patientName: '', rut: '', pathology: '' }),
+      R9: buildEmptyBed('R9'),
+      R10: buildEmptyBed('R10'),
     };
 
     const remoteAfterClientA = {
@@ -227,10 +236,10 @@ describeEmulator('Firestore emulator mutation idempotency', () => {
       lastUpdated: isoAt(date, '10:10:00'),
       beds: {
         ...base.beds,
-        R1: buildPatient('R1', { patientName: '', rut: '', pathology: '' }),
-        R2: buildPatient('R2', { patientName: '', rut: '', pathology: '' }),
-        R3: buildPatient('R3', { patientName: '', rut: '', pathology: '' }),
-        R4: buildPatient('R4', { patientName: '', rut: '', pathology: '' }),
+        R1: buildEmptyBed('R1'),
+        R2: buildEmptyBed('R2'),
+        R3: buildEmptyBed('R3'),
+        R4: buildEmptyBed('R4'),
         R9: {
           ...base.beds.R1,
           bedId: 'R9',
@@ -274,10 +283,10 @@ describeEmulator('Firestore emulator mutation idempotency', () => {
       lastUpdated: isoAt(date, '10:00:00'),
       beds: {
         ...base.beds,
-        R5: buildPatient('R5', { patientName: '', rut: '', pathology: '' }),
-        R6: buildPatient('R6', { patientName: '', rut: '', pathology: '' }),
-        R7: buildPatient('R7', { patientName: '', rut: '', pathology: '' }),
-        R8: buildPatient('R8', { patientName: '', rut: '', pathology: '' }),
+        R5: buildEmptyBed('R5'),
+        R6: buildEmptyBed('R6'),
+        R7: buildEmptyBed('R7'),
+        R8: buildEmptyBed('R8'),
         R10: {
           ...base.beds.R5,
           bedId: 'R10',
