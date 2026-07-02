@@ -14,11 +14,17 @@ import clsx from 'clsx';
 import { AuditLogEntry, GroupedAuditLogEntry } from '@/types/auditLogTypes';
 import { AuditLogRow } from './AuditLogRow';
 import { PatientAuditPackageRow } from './PatientAuditPackageRow';
+import {
+  AuditPatientPackageIntentTabs,
+  buildPatientPackageIntentTabId,
+} from './AuditPatientPackageIntentTabs';
 import { AuditSkeleton } from '@/components/shared/Skeleton';
 import type { ClinicalAuditPatientPackage } from '@/services/admin/clinicalAuditPatientPackages';
 import type {
   ClinicalAuditPatientPackageFilterId,
   ClinicalAuditPatientPackageFilterOption,
+  ClinicalAuditPatientPackageIntentId,
+  ClinicalAuditPatientPackageIntentOption,
 } from '@/services/admin/clinicalAuditPatientPackageFilters';
 
 interface AuditTableProps {
@@ -28,8 +34,11 @@ interface AuditTableProps {
   patientPackages: ClinicalAuditPatientPackage[];
   paginatedPatientPackages: ClinicalAuditPatientPackage[];
   patientPackageFilterOptions: ClinicalAuditPatientPackageFilterOption[];
+  patientPackageIntentOptions: ClinicalAuditPatientPackageIntentOption[];
   activePatientPackageFilter: ClinicalAuditPatientPackageFilterId;
   onPatientPackageFilterChange: (value: ClinicalAuditPatientPackageFilterId) => void;
+  activePatientPackageIntent: ClinicalAuditPatientPackageIntentId;
+  onPatientPackageIntentChange: (value: ClinicalAuditPatientPackageIntentId) => void;
   loading: boolean;
   compactView: boolean;
   setCompactView: (val: boolean) => void;
@@ -57,8 +66,11 @@ export const AuditTable: React.FC<AuditTableProps> = ({
   patientPackages,
   paginatedPatientPackages,
   patientPackageFilterOptions,
+  patientPackageIntentOptions,
   activePatientPackageFilter,
   onPatientPackageFilterChange,
+  activePatientPackageIntent,
+  onPatientPackageIntentChange,
   loading,
   compactView,
   setCompactView,
@@ -83,6 +95,12 @@ export const AuditTable: React.FC<AuditTableProps> = ({
   const hasVisibleRows = isPatientPackageView
     ? patientPackages.length > 0
     : filteredLogs.length > 0;
+  const patientPackagePanelId = React.useId();
+  const patientPackageTabsId = React.useId();
+  const activeIntentTabId = buildPatientPackageIntentTabId(
+    patientPackageTabsId,
+    activePatientPackageIntent
+  );
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -166,42 +184,57 @@ export const AuditTable: React.FC<AuditTableProps> = ({
       </div>
 
       {isPatientPackageView && (
-        <div
-          className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-white px-5 py-2"
-          aria-label="Filtros operacionales de paquetes por paciente"
-        >
-          {patientPackageFilterOptions.map(option => {
-            const isActive = activePatientPackageFilter === option.id;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                aria-label={`${option.label} ${option.count}`}
-                aria-pressed={isActive}
-                onClick={() => onPatientPackageFilterChange(option.id)}
-                className={clsx(
-                  'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold transition focus:outline-none focus:ring-4',
-                  isActive
-                    ? 'border-sky-200 bg-sky-50 text-sky-700 focus:ring-sky-500/15'
-                    : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 focus:ring-slate-500/10'
-                )}
-              >
-                <span>{option.label}</span>
-                <span
+        <div className="border-b border-slate-100 bg-white">
+          <AuditPatientPackageIntentTabs
+            options={patientPackageIntentOptions}
+            activeIntent={activePatientPackageIntent}
+            onIntentChange={onPatientPackageIntentChange}
+            panelId={patientPackagePanelId}
+            tabsId={patientPackageTabsId}
+          />
+
+          <div
+            className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-5 py-2"
+            aria-label="Filtros operacionales de paquetes por paciente"
+          >
+            {patientPackageFilterOptions.map(option => {
+              const isActive = activePatientPackageFilter === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-label={`${option.label} ${option.count}`}
+                  aria-pressed={isActive}
+                  onClick={() => onPatientPackageFilterChange(option.id)}
                   className={clsx(
-                    'rounded-md px-1.5 py-0.5 font-black',
-                    isActive ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-600'
+                    'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold transition focus:outline-none focus:ring-4',
+                    isActive
+                      ? 'border-sky-200 bg-sky-50 text-sky-700 focus:ring-sky-500/15'
+                      : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 focus:ring-slate-500/10'
                   )}
                 >
-                  {option.count}
-                </span>
-              </button>
-            );
-          })}
+                  <span>{option.label}</span>
+                  <span
+                    className={clsx(
+                      'rounded-md px-1.5 py-0.5 font-black',
+                      isActive ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-600'
+                    )}
+                  >
+                    {option.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div
+        className="overflow-x-auto"
+        id={isPatientPackageView ? patientPackagePanelId : undefined}
+        role={isPatientPackageView ? 'tabpanel' : undefined}
+        aria-labelledby={isPatientPackageView ? activeIntentTabId : undefined}
+      >
         <table className="w-full text-sm">
           <thead className="bg-slate-50/50 border-b border-slate-100">
             {isPatientPackageView ? (

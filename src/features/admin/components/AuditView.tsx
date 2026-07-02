@@ -30,6 +30,7 @@ export const AuditView: React.FC = () => {
     patientPackages,
     paginatedPatientPackages,
     patientPackageFilterOptions,
+    patientPackageIntentOptions,
     stats,
     loading,
     fetchLimit,
@@ -44,6 +45,7 @@ export const AuditView: React.FC = () => {
     setCompactView,
     setGroupedView,
     setActivePatientPackageFilter,
+    setActivePatientPackageIntent,
     expandedRows,
     toggleRow,
     fetchLogs,
@@ -64,6 +66,7 @@ export const AuditView: React.FC = () => {
     compactView,
     groupedView,
     activePatientPackageFilter,
+    activePatientPackageIntent,
   } = filters;
 
   // Export and dialog state
@@ -156,8 +159,11 @@ export const AuditView: React.FC = () => {
           patientPackages={patientPackages}
           paginatedPatientPackages={paginatedPatientPackages}
           patientPackageFilterOptions={patientPackageFilterOptions}
+          patientPackageIntentOptions={patientPackageIntentOptions}
           activePatientPackageFilter={activePatientPackageFilter}
           onPatientPackageFilterChange={setActivePatientPackageFilter}
+          activePatientPackageIntent={activePatientPackageIntent}
+          onPatientPackageIntentChange={setActivePatientPackageIntent}
           loading={loading}
           compactView={compactView}
           setCompactView={setCompactView}

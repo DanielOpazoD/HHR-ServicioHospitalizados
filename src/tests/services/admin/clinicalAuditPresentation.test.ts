@@ -78,6 +78,10 @@ describe('buildClinicalAuditPresentation', () => {
           changes: {
             note: { old: 'estable', new: 'dolor toracico' },
             specialty: { old: 'Medicina', new: 'Cirugia' },
+            handoffNoteDayShift: { old: 'Sin cambios', new: 'Controlar dolor' },
+            handoffNoteNightShift: { old: '', new: 'Sin eventos nocturnos' },
+            handoffNovedadesDayShift: { old: '', new: 'Oxigeno disponible' },
+            medicalHandoffNote: { old: '', new: 'Reevaluar en visita' },
           },
         },
       })
@@ -86,6 +90,26 @@ describe('buildClinicalAuditPresentation', () => {
     expect(presentation.importantChanges).toEqual([
       { fieldLabel: 'Nota clínica', oldValue: 'estable', newValue: 'dolor toracico' },
       { fieldLabel: 'Especialidad', oldValue: 'Medicina', newValue: 'Cirugia' },
+      {
+        fieldLabel: 'Nota de entrega de enfermería - turno día',
+        oldValue: 'Sin cambios',
+        newValue: 'Controlar dolor',
+      },
+      {
+        fieldLabel: 'Nota de entrega de enfermería - turno noche',
+        oldValue: '',
+        newValue: 'Sin eventos nocturnos',
+      },
+      {
+        fieldLabel: 'Novedades de entrega de enfermería - turno día',
+        oldValue: '',
+        newValue: 'Oxigeno disponible',
+      },
+      {
+        fieldLabel: 'Nota de entrega médica',
+        oldValue: '',
+        newValue: 'Reevaluar en visita',
+      },
     ]);
   });
 
