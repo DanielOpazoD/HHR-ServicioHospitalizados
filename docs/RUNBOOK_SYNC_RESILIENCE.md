@@ -157,6 +157,24 @@ Uso operativo:
 6. Si no hay snapshots, usar la razón del panel: TTL expirado, permiso denegado, no guardado o
    sin evidencia recuperable.
 
+## Apartado transversal: salud de convergencia clínica
+
+La convergencia clínica es una lectura operacional, no una nueva fuente de verdad. Compara registro
+local, remoto, outbox, auditoría reciente y snapshots recuperables para responder si los datos del
+censo/entregas están sanos o necesitan intervención.
+
+Estados esperados:
+
+- `healthy`: no hay divergencias activas.
+- `recoverable`: hay trabajo pendiente que puede reintentarse sin elegir verdad clínica.
+- `needs_review`: hay divergencia clínica o evidencia incompleta; revisar antes de preservar.
+- `unsafe`: no se debe resolver automático, por ejemplo paciente activo duplicado.
+
+Regla de seguridad: una acción sugerida por convergencia nunca reemplaza `authority mode`, merge por
+intención clínica, invariantes post-merge ni guardrails anti-rollback del centro de conflictos.
+
+Referencia: `docs/ADR_SYNC_CONVERGENCE_HEALTH.md`.
+
 ## Procedimiento 2.3: pre-outbox y ack de escritura directa
 
 Las escrituras críticas del censo usan flujo `pre-outbox`: primero persisten el
