@@ -129,6 +129,7 @@ export interface ConflictVersionRestoreAuditDetails {
       | 'selectedRevision'
     > & {
       impactCount: number;
+      impactsTruncated?: boolean;
       impacts: Array<{
         kind: string;
         module: string;

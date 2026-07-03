@@ -288,7 +288,7 @@ export const ClinicalConflictCenterControl: React.FC<ClinicalConflictCenterContr
   );
   const restoreImpactBySnapshotId = React.useMemo(() => {
     const impactById = new Map<string, DailyRecordRestoreImpactAnalysis>();
-    if (!date || !currentRecord) return impactById;
+    if (!date || !currentRecord || !recovery.isOpen) return impactById;
     recovery.snapshots.forEach(snapshot => {
       impactById.set(
         snapshot.id,
@@ -300,7 +300,7 @@ export const ClinicalConflictCenterControl: React.FC<ClinicalConflictCenterContr
       );
     });
     return impactById;
-  }, [currentRecord, date, recovery.snapshots]);
+  }, [currentRecord, date, recovery.isOpen, recovery.snapshots]);
 
   if (!date || !recovery.canManageClinicalConflicts) {
     return null;

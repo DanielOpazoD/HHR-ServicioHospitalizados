@@ -12,6 +12,8 @@ import {
   type DailyRecordRestoreImpactAnalysis,
 } from '@/services/repositories/dailyRecordRestoreImpactAnalyzer';
 
+const RESTORE_IMPACT_AUDIT_LIMIT = 12;
+
 export type RestoreDailyRecordVersionResult =
   | { status: 'restored' }
   | { status: 'not_found' }
@@ -29,7 +31,8 @@ const buildAuditRestoreImpact = (
   currentRevision: impactAnalysis.currentRevision,
   selectedRevision: impactAnalysis.selectedRevision,
   impactCount: impactAnalysis.impacts.length,
-  impacts: impactAnalysis.impacts.slice(0, 12).map(impact => ({
+  impactsTruncated: impactAnalysis.impacts.length > RESTORE_IMPACT_AUDIT_LIMIT,
+  impacts: impactAnalysis.impacts.slice(0, RESTORE_IMPACT_AUDIT_LIMIT).map(impact => ({
     kind: impact.kind,
     module: impact.module,
     severity: impact.severity,

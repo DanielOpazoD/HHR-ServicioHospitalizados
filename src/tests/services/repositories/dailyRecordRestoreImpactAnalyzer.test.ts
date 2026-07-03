@@ -154,6 +154,88 @@ describe('dailyRecordRestoreImpactAnalyzer', () => {
     expect(result.impactedModules).toEqual(expect.arrayContaining(['census']));
   });
 
+  it('blocks restoring a snapshot that would revive a tombstoned movement', () => {
+    const current = buildRecord({
+      discharges: [
+        {
+          id: 'd-deleted',
+          bedId: 'H2',
+          bedName: 'H2',
+          bedType: 'Cama',
+          patientName: 'Alta Eliminada',
+          rut: '77.777.777-7',
+          diagnosis: 'Alta anulada',
+          time: '12:00',
+          status: 'Vivo',
+          deletedAt: '2026-07-01T18:00:00.000Z',
+        },
+      ],
+      lastUpdated: '2026-07-01T18:00:00.000Z',
+    });
+    const selectedSnapshot = buildRecord({
+      discharges: [
+        {
+          id: 'd-deleted',
+          bedId: 'H2',
+          bedName: 'H2',
+          bedType: 'Cama',
+          patientName: 'Alta Eliminada',
+          rut: '77.777.777-7',
+          diagnosis: 'Alta anulada',
+          time: '12:00',
+          status: 'Vivo',
+        },
+      ],
+      lastUpdated: '2026-07-01T10:00:00.000Z',
+    });
+
+    const result = analyzeDailyRecordRestoreImpact({
+      current,
+      selectedSnapshot,
+      date: '2026-07-01',
+    });
+
+    expect(result.status).toBe('blocked');
+    expect(result.risk).toBe('high');
+    expect(result.blockingImpactCount).toBe(1);
+    expectImpactKinds(result, ['movement_tombstone_revived']);
+    expect(result.impactedModules).toEqual(expect.arrayContaining(['movements']));
+  });
+
+  it('blocks restoring a snapshot that would create duplicate active patients', () => {
+    const current = buildRecord({
+      beds: {
+        H1: buildPatient({ patientName: '', rut: '', bedId: 'H1', bedName: 'H1' }),
+        H2: buildPatient({ patientName: '', rut: '', bedId: 'H2', bedName: 'H2' }),
+      },
+      lastUpdated: '2026-07-01T18:00:00.000Z',
+    });
+    const duplicatePatient = buildPatient({
+      patientName: 'Paciente Duplicado',
+      rut: '88.888.888-8',
+      clinicalEpisodeId: 'episode-duplicate',
+    });
+    const selectedSnapshot = buildRecord({
+      beds: {
+        H1: buildPatient({ ...duplicatePatient, bedId: 'H1', bedName: 'H1' }),
+        H2: buildPatient({ ...duplicatePatient, bedId: 'H2', bedName: 'H2' }),
+      },
+      lastUpdated: '2026-07-01T10:00:00.000Z',
+    });
+
+    const result = analyzeDailyRecordRestoreImpact({
+      current,
+      selectedSnapshot,
+      date: '2026-07-01',
+    });
+
+    expect(result.status).toBe('blocked');
+    expect(result.risk).toBe('high');
+    expect(result.blockingImpactCount).toBe(1);
+    expectImpactKinds(result, ['duplicate_active_patient']);
+    expect(result.impactedModules).toEqual(expect.arrayContaining(['census']));
+  });
+
   it('requires review when restore would hide newer nursing and medical handoff content', () => {
     const current = buildRecord({
       beds: {

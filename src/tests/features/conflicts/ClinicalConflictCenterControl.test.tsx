@@ -229,7 +229,7 @@ describe('ClinicalConflictCenterControl', () => {
     );
 
     expect(screen.getAllByText('Bloqueado por seguridad clínica')[0]).toBeInTheDocument();
-    expect(screen.getAllByText(/eliminaria una alta visible/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/eliminaría una alta visible/i)[0]).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByText('Bloqueado')[0]);
 
@@ -249,7 +249,7 @@ describe('ClinicalConflictCenterControl', () => {
     );
 
     expect(screen.getAllByText('Requiere revisión')[0]).toBeInTheDocument();
-    expect(screen.getAllByText(/nota posterior de entrega de enfermeria/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/nota posterior de entrega de enfermería/i)[0]).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByText('Preservar')[0]);
 

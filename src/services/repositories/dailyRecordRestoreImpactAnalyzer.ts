@@ -129,7 +129,7 @@ const collectMovementImpacts = ({
               module: 'movements',
               severity: 'blocking',
               path,
-              message: `La restauracion eliminaria una ${MOVEMENT_LABEL[field]} visible registrada despues del snapshot.`,
+              message: `La restauración eliminaría una ${MOVEMENT_LABEL[field]} visible registrada después del snapshot.`,
               ...(patientName ? { patientName } : {}),
               ...(rut ? { rut } : {}),
               ...(bedId ? { bedId } : {}),
@@ -146,7 +146,7 @@ const collectMovementImpacts = ({
             module: 'movements',
             severity: 'blocking',
             path,
-            message: `La restauracion reviviria una ${MOVEMENT_LABEL[field]} eliminada.`,
+            message: `La restauración reviviría una ${MOVEMENT_LABEL[field]} eliminada.`,
             ...(patientName ? { patientName } : {}),
             ...(rut ? { rut } : {}),
             ...(bedId ? { bedId } : {}),
@@ -197,8 +197,8 @@ const collectActiveBedRollbackImpacts = ({
           severity: 'blocking',
           path: `beds.${currentPatient.bedId}`,
           message: selectedPatient
-            ? `La restauracion devolveria a ${currentPatient.patientName} desde ${currentPatient.bedId} a ${selectedPatient.bedId}.`
-            : `La restauracion removeria a ${currentPatient.patientName} de ${currentPatient.bedId}.`,
+            ? `La restauración devolvería a ${currentPatient.patientName} desde ${currentPatient.bedId} a ${selectedPatient.bedId}.`
+            : `La restauración removería a ${currentPatient.patientName} de ${currentPatient.bedId}.`,
           patientName: currentPatient.patientName,
           ...(currentPatient.rut ? { rut: currentPatient.rut } : {}),
           bedId: currentPatient.bedId,
@@ -229,7 +229,7 @@ const collectNursingHandoffImpacts = ({
           module: 'nursing_handoff',
           severity: 'warning',
           path: `beds.${bedId}.${field}`,
-          message: 'La restauracion ocultaria una nota posterior de entrega de enfermeria.',
+          message: 'La restauración ocultaría una nota posterior de entrega de enfermería.',
           patientName: getPatientDisplayName(currentPatient),
           ...(normalizeText(currentPatient.rut) ? { rut: normalizeText(currentPatient.rut) } : {}),
           bedId,
@@ -247,7 +247,7 @@ const collectNursingHandoffImpacts = ({
         module: 'nursing_handoff',
         severity: 'warning',
         path: field,
-        message: 'La restauracion reemplazaria novedades posteriores de entrega de enfermeria.',
+        message: 'La restauración reemplazaría novedades posteriores de entrega de enfermería.',
       })
     );
   });
@@ -288,7 +288,7 @@ const collectMedicalHandoffImpacts = ({
           module: 'medical_handoff',
           severity: 'warning',
           path: `beds.${bedId}.medicalHandoffEntries.${id}`,
-          message: 'La restauracion ocultaria una entrada medica posterior por paciente.',
+          message: 'La restauración ocultaría una entrada médica posterior por paciente.',
           patientName: getPatientDisplayName(currentPatient),
           ...(normalizeText(currentPatient.rut) ? { rut: normalizeText(currentPatient.rut) } : {}),
           bedId,
@@ -316,7 +316,7 @@ const collectMedicalHandoffImpacts = ({
         module: 'medical_handoff',
         severity: 'warning',
         path: `medicalHandoffBySpecialty.${specialty}.note`,
-        message: 'La restauracion reemplazaria una entrega medica posterior por especialidad.',
+        message: 'La restauración reemplazaría una entrega médica posterior por especialidad.',
       })
     );
   });
@@ -332,7 +332,7 @@ const collectMedicalHandoffImpacts = ({
         module: 'medical_handoff',
         severity: 'warning',
         path: 'medicalHandoffNovedades',
-        message: 'La restauracion reemplazaria novedades medicas posteriores.',
+        message: 'La restauración reemplazaría novedades médicas posteriores.',
       })
     );
   }
