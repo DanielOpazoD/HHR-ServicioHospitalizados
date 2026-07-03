@@ -89,12 +89,7 @@ export const buildSyncQueueTelemetryFromRows = (
     oldestPendingBudgetState,
     directQueueBudgetState,
     retryingBudgetState,
-    runtimeState:
-      directQueueBudgetState === 'critical'
-        ? 'blocked'
-        : directQueueBudgetState === 'warning' && runtimeState === 'ok'
-          ? 'degraded'
-          : runtimeState,
+    runtimeState: directQueueBudgetState === 'critical' ? 'blocked' : runtimeState,
   };
 };
 

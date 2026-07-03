@@ -192,4 +192,70 @@ describe('syncQueueTelemetryController', () => {
     expect(JSON.stringify(eventContext)).not.toContain('raw-client-id');
     expect(JSON.stringify(eventContext)).not.toContain('raw-tab-id');
   });
+
+  it('records stale truth selection as retryable degraded telemetry', () => {
+    recordSyncQueueTruthSelectionTelemetry(
+      baseTask({
+        key: 'daily:2026-03-22',
+        contexts: ['clinical'],
+        syncContract: {
+          expectedVersion: '2026-03-22T09:00:00.000Z',
+          mutationId: 'mutation-stale',
+          changedPaths: ['beds.R1.pathology'],
+        },
+      }),
+      {
+        resolution: 'stale',
+        selectedTruth: 'authority_intent_invariants',
+      }
+    );
+
+    expect(mockRecordOperationalTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        operation: 'sync_queue_truth_selected',
+        status: 'degraded',
+        runtimeState: 'retryable',
+        context: expect.objectContaining({
+          resolution: 'stale',
+          expectedVersion: '2026-03-22T09:00:00.000Z',
+          acceptedVersion: undefined,
+        }),
+      }),
+      { allowSuccess: true }
+    );
+  });
+
+  it('records blocked truth selection with a clinical authority issue', () => {
+    recordSyncQueueTruthSelectionTelemetry(
+      baseTask({
+        key: 'daily:2026-03-22',
+        contexts: ['clinical'],
+        syncContract: {
+          expectedVersion: '2026-03-22T09:00:00.000Z',
+          mutationId: 'mutation-blocked',
+          changedPaths: ['beds.R1.pathology'],
+        },
+      }),
+      {
+        resolution: 'blocked',
+        acceptedVersion: '2026-03-22T09:05:00.000Z',
+        selectedTruth: 'blocked_before_publish',
+      }
+    );
+
+    expect(mockRecordOperationalTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        operation: 'sync_queue_truth_selected',
+        status: 'failed',
+        runtimeState: 'blocked',
+        issues: ['La autoridad clinica bloqueo la mutacion antes de publicar.'],
+        context: expect.objectContaining({
+          resolution: 'blocked',
+          selectedTruth: 'blocked_before_publish',
+          acceptedVersion: '2026-03-22T09:05:00.000Z',
+        }),
+      }),
+      { allowSuccess: true }
+    );
+  });
 });
