@@ -34,18 +34,34 @@ export const getSyncTaskKey = (type: SyncTask['type'], payload: unknown): string
   return undefined;
 };
 
+export const anonymizeSyncActorId = (value: unknown): string | undefined => {
+  const text = String(value || '').trim();
+  if (!text) return undefined;
+
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return `anon_${(hash >>> 0).toString(36)}`;
+};
+
 export const sanitizeSyncContractForOperationalSnapshot = (
   syncContract: SyncTask['syncContract']
 ): SyncTask['syncContract'] | undefined => {
   if (!syncContract) return undefined;
   return {
     expectedVersion: syncContract.expectedVersion,
+    acceptedVersion: syncContract.acceptedVersion,
+    acceptedRevision: syncContract.acceptedRevision,
     recordRevision: syncContract.recordRevision,
     baseRevision: syncContract.baseRevision,
     changedPaths: syncContract.changedPaths,
     mutationId: syncContract.mutationId,
     mutationIds: syncContract.mutationIds,
-    clientId: syncContract.clientId,
-    tabId: syncContract.tabId,
+    clientId: anonymizeSyncActorId(syncContract.clientId),
+    tabId: anonymizeSyncActorId(syncContract.tabId),
+    resolution: syncContract.resolution,
   };
 };

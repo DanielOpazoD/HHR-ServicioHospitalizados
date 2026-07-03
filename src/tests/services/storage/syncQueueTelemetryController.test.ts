@@ -1,9 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildSyncQueueTelemetryFromRows,
   recordSyncQueueBudgetTelemetry,
+  recordSyncQueueTruthSelectionTelemetry,
 } from '@/services/storage/sync/syncQueueTelemetryController';
 import type { SyncTask } from '@/services/storage/syncQueueTypes';
+import { sanitizeSyncContractForOperationalSnapshot } from '@/services/storage/sync/syncQueueTaskFactory';
 
 const mockRecordOperationalTelemetry = vi.fn();
 
@@ -22,6 +24,10 @@ const baseTask = (overrides: Partial<SyncTask> = {}): SyncTask => ({
 });
 
 describe('syncQueueTelemetryController', () => {
+  beforeEach(() => {
+    mockRecordOperationalTelemetry.mockClear();
+  });
+
   it('builds degraded telemetry when retrying reaches warning threshold', () => {
     const telemetry = buildSyncQueueTelemetryFromRows(
       [baseTask({ retryCount: 1 })],
@@ -106,5 +112,84 @@ describe('syncQueueTelemetryController', () => {
         runtimeState: 'degraded',
       })
     );
+  });
+
+  it('sanitizes client and tab identifiers in operational sync snapshots', () => {
+    const snapshot = sanitizeSyncContractForOperationalSnapshot({
+      expectedVersion: '2026-03-22T09:00:00.000Z',
+      acceptedVersion: '2026-03-22T10:00:00.000Z',
+      resolution: 'merged',
+      changedPaths: ['beds.R1.pathology'],
+      mutationId: 'mutation-visible',
+      clientId: 'raw-client-id',
+      tabId: 'raw-tab-id',
+    });
+
+    expect(snapshot).toMatchObject({
+      expectedVersion: '2026-03-22T09:00:00.000Z',
+      acceptedVersion: '2026-03-22T10:00:00.000Z',
+      resolution: 'merged',
+      changedPaths: ['beds.R1.pathology'],
+      mutationId: 'mutation-visible',
+    });
+    expect(snapshot?.clientId).toMatch(/^anon_/);
+    expect(snapshot?.tabId).toMatch(/^anon_/);
+    expect(snapshot?.clientId).not.toBe('raw-client-id');
+    expect(snapshot?.tabId).not.toBe('raw-tab-id');
+  });
+
+  it('records semantic truth selection telemetry for sync mutations', () => {
+    recordSyncQueueTruthSelectionTelemetry(
+      baseTask({
+        key: 'daily:2026-03-22',
+        contexts: ['clinical', 'handoff'],
+        origin: 'partial_update_retry',
+        syncContract: {
+          expectedVersion: '2026-03-22T09:00:00.000Z',
+          acceptedVersion: '2026-03-22T10:00:00.000Z',
+          resolution: 'merged',
+          mutationId: 'mutation-trace',
+          clientId: 'raw-client-id',
+          tabId: 'raw-tab-id',
+          changedPaths: ['beds.R1.handoffNoteDayShift'],
+        },
+      }),
+      {
+        resolution: 'merged',
+        acceptedVersion: '2026-03-22T10:00:00.000Z',
+        acceptedRevision: 12,
+        selectedTruth: 'authority_intent_invariants',
+      }
+    );
+
+    expect(mockRecordOperationalTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: 'sync',
+        operation: 'sync_queue_truth_selected',
+        status: 'success',
+        runtimeState: 'recoverable',
+        context: expect.objectContaining({
+          key: 'daily:2026-03-22',
+          resolution: 'merged',
+          selectedTruth: 'authority_intent_invariants',
+          expectedVersion: '2026-03-22T09:00:00.000Z',
+          acceptedVersion: '2026-03-22T10:00:00.000Z',
+          acceptedRevision: 12,
+          mutationId: 'mutation-trace',
+          changedPaths: ['beds.R1.handoffNoteDayShift'],
+          contexts: ['clinical', 'handoff'],
+          origin: 'partial_update_retry',
+        }),
+      }),
+      { allowSuccess: true }
+    );
+    const eventContext = mockRecordOperationalTelemetry.mock.calls[0]?.[0]?.context as Record<
+      string,
+      unknown
+    >;
+    expect(eventContext.clientId).toMatch(/^anon_/);
+    expect(eventContext.tabId).toMatch(/^anon_/);
+    expect(JSON.stringify(eventContext)).not.toContain('raw-client-id');
+    expect(JSON.stringify(eventContext)).not.toContain('raw-tab-id');
   });
 });

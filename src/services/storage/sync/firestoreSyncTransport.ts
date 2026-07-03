@@ -27,6 +27,10 @@ import {
   shouldUseDailyRecordAuthorityCallable,
 } from '@/services/storage/firestore/dailyRecordAuthorityMode';
 import { saveDailyRecordWithClinicalAuthorityCallable } from '@/services/storage/firestore/dailyRecordAuthorityCallableClient';
+import {
+  recordSyncQueueTruthSelectionTelemetry,
+  type SyncQueueSelectedTruth,
+} from '@/services/storage/sync/syncQueueTelemetryController';
 
 const STRICT_REMOTE_DRIFT_TOLERANCE_MS = 0;
 const MERGEABLE_MOVEMENT_ARRAY_ROOTS = new Set(['discharges', 'transfers', 'cma']);
@@ -240,27 +244,46 @@ const shouldRevalidateAgainstRemote = (
   return toMillis(remoteLastUpdated) > toMillis(expectedVersion);
 };
 
+interface ResolvedSyncRecordForTask {
+  record: DailyRecord | null;
+  resolution: NonNullable<SyncTask['syncContract']>['resolution'];
+  acceptedVersion?: string;
+  selectedTruth?: SyncQueueSelectedTruth;
+}
+
 const resolveRecordForSyncTask = async (
   task: SyncTask,
   record: DailyRecord,
   runtime: FirestoreServiceRuntimePort
-): Promise<DailyRecord | null> => {
+): Promise<ResolvedSyncRecordForTask> => {
   const docRef = getRecordDocRef(record.date, runtime);
   const remoteSnap = await getDoc(docRef);
   if (!remoteSnap.exists()) {
-    return record;
+    return {
+      record,
+      resolution: 'accepted',
+      acceptedVersion: record.lastUpdated,
+    };
   }
 
   const remoteData = remoteSnap.data() as Record<string, unknown>;
-  if (hasRemoteAppliedMutation(task, remoteData.meta as Record<string, unknown> | undefined)) {
-    return null;
-  }
-
   const remoteLastUpdated = getRemoteLastUpdated(remoteData);
+  if (hasRemoteAppliedMutation(task, remoteData.meta as Record<string, unknown> | undefined)) {
+    return {
+      record: null,
+      resolution: 'already_applied',
+      acceptedVersion: remoteLastUpdated,
+      selectedTruth: 'remote_already_applied',
+    };
+  }
 
   if (!shouldRevalidateAgainstRemote(remoteLastUpdated, task.syncContract?.expectedVersion)) {
     assertSyncQueueConcurrency(record, remoteLastUpdated);
-    return record;
+    return {
+      record,
+      resolution: 'accepted',
+      acceptedVersion: record.lastUpdated,
+    };
   }
 
   const remoteRecord = docToRecord(remoteData, record.date);
@@ -297,7 +320,11 @@ const resolveRecordForSyncTask = async (
     );
   }
 
-  return consistency.record;
+  return {
+    record: consistency.record,
+    resolution: 'merged',
+    acceptedVersion: consistency.record.lastUpdated,
+  };
 };
 
 const syncDailyRecord = async (
@@ -308,10 +335,16 @@ const syncDailyRecord = async (
   await measureRepositoryOperation(
     'syncQueue.writeDailyRecord',
     async () => {
-      const recordToWrite = await resolveRecordForSyncTask(task, record, runtime);
-      if (!recordToWrite) {
+      const resolved = await resolveRecordForSyncTask(task, record, runtime);
+      if (!resolved.record) {
+        recordSyncQueueTruthSelectionTelemetry(task, {
+          resolution: resolved.resolution,
+          acceptedVersion: resolved.acceptedVersion,
+          selectedTruth: resolved.selectedTruth || 'remote_already_applied',
+        });
         return;
       }
+      const recordToWrite = resolved.record;
 
       const authority = evaluateDailyRecordClinicalAuthority(recordToWrite, {
         date: recordToWrite.date,
@@ -324,19 +357,30 @@ const syncDailyRecord = async (
       });
 
       if (authority.status === 'blocked') {
+        recordSyncQueueTruthSelectionTelemetry(task, {
+          resolution: 'blocked',
+          acceptedVersion: resolved.acceptedVersion,
+          selectedTruth: 'blocked_before_publish',
+        });
         throw new ConcurrencyError(
           `Sync queue: clinical authority blocked write for ${recordToWrite.date}.`
         );
       }
 
       if (shouldUseDailyRecordAuthorityCallable()) {
-        await saveDailyRecordWithClinicalAuthorityCallable({
+        const response = await saveDailyRecordWithClinicalAuthorityCallable({
           date: recordToWrite.date,
           record: recordToWrite,
           expectedLastUpdated: task.syncContract?.expectedVersion,
           mode: 'enforced',
           origin: task.origin,
           syncContract: task.syncContract,
+        });
+        recordSyncQueueTruthSelectionTelemetry(task, {
+          resolution: resolved.resolution,
+          acceptedVersion: recordToWrite.lastUpdated,
+          acceptedRevision: response?.revision,
+          selectedTruth: 'authority_intent_invariants',
         });
         return;
       }
@@ -362,6 +406,11 @@ const syncDailyRecord = async (
         sanitizeForFirestore(recordToWrite) as Record<string, unknown>,
         { merge: true }
       );
+      recordSyncQueueTruthSelectionTelemetry(task, {
+        resolution: resolved.resolution,
+        acceptedVersion: recordToWrite.lastUpdated,
+        selectedTruth: 'legacy_direct_publish',
+      });
     },
     { thresholdMs: 180, context: record.date }
   );
