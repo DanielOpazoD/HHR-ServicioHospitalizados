@@ -315,7 +315,7 @@ describe('dailyRecordRepositoryWriteService concurrency auto-merge', () => {
         }),
       }),
       expect.objectContaining({
-        contexts: ['clinical'],
+        contexts: ['handoff'],
         origin: 'conflict_auto_merge',
       })
     );

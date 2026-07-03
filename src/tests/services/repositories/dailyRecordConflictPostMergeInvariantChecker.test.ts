@@ -14,6 +14,20 @@ const makeRecord = (lastUpdated: string): DailyRecord =>
     lastUpdated,
   }) as DailyRecord;
 
+const makePatient = (
+  patientName: string,
+  rut: string,
+  admissionDate: string,
+  extras: Partial<DailyRecord['beds'][string]> = {}
+): DailyRecord['beds'][string] =>
+  ({
+    bedId: 'R1',
+    patientName,
+    rut,
+    admissionDate,
+    ...extras,
+  }) as DailyRecord['beds'][string];
+
 describe('dailyRecordConflictPostMergeInvariantChecker', () => {
   it('blocks post-merge records that drop visible movements, revive tombstones or duplicate active patients', () => {
     const remote = makeRecord('2026-07-01T10:10:00.000Z');
@@ -150,5 +164,143 @@ describe('dailyRecordConflictPostMergeInvariantChecker', () => {
       violations: [],
     });
     expect(result.record).toBe(resolved);
+  });
+
+  it('blocks handoff note and medical entry loss for the same clinical episode', () => {
+    const remote = makeRecord('2026-07-01T10:10:00.000Z');
+    remote.beds = {
+      R1: makePatient('Paciente Handoff', '12.345.678-9', '2026-07-01', {
+        handoffNoteDayShift: 'Nota enfermeria remota',
+        medicalHandoffEntries: [
+          { id: 'entry-remote', specialty: 'cirugia', note: 'Entrada remota' },
+        ] as never,
+      }),
+    };
+
+    const local = makeRecord('2026-07-01T10:00:00.000Z');
+    local.beds = {
+      R1: makePatient('Paciente Handoff', '12.345.678-9', '2026-07-01', {
+        handoffNoteNightShift: 'Nota enfermeria local',
+        medicalHandoffEntries: [
+          { id: 'entry-local', specialty: 'medicinaInterna', note: 'Entrada local' },
+        ] as never,
+      }),
+    };
+
+    const resolved = makeRecord('2026-07-01T10:10:00.000Z');
+    resolved.beds = {
+      R1: makePatient('Paciente Handoff', '12.345.678-9', '2026-07-01', {
+        handoffNoteDayShift: '',
+        handoffNoteNightShift: '',
+        medicalHandoffEntries: [
+          { id: 'entry-remote', specialty: 'cirugia', note: 'Entrada remota' },
+        ] as never,
+      }),
+    };
+
+    const result = evaluateDailyRecordConflictPostMergeInvariants({
+      remote,
+      local,
+      resolved,
+      context: { date: '2026-07-01', phase: 'sync_publish' },
+    });
+
+    expect(result.status).toBe('blocked');
+    expect(result.violations.map(violation => violation.type)).toEqual(
+      expect.arrayContaining([
+        'handoff_note_missing_after_merge',
+        'medical_handoff_entry_missing_after_merge',
+      ])
+    );
+    expect(result.violations.map(violation => violation.path)).toEqual(
+      expect.arrayContaining([
+        'beds.R1.handoffNoteDayShift',
+        'beds.R1.handoffNoteNightShift',
+        'beds.R1.medicalHandoffEntries.entry-local',
+      ])
+    );
+  });
+
+  it('blocks stale medical handoff entries revived into a different clinical episode', () => {
+    const remote = makeRecord('2026-07-01T10:10:00.000Z');
+    remote.beds = {
+      R1: makePatient('Paciente Nuevo', '22.222.222-2', '2026-07-01', {
+        medicalHandoffEntries: [],
+      }),
+    };
+
+    const local = makeRecord('2026-07-01T10:00:00.000Z');
+    local.beds = {
+      R1: makePatient('Paciente Antiguo', '11.111.111-1', '2026-06-25', {
+        medicalHandoffEntries: [
+          { id: 'entry-old', specialty: 'cirugia', note: 'Entrada del episodio antiguo' },
+        ] as never,
+      }),
+    };
+
+    const resolved = makeRecord('2026-07-01T10:10:00.000Z');
+    resolved.beds = {
+      R1: makePatient('Paciente Nuevo', '22.222.222-2', '2026-07-01', {
+        medicalHandoffEntries: [
+          { id: 'entry-old', specialty: 'cirugia', note: 'Entrada del episodio antiguo' },
+        ] as never,
+      }),
+    };
+
+    const result = evaluateDailyRecordConflictPostMergeInvariants({
+      remote,
+      local,
+      resolved,
+      context: { date: '2026-07-01', phase: 'sync_publish' },
+    });
+
+    expect(result.status).toBe('blocked');
+    expect(result.violations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'medical_handoff_entry_cross_episode_after_merge',
+          path: 'beds.R1.medicalHandoffEntries.entry-old',
+        }),
+      ])
+    );
+  });
+
+  it('repairs stale medical handoff summary from merged specialty notes', () => {
+    const remote = makeRecord('2026-07-01T10:10:00.000Z');
+    remote.medicalHandoffBySpecialty = {
+      cirugia: {
+        note: 'Control quirurgico',
+        updatedAt: '2026-07-01T10:00:00.000Z',
+      },
+    } as DailyRecord['medicalHandoffBySpecialty'];
+    remote.medicalHandoffNovedades = 'Cirugía\nControl quirurgico';
+
+    const local = makeRecord('2026-07-01T10:00:00.000Z');
+    local.medicalHandoffBySpecialty = {
+      medicinaInterna: {
+        note: 'Ajustar antihipertensivos',
+        updatedAt: '2026-07-01T10:05:00.000Z',
+      },
+    } as DailyRecord['medicalHandoffBySpecialty'];
+    local.medicalHandoffNovedades = 'Medicina Interna\nAjustar antihipertensivos';
+
+    const resolved = makeRecord('2026-07-01T10:10:00.000Z');
+    resolved.medicalHandoffBySpecialty = {
+      ...remote.medicalHandoffBySpecialty,
+      ...local.medicalHandoffBySpecialty,
+    };
+    resolved.medicalHandoffNovedades = remote.medicalHandoffNovedades;
+
+    const result = evaluateDailyRecordConflictPostMergeInvariants({
+      remote,
+      local,
+      resolved,
+      context: { date: '2026-07-01', phase: 'sync_publish' },
+    });
+
+    expect(result.status).toBe('ok');
+    expect(result.record.medicalHandoffNovedades).toContain('Cirugía');
+    expect(result.record.medicalHandoffNovedades).toContain('Medicina Interna');
+    expect(result.record.medicalHandoffNovedades).toContain('Ajustar antihipertensivos');
   });
 });

@@ -1,22 +1,24 @@
 # ADR: Contrato de verdad clínica del censo diario
 
 **Estado:** Vigente (2026-07-01)
-**Ámbito:** `dailyRecord` · censo diario · sincronización multi-PC · conflictos · movimientos
-**Relacionado:** `ADR_DAILY_CENSUS_MOVEMENT_CONFLICT_INVARIANTS.md`, `ADR_CONFLICT_VERSION_RECOVERY.md`, `RUNBOOK_DAILY_CENSUS_RECOVERY.md`, `RUNBOOK_SYNC_RESILIENCE.md`
+**Ámbito:** `dailyRecord` · censo diario · sincronización multi-PC · conflictos · movimientos · entrega de turno
+**Relacionado:** `ADR_DAILY_CENSUS_MOVEMENT_CONFLICT_INVARIANTS.md`, `ADR_CONFLICT_VERSION_RECOVERY.md`, `ADR_HANDOFF_RUNTIME_SURFACES.md`, `RUNBOOK_DAILY_CENSUS_RECOVERY.md`, `RUNBOOK_SYNC_RESILIENCE.md`
 
 ## Decisión
 
 La verdad final del censo diario no es el último navegador que escribió.
 
-Para altas, traslados, movimientos internos, CMA y cambios clínicos asociados, la verdad seleccionada
-debe salir de esta cadena:
+Para altas, traslados, movimientos internos, CMA, entrega de turno de enfermería, entrega de turno
+médica y cambios clínicos asociados, la verdad seleccionada debe salir de esta cadena:
 
 1. mutación aceptada por la autoridad transaccional del `dailyRecord`;
 2. contrato de sincronización con `mutationId`, `clientId`, `tabId`, `expectedVersion`,
    `changedPaths` y claves clínicas disponibles;
-3. merge por intención clínica cuando hay conflicto;
+3. merge por intención clínica cuando hay conflicto, incluyendo notas/entradas de handoff cuando
+   pertenecen al mismo episodio clínico;
 4. invariantes post-merge que impiden perder movimientos visibles, duplicar pacientes activos en
-   camas, revivir tombstones o borrar snapshot clínico relevante como diagnóstico.
+   camas, revivir tombstones, borrar snapshot clínico relevante como diagnóstico o desalinear
+   proyecciones derivadas de handoff médico.
 
 Esta regla reemplaza cualquier interpretación de `last write wins` para el censo diario. El timestamp
 del navegador puede ordenar intentos, pero no decide por sí solo la verdad clínica.
@@ -39,7 +41,27 @@ del navegador puede ordenar intentos, pero no decide por sí solo la verdad clí
 - Un movimiento interno no puede dejar el mismo paciente activo en dos camas.
 - Un tombstone de movimiento no puede revivir por merge posterior.
 - El diagnóstico y snapshot clínico relevante deben preservarse al mover cama.
+- Una nota de entrega de enfermería aceptada no puede desaparecer si corresponde al mismo episodio
+  clínico.
+- Una entrada de entrega médica por paciente no puede perderse cuando tiene identidad propia
+  (`medicalHandoffEntries[].id`) y corresponde al mismo episodio clínico.
+- Una entrada o nota de handoff stale no puede revivir sobre otro paciente, reingreso u episodio.
+- `medicalHandoffNovedades` es una proyección de `medicalHandoffBySpecialty` cuando existen notas
+  estructuradas por especialidad; tras un merge debe representar el estado fusionado, no la vista
+  stale de un navegador.
 - La recuperación desde snapshots es operativa y temporal; no reemplaza el contrato de verdad.
+
+## Superficies cubiertas
+
+| Superficie                                                | Contrato de conflicto/replay                                                               |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `discharges[]`, `transfers[]`, `cma[]`                    | Merge por identidad, tombstone dominante e invariantes de visibilidad.                     |
+| Movimientos de cama                                       | Estado actual de camas con snapshot clínico preservado y paciente activo en una sola cama. |
+| `handoffNoteDayShift` / `handoffNoteNightShift`           | Narrativa local preservable solo dentro del mismo episodio clínico.                        |
+| `handoffNovedadesDayShift` / `handoffNovedadesNightShift` | Texto de turno con prioridad local explícita cuando el patch representa intención vigente. |
+| `medicalHandoffBySpecialty`                               | Objeto estructurado por especialidad, mergeable por clave de especialidad.                 |
+| `medicalHandoffEntries`                                   | Arreglo por paciente mergeable por `id`, bloqueado si cruza episodio clínico.              |
+| `medicalHandoffNovedades`                                 | Proyección derivada que debe mantenerse consistente con `medicalHandoffBySpecialty`.       |
 
 ## Evidencia mínima
 

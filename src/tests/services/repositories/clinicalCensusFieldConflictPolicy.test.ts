@@ -115,7 +115,7 @@ describe('clinical census field conflict policy', () => {
         expect.objectContaining({
           path: 'beds.R1.handoffNote',
           winner: 'local',
-          reason: 'clinical_local_priority',
+          reason: 'handoff_local_priority',
         }),
       ])
     );

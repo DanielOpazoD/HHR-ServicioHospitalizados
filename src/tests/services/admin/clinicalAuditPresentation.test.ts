@@ -82,6 +82,8 @@ describe('buildClinicalAuditPresentation', () => {
             handoffNoteNightShift: { old: '', new: 'Sin eventos nocturnos' },
             handoffNovedadesDayShift: { old: '', new: 'Oxigeno disponible' },
             medicalHandoffNote: { old: '', new: 'Reevaluar en visita' },
+            medicalHandoffEntries: { old: [], new: ['entry-1'] },
+            medicalHandoffBySpecialty: { old: [], new: ['cirugia'] },
           },
         },
       })
@@ -109,6 +111,16 @@ describe('buildClinicalAuditPresentation', () => {
         fieldLabel: 'Nota de entrega médica',
         oldValue: '',
         newValue: 'Reevaluar en visita',
+      },
+      {
+        fieldLabel: 'Entradas de entrega médica por paciente',
+        oldValue: [],
+        newValue: ['entry-1'],
+      },
+      {
+        fieldLabel: 'Entrega médica por especialidad',
+        oldValue: [],
+        newValue: ['cirugia'],
       },
     ]);
   });

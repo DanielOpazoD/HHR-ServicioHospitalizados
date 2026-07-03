@@ -59,6 +59,8 @@ const FIELD_LABELS: Record<string, string> = {
   handoffNovedadesDayShift: 'Novedades de entrega de enfermería - turno día',
   handoffNovedadesNightShift: 'Novedades de entrega de enfermería - turno noche',
   medicalHandoffNote: 'Nota de entrega médica',
+  medicalHandoffEntries: 'Entradas de entrega médica por paciente',
+  medicalHandoffBySpecialty: 'Entrega médica por especialidad',
   medicalHandoffNovedades: 'Novedades de entrega médica',
   specialty: 'Especialidad',
   secondarySpecialty: 'Especialidad secundaria',
