@@ -106,6 +106,8 @@ export interface ConflictVersionRestoreAuditDetails {
       bedName?: string;
       bedId?: string;
     }>;
+    patientContextCount?: number;
+    patientContextsTruncated?: boolean;
     changedFields?: Array<{
       path: string;
       module: string;
@@ -114,6 +116,8 @@ export interface ConflictVersionRestoreAuditDetails {
       after: string;
       bedId?: string;
     }>;
+    changedFieldCount?: number;
+    changedFieldsTruncated?: boolean;
   };
 }
 

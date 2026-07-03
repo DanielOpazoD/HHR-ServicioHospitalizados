@@ -51,6 +51,23 @@ const buildSnapshot = (
   record,
 });
 
+const buildManyBeds = (count: number, pathologyPrefix: string): DailyRecord['beds'] =>
+  Object.fromEntries(
+    Array.from({ length: count }, (_, index) => {
+      const bedId = `H${String(index).padStart(2, '0')}`;
+      return [
+        bedId,
+        {
+          bedId,
+          bedName: bedId,
+          patientName: `Paciente ${index}`,
+          rut: `RUT-${index}`,
+          pathology: `${pathologyPrefix} ${index}`,
+        },
+      ];
+    })
+  ) as DailyRecord['beds'];
+
 describe('clinicalConflictCenterController', () => {
   it('allows only admin and Hospitalizados HHR/enfermeria roles to manage clinical conflicts', () => {
     expect(canManageClinicalConflictCenter('admin')).toBe(true);
@@ -181,6 +198,56 @@ describe('clinicalConflictCenterController', () => {
       expect.arrayContaining([
         expect.objectContaining({ id: 'conflict-1__remote_premerge', label: 'Versión en la nube' }),
         expect.objectContaining({ id: 'conflict-1__incoming_premerge', label: 'Versión local' }),
+      ])
+    );
+  });
+
+  it('keeps modules and counts based on the full diff set when display summaries are large', () => {
+    const remote = buildRecord({
+      beds: buildManyBeds(35, 'Dx remoto'),
+      medicalHandoffBySpecialty: {
+        cirugia: {
+          note: 'Pendiente visita',
+          createdAt: '2026-07-01T10:00:00.000Z',
+          updatedAt: '2026-07-01T10:00:00.000Z',
+          version: 1,
+          author: { uid: 'doc-1', displayName: 'Dr Uno', email: 'doc@example.com' },
+        },
+      },
+    });
+    const incoming = buildRecord({
+      beds: buildManyBeds(35, 'Dx local'),
+      medicalHandoffBySpecialty: {
+        cirugia: {
+          note: 'Pendiente visita médica actualizada',
+          createdAt: '2026-07-01T10:00:00.000Z',
+          updatedAt: '2026-07-01T10:05:00.000Z',
+          version: 2,
+          author: { uid: 'doc-1', displayName: 'Dr Uno', email: 'doc@example.com' },
+        },
+      },
+    });
+
+    const model = buildClinicalConflictCenterModel({
+      date: '2026-07-01',
+      snapshots: [
+        buildSnapshot('conflict-1__remote_premerge', 'remote_premerge', remote),
+        buildSnapshot('conflict-1__incoming_premerge', 'incoming_premerge', incoming),
+      ],
+    });
+
+    const [conflict] = model.conflicts;
+    expect(conflict.totalChangeCount).toBeGreaterThan(30);
+    expect(conflict.changes).toHaveLength(conflict.totalChangeCount);
+    expect(conflict.modules.map(module => module.key)).toEqual(
+      expect.arrayContaining(['census', 'medical_handoff'])
+    );
+    expect(conflict.changes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          module: 'medical_handoff',
+          label: 'Entrega médica por especialidad',
+        }),
       ])
     );
   });

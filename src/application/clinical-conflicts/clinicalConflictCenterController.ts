@@ -57,6 +57,7 @@ export interface ClinicalConflictReviewPackage {
   modules: ClinicalConflictModuleDescriptor[];
   patientContexts: ClinicalConflictPatientContext[];
   changes: ClinicalConflictFieldChange[];
+  totalChangeCount: number;
   options: ClinicalConflictSnapshotOption[];
 }
 
@@ -163,8 +164,7 @@ const compareRecords = (
         after: formatValue(after.get(path)),
         bedId: classification.bedId,
       };
-    })
-    .slice(0, 30);
+    });
 };
 
 const hasPatientName = (patient?: Partial<PatientData> | null): patient is PatientData =>
@@ -286,6 +286,7 @@ const buildConflictPackage = (
     modules: buildModules(changes),
     patientContexts,
     changes,
+    totalChangeCount: changes.length,
     options: snapshots.map(buildSnapshotOption),
   };
 };

@@ -62,6 +62,8 @@ const buildRestoreReviewContext = ({
   selectedVersionLabel: option.label,
   modules: conflict.modules.map(module => ({ key: module.key, label: module.label })),
   patientContexts: conflict.patientContexts.slice(0, 10),
+  patientContextCount: conflict.patientContexts.length,
+  patientContextsTruncated: conflict.patientContexts.length > 10,
   changedFields: conflict.changes.slice(0, 12).map(change => ({
     path: change.path,
     module: change.module,
@@ -70,6 +72,8 @@ const buildRestoreReviewContext = ({
     after: change.after,
     ...(change.bedId ? { bedId: change.bedId } : {}),
   })),
+  changedFieldCount: conflict.totalChangeCount,
+  changedFieldsTruncated: conflict.totalChangeCount > 12,
 });
 
 const PatientContextList: React.FC<{ conflict: ClinicalConflictReviewPackage }> = ({
@@ -91,6 +95,11 @@ const PatientContextList: React.FC<{ conflict: ClinicalConflictReviewPackage }> 
           {patient.bedName ? ` · ${patient.bedName}` : ''}
         </span>
       ))}
+      {conflict.patientContexts.length > 6 && (
+        <span className="text-[11px] text-slate-500">
+          +{conflict.patientContexts.length - 6} paciente(s) adicionales
+        </span>
+      )}
     </div>
   );
 };
@@ -128,7 +137,7 @@ const ChangeList: React.FC<{ conflict: ClinicalConflictReviewPackage }> = ({ con
       ))}
       {conflict.changes.length > 8 && (
         <p className="text-[11px] text-slate-500">
-          +{conflict.changes.length - 8} diferencia(s) adicionales en el registro completo.
+          +{conflict.totalChangeCount - 8} diferencia(s) adicionales en el registro completo.
         </p>
       )}
     </div>

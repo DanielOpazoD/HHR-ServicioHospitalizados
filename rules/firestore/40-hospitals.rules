@@ -17,7 +17,8 @@
 
         // Recoverable conflict version snapshots. Auto-expire ~48h via a Firestore TTL policy on
         // the `expireAt` field. Preview/restore is restricted to admin + Hospitalizados HHR
-        // (nurse_hospital); any editor may still create a snapshot during normal conflict
+        // (nurse_hospital); any user with editable hospital-document access
+        // (canCreateEditableHospitalDocument) may still create a snapshot during normal conflict
         // resolution. See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
         match /conflictSnapshots/{snapshotId} {
           allow read: if canManageClinicalConflictSnapshots();

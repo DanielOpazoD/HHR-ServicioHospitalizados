@@ -46,6 +46,31 @@ const buildSnapshot = (
   record,
 });
 
+const buildCrowdedRecord = (pathologyPrefix: string): DailyRecord =>
+  ({
+    date: '2026-07-01',
+    beds: Object.fromEntries(
+      Array.from({ length: 13 }, (_, index) => {
+        const bedId = `H${String(index).padStart(2, '0')}`;
+        return [
+          bedId,
+          {
+            bedId,
+            bedName: bedId,
+            patientName: `Paciente ${index}`,
+            rut: `RUT-${index}`,
+            pathology: `${pathologyPrefix} ${index}`,
+          },
+        ];
+      })
+    ),
+    discharges: [],
+    transfers: [],
+    cma: [],
+    activeExtraBeds: [],
+    lastUpdated: '2026-07-01T10:00:00.000Z',
+  }) as unknown as DailyRecord;
+
 const defaultRecovery = (
   overrides: Partial<ConflictVersionRecoveryModel> = {}
 ): ConflictVersionRecoveryModel => ({
@@ -96,6 +121,48 @@ describe('ClinicalConflictCenterControl', () => {
     expect(screen.getByTestId('clinical-conflict-center-modal')).toBeInTheDocument();
     expect(screen.getByText('Snapshots sin permiso de lectura')).toBeInTheDocument();
     expect(screen.getByText(/Entrega médica · 2026-07-01/)).toBeInTheDocument();
+  });
+
+  it('shows truncation hints and audits total counts when the conflict summary is capped', () => {
+    const restore = vi.fn();
+    mockRecovery.mockReturnValue(
+      defaultRecovery({
+        restore,
+        snapshots: [
+          buildSnapshot(
+            'conflict-1__remote_premerge',
+            'remote_premerge',
+            buildCrowdedRecord('Remoto')
+          ),
+          buildSnapshot(
+            'conflict-1__incoming_premerge',
+            'incoming_premerge',
+            buildCrowdedRecord('Local')
+          ),
+        ],
+      })
+    );
+
+    render(<ClinicalConflictCenterControl date="2026-07-01" scope="census" />);
+
+    expect(screen.getByText('+7 paciente(s) adicionales')).toBeInTheDocument();
+    expect(
+      screen.getByText('+5 diferencia(s) adicionales en el registro completo.')
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByText('Preservar')[0]);
+
+    expect(restore).toHaveBeenCalledWith(
+      'conflict-1__remote_premerge',
+      expect.objectContaining({
+        reviewContext: expect.objectContaining({
+          patientContextCount: 13,
+          patientContextsTruncated: true,
+          changedFieldCount: 13,
+          changedFieldsTruncated: true,
+        }),
+      })
+    );
   });
 
   it('shows patient-centered differences and delegates preservation to audited restore', () => {
