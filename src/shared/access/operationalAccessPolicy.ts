@@ -2,6 +2,7 @@ import type { ModuleType } from '@/constants/navigationConfig';
 import type { UserRole } from '@/types/authRoleTypes';
 import {
   ACTIONS,
+  ROLES,
   canDoAction,
   canEditModule,
   getRoleDisplayName,
@@ -218,6 +219,9 @@ export const canAccessAuditViewForRole = (role: SupportedRole): boolean =>
   getVisibleAppModules(role).includes('AUDIT') && canDoAction(role, ACTIONS.AUDIT_READ);
 
 export const canAccessAuditSensitivePanelsForRole = (role: SupportedRole): boolean => isAdmin(role);
+
+export const canManageClinicalConflictCenter = (role: SupportedRole): boolean =>
+  isAdmin(role) || role === ROLES.NURSE_HOSPITAL;
 
 export const canExportAuditDataForRole = (role: SupportedRole): boolean =>
   canDoAction(role, ACTIONS.EXPORT_EXCEL) || canDoAction(role, ACTIONS.EXPORT_PDF);

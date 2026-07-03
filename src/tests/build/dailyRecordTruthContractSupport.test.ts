@@ -13,6 +13,7 @@ describe('daily record truth contract support', () => {
       'conflict-recovery-ui-reasons',
       'conflict-resolution-summary-observability',
       'operator-runbook',
+      'clinical-conflict-center-contract',
     ]);
     expect(result.checks.every(check => check.ok)).toBe(true);
   });

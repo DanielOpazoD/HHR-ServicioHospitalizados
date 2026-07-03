@@ -67,6 +67,9 @@ service cloud.firestore {
     function canManageSystemHealthOperations() {
       return isAdmin();
     }
+    function canManageClinicalConflictSnapshots() {
+      return hasAnyEffectiveRole(['admin', 'nurse_hospital']);
+    }
     function isEditorRole() {
       return hasEffectiveRole('editor');
     }
@@ -700,7 +703,7 @@ service cloud.firestore {
           allow update, delete: if canAdminMaintainHospitalDocument();
         }
         match /conflictSnapshots/{snapshotId} {
-          allow read: if isAdmin();
+          allow read: if canManageClinicalConflictSnapshots();
           allow create: if canCreateEditableHospitalDocument();
           allow update, delete: if canAdminMaintainHospitalDocument();
         }

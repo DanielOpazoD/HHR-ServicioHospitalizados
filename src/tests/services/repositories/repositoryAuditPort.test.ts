@@ -112,6 +112,26 @@ describe('repositoryAuditPort', () => {
       snapshotId: 'cid__remote_premerge',
       origin: 'remote_premerge',
       conflictId: 'cid',
+      reviewContext: {
+        source: 'clinical_conflict_center',
+        scope: 'nursing_handoff',
+        reason: 'manual_preserve_selected_truth',
+        selectedVersionLabel: 'Versión en la nube',
+        modules: [{ key: 'nursing_handoff', label: 'Entrega enfermería' }],
+        patientContexts: [
+          { patientName: 'Pierre Jean', rut: '25DF52626', bedName: 'H1', bedId: 'H1' },
+        ],
+        changedFields: [
+          {
+            path: 'beds.H1.handoffNoteDayShift',
+            module: 'nursing_handoff',
+            label: 'Nota enfermería turno largo',
+            before: 'A',
+            after: 'B',
+            bedId: 'H1',
+          },
+        ],
+      },
     });
 
     expect(auditMocks.executeWriteAuditEvent).toHaveBeenCalledWith({
@@ -119,7 +139,16 @@ describe('repositoryAuditPort', () => {
       action: 'CONFLICT_VERSION_RESTORED',
       entityType: 'dailyRecord',
       entityId: '2026-02-19',
-      details: { snapshotId: 'cid__remote_premerge', origin: 'remote_premerge', conflictId: 'cid' },
+      details: {
+        snapshotId: 'cid__remote_premerge',
+        origin: 'remote_premerge',
+        conflictId: 'cid',
+        reviewContext: expect.objectContaining({
+          source: 'clinical_conflict_center',
+          scope: 'nursing_handoff',
+          selectedVersionLabel: 'Versión en la nube',
+        }),
+      },
       recordDate: '2026-02-19',
     });
   });

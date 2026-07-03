@@ -93,6 +93,10 @@ service cloud.firestore {
       return isAdmin();
     }
 
+    function canManageClinicalConflictSnapshots() {
+      return hasAnyEffectiveRole(['admin', 'nurse_hospital']);
+    }
+
     function isEditorRole() {
       return hasEffectiveRole('editor');
     }

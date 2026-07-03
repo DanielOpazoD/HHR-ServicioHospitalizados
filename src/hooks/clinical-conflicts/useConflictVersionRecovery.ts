@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
+import { canManageClinicalConflictCenter } from '@/shared/access/operationalAccessPolicy';
+import type { ConflictVersionRestoreAuditDetails } from '@/services/repositories/ports/repositoryAuditPort';
 import {
   defaultDailyRecordConflictRecoveryPort,
   type ConflictSnapshotRecoveryEvidence,
@@ -14,7 +16,7 @@ interface UseConflictVersionRecoveryOptions {
 }
 
 export interface ConflictVersionRecoveryModel {
-  isAdmin: boolean;
+  canManageClinicalConflicts: boolean;
   isOpen: boolean;
   loading: boolean;
   restoringId: string | null;
@@ -22,7 +24,17 @@ export interface ConflictVersionRecoveryModel {
   snapshotRecovery: ConflictSnapshotRecoveryEvidence | null;
   open: () => void;
   close: () => void;
-  restore: (snapshotId: string) => Promise<void>;
+  restore: (
+    snapshotId: string,
+    options?: {
+      title?: string;
+      message?: string;
+      confirmText?: string;
+      successTitle?: string;
+      successMessage?: string;
+      reviewContext?: ConflictVersionRestoreAuditDetails['reviewContext'];
+    }
+  ) => Promise<void>;
 }
 
 const resolveSnapshotListUnavailableReason = (
@@ -36,9 +48,10 @@ const resolveSnapshotListUnavailableReason = (
 };
 
 /**
- * Admin-only model for the census "conflict versions" affordance: lists the recoverable conflict
- * snapshots for a day and restores one (with confirmation + notifications). All restores are
- * audited server-side. See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
+ * Recovery model for the clinical conflict center: lists recoverable conflict snapshots for a day
+ * and preserves one selected version with confirmation + notifications. Access is limited to
+ * clinical conflict managers (admin and Hospitalizados HHR nursing). All restores are audited.
+ * See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
  */
 export const useConflictVersionRecovery = ({
   date,
@@ -47,7 +60,7 @@ export const useConflictVersionRecovery = ({
   const { role } = useAuth();
   const { confirm } = useConfirmDialog();
   const { success, error: notifyError } = useNotification();
-  const isAdmin = role === 'admin';
+  const canManageClinicalConflicts = canManageClinicalConflictCenter(role);
 
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -109,14 +122,25 @@ export const useConflictVersionRecovery = ({
   const close = useCallback(() => setIsOpen(false), []);
 
   const restore = useCallback(
-    async (snapshotId: string) => {
+    async (
+      snapshotId: string,
+      options?: {
+        title?: string;
+        message?: string;
+        confirmText?: string;
+        successTitle?: string;
+        successMessage?: string;
+        reviewContext?: ConflictVersionRestoreAuditDetails['reviewContext'];
+      }
+    ) => {
       if (!date) return;
       const confirmed = await confirm({
-        title: 'Restaurar versión',
+        title: options?.title || 'Preservar versión clínica',
         message:
+          options?.message ||
           'Se reemplazará el registro del día con esta versión. El estado actual quedará ' +
-          'guardado en el historial y la acción quedará auditada.',
-        confirmText: 'Restaurar',
+            'guardado en el historial y la acción quedará auditada.',
+        confirmText: options?.confirmText || 'Preservar',
         cancelText: 'Cancelar',
         variant: 'warning',
       });
@@ -124,9 +148,16 @@ export const useConflictVersionRecovery = ({
 
       setRestoringId(snapshotId);
       try {
-        const result = await port.restoreDailyRecordVersion(date, snapshotId);
+        const result = await port.restoreDailyRecordVersion(
+          date,
+          snapshotId,
+          options?.reviewContext
+        );
         if (result.status === 'restored') {
-          success('Versión restaurada', 'El registro del día fue restaurado.');
+          success(
+            options?.successTitle || 'Versión preservada',
+            options?.successMessage || 'El registro del día fue actualizado con la versión elegida.'
+          );
           setIsOpen(false);
         } else {
           notifyError('La versión ya no está disponible.');
@@ -142,7 +173,7 @@ export const useConflictVersionRecovery = ({
   );
 
   return {
-    isAdmin,
+    canManageClinicalConflicts,
     isOpen,
     loading,
     restoringId,

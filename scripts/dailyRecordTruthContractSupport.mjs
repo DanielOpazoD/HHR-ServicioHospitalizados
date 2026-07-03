@@ -21,7 +21,7 @@ export const evaluateDailyRecordTruthContract = root => {
   const emulatorTest = readText(root, 'src/tests/emulator/sync-mutation-idempotency.emulator.test.ts');
   const conflictPresentation = readText(
     root,
-    'src/features/census/controllers/conflictVersionsPresentationController.ts'
+    'src/application/clinical-conflicts/conflictSnapshotRecoveryPresentation.ts'
   );
   const conflictPresentationTest = readText(
     root,
@@ -41,6 +41,23 @@ export const evaluateDailyRecordTruthContract = root => {
   );
   const runbook = readText(root, 'docs/RUNBOOK_DAILY_CENSUS_RECOVERY.md');
   const firestoreSyncRunbook = readText(root, 'docs/runbooks/firestore-sync-issues.md');
+  const clinicalConflictCenter = readText(
+    root,
+    'src/application/clinical-conflicts/clinicalConflictCenterController.ts'
+  );
+  const clinicalConflictClassifier = readText(
+    root,
+    'src/application/clinical-conflicts/clinicalConflictPathClassifier.ts'
+  );
+  const conflictCenterComponent = readText(
+    root,
+    'src/components/clinical-conflicts/ClinicalConflictCenterControl.tsx'
+  );
+  const repositoryAuditPort = readText(
+    root,
+    'src/services/repositories/ports/repositoryAuditPort.ts'
+  );
+  const firestoreRules = readText(root, 'firestore.rules');
 
   const checks = [
     buildCheck(
@@ -92,7 +109,7 @@ export const evaluateDailyRecordTruthContract = root => {
         ]),
       'Conflict recovery UI must distinguish saved, failed, expired TTL, permission and unknown empty states.',
       [
-        'src/features/census/controllers/conflictVersionsPresentationController.ts',
+        'src/application/clinical-conflicts/conflictSnapshotRecoveryPresentation.ts',
         'src/tests/views/census/conflictVersionsPresentationController.test.ts',
       ]
     ),
@@ -132,6 +149,35 @@ export const evaluateDailyRecordTruthContract = root => {
       ]),
       'Operator runbook must explain auto-merge review, no-snapshot causes and restore/no-restore criteria.',
       ['docs/RUNBOOK_DAILY_CENSUS_RECOVERY.md']
+    ),
+    buildCheck(
+      'clinical-conflict-center-contract',
+      includesAll(clinicalConflictCenter, [
+        'buildClinicalConflictCenterModel',
+      ]) &&
+        includesAll(clinicalConflictClassifier, [
+        'nursing_handoff',
+        'medical_handoff',
+        'movements',
+      ]) &&
+        includesAll(conflictCenterComponent, [
+          'Centro de conflictos clínicos',
+          'Preservar',
+        'manual_preserve_selected_truth',
+      ]) &&
+        includesAll(repositoryAuditPort, ['reviewContext', 'clinical_conflict_center']) &&
+        includesAll(firestoreRules, [
+          'canManageClinicalConflictSnapshots',
+          "['admin', 'nurse_hospital']",
+        ]),
+      'Clinical conflict center must cover census, handoff and movement scopes with auditable manual preservation.',
+      [
+        'src/application/clinical-conflicts/clinicalConflictCenterController.ts',
+        'src/application/clinical-conflicts/clinicalConflictPathClassifier.ts',
+        'src/components/clinical-conflicts/ClinicalConflictCenterControl.tsx',
+        'src/services/repositories/ports/repositoryAuditPort.ts',
+        'firestore.rules',
+      ]
     ),
   ];
 

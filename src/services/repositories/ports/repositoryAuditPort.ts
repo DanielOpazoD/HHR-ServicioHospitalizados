@@ -4,7 +4,7 @@ import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 export interface ConflictAuditDetails {
   /** Correlates the audit entry with the recoverable version snapshots in `conflictSnapshots/`. */
   conflictId?: string;
-  /** Whether recoverable pre-merge snapshots were stored for the admin conflict panel. */
+  /** Whether recoverable pre-merge snapshots were stored for the clinical conflict center. */
   snapshotRecovery?: {
     status: 'saved' | 'failed';
     snapshotIds: string[];
@@ -93,10 +93,36 @@ export interface ConflictVersionRestoreAuditDetails {
   origin: string;
   /** Correlates back to the conflict and its version snapshots. */
   conflictId?: string;
+  /** Clinical review context captured by the conflict center before the overwrite is applied. */
+  reviewContext?: {
+    source: 'clinical_conflict_center';
+    scope: 'census' | 'nursing_handoff' | 'medical_handoff';
+    reason: 'manual_preserve_selected_truth';
+    selectedVersionLabel?: string;
+    modules?: Array<{ key: string; label: string }>;
+    patientContexts?: Array<{
+      patientName: string;
+      rut?: string;
+      bedName?: string;
+      bedId?: string;
+    }>;
+    patientContextCount?: number;
+    patientContextsTruncated?: boolean;
+    changedFields?: Array<{
+      path: string;
+      module: string;
+      label: string;
+      before: string;
+      after: string;
+      bedId?: string;
+    }>;
+    changedFieldCount?: number;
+    changedFieldsTruncated?: boolean;
+  };
 }
 
 /**
- * Audits an admin restoring a daily-record version from the conflict panel. Permanent (the
+ * Audits an authorized reviewer restoring a daily-record version from the conflict panel. Permanent (the
  * recoverable snapshots themselves expire via TTL, but this trail does not). See
  * docs/ADR_CONFLICT_VERSION_RECOVERY.md.
  */

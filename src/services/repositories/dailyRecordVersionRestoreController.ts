@@ -2,13 +2,16 @@ import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { getConflictVersionSnapshot } from '@/services/storage/firestore/dailyRecordConflictSnapshotService';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { saveRecordToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
-import { logRepositoryConflictVersionRestored } from '@/services/repositories/ports/repositoryAuditPort';
+import {
+  logRepositoryConflictVersionRestored,
+  type ConflictVersionRestoreAuditDetails,
+} from '@/services/repositories/ports/repositoryAuditPort';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 export type RestoreDailyRecordVersionResult = { status: 'restored' } | { status: 'not_found' };
 
 /**
- * Restores a daily-record version that an admin selected from the conflict panel.
+ * Restores a daily-record version selected by an authorized clinical conflict manager.
  *
  * Restoring overwrites live clinical data, so it is audited and **fails closed**: the permanent
  * `CONFLICT_VERSION_RESTORED` audit is written FIRST, and only if it succeeds is the record saved —
@@ -16,12 +19,13 @@ export type RestoreDailyRecordVersionResult = { status: 'restored' } | { status:
  * any mutation). The save itself is an atomic full-save with the CURRENT version as the base, so the
  * state live at restore time is snapshotted to `history` (non-destructive) and the chosen version
  * becomes the new live record; it bypasses the erasure pre-check that normal saves run (choosing a
- * version is an explicit, reversible admin action). The other conflict versions remain in
+ * version is an explicit, reversible clinical-conflict-manager action). The other conflict versions remain in
  * `conflictSnapshots/` until their TTL. See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
  */
 export const restoreDailyRecordVersion = async (
   date: string,
-  snapshotId: string
+  snapshotId: string,
+  reviewContext?: ConflictVersionRestoreAuditDetails['reviewContext']
 ): Promise<RestoreDailyRecordVersionResult> => {
   const snapshot = await getConflictVersionSnapshot(date, snapshotId);
   if (!snapshot) {
@@ -37,13 +41,14 @@ export const restoreDailyRecordVersion = async (
     snapshotId,
     origin: snapshot.origin,
     conflictId: snapshot.conflictId,
+    ...(reviewContext ? { reviewContext } : {}),
   });
 
   try {
     await saveRecordToFirestore(restoredRecord, current?.lastUpdated);
   } catch (saveError) {
     // The audit row is already written but the save failed (rare): a "phantom" restore audit.
-    // Surface it for reconciliation; the admin still sees the failure via the rethrow.
+    // Surface it for reconciliation; the authorized reviewer still sees the failure via the rethrow.
     recordOperationalErrorTelemetry('firestore', 'restore_daily_record_version_save', saveError, {
       code: 'firestore_conflict_restore_save_failed_post_audit',
       message: 'La restauración se auditó pero el guardado del registro falló.',

@@ -1,8 +1,9 @@
 # Runbook: recuperación de incidentes del censo diario
 
-**Ámbito:** censo diario, altas, movimientos de cama, conflictos auto-mergeados.
-**Uso:** cuando observabilidad y censo visible no coinciden, o cuando el panel de versiones en
-conflicto no muestra evidencia recuperable.
+**Ámbito:** censo diario, altas, movimientos de cama, CMA, entrega de turno enfermería, entrega
+médica y conflictos auto-mergeados.
+**Uso:** cuando observabilidad y el estado clínico visible no coinciden, o cuando el centro de
+conflictos clínicos no muestra evidencia recuperable.
 
 ## Triage inicial
 
@@ -44,9 +45,10 @@ conflicto no muestra evidencia recuperable.
    recuperable.
 5. Registrar cualquier restauración o reparación manual como acción auditada.
 
-## Si el panel de conflictos no muestra versiones
+## Si el centro de conflictos no muestra versiones
 
-Interpretar el estado del panel:
+El centro aparece como un indicador discreto en censo diario, entrega de enfermería y entrega
+médica para usuarios `admin` o `nurse_hospital`. Interpretar el estado:
 
 - **Snapshots recuperables:** existe al menos una versión que puede restaurarse.
 - **Snapshots no guardados:** el conflicto ocurrió, pero la captura best-effort falló.
@@ -66,8 +68,10 @@ haya expirado.
 3. Revisar `conflictResolutionSummary.mergedPaths` para saber qué intención clínica fue fusionada.
 4. Revisar `conflictResolutionSummary.blockedPaths` para saber qué rutas quedaron protegidas.
 5. Revisar `conflictResolutionSummary.invariantChecks` antes de decidir restaurar una versión.
-6. Si existe `snapshotRecovery.status = saved`, usar el panel de versiones solo como apoyo
+6. Si existe `snapshotRecovery.status = saved`, usar el centro de conflictos solo como apoyo
    operativo temporal.
+7. Si la regla automática eligió un camino incorrecto, preservar manualmente la versión correcta
+   desde el centro. La acción debe quedar como `CONFLICT_VERSION_RESTORED` con `reviewContext`.
 
 ## Cuándo restaurar una versión de conflicto
 
@@ -77,7 +81,7 @@ Restaurar solo si se cumplen todas estas condiciones:
 - la restauración corrige una pérdida visible real de alta, traslado, CMA, movimiento interno o
   diagnóstico;
 - no revive tombstones ni deja al paciente activo en dos camas;
-- el cambio fue revisado por un usuario autorizado;
+- el cambio fue revisado por `admin` o `nurse_hospital`;
 - la restauración queda auditada como `CONFLICT_VERSION_RESTORED`.
 
 ## Cuándo NO restaurar una versión
@@ -99,6 +103,8 @@ npx vitest run src/tests/services/repositories/dailyRecordCensusIncidentRegressi
   src/tests/services/repositories/conflictResolutionMovementDeletionPolicy.test.ts \
   src/tests/services/storage/dailyRecordConflictSnapshotService.test.ts \
   src/tests/views/census/conflictVersionsPresentationController.test.ts \
+  src/tests/features/conflicts/clinicalConflictCenterController.test.ts \
+  src/tests/features/conflicts/ClinicalConflictCenterControl.test.tsx \
   src/tests/services/repositories/conflictResolutionAuditSummary.test.ts
 ```
 
