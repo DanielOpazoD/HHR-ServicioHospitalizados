@@ -1,7 +1,7 @@
 import React from 'react';
 import { ClinicalConflictCenterControl } from '@/components/clinical-conflicts/ClinicalConflictCenterControl';
 import type { DailyRecordConflictRecoveryPort } from '@/application/ports/dailyRecordConflictRecoveryPort';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 
 interface ConflictVersionsAdminControlProps {
   date?: string;
