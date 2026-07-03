@@ -10,9 +10,10 @@
 
 Cuando ocurre un conflicto de concurrencia en el registro diario (auto-merge o bloqueo
 por `ConcurrencyError`), persistir **server-side ambas versiones completas previas** —la
-remota y la entrante/local— como snapshots etiquetados, y permitir que un **administrador**
-previsualice y **restaure** cualquiera de ellas. Toda restauración es una escritura
-**atómica, no destructiva y auditada**.
+remota y la entrante/local— como snapshots etiquetados, y permitir que `admin` o
+`nurse_hospital` (Hospitalizados HHR / enfermería de hospitalizados) previsualicen y
+**preserven** cualquiera de ellas desde el centro de conflictos clínicos. Toda restauración
+es una escritura **atómica, no destructiva y auditada**.
 
 Se registran **todos** los casos de conflicto/auto-merge (sin tope por conteo). Los snapshots
 recuperables **expiran solos a ~48 h** vía TTL nativo de Firestore para acotar el almacenamiento,
@@ -43,9 +44,11 @@ política de cambios (runtime/datos/clínico).
 **Dentro (MVP):**
 
 1. Captura dual de snapshots completos al momento del conflicto/merge.
-2. Lectura + restauración por admin desde el **censo**: botón sutil admin en
-   `src/features/census/components/CensusStaffHeader.tsx` →
-   `src/features/census/components/ConflictVersionsAdminControl.tsx`.
+2. Lectura + preservación por `admin`/`nurse_hospital` desde un **centro de conflictos
+   clínicos** reutilizable:
+   - censo diario: `src/features/census/components/CensusStaffHeader.tsx`;
+   - entrega enfermería: `src/features/handoff/components/HandoffView.tsx`;
+   - entrega médica: `src/features/handoff/components/HandoffMedicalContent.tsx`.
 3. **Auditoría de la restauración** (requisito explícito).
 
 **Fuera (evita sobreingeniería, por la doctrina del equipo):**
@@ -100,10 +103,12 @@ el campo `expireAt`):
 
 ## Contrato de restauración
 
-`restoreDailyRecordVersion(date, snapshotId)`:
+`restoreDailyRecordVersion(date, snapshotId, reviewContext?)`:
 
-- **Solo admin** — enforzado en las **rules** (lectura de `conflictSnapshots/` restringida a
-  `isAdmin()`), no solo en el gate de la UI.
+- **Solo `admin` o `nurse_hospital` para revisar snapshots** — enforzado en las **rules** con
+  `canManageClinicalConflictSnapshots()` y también en la UI con
+  `canManageClinicalConflictCenter()`. Las escrituras/updates/deletes administrativos de la
+  subcolección siguen restringidos a mantenimiento admin.
 - **Falla cerrado:** primero se escribe la auditoría `CONFLICT_VERSION_RESTORED`; solo si ésta tiene
   éxito se guarda el `record`. Un actor anónimo o un fallo de auditoría **aborta antes** de mutar —
   nunca hay un overwrite clínico sin auditar.
@@ -118,14 +123,19 @@ Toda restauración se registra vía el puerto de auditoría existente
 (`src/services/repositories/ports/repositoryAuditPort.ts`), con un nuevo evento
 `logRepositoryConflictVersionRestored`, hermano de `logRepositoryConflictAutoMerged`. Captura:
 
-- **quién** (email/uid del admin), **cuándo**,
+- **quién** (email/uid del usuario autorizado), **cuándo**,
 - `date`, `snapshotId` restaurado, `origin`, `conflictId`,
-- la `revision` resultante de la escritura de restauración.
+- `reviewContext` si la acción vino del centro de conflictos:
+  - `scope` (`census`, `nursing_handoff`, `medical_handoff`),
+  - versión seleccionada,
+  - módulos afectados,
+  - paciente/cama/RUT si estaban disponibles,
+  - campos resumidos antes/después.
 
 Va a la **misma colección/telemetría de auditoría** que el auto-merge. La restauración
 **nunca borra** snapshots (append-only), de modo que la cadena «conflicto → merge → restore»
-queda completa y reconstruible. Sin RUT/nombres en texto plano en la telemetría (igual que el
-auto-merge hoy).
+queda completa y reconstruible. Los datos clínicos incluidos en `reviewContext` son el mínimo
+necesario para auditoría operacional del cambio elegido.
 
 ## Decisiones abiertas (con recomendación)
 
@@ -133,7 +143,8 @@ auto-merge hoy).
    **TTL ~48 h (configurable)** vía Firestore nativo, sin tope por conteo; la auditoría no expira.
    _Queda solo confirmar que 48 h es la ventana clínica adecuada._
 2. **Restore sobre día ya editado:** nueva escritura atómica, no destructivo. → _Recomendado._
-3. **Permisos:** solo admin. → _Recomendado._
+3. **Permisos:** `admin` + `nurse_hospital` para revisar/preservar; mantenimiento de blobs solo
+   admin. → _Resuelto (2026-07-03)._
 4. **¿Capturar también la versión local rechazada en `ConcurrencyError` (bloqueo)?** Es la que
    el usuario podría perder al recargar. → _Recomiendo SÍ (mismo `incoming_premerge`)._
 

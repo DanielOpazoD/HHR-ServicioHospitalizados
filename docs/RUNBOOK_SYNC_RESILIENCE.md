@@ -133,6 +133,25 @@ aparecer durante carreras multitab o recuperación de leases vencidos. Si se
 repite junto a `oldestPendingAgeMs` crítico, escalar con las operaciones recientes
 del outbox antes de limpiar cache local.
 
+## Apartado transversal: centro de conflictos clínicos revisables
+
+El flujo normal sigue siendo auto-merge seguro: el usuario clínico no debe ser interrumpido cuando
+la autoridad transaccional, la intención clínica y los invariantes permiten resolver. Si queda
+evidencia recuperable, `admin` y `nurse_hospital` pueden abrir el centro de conflictos desde:
+
+- censo diario;
+- entrega de turno enfermería;
+- entrega de turno médica.
+
+Uso operativo:
+
+1. Revisar módulos afectados y pacientes/camas mostrados en el centro.
+2. Comparar campos resumidos antes/después.
+3. Preservar una versión solo si la regla automática eligió una verdad clínica incorrecta.
+4. Confirmar que observabilidad registre `CONFLICT_VERSION_RESTORED` con `reviewContext`.
+5. Si no hay snapshots, usar la razón del panel: TTL expirado, permiso denegado, no guardado o
+   sin evidencia recuperable.
+
 ## Procedimiento 2.3: pre-outbox y ack de escritura directa
 
 Las escrituras críticas del censo usan flujo `pre-outbox`: primero persisten el
