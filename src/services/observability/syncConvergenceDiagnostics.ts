@@ -1,6 +1,10 @@
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 import type { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
 import type { SyncQueueOperationSnapshot } from '@/services/storage/sync';
+import {
+  collectMedicalHandoffFindings,
+  collectNursingHandoffFindings,
+} from '@/services/observability/syncConvergenceHandoffDiagnostics';
 
 export type SyncConvergenceStatus = 'healthy' | 'recoverable' | 'needs_review' | 'unsafe';
 export type SyncConvergenceSeverity = 'info' | 'warning' | 'critical';
@@ -30,7 +34,7 @@ export interface SyncConvergenceFinding {
   status: Exclude<SyncConvergenceStatus, 'healthy'>;
   severity: SyncConvergenceSeverity;
   path: string;
-  module: 'censo' | 'handoff' | 'sync' | 'recovery';
+  module: 'censo' | 'nursing_handoff' | 'medical_handoff' | 'sync' | 'recovery';
   message: string;
   affectedPatient?: string;
   evidence: Record<string, unknown>;
@@ -56,7 +60,6 @@ export interface SyncConvergenceDiagnostic {
 
 const DEFAULT_STALE_OUTBOX_MS = 45 * 60 * 1000;
 const MOVEMENT_FIELDS = ['discharges', 'transfers', 'cma'] as const;
-const HANDOFF_FIELDS = ['handoffNoteDayShift', 'handoffNoteNightShift'] as const;
 
 type MovementField = (typeof MOVEMENT_FIELDS)[number];
 
@@ -65,9 +68,6 @@ const normalizeIdentity = (value: unknown): string => normalizeText(value).toLow
 
 const isDeletedMovement = (movement: { deletedAt?: unknown } | undefined): boolean =>
   normalizeText(movement?.deletedAt).length > 0;
-
-const valuesDiffer = (left: unknown, right: unknown): boolean =>
-  JSON.stringify(left ?? null) !== JSON.stringify(right ?? null);
 
 const hasPendingOutboxForPath = (outbox: SyncQueueOperationSnapshot[], path: string): boolean =>
   outbox.some(operation =>
@@ -83,20 +83,6 @@ const resolvePatientIdentityKey = (patient: DailyRecord['beds'][string] | undefi
   if (episode) return `episode:${episode}`;
   const name = normalizeIdentity(patient?.patientName);
   return name ? `name:${name}` : '';
-};
-
-const sameClinicalEpisode = (
-  left: DailyRecord['beds'][string] | undefined,
-  right: DailyRecord['beds'][string] | undefined
-): boolean => {
-  if (!left || !right) return false;
-  const leftEpisode = normalizeText(left.clinicalEpisodeId);
-  const rightEpisode = normalizeText(right.clinicalEpisodeId);
-  if (leftEpisode || rightEpisode) return leftEpisode.length > 0 && leftEpisode === rightEpisode;
-  const leftRut = normalizeIdentity(left.rut);
-  const rightRut = normalizeIdentity(right.rut);
-  if (leftRut || rightRut) return leftRut.length > 0 && leftRut === rightRut;
-  return normalizeIdentity(left.patientName) === normalizeIdentity(right.patientName);
 };
 
 const describePatient = (
@@ -177,58 +163,15 @@ const collectMovementFindings = ({
           path,
           module: 'censo',
           affectedPatient: normalizeText(movement.patientName) || undefined,
-          message: `Movimiento ${field}.${id} existe localmente pero no esta reflejado remoto.`,
+          message: `Movimiento ${field}.${id} existe localmente pero no está reflejado remoto.`,
           evidence: {
+            date: localRecord.date,
             field,
             movementId: id,
             pendingOutbox,
           },
         });
       });
-  });
-
-  return findings;
-};
-
-const collectHandoffFindings = ({
-  localRecord,
-  remoteRecord,
-  outbox,
-}: Required<Pick<EvaluateSyncConvergenceInput, 'outbox'>> &
-  Pick<EvaluateSyncConvergenceInput, 'localRecord' | 'remoteRecord'>): SyncConvergenceFinding[] => {
-  if (!localRecord || !remoteRecord) return [];
-  const bedIds = new Set([
-    ...Object.keys(localRecord.beds || {}),
-    ...Object.keys(remoteRecord.beds || {}),
-  ]);
-  const findings: SyncConvergenceFinding[] = [];
-
-  bedIds.forEach(bedId => {
-    const localPatient = localRecord.beds?.[bedId];
-    const remotePatient = remoteRecord.beds?.[bedId];
-    if (!sameClinicalEpisode(localPatient, remotePatient)) return;
-
-    HANDOFF_FIELDS.forEach(field => {
-      if (!valuesDiffer(localPatient?.[field], remotePatient?.[field])) return;
-      const path = `beds.${bedId}.${field}`;
-      const pendingOutbox = hasPendingOutboxForPath(outbox, path);
-      findings.push({
-        type: 'handoff_divergent',
-        status: pendingOutbox ? 'recoverable' : 'needs_review',
-        severity: pendingOutbox ? 'warning' : 'critical',
-        path,
-        module: 'handoff',
-        affectedPatient: describePatient(localPatient ?? remotePatient, bedId),
-        message: `Entrega de turno divergente en ${path} para el mismo episodio clinico.`,
-        evidence: {
-          bedId,
-          field,
-          pendingOutbox,
-          localHasValue: normalizeText(localPatient?.[field]).length > 0,
-          remoteHasValue: normalizeText(remotePatient?.[field]).length > 0,
-        },
-      });
-    });
   });
 
   return findings;
@@ -253,7 +196,7 @@ const collectOutboxFindings = (
         severity: 'warning',
         path: operation.key || `syncQueue.${operation.id || operation.type}`,
         module: 'sync',
-        message: 'Operacion local pendiente excede el umbral de antiguedad del outbox.',
+        message: 'Operación local pendiente excede el umbral de antigüedad del outbox.',
         evidence: {
           operationId: operation.id,
           key: operation.key,
@@ -282,7 +225,7 @@ const collectOutboxFindings = (
       severity: 'warning',
       path: `syncContract.mutationId.${mutationId}`,
       module: 'sync',
-      message: 'La misma mutacion aparece mas de una vez en operaciones recientes del outbox.',
+      message: 'La misma mutación aparece más de una vez en operaciones recientes del outbox.',
       evidence: {
         mutationId,
         operationIds: operations.map(operation => operation.id).filter(Boolean),
@@ -306,7 +249,7 @@ const collectSnapshotFindings = (
       severity: snapshotRecovery.status === 'permission_denied' ? 'critical' : 'warning',
       path: 'conflictSnapshot',
       module: 'recovery',
-      message: 'No hay snapshot de recuperacion confiable para explicar o revertir el conflicto.',
+      message: 'No hay snapshot de recuperación confiable para explicar o revertir el conflicto.',
       evidence: {
         snapshotStatus: snapshotRecovery.status,
         reason: snapshotRecovery.reason,
@@ -326,7 +269,7 @@ const buildSummary = (
   status: SyncConvergenceStatus,
   findings: SyncConvergenceFinding[]
 ): string => {
-  if (status === 'healthy') return 'Sincronizacion clinica convergida sin hallazgos activos.';
+  if (status === 'healthy') return 'Sincronización clínica convergida sin hallazgos activos.';
   const counts = findings.reduce<Record<SyncConvergenceFindingType, number>>(
     (acc, finding) => ({
       ...acc,
@@ -334,7 +277,7 @@ const buildSummary = (
     }),
     {} as Record<SyncConvergenceFindingType, number>
   );
-  return `Sincronizacion clinica ${status}: ${Object.entries(counts)
+  return `Sincronización clínica ${status}: ${Object.entries(counts)
     .map(([type, count]) => `${type}=${count}`)
     .join(', ')}.`;
 };
@@ -351,7 +294,8 @@ export const evaluateSyncConvergence = ({
   const findings = [
     ...collectDuplicateActivePatientFindings(localRecord || remoteRecord),
     ...collectMovementFindings({ localRecord, remoteRecord, outbox }),
-    ...collectHandoffFindings({ localRecord, remoteRecord, outbox }),
+    ...collectNursingHandoffFindings({ localRecord, remoteRecord, outbox }),
+    ...collectMedicalHandoffFindings({ localRecord, remoteRecord, outbox }),
     ...collectOutboxFindings(outbox, nowMs, staleOutboxMs),
     ...collectSnapshotFindings(snapshotRecovery),
   ];

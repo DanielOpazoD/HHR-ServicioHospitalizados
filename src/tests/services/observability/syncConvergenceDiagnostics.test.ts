@@ -208,8 +208,128 @@ describe('syncConvergenceDiagnostics', () => {
       expect.objectContaining({
         type: 'handoff_divergent',
         path: 'beds.R1.handoffNoteDayShift',
-        module: 'handoff',
+        module: 'nursing_handoff',
         affectedPatient: 'Pierre Jean',
+        evidence: expect.objectContaining({
+          bedId: 'R1',
+          rut: '25DF52626',
+          date: '2026-07-02',
+        }),
+      })
+    );
+  });
+
+  it('detects medical handoff specialty divergence with clinical context', () => {
+    const localRecord = makeRecord({
+      medicalHandoffBySpecialty: {
+        cirugia: {
+          note: 'Control quirúrgico local posterior.',
+          createdAt: '2026-07-02T08:00:00.000Z',
+          updatedAt: '2026-07-02T10:00:00.000Z',
+          version: 2,
+          author: { uid: 'doc-1', displayName: 'Dra Cirugía', email: 'doc@example.com' },
+        },
+      },
+      medicalHandoffNovedades: 'Cirugía\nControl quirúrgico local posterior.',
+    });
+    const remoteRecord = makeRecord({
+      medicalHandoffBySpecialty: {
+        cirugia: {
+          note: 'Control quirúrgico remoto anterior.',
+          createdAt: '2026-07-02T08:00:00.000Z',
+          updatedAt: '2026-07-02T09:00:00.000Z',
+          version: 1,
+          author: { uid: 'doc-1', displayName: 'Dra Cirugía', email: 'doc@example.com' },
+        },
+      },
+      medicalHandoffNovedades: 'Cirugía\nControl quirúrgico remoto anterior.',
+    });
+
+    const result = evaluateSyncConvergence({
+      localRecord,
+      remoteRecord,
+      outbox: [],
+      snapshotRecovery: { status: 'available' },
+      nowMs: Date.parse('2026-07-02T10:20:00.000Z'),
+    });
+
+    expect(result.status).toBe('needs_review');
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        type: 'handoff_divergent',
+        path: 'medicalHandoffBySpecialty.cirugia.note',
+        module: 'medical_handoff',
+        message: expect.stringContaining('Entrega médica divergente'),
+        evidence: expect.objectContaining({
+          date: '2026-07-02',
+          specialty: 'cirugia',
+          localHasValue: true,
+          remoteHasValue: true,
+        }),
+      })
+    );
+  });
+
+  it('detects medical patient-entry divergence only for the same clinical episode', () => {
+    const localRecord = makeRecord({
+      beds: {
+        R1: makePatient('R1', {
+          patientName: 'Ana Perez',
+          rut: '12.345.678-5',
+          clinicalEpisodeId: 'episode-ana-current',
+          medicalHandoffEntries: [
+            { id: 'mh-1', specialty: 'medicinaInterna', note: 'Plan médico local posterior.' },
+          ],
+        }),
+      },
+    });
+    const remoteRecord = makeRecord({
+      beds: {
+        R1: makePatient('R1', {
+          patientName: 'Ana Perez',
+          rut: '99.999.999-9',
+          clinicalEpisodeId: 'episode-ana-old',
+          medicalHandoffEntries: [
+            { id: 'mh-1', specialty: 'medicinaInterna', note: 'Plan médico remoto anterior.' },
+          ],
+        }),
+        R2: makePatient('R2', {
+          patientName: 'Ana Perez',
+          rut: '12.345.678-5',
+          clinicalEpisodeId: 'episode-ana-current',
+          medicalHandoffEntries: [
+            { id: 'mh-1', specialty: 'medicinaInterna', note: 'Plan médico remoto anterior.' },
+          ],
+        }),
+      },
+    });
+
+    const result = evaluateSyncConvergence({
+      localRecord,
+      remoteRecord,
+      outbox: [],
+      snapshotRecovery: { status: 'available' },
+      nowMs: Date.parse('2026-07-02T10:20:00.000Z'),
+    });
+
+    expect(result.status).toBe('needs_review');
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        type: 'handoff_divergent',
+        path: 'beds.R2.medicalHandoffEntries.mh-1',
+        module: 'medical_handoff',
+        affectedPatient: 'Ana Perez',
+        evidence: expect.objectContaining({
+          bedId: 'R2',
+          rut: '12.345.678-5',
+          entryId: 'mh-1',
+          date: '2026-07-02',
+        }),
+      })
+    );
+    expect(result.findings).not.toContainEqual(
+      expect.objectContaining({
+        path: 'beds.R1.medicalHandoffEntries.mh-1',
       })
     );
   });
