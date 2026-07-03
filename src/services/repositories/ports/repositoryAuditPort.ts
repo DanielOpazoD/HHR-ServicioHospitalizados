@@ -93,6 +93,28 @@ export interface ConflictVersionRestoreAuditDetails {
   origin: string;
   /** Correlates back to the conflict and its version snapshots. */
   conflictId?: string;
+  /** Clinical review context captured by the conflict center before the overwrite is applied. */
+  reviewContext?: {
+    source: 'clinical_conflict_center';
+    scope: 'census' | 'nursing_handoff' | 'medical_handoff';
+    reason: 'manual_preserve_selected_truth';
+    selectedVersionLabel?: string;
+    modules?: Array<{ key: string; label: string }>;
+    patientContexts?: Array<{
+      patientName: string;
+      rut?: string;
+      bedName?: string;
+      bedId?: string;
+    }>;
+    changedFields?: Array<{
+      path: string;
+      module: string;
+      label: string;
+      before: string;
+      after: string;
+      bedId?: string;
+    }>;
+  };
 }
 
 /**

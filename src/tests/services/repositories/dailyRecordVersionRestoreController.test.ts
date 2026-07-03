@@ -40,7 +40,15 @@ describe('restoreDailyRecordVersion', () => {
       lastUpdated: '2026-06-26T12:00:00.000Z',
     } as never);
 
-    const result = await restoreDailyRecordVersion('2026-06-26', 'cid__remote_premerge');
+    const result = await restoreDailyRecordVersion('2026-06-26', 'cid__remote_premerge', {
+      source: 'clinical_conflict_center',
+      scope: 'census',
+      reason: 'manual_preserve_selected_truth',
+      selectedVersionLabel: 'Versión en la nube',
+      modules: [{ key: 'census', label: 'Censo diario' }],
+      patientContexts: [{ patientName: 'Remoto', bedName: 'R1', bedId: 'R1' }],
+      changedFields: [],
+    });
 
     expect(result).toEqual({ status: 'restored' });
     // Atomic full-save with the CURRENT version as base (CAS-safe, non-destructive).
@@ -52,6 +60,11 @@ describe('restoreDailyRecordVersion', () => {
       snapshotId: 'cid__remote_premerge',
       origin: 'remote_premerge',
       conflictId: 'cid',
+      reviewContext: expect.objectContaining({
+        source: 'clinical_conflict_center',
+        scope: 'census',
+        selectedVersionLabel: 'Versión en la nube',
+      }),
     });
   });
 

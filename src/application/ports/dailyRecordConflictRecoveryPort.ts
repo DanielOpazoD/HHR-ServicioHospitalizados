@@ -1,5 +1,6 @@
 import type { ConflictVersionSnapshot } from '@/services/storage/firestore/dailyRecordConflictSnapshotService';
 import type { RestoreDailyRecordVersionResult } from '@/services/repositories/dailyRecordVersionRestoreController';
+import type { ConflictVersionRestoreAuditDetails } from '@/services/repositories/ports/repositoryAuditPort';
 import type { AuditLogEntry } from '@/types/auditLogTypes';
 
 export type { ConflictVersionSnapshot } from '@/services/storage/firestore/dailyRecordConflictSnapshotService';
@@ -46,7 +47,8 @@ export interface DailyRecordConflictRecoveryPort {
   ) => Promise<ConflictSnapshotRecoveryEvidence | null>;
   restoreDailyRecordVersion: (
     date: string,
-    snapshotId: string
+    snapshotId: string,
+    reviewContext?: ConflictVersionRestoreAuditDetails['reviewContext']
   ) => Promise<RestoreDailyRecordVersionResult>;
 }
 
@@ -63,9 +65,9 @@ export const defaultDailyRecordConflictRecoveryPort: DailyRecordConflictRecovery
       date
     );
   },
-  restoreDailyRecordVersion: async (date, snapshotId) => {
+  restoreDailyRecordVersion: async (date, snapshotId, reviewContext) => {
     const { restoreDailyRecordVersion } =
       await import('@/services/repositories/dailyRecordVersionRestoreController');
-    return restoreDailyRecordVersion(date, snapshotId);
+    return restoreDailyRecordVersion(date, snapshotId, reviewContext);
   },
 };

@@ -1,0 +1,133 @@
+/** @vitest-environment jsdom */
+import '../../setup';
+import React from 'react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ClinicalConflictCenterControl } from '@/components/clinical-conflicts/ClinicalConflictCenterControl';
+import type { ConflictVersionRecoveryModel } from '@/hooks/clinical-conflicts/useConflictVersionRecovery';
+import type { ConflictVersionSnapshot } from '@/application/ports/dailyRecordConflictRecoveryPort';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
+
+const mockRecovery = vi.hoisted(() => vi.fn<() => ConflictVersionRecoveryModel>());
+
+vi.mock('@/hooks/clinical-conflicts/useConflictVersionRecovery', () => ({
+  useConflictVersionRecovery: () => mockRecovery(),
+}));
+
+const buildRecord = (pathology: string, note: string): DailyRecord =>
+  ({
+    date: '2026-07-01',
+    beds: {
+      H1: {
+        bedId: 'H1',
+        bedName: 'H1',
+        patientName: 'Pierre Jean',
+        rut: '25DF52626',
+        pathology,
+        handoffNoteDayShift: note,
+      },
+    },
+    discharges: [],
+    transfers: [],
+    cma: [],
+    activeExtraBeds: [],
+    lastUpdated: '2026-07-01T10:00:00.000Z',
+  }) as unknown as DailyRecord;
+
+const buildSnapshot = (
+  id: string,
+  origin: ConflictVersionSnapshot['origin'],
+  record: DailyRecord
+): ConflictVersionSnapshot => ({
+  id,
+  origin,
+  conflictId: 'conflict-1',
+  sourceLastUpdated: record.lastUpdated,
+  record,
+});
+
+const defaultRecovery = (
+  overrides: Partial<ConflictVersionRecoveryModel> = {}
+): ConflictVersionRecoveryModel => ({
+  isAdmin: true,
+  canManageClinicalConflicts: true,
+  isOpen: true,
+  loading: false,
+  restoringId: null,
+  snapshots: [
+    buildSnapshot('conflict-1__remote_premerge', 'remote_premerge', buildRecord('Neumonia', 'A')),
+    buildSnapshot('conflict-1__incoming_premerge', 'incoming_premerge', buildRecord('ICC', 'B')),
+  ],
+  snapshotRecovery: null,
+  open: vi.fn(),
+  close: vi.fn(),
+  restore: vi.fn(),
+  ...overrides,
+});
+
+describe('ClinicalConflictCenterControl', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('does not render the affordance for users without conflict management access', () => {
+    mockRecovery.mockReturnValue(defaultRecovery({ canManageClinicalConflicts: false }));
+
+    render(<ClinicalConflictCenterControl date="2026-07-01" scope="nursing_handoff" />);
+
+    expect(screen.queryByTestId('clinical-conflict-center-button')).not.toBeInTheDocument();
+  });
+
+  it('renders an explainable empty state when snapshots are unavailable', () => {
+    mockRecovery.mockReturnValue(
+      defaultRecovery({
+        snapshots: [],
+        snapshotRecovery: {
+          status: 'saved',
+          snapshotIds: ['conflict-1__remote_premerge'],
+          origins: ['remote_premerge'],
+          ttlMs: 172800000,
+          unavailableReason: 'permission_denied',
+        },
+      })
+    );
+
+    render(<ClinicalConflictCenterControl date="2026-07-01" scope="medical_handoff" />);
+
+    expect(screen.getByTestId('clinical-conflict-center-modal')).toBeInTheDocument();
+    expect(screen.getByText('Snapshots sin permiso de lectura')).toBeInTheDocument();
+    expect(screen.getByText(/Entrega médica · 2026-07-01/)).toBeInTheDocument();
+  });
+
+  it('shows patient-centered differences and delegates preservation to audited restore', () => {
+    const restore = vi.fn();
+    mockRecovery.mockReturnValue(defaultRecovery({ restore }));
+
+    render(<ClinicalConflictCenterControl date="2026-07-01" scope="nursing_handoff" />);
+
+    expect(screen.getByText('Pierre Jean · 25DF52626 · H1')).toBeInTheDocument();
+    expect(screen.getByText('Diagnóstico')).toBeInTheDocument();
+    expect(screen.getByText('Nota enfermería turno largo')).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByText('Preservar')[0]);
+
+    expect(restore).toHaveBeenCalledWith(
+      'conflict-1__remote_premerge',
+      expect.objectContaining({
+        title: 'Preservar versión seleccionada',
+        confirmText: 'Preservar',
+        reviewContext: expect.objectContaining({
+          source: 'clinical_conflict_center',
+          scope: 'nursing_handoff',
+          selectedVersionLabel: 'Versión en la nube',
+          patientContexts: expect.arrayContaining([
+            expect.objectContaining({ patientName: 'Pierre Jean', rut: '25DF52626' }),
+          ]),
+          changedFields: expect.arrayContaining([
+            expect.objectContaining({ label: 'Diagnóstico', before: 'Neumonia', after: 'ICC' }),
+          ]),
+        }),
+      })
+    );
+  });
+});

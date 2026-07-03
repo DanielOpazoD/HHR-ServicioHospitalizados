@@ -2,7 +2,10 @@ import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { getConflictVersionSnapshot } from '@/services/storage/firestore/dailyRecordConflictSnapshotService';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { saveRecordToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
-import { logRepositoryConflictVersionRestored } from '@/services/repositories/ports/repositoryAuditPort';
+import {
+  logRepositoryConflictVersionRestored,
+  type ConflictVersionRestoreAuditDetails,
+} from '@/services/repositories/ports/repositoryAuditPort';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
 
 export type RestoreDailyRecordVersionResult = { status: 'restored' } | { status: 'not_found' };
@@ -21,7 +24,8 @@ export type RestoreDailyRecordVersionResult = { status: 'restored' } | { status:
  */
 export const restoreDailyRecordVersion = async (
   date: string,
-  snapshotId: string
+  snapshotId: string,
+  reviewContext?: ConflictVersionRestoreAuditDetails['reviewContext']
 ): Promise<RestoreDailyRecordVersionResult> => {
   const snapshot = await getConflictVersionSnapshot(date, snapshotId);
   if (!snapshot) {
@@ -37,6 +41,7 @@ export const restoreDailyRecordVersion = async (
     snapshotId,
     origin: snapshot.origin,
     conflictId: snapshot.conflictId,
+    ...(reviewContext ? { reviewContext } : {}),
   });
 
   try {
