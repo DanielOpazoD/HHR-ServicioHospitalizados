@@ -38,8 +38,18 @@ export interface SyncTask {
   syncContract?: SyncTaskContract;
 }
 
+export type SyncTaskResolution =
+  | 'accepted'
+  | 'replayed'
+  | 'merged'
+  | 'blocked'
+  | 'stale'
+  | 'already_applied';
+
 export interface SyncTaskContract {
   expectedVersion?: string;
+  acceptedVersion?: string;
+  acceptedRevision?: number;
   baseRevision?: number;
   recordRevision?: string;
   clinicalEpisodeKeys?: string[];
@@ -48,4 +58,5 @@ export interface SyncTaskContract {
   mutationIds?: string[];
   clientId?: string;
   tabId?: string;
+  resolution?: SyncTaskResolution;
 }

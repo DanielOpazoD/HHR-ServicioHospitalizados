@@ -1,11 +1,27 @@
 import type { SyncTask } from '@/services/storage/syncQueueTypes';
 import type { SyncQueueTelemetry } from '@/services/storage/sync/syncQueueTelemetryContracts';
 import { recordOperationalTelemetry } from '@/services/observability/operationalTelemetryRecorder';
+import type { OperationalRuntimeState } from '@/services/observability/operationalRuntimeState';
+import type { OperationalTelemetryStatus } from '@/services/observability/operationalTelemetryTypes';
+import { sanitizeSyncContractForOperationalSnapshot } from '@/services/storage/sync/syncQueueTaskFactory';
 import {
   resolveSyncQueueBudgetState,
   resolveSyncQueueRuntimeState,
   SYNC_QUEUE_RUNTIME_THRESHOLDS,
 } from '@/services/storage/sync/syncQueueOperationalBudgets';
+
+export type SyncQueueSelectedTruth =
+  | 'authority_intent_invariants'
+  | 'remote_already_applied'
+  | 'legacy_direct_publish'
+  | 'blocked_before_publish';
+
+export interface SyncQueueTruthSelectionTelemetryInput {
+  resolution: NonNullable<SyncTask['syncContract']>['resolution'];
+  selectedTruth: SyncQueueSelectedTruth;
+  acceptedVersion?: string;
+  acceptedRevision?: number;
+}
 
 export interface SyncQueueTelemetrySnapshot extends SyncQueueTelemetry {
   capturedAt: number;
@@ -73,12 +89,7 @@ export const buildSyncQueueTelemetryFromRows = (
     oldestPendingBudgetState,
     directQueueBudgetState,
     retryingBudgetState,
-    runtimeState:
-      directQueueBudgetState === 'critical'
-        ? 'blocked'
-        : directQueueBudgetState === 'warning' && runtimeState === 'ok'
-          ? 'degraded'
-          : runtimeState,
+    runtimeState: directQueueBudgetState === 'critical' ? 'blocked' : runtimeState,
   };
 };
 
@@ -197,4 +208,65 @@ export const recordSyncQueueBudgetTelemetry = (
       ...context,
     },
   });
+};
+
+const resolveTruthTelemetryStatus = (
+  resolution: SyncQueueTruthSelectionTelemetryInput['resolution']
+): {
+  status: OperationalTelemetryStatus;
+  runtimeState: OperationalRuntimeState;
+} => {
+  if (resolution === 'blocked') {
+    return { status: 'failed', runtimeState: 'blocked' };
+  }
+  if (resolution === 'stale') {
+    return { status: 'degraded', runtimeState: 'retryable' };
+  }
+  return { status: 'success', runtimeState: 'recoverable' };
+};
+
+export const recordSyncQueueTruthSelectionTelemetry = (
+  task: Pick<SyncTask, 'id' | 'type' | 'key' | 'contexts' | 'origin' | 'syncContract'>,
+  input: SyncQueueTruthSelectionTelemetryInput
+): void => {
+  const telemetryStatus = resolveTruthTelemetryStatus(input.resolution);
+  const contract = sanitizeSyncContractForOperationalSnapshot({
+    ...task.syncContract,
+    acceptedVersion: input.acceptedVersion ?? task.syncContract?.acceptedVersion,
+    acceptedRevision: input.acceptedRevision ?? task.syncContract?.acceptedRevision,
+    resolution: input.resolution,
+  });
+
+  recordOperationalTelemetry(
+    {
+      category: 'sync',
+      operation: 'sync_queue_truth_selected',
+      status: telemetryStatus.status,
+      runtimeState: telemetryStatus.runtimeState,
+      issues:
+        input.resolution === 'blocked'
+          ? ['La autoridad clinica bloqueo la mutacion antes de publicar.']
+          : undefined,
+      context: {
+        taskId: task.id,
+        type: task.type,
+        key: task.key,
+        contexts: task.contexts,
+        origin: task.origin,
+        selectedTruth: input.selectedTruth,
+        resolution: input.resolution,
+        expectedVersion: contract?.expectedVersion,
+        acceptedVersion: contract?.acceptedVersion,
+        acceptedRevision: contract?.acceptedRevision,
+        recordRevision: contract?.recordRevision,
+        baseRevision: contract?.baseRevision,
+        mutationId: contract?.mutationId,
+        mutationIds: contract?.mutationIds,
+        clientId: contract?.clientId,
+        tabId: contract?.tabId,
+        changedPaths: contract?.changedPaths,
+      },
+    },
+    { allowSuccess: true }
+  );
 };

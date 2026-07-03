@@ -36,6 +36,8 @@ const GENERATED_REPORT_STATUS_SUFFIXES = new Set([
   'reports/release-readiness-scorecard.md',
   'reports/runtime-contracts.json',
   'reports/runtime-contracts.md',
+  'reports/sync-convergence.json',
+  'reports/sync-convergence.md',
   'reports/system-confidence.json',
   'reports/system-confidence.md',
   'reports/technical-ownership-map.json',

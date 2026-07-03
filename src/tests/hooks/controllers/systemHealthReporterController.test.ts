@@ -185,6 +185,56 @@ describe('systemHealthReporterController', () => {
     expect(JSON.stringify(events)).not.toContain('11111111-1');
   });
 
+  it('keeps sync truth selection successes visible for convergence monitoring', () => {
+    const events = buildRecentUserHealthEvents({
+      localErrors: [],
+      operationalEvents: [
+        {
+          category: 'sync',
+          status: 'success',
+          runtimeState: 'recoverable',
+          operation: 'sync_queue_truth_selected',
+          timestamp: '2026-05-21T14:05:00.000Z',
+          issues: [],
+          context: {
+            module: 'Censo diario',
+            action: 'Verdad clinica aceptada',
+            route: '/censo',
+            clinicalDate: '2026-05-21',
+            bedLabel: 'Cama R1',
+            patientName: 'Paciente no debe exponerse',
+            rut: '11111111-1',
+            clientId: 'anon_a1b2c3',
+            tabId: 'anon_d4e5f6',
+          },
+        },
+      ],
+    });
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      id: 'operational:sync:sync_queue_truth_selected:2026-05-21T14:05:00.000Z',
+      source: 'operational',
+      category: 'sync',
+      severity: 'info',
+      status: 'recovered',
+      operation: 'sync_queue_truth_selected',
+      module: 'Censo diario',
+      action: 'Verdad clinica aceptada',
+      route: '/censo',
+      telemetryStatus: 'success',
+      runtimeState: 'recoverable',
+      contextSummary: [
+        'fecha clinica: 2026-05-21',
+        'cama: Cama R1',
+        'module: Censo diario',
+        'action: Verdad clinica aceptada',
+      ],
+    });
+    expect(JSON.stringify(events)).not.toContain('Paciente no debe exponerse');
+    expect(JSON.stringify(events)).not.toContain('11111111-1');
+  });
+
   it('infers actionable local error origin from route when module is missing', () => {
     const events = buildRecentUserHealthEvents({
       localErrors: [

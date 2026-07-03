@@ -38,6 +38,7 @@ export const evaluateSyncInvariants = root => {
   const publicQueue = readText(root, 'src/services/storage/sync/publicSyncQueue.ts');
   const contractPolicy = readText(root, 'src/services/storage/sync/syncTaskContractPolicy.ts');
   const transport = readText(root, 'src/services/storage/sync/firestoreSyncTransport.ts');
+  const conflictPolicy = readText(root, 'src/services/storage/sync/firestoreSyncConflictPolicy.ts');
   const repositoryWrite = readText(
     root,
     'src/services/repositories/dailyRecordRepositoryWriteService.ts'
@@ -144,10 +145,14 @@ export const evaluateSyncInvariants = root => {
     buildInvariant(
       'idempotent-mutation-drain',
       transport.includes('hasRemoteAppliedMutation') &&
-        transport.includes('return null') &&
-        transport.includes('lastMutationId'),
+        transport.includes("resolution: 'already_applied'") &&
+        transport.includes('record: null') &&
+        conflictPolicy.includes('lastMutationId'),
       'Sync queue replay must treat a remote matching mutationId as an already-applied success so local outbox can drain.',
-      ['src/services/storage/sync/firestoreSyncTransport.ts']
+      [
+        'src/services/storage/sync/firestoreSyncTransport.ts',
+        'src/services/storage/sync/firestoreSyncConflictPolicy.ts',
+      ]
     ),
   ];
 

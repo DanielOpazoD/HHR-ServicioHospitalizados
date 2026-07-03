@@ -13,7 +13,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useConfirmDialog, useNotification } from '@/context/UIContext';
 import { SystemHealthIncidentDetailPanel } from './SystemHealthIncidentDetailPanel';
 import { SystemHealthIncidentQueue } from './SystemHealthIncidentQueue';
+import { SystemHealthSyncConvergencePanel } from './SystemHealthSyncConvergencePanel';
 import { SystemHealthTriageToolbar } from './SystemHealthTriageToolbar';
+import { buildSystemHealthSyncConvergencePanelModel } from './systemHealthSyncConvergenceModel';
 import {
   buildSystemHealthTriageModel,
   exportSystemHealthIncidentsCsv,
@@ -79,6 +81,10 @@ export const SystemHealthDashboard = () => {
     [dateRange, eventType, resolutionState, searchTerm, selectedDate, selectedUid, severity, stats]
   );
   const { filteredUsers, selectedUser, selectedIncidents, incidentQueue } = triageModel;
+  const syncConvergenceModel = useMemo(
+    () => buildSystemHealthSyncConvergencePanelModel(filteredUsers),
+    [filteredUsers]
+  );
   const canManageSystemHealthOperations = role === 'admin';
 
   const notifyAdminOnlyAction = () => {
@@ -322,6 +328,8 @@ export const SystemHealthDashboard = () => {
         </div>
       ) : (
         <div className="space-y-6">
+          <SystemHealthSyncConvergencePanel model={syncConvergenceModel} />
+
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_430px]">
             <SystemHealthIncidentQueue
               incidents={incidentQueue}

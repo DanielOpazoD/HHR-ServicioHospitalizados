@@ -367,4 +367,132 @@ describe('sync queue mutation conflicts', () => {
     );
     await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
   });
+
+  it('converges three clients across census movements and handoff after stale restart replay', async () => {
+    const local = makeRecord('2025-01-27', '2025-01-27T10:10:00.000Z');
+    local.beds.R1 = makePatient('R1', {
+      pathology: 'Diagnostico basal antes del reinicio',
+      handoffNoteNightShift: 'B: vigilar fiebre en turno noche',
+      medicalHandoffEntries: [
+        { id: 'entry-b', specialty: 'medicinaInterna', note: 'B: control antihipertensivo' },
+      ] as never,
+    });
+    local.discharges = [
+      { id: 'discharge-b', bedId: 'R2', patientName: 'Alta cliente B' },
+    ] as unknown as DailyRecord['discharges'];
+    local.transfers = [
+      { id: 'transfer-b', bedId: 'R3', patientName: 'Traslado cliente B' },
+    ] as unknown as DailyRecord['transfers'];
+    local.cma = [
+      { id: 'cma-b', bedName: 'R4', originalBedId: 'R4', patientName: 'CMA cliente B' },
+    ] as unknown as DailyRecord['cma'];
+    local.medicalHandoffBySpecialty = {
+      medicinaInterna: {
+        note: 'B: control antihipertensivo',
+        updatedAt: '2025-01-27T10:10:00.000Z',
+      },
+    } as DailyRecord['medicalHandoffBySpecialty'];
+    local.medicalHandoffNovedades = 'Medicina Interna\nB: control antihipertensivo';
+
+    const remote = makeRecord('2025-01-27', '2025-01-27T10:35:00.000Z');
+    remote.beds.R1 = makePatient('R1', {
+      pathology: 'C: diagnostico remoto ya aceptado',
+      handoffNoteDayShift: 'A: indicaciones de dia ya aceptadas',
+      medicalHandoffEntries: [
+        { id: 'entry-a', specialty: 'cirugia', note: 'A: control quirurgico' },
+      ] as never,
+    });
+    remote.discharges = [
+      { id: 'discharge-a', bedId: 'R5', patientName: 'Alta cliente A' },
+    ] as unknown as DailyRecord['discharges'];
+    remote.transfers = [
+      { id: 'transfer-a', bedId: 'R6', patientName: 'Traslado cliente A' },
+    ] as unknown as DailyRecord['transfers'];
+    remote.cma = [
+      { id: 'cma-a', bedName: 'R7', originalBedId: 'R7', patientName: 'CMA cliente A' },
+    ] as unknown as DailyRecord['cma'];
+    remote.medicalHandoffBySpecialty = {
+      cirugia: {
+        note: 'A: control quirurgico',
+        updatedAt: '2025-01-27T10:30:00.000Z',
+      },
+    } as DailyRecord['medicalHandoffBySpecialty'];
+    remote.medicalHandoffNovedades = 'Cirugía\nA: control quirurgico';
+    (remote as DailyRecord & { meta: Record<string, unknown> }).meta = {
+      revision: 11,
+      lastMutationId: 'client-c-accepted-census-handoff',
+      lastChangedPaths: [
+        'beds.R1.pathology',
+        'beds.R1.handoffNoteDayShift',
+        'discharges',
+        'transfers',
+        'cma',
+        'medicalHandoffBySpecialty.cirugia',
+        'medicalHandoffNovedades',
+        'beds.R1.medicalHandoffEntries',
+      ],
+    };
+
+    vi.mocked(getDoc).mockResolvedValue({
+      exists: () => true,
+      data: () => remote as unknown as Record<string, unknown>,
+    } as Awaited<ReturnType<typeof getDoc>>);
+
+    (import.meta.env as Record<string, string | undefined>).VITE_DAILY_RECORD_AUTHORITY_MODE =
+      'enforced';
+    await queueSyncTask('UPDATE_DAILY_RECORD', local, {
+      contexts: ['clinical', 'movements', 'handoff'],
+      origin: 'partial_update_retry',
+      syncContract: {
+        expectedVersion: '2025-01-27T10:00:00.000Z',
+        changedPaths: [
+          'beds.R1.handoffNoteNightShift',
+          'discharges',
+          'transfers',
+          'cma',
+          'medicalHandoffBySpecialty.medicinaInterna',
+          'medicalHandoffNovedades',
+          'beds.R1.medicalHandoffEntries',
+        ],
+        mutationId: 'client-b-stale-restart-replay',
+        tabId: 'tab-before-restart',
+      },
+    });
+
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    await processSyncQueue();
+
+    expect(mockAuthorityCallable).toHaveBeenCalledTimes(1);
+    const authorityPayload = mockAuthorityCallable.mock.calls[0]?.[0] as {
+      record: DailyRecord;
+      syncContract: { mutationId?: string; tabId?: string; changedPaths?: string[] };
+    };
+    const resolved = authorityPayload.record;
+    expect(authorityPayload.syncContract).toMatchObject({
+      mutationId: 'client-b-stale-restart-replay',
+      tabId: 'tab-before-restart',
+    });
+    expect(authorityPayload.syncContract.changedPaths).toContain('beds.R1.handoffNoteNightShift');
+    expect(resolved.beds.R1.pathology).toBe('C: diagnostico remoto ya aceptado');
+    expect(resolved.beds.R1.handoffNoteDayShift).toBe('A: indicaciones de dia ya aceptadas');
+    expect(resolved.beds.R1.handoffNoteNightShift).toBe('B: vigilar fiebre en turno noche');
+    expect(resolved.discharges.map(item => item.id)).toEqual(['discharge-a', 'discharge-b']);
+    expect(resolved.transfers.map(item => item.id)).toEqual(['transfer-a', 'transfer-b']);
+    expect(resolved.cma.map(item => item.id)).toEqual(['cma-a', 'cma-b']);
+    expect(resolved.medicalHandoffBySpecialty).toEqual(
+      expect.objectContaining({
+        cirugia: expect.objectContaining({ note: 'A: control quirurgico' }),
+        medicinaInterna: expect.objectContaining({ note: 'B: control antihipertensivo' }),
+      })
+    );
+    expect(resolved.medicalHandoffNovedades).toContain('Cirugía');
+    expect(resolved.medicalHandoffNovedades).toContain('Medicina Interna');
+    expect(resolved.beds.R1.medicalHandoffEntries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'entry-a' }),
+        expect.objectContaining({ id: 'entry-b' }),
+      ])
+    );
+    await expect(hospitalDB.syncQueue.toArray()).resolves.toHaveLength(0);
+  });
 });

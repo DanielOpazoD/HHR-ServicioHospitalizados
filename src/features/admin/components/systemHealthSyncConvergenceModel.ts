@@ -1,0 +1,168 @@
+import type { UserHealthRecentEvent, UserHealthStatus } from '@/services/admin/healthService';
+
+export type SystemHealthSyncConvergencePanelStatus =
+  | 'healthy'
+  | 'recoverable'
+  | 'needs_review'
+  | 'unsafe';
+
+export interface SystemHealthSyncConvergencePanelModel {
+  status: SystemHealthSyncConvergencePanelStatus;
+  statusLabel: string;
+  summary: string;
+  pendingOperations: number;
+  blockedOperations: number;
+  recoverableDivergences: number;
+  affectedUsers: number;
+  lastConvergenceOkAt?: string;
+  technicalDetails: string[];
+}
+
+const TRUTH_SELECTION_OPERATION = 'sync_queue_truth_selected';
+
+const STATUS_LABELS: Record<SystemHealthSyncConvergencePanelStatus, string> = {
+  healthy: 'Convergente',
+  recoverable: 'Con recuperacion pendiente',
+  needs_review: 'Requiere revision',
+  unsafe: 'Inseguro',
+};
+
+const toMs = (timestamp: string | undefined): number => {
+  if (!timestamp) return 0;
+  const value = Date.parse(timestamp);
+  return Number.isFinite(value) ? value : 0;
+};
+
+const isSyncEvent = (event: UserHealthRecentEvent): boolean => event.category === 'sync';
+
+const isTruthSelectionOkEvent = (event: UserHealthRecentEvent): boolean =>
+  isSyncEvent(event) &&
+  event.operation === TRUTH_SELECTION_OPERATION &&
+  event.status === 'recovered' &&
+  event.telemetryStatus === 'success';
+
+const isRecoverableSyncDivergenceEvent = (event: UserHealthRecentEvent): boolean =>
+  isSyncEvent(event) &&
+  event.status === 'recovered' &&
+  event.operation !== TRUTH_SELECTION_OPERATION;
+
+const buildSummary = ({
+  status,
+  pendingOperations,
+  blockedOperations,
+  recoverableDivergences,
+  affectedUsers,
+}: Pick<
+  SystemHealthSyncConvergencePanelModel,
+  'affectedUsers' | 'blockedOperations' | 'pendingOperations' | 'recoverableDivergences' | 'status'
+>): string => {
+  if (status === 'healthy') {
+    return affectedUsers === 0
+      ? 'Sin usuarios con actividad de sincronizacion visible en los filtros actuales.'
+      : 'Sin pendientes ni conflictos de sincronizacion visibles en los filtros actuales.';
+  }
+
+  const fragments: string[] = [];
+  if (blockedOperations > 0) {
+    fragments.push(`${blockedOperations} operaciones fallidas/en conflicto`);
+  }
+  if (pendingOperations > 0) {
+    fragments.push(`${pendingOperations} operaciones pendientes/reintentando`);
+  }
+  if (recoverableDivergences > 0) {
+    fragments.push(`${recoverableDivergences} divergencias recuperables recientes`);
+  }
+
+  return fragments.join('; ');
+};
+
+export const buildSystemHealthSyncConvergencePanelModel = (
+  users: UserHealthStatus[]
+): SystemHealthSyncConvergencePanelModel => {
+  const pendingOperations = users.reduce(
+    (total, user) => total + user.pendingSyncTasks + user.retryingSyncTasks,
+    0
+  );
+  const blockedOperations = users.reduce(
+    (total, user) =>
+      total + user.failedSyncTasks + user.conflictSyncTasks + (user.syncOrphanedTasks || 0),
+    0
+  );
+  const syncEvents = users.flatMap(user => user.recentEvents?.filter(isSyncEvent) || []);
+  const recoverableDivergences = syncEvents.filter(isRecoverableSyncDivergenceEvent).length;
+  const lastConvergenceOkAt = syncEvents
+    .filter(isTruthSelectionOkEvent)
+    .sort((left, right) => toMs(right.timestamp) - toMs(left.timestamp))[0]?.timestamp;
+  const affectedUsers = users.filter(user => {
+    const hasSyncWork =
+      user.pendingSyncTasks +
+        user.retryingSyncTasks +
+        user.failedSyncTasks +
+        user.conflictSyncTasks +
+        (user.syncOrphanedTasks || 0) >
+      0;
+    return hasSyncWork || (user.recentEvents || []).some(isSyncEvent);
+  }).length;
+
+  const hasUnsafeSignal = syncEvents.some(
+    event =>
+      event.severity === 'critical' &&
+      event.runtimeState === 'blocked' &&
+      /invariant|duplicate|unsafe/i.test(`${event.operation || ''} ${event.message || ''}`)
+  );
+  const status: SystemHealthSyncConvergencePanelStatus = hasUnsafeSignal
+    ? 'unsafe'
+    : blockedOperations > 0
+      ? 'needs_review'
+      : pendingOperations > 0 || recoverableDivergences > 0
+        ? 'recoverable'
+        : 'healthy';
+
+  const technicalDetails = users
+    .flatMap(user => {
+      const details: string[] = [];
+      if (user.pendingSyncTasks > 0 || user.retryingSyncTasks > 0) {
+        details.push(
+          `${user.displayName}: ${user.pendingSyncTasks} pendientes, ${user.retryingSyncTasks} reintentando`
+        );
+      }
+      if (
+        user.failedSyncTasks > 0 ||
+        user.conflictSyncTasks > 0 ||
+        (user.syncOrphanedTasks || 0) > 0
+      ) {
+        details.push(
+          `${user.displayName}: ${user.failedSyncTasks} fallidas, ${user.conflictSyncTasks} en conflicto, ${user.syncOrphanedTasks || 0} huerfanas`
+        );
+      }
+      (user.recentEvents || []).filter(isRecoverableSyncDivergenceEvent).forEach(event => {
+        details.push(
+          `Operacion recuperable: ${event.operation || 'sync'} en ${event.module || 'Sync'}`
+        );
+      });
+      return details;
+    })
+    .slice(0, 8);
+
+  if (lastConvergenceOkAt) {
+    technicalDetails.push(`Ultima verdad aceptada: ${lastConvergenceOkAt}`);
+  }
+
+  return {
+    status,
+    statusLabel: STATUS_LABELS[status],
+    summary: buildSummary({
+      status,
+      pendingOperations,
+      blockedOperations,
+      recoverableDivergences,
+      affectedUsers,
+    }),
+    pendingOperations,
+    blockedOperations,
+    recoverableDivergences,
+    affectedUsers,
+    lastConvergenceOkAt,
+    technicalDetails,
+  };
+};
