@@ -159,6 +159,11 @@ export const useConflictVersionRecovery = ({
             options?.successMessage || 'El registro del día fue actualizado con la versión elegida.'
           );
           setIsOpen(false);
+        } else if (result.status === 'blocked') {
+          notifyError(
+            `Restauración bloqueada por seguridad clínica: ${result.impactAnalysis.blockingImpactCount} impacto(s) crítico(s).`
+          );
+          void load();
         } else {
           notifyError('La versión ya no está disponible.');
           void load();

@@ -91,7 +91,10 @@ export const CensusStaffHeader: React.FC<CensusStaffHeaderProps> = ({
         />
       )}
 
-      <ConflictVersionsAdminControl date={dailyRecordData.record?.date} />
+      <ConflictVersionsAdminControl
+        date={dailyRecordData.record?.date}
+        currentRecord={dailyRecordData.record}
+      />
 
       {activeDetailedRole && dailyRecordData.record?.date && readModel.staffDetailsState && (
         <StaffShiftDetailsModal

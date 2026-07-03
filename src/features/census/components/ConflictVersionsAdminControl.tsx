@@ -1,9 +1,11 @@
 import React from 'react';
 import { ClinicalConflictCenterControl } from '@/components/clinical-conflicts/ClinicalConflictCenterControl';
 import type { DailyRecordConflictRecoveryPort } from '@/application/ports/dailyRecordConflictRecoveryPort';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 interface ConflictVersionsAdminControlProps {
   date?: string;
+  currentRecord?: DailyRecord | null;
   /** Injectable for tests/stories; defaults to the real port. */
   port?: DailyRecordConflictRecoveryPort;
 }
@@ -14,11 +16,13 @@ interface ConflictVersionsAdminControlProps {
  */
 export const ConflictVersionsAdminControl: React.FC<ConflictVersionsAdminControlProps> = ({
   date,
+  currentRecord,
   port,
 }) => (
   <ClinicalConflictCenterControl
     date={date}
     scope="census"
+    currentRecord={currentRecord}
     port={port}
     buttonTestId="conflict-versions-button"
     className="self-center"

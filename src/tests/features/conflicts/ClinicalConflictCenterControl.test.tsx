@@ -71,6 +71,25 @@ const buildCrowdedRecord = (pathologyPrefix: string): DailyRecord =>
     lastUpdated: '2026-07-01T10:00:00.000Z',
   }) as unknown as DailyRecord;
 
+const buildRecordWithDischarge = (): DailyRecord =>
+  ({
+    ...buildRecord('Neumonia', 'A'),
+    lastUpdated: '2026-07-01T18:00:00.000Z',
+    discharges: [
+      {
+        id: 'd-1',
+        bedName: 'H2',
+        bedId: 'H2',
+        bedType: 'Cama',
+        patientName: 'Alta Posterior',
+        rut: '17.274.300-5',
+        diagnosis: 'Alta posterior',
+        time: '15:00',
+        status: 'Vivo',
+      },
+    ],
+  }) as unknown as DailyRecord;
+
 const defaultRecovery = (
   overrides: Partial<ConflictVersionRecoveryModel> = {}
 ): ConflictVersionRecoveryModel => ({
@@ -192,6 +211,53 @@ describe('ClinicalConflictCenterControl', () => {
           changedFields: expect.arrayContaining([
             expect.objectContaining({ label: 'Diagnóstico', before: 'Neumonia', after: 'ICC' }),
           ]),
+        }),
+      })
+    );
+  });
+
+  it('shows anti-rollback impact and disables preserving a version that would remove a later movement', () => {
+    const restore = vi.fn();
+    mockRecovery.mockReturnValue(defaultRecovery({ restore }));
+
+    render(
+      <ClinicalConflictCenterControl
+        date="2026-07-01"
+        scope="census"
+        currentRecord={buildRecordWithDischarge()}
+      />
+    );
+
+    expect(screen.getAllByText('Bloqueado por seguridad clínica')[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/eliminaria una alta visible/i)[0]).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByText('Bloqueado')[0]);
+
+    expect(restore).not.toHaveBeenCalled();
+  });
+
+  it('shows review-required impact while still allowing preservation for newer handoff notes', () => {
+    const restore = vi.fn();
+    mockRecovery.mockReturnValue(defaultRecovery({ restore }));
+
+    render(
+      <ClinicalConflictCenterControl
+        date="2026-07-01"
+        scope="nursing_handoff"
+        currentRecord={buildRecord('Neumonia', 'Nota posterior de enfermeria')}
+      />
+    );
+
+    expect(screen.getAllByText('Requiere revisión')[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/nota posterior de entrega de enfermeria/i)[0]).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByText('Preservar')[0]);
+
+    expect(restore).toHaveBeenCalledWith(
+      'conflict-1__remote_premerge',
+      expect.objectContaining({
+        reviewContext: expect.objectContaining({
+          scope: 'nursing_handoff',
         }),
       })
     );

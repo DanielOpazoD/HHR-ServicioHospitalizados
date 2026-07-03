@@ -148,6 +148,7 @@ const HandoffViewContent: React.FC<HandoffViewContentProps> = ({
     <ClinicalConflictCenterControl
       date={record.date}
       scope={isMedical ? 'medical_handoff' : 'nursing_handoff'}
+      currentRecord={record}
     />
   );
   const nursingHeaderAction =
