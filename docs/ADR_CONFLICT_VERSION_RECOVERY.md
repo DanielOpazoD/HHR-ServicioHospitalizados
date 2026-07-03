@@ -112,6 +112,12 @@ el campo `expireAt`):
 - **Falla cerrado:** primero se escribe la auditoría `CONFLICT_VERSION_RESTORED`; solo si ésta tiene
   éxito se guarda el `record`. Un actor anónimo o un fallo de auditoría **aborta antes** de mutar —
   nunca hay un overwrite clínico sin auditar.
+- **Guard anti-rollback:** antes de auditar y guardar, se compara la versión seleccionada contra el
+  registro remoto vigente. Si preservar el snapshot eliminaría movimientos visibles posteriores
+  (altas, traslados, CMA), reviviría tombstones, removería/cambiaría un paciente activo ya movido o
+  dejaría duplicados activos, la restauración queda **bloqueada**. Impactos no bloqueantes
+  (por ejemplo handoff enfermería/médico posterior) quedan visibles como `review_required` y se
+  registran en auditoría.
 - Luego, **full-save atómico** del `record` (reusa `saveRecordAtomically`): el CAS corre contra el
   remoto actual, así que el estado que hubiera se snapshotea como de costumbre — **nunca destructivo**.
 - El estado restaurado queda como **una nueva versión** en el historial; nada se pierde.
@@ -131,6 +137,9 @@ Toda restauración se registra vía el puerto de auditoría existente
   - módulos afectados,
   - paciente/cama/RUT si estaban disponibles,
   - campos resumidos antes/después.
+  - `restoreImpact`: riesgo (`low`/`medium`/`high`), estado (`safe`/`review_required`/`blocked`),
+    módulos impactados, conteo de impactos bloqueantes y muestra de impactos detectados contra el
+    registro vigente.
 
 Va a la **misma colección/telemetría de auditoría** que el auto-merge. La restauración
 **nunca borra** snapshots (append-only), de modo que la cadena «conflicto → merge → restore»

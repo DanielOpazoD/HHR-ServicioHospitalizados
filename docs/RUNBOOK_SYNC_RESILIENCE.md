@@ -147,9 +147,14 @@ Uso operativo:
 
 1. Revisar módulos afectados y pacientes/camas mostrados en el centro.
 2. Comparar campos resumidos antes/después.
-3. Preservar una versión solo si la regla automática eligió una verdad clínica incorrecta.
-4. Confirmar que observabilidad registre `CONFLICT_VERSION_RESTORED` con `reviewContext`.
-5. Si no hay snapshots, usar la razón del panel: TTL expirado, permiso denegado, no guardado o
+3. Revisar el impacto anti-rollback de cada versión:
+   - `Bloqueado por seguridad clínica`: no preservar desde UI; indica que el snapshot borraría
+     hechos clínicos posteriores (movimientos, cama activa, tombstones o duplicados).
+   - `Requiere revisión`: puede preservarse, pero el operador debe entender que ocultará contenido
+     posterior no bloqueante, usualmente handoff enfermería o entrega médica.
+4. Preservar una versión solo si la regla automática eligió una verdad clínica incorrecta.
+5. Confirmar que observabilidad registre `CONFLICT_VERSION_RESTORED` con `reviewContext.restoreImpact`.
+6. Si no hay snapshots, usar la razón del panel: TTL expirado, permiso denegado, no guardado o
    sin evidencia recuperable.
 
 ## Procedimiento 2.3: pre-outbox y ack de escritura directa
