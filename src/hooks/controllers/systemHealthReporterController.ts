@@ -121,6 +121,9 @@ const mapTelemetrySeverity = (
 const mapTelemetryStatus = (event: OperationalTelemetryEvent): UserHealthRecentEvent['status'] =>
   event.runtimeState === 'recoverable' || event.status === 'partial' ? 'recovered' : 'open';
 
+const isSyncTruthSelectionTelemetry = (event: OperationalTelemetryEvent): boolean =>
+  event.category === 'sync' && event.operation === 'sync_queue_truth_selected';
+
 const buildContextSummary = (context: Record<string, unknown> | undefined): string[] => {
   if (!context) return [];
   return Object.entries(context)
@@ -184,7 +187,7 @@ export const buildRecentUserHealthEvents = ({
   });
 
   const operationalHealthEvents: UserHealthRecentEvent[] = operationalEvents
-    .filter(event => event.status !== 'success')
+    .filter(event => event.status !== 'success' || isSyncTruthSelectionTelemetry(event))
     .map(event => ({
       id: `operational:${event.category}:${event.operation}:${event.timestamp}`,
       source: 'operational',
