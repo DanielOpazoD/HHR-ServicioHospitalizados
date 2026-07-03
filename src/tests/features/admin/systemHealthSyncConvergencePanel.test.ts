@@ -203,4 +203,60 @@ describe('systemHealthSyncConvergencePanel', () => {
       }),
     ]);
   });
+
+  it('keeps clinical signal ownership when different users emit repeated event ids', () => {
+    const model = buildSystemHealthSyncConvergencePanelModel([
+      buildUser({
+        uid: 'nurse-1',
+        displayName: 'Hospitalizados HHR',
+        recentEvents: [
+          {
+            id: 'shared-event-id',
+            source: 'operational',
+            category: 'sync',
+            severity: 'warning',
+            status: 'recovered',
+            timestamp: '2026-07-02T11:00:00.000Z',
+            message: 'Censo recuperado por replay.',
+            operation: 'daily_record_replay',
+            module: 'Censo diario',
+            runtimeState: 'recoverable',
+            telemetryStatus: 'success',
+            contextSummary: ['Paciente: Ana Perez'],
+          },
+        ],
+      }),
+      buildUser({
+        uid: 'doctor-1',
+        displayName: 'Médico Turno',
+        recentEvents: [
+          {
+            id: 'shared-event-id',
+            source: 'operational',
+            category: 'sync',
+            severity: 'warning',
+            status: 'recovered',
+            timestamp: '2026-07-02T11:01:00.000Z',
+            message: 'Censo recuperado por replay médico.',
+            operation: 'daily_record_replay',
+            module: 'Censo diario',
+            runtimeState: 'recoverable',
+            telemetryStatus: 'success',
+            contextSummary: ['Paciente: Pedro Silva'],
+          },
+        ],
+      }),
+    ]);
+
+    expect(model.clinicalSignals).toEqual([
+      expect.objectContaining({
+        label: 'Censo diario',
+        count: 2,
+        examples: [
+          expect.stringContaining('Hospitalizados HHR · Censo recuperado por replay.'),
+          expect.stringContaining('Médico Turno · Censo recuperado por replay médico.'),
+        ],
+      }),
+    ]);
+  });
 });

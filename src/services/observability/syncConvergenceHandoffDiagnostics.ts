@@ -1,6 +1,12 @@
 import type { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
 import type { SyncQueueOperationSnapshot } from '@/services/storage/sync';
 import type { SyncConvergenceFinding } from '@/services/observability/syncConvergenceDiagnosticTypes';
+import {
+  describePatient,
+  hasPendingOutboxForPath,
+  normalizeIdentity,
+  normalizeText,
+} from '@/services/observability/syncConvergenceSharedHelpers';
 
 const HANDOFF_FIELDS = ['handoffNoteDayShift', 'handoffNoteNightShift'] as const;
 
@@ -13,18 +19,8 @@ interface CollectHandoffFindingsInput {
   outbox: SyncQueueOperationSnapshot[];
 }
 
-const normalizeText = (value: unknown): string => String(value || '').trim();
-const normalizeIdentity = (value: unknown): string => normalizeText(value).toLowerCase();
-
 const valuesDiffer = (left: unknown, right: unknown): boolean =>
   JSON.stringify(left ?? null) !== JSON.stringify(right ?? null);
-
-const hasPendingOutboxForPath = (outbox: SyncQueueOperationSnapshot[], path: string): boolean =>
-  outbox.some(operation =>
-    (operation.syncContract?.changedPaths || []).some(
-      changedPath => changedPath === path || changedPath.startsWith(`${path}.`)
-    )
-  );
 
 const sameClinicalEpisode = (left: Patient | undefined, right: Patient | undefined): boolean => {
   if (!left || !right) return false;
@@ -36,9 +32,6 @@ const sameClinicalEpisode = (left: Patient | undefined, right: Patient | undefin
   if (leftRut || rightRut) return leftRut.length > 0 && leftRut === rightRut;
   return normalizeIdentity(left.patientName) === normalizeIdentity(right.patientName);
 };
-
-const describePatient = (patient: Patient | undefined, fallback = 'Paciente sin identificar') =>
-  normalizeText(patient?.patientName) || fallback;
 
 const buildPatientEvidence = (record: DailyRecord, bedId: string, patient?: Patient) => ({
   date: record.date,
@@ -111,8 +104,13 @@ export const collectMedicalHandoffFindings = ({
   if (!localRecord || !remoteRecord) return [];
   const findings: SyncConvergenceFinding[] = [];
 
-  Object.entries(localRecord.medicalHandoffBySpecialty || {}).forEach(([specialty, localEntry]) => {
+  const specialtyKeys = new Set([
+    ...Object.keys(localRecord.medicalHandoffBySpecialty || {}),
+    ...Object.keys(remoteRecord.medicalHandoffBySpecialty || {}),
+  ]);
+  specialtyKeys.forEach(specialty => {
     const specialtyKey = specialty as MedicalSpecialtyKey;
+    const localEntry = localRecord.medicalHandoffBySpecialty?.[specialtyKey];
     const remoteEntry = remoteRecord.medicalHandoffBySpecialty?.[specialtyKey];
     if (!valuesDiffer(localEntry?.note, remoteEntry?.note)) return;
     const path = `medicalHandoffBySpecialty.${specialty}.note`;
@@ -159,14 +157,19 @@ export const collectMedicalHandoffFindings = ({
     const remoteEntries = new Map(
       getMedicalEntries(remoteMatch.patient)
         .filter(entry => normalizeText(entry.id))
-        .map(entry => [entry.id, entry])
+        .map(entry => [normalizeText(entry.id), entry])
     );
+    const localEntries = new Map(
+      getMedicalEntries(localPatient)
+        .filter(entry => normalizeText(entry.id))
+        .map(entry => [normalizeText(entry.id), entry])
+    );
+    const entryIds = new Set([...localEntries.keys(), ...remoteEntries.keys()]);
 
-    getMedicalEntries(localPatient).forEach(localEntry => {
-      const entryId = normalizeText(localEntry.id);
-      if (!entryId) return;
+    entryIds.forEach(entryId => {
+      const localEntry = localEntries.get(entryId);
       const remoteEntry = remoteEntries.get(entryId);
-      if (!valuesDiffer(localEntry.note, remoteEntry?.note)) return;
+      if (!valuesDiffer(localEntry?.note, remoteEntry?.note)) return;
       const path = `beds.${remoteMatch.bedId}.medicalHandoffEntries.${entryId}`;
       const pendingOutbox = hasPendingOutboxForPath(outbox, path);
       findings.push({
@@ -180,9 +183,9 @@ export const collectMedicalHandoffFindings = ({
         evidence: {
           ...buildPatientEvidence(localRecord, remoteMatch.bedId, localPatient),
           entryId,
-          specialty: normalizeText(localEntry.specialty) || undefined,
+          specialty: normalizeText(localEntry?.specialty || remoteEntry?.specialty) || undefined,
           pendingOutbox,
-          localHasValue: normalizeText(localEntry.note).length > 0,
+          localHasValue: normalizeText(localEntry?.note).length > 0,
           remoteHasValue: normalizeText(remoteEntry?.note).length > 0,
         },
       });

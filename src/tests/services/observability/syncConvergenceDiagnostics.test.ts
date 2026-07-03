@@ -170,6 +170,8 @@ describe('syncConvergenceDiagnostics', () => {
       path: 'discharges.D1',
       module: 'censo',
       affectedPatient: 'Bernardo Orrego',
+      message:
+        'Movimiento discharges.D1 existe localmente pero no está reflejado en el registro remoto.',
     });
   });
 
@@ -264,6 +266,81 @@ describe('syncConvergenceDiagnostics', () => {
           date: '2026-07-02',
           specialty: 'cirugia',
           localHasValue: true,
+          remoteHasValue: true,
+        }),
+      })
+    );
+  });
+
+  it('detects remote-only medical handoff specialty notes and patient entries', () => {
+    const localRecord = makeRecord({
+      beds: {
+        R1: makePatient('R1', {
+          patientName: 'Ana Perez',
+          rut: '12.345.678-5',
+          clinicalEpisodeId: 'episode-ana-current',
+          medicalHandoffEntries: [],
+        }),
+      },
+    });
+    const remoteRecord = makeRecord({
+      medicalHandoffBySpecialty: {
+        cirugia: {
+          note: 'Control remoto agregado por cirugía.',
+          createdAt: '2026-07-02T08:00:00.000Z',
+          updatedAt: '2026-07-02T10:00:00.000Z',
+          version: 1,
+          author: { uid: 'doc-1', displayName: 'Dra Cirugía', email: 'doc@example.com' },
+        },
+      },
+      beds: {
+        R2: makePatient('R2', {
+          patientName: 'Ana Perez',
+          rut: '12.345.678-5',
+          clinicalEpisodeId: 'episode-ana-current',
+          medicalHandoffEntries: [
+            {
+              id: 'mh-remote',
+              specialty: 'medicinaInterna',
+              note: 'Entrada remota posterior.',
+            },
+          ],
+        }),
+      },
+    });
+
+    const result = evaluateSyncConvergence({
+      localRecord,
+      remoteRecord,
+      outbox: [],
+      snapshotRecovery: { status: 'available' },
+      nowMs: Date.parse('2026-07-02T10:20:00.000Z'),
+    });
+
+    expect(result.status).toBe('needs_review');
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        type: 'handoff_divergent',
+        path: 'medicalHandoffBySpecialty.cirugia.note',
+        module: 'medical_handoff',
+        evidence: expect.objectContaining({
+          localHasValue: false,
+          remoteHasValue: true,
+          specialty: 'cirugia',
+        }),
+      })
+    );
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        type: 'handoff_divergent',
+        path: 'beds.R2.medicalHandoffEntries.mh-remote',
+        module: 'medical_handoff',
+        affectedPatient: 'Ana Perez',
+        evidence: expect.objectContaining({
+          bedId: 'R2',
+          rut: '12.345.678-5',
+          entryId: 'mh-remote',
+          localHasValue: false,
           remoteHasValue: true,
         }),
       })

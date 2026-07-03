@@ -87,6 +87,7 @@ describe('syncHealthPackagePresenter', () => {
         expect.objectContaining({
           title: 'Bernardo Orrego · 17.274.300-5 · R1',
           date: '2026-07-02',
+          moduleKeys: ['censo', 'medical_handoff'],
           modules: ['Censo diario', 'Entrega médica'],
           highestSeverity: 'critical',
           findings: expect.arrayContaining([
@@ -96,6 +97,55 @@ describe('syncHealthPackagePresenter', () => {
         }),
       ],
     });
+  });
+
+  it('keeps no-bed findings separated by module while preserving patient context', () => {
+    const diagnostic = makeDiagnostic([
+      makeFinding({
+        module: 'sync',
+        path: 'syncQueue.mutation-1',
+        message: 'Outbox pendiente.',
+        evidence: {
+          date: '2026-07-02',
+          rut: '17.274.300-5',
+          pendingOutbox: true,
+        },
+      }),
+      makeFinding({
+        type: 'handoff_divergent',
+        module: 'medical_handoff',
+        path: 'medicalHandoffBySpecialty.cirugia.note',
+        message: 'Entrega médica divergente.',
+        evidence: {
+          date: '2026-07-02',
+          rut: '17.274.300-5',
+          specialty: 'cirugia',
+        },
+      }),
+    ]);
+
+    const healthPackage = buildSyncHealthPackage({
+      diagnostic,
+      recoveryPlan: makePlan(),
+    });
+
+    expect(healthPackage.groups).toHaveLength(2);
+    expect(healthPackage.groups).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: 'Bernardo Orrego · 17.274.300-5',
+          date: '2026-07-02',
+          moduleKeys: ['sync'],
+          modules: ['Sincronización local'],
+        }),
+        expect.objectContaining({
+          title: 'Bernardo Orrego · 17.274.300-5',
+          date: '2026-07-02',
+          moduleKeys: ['medical_handoff'],
+          modules: ['Entrega médica'],
+        }),
+      ])
+    );
   });
 
   it('translates technical recovery actions into operator guidance', () => {

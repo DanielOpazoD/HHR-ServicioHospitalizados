@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { SystemHealthSyncConvergencePanel } from '@/features/admin/components/SystemHealthSyncConvergencePanel';
 import type { SystemHealthSyncConvergencePanelModel } from '@/features/admin/components/systemHealthSyncConvergenceModel';
@@ -39,5 +39,17 @@ describe('SystemHealthSyncConvergencePanel', () => {
     expect(screen.getAllByText(/Entrega médica/).length).toBeGreaterThan(0);
     expect(screen.getByText(/Ana Perez/)).toBeInTheDocument();
     expect(screen.queryByText('raw sync detail hidden until requested')).not.toBeInTheDocument();
+
+    const detailsButton = screen.getByRole('button', { name: /detalle técnico/i });
+    expect(detailsButton).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(detailsButton);
+
+    expect(detailsButton).toHaveAttribute('aria-expanded', 'true');
+    const actionsHeading = screen.getByText('Acciones sugeridas');
+    const rawDetail = screen.getByText('raw sync detail hidden until requested');
+    expect(
+      actionsHeading.compareDocumentPosition(rawDetail) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 });

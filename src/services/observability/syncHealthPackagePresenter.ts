@@ -36,6 +36,7 @@ export interface SyncHealthGroup {
   patientName?: string;
   rut?: string;
   bedId?: string;
+  moduleKeys: SyncHealthModule[];
   modules: string[];
   highestSeverity: SyncConvergenceSeverity;
   findings: SyncHealthFindingItem[];
@@ -170,6 +171,7 @@ const buildGroups = (findings: SyncConvergenceFinding[]): SyncHealthGroup[] => {
     const rut = readText(first?.evidence.rut) || undefined;
     const bedId = readText(first?.evidence.bedId) || undefined;
     const patientName = first?.affectedPatient;
+    const moduleKeys = Array.from(new Set(groupFindings.map(finding => finding.module)));
     const modules = Array.from(new Set(groupFindings.map(finding => finding.moduleLabel)));
     return {
       key,
@@ -183,6 +185,7 @@ const buildGroups = (findings: SyncConvergenceFinding[]): SyncHealthGroup[] => {
       ...(patientName ? { patientName } : {}),
       ...(rut ? { rut } : {}),
       ...(bedId ? { bedId } : {}),
+      moduleKeys,
       modules,
       highestSeverity: resolveHighestSeverity(groupFindings),
       findings: groupFindings,

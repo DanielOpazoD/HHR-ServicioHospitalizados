@@ -92,23 +92,18 @@ const normalizeSignalLabel = (event: UserHealthRecentEvent): string => {
 };
 
 const buildClinicalSignals = (
-  users: UserHealthStatus[],
-  syncEvents: UserHealthRecentEvent[]
+  users: UserHealthStatus[]
 ): SystemHealthSyncConvergencePanelModel['clinicalSignals'] => {
-  const userByEventId = new Map<string, UserHealthStatus>();
-  users.forEach(user => {
-    (user.recentEvents || []).forEach(event => userByEventId.set(event.id, user));
-  });
-
   const byLabel = new Map<string, string[]>();
-  syncEvents.forEach(event => {
-    const label = normalizeSignalLabel(event);
-    const user = userByEventId.get(event.id);
-    const context = (event.contextSummary || []).join(' · ');
-    const example = [user?.displayName, event.message, context].filter(Boolean).join(' · ');
-    const examples = byLabel.get(label) || [];
-    examples.push(example);
-    byLabel.set(label, examples);
+  users.forEach(user => {
+    (user.recentEvents || []).filter(isSyncEvent).forEach(event => {
+      const label = normalizeSignalLabel(event);
+      const context = (event.contextSummary || []).join(' · ');
+      const example = [user.displayName, event.message, context].filter(Boolean).join(' · ');
+      const examples = byLabel.get(label) || [];
+      examples.push(example);
+      byLabel.set(label, examples);
+    });
   });
 
   return Array.from(byLabel.entries()).map(([label, examples]) => ({
@@ -161,7 +156,7 @@ export const buildSystemHealthSyncConvergencePanelModel = (
   );
   const syncEvents = users.flatMap(user => user.recentEvents?.filter(isSyncEvent) || []);
   const recoverableDivergences = syncEvents.filter(isRecoverableSyncDivergenceEvent).length;
-  const clinicalSignals = buildClinicalSignals(users, syncEvents);
+  const clinicalSignals = buildClinicalSignals(users);
   const lastConvergenceOkAt = syncEvents
     .filter(isTruthSelectionOkEvent)
     .sort((left, right) => toMs(right.timestamp) - toMs(left.timestamp))[0]?.timestamp;

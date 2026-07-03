@@ -12,6 +12,12 @@ import {
   collectMedicalHandoffFindings,
   collectNursingHandoffFindings,
 } from '@/services/observability/syncConvergenceHandoffDiagnostics';
+import {
+  describePatient,
+  hasPendingOutboxForPath,
+  normalizeIdentity,
+  normalizeText,
+} from '@/services/observability/syncConvergenceSharedHelpers';
 
 export type {
   EvaluateSyncConvergenceInput,
@@ -29,18 +35,8 @@ const MOVEMENT_FIELDS = ['discharges', 'transfers', 'cma'] as const;
 
 type MovementField = (typeof MOVEMENT_FIELDS)[number];
 
-const normalizeText = (value: unknown): string => String(value || '').trim();
-const normalizeIdentity = (value: unknown): string => normalizeText(value).toLowerCase();
-
 const isDeletedMovement = (movement: { deletedAt?: unknown } | undefined): boolean =>
   normalizeText(movement?.deletedAt).length > 0;
-
-const hasPendingOutboxForPath = (outbox: SyncQueueOperationSnapshot[], path: string): boolean =>
-  outbox.some(operation =>
-    (operation.syncContract?.changedPaths || []).some(
-      changedPath => changedPath === path || changedPath.startsWith(`${path}.`)
-    )
-  );
 
 const resolvePatientIdentityKey = (patient: DailyRecord['beds'][string] | undefined): string => {
   const rut = normalizeIdentity(patient?.rut);
@@ -50,11 +46,6 @@ const resolvePatientIdentityKey = (patient: DailyRecord['beds'][string] | undefi
   const name = normalizeIdentity(patient?.patientName);
   return name ? `name:${name}` : '';
 };
-
-const describePatient = (
-  patient: DailyRecord['beds'][string] | undefined,
-  fallback = 'Paciente sin identificar'
-): string => normalizeText(patient?.patientName) || fallback;
 
 const collectDuplicateActivePatientFindings = (
   record: DailyRecord | null | undefined
@@ -129,7 +120,7 @@ const collectMovementFindings = ({
           path,
           module: 'censo',
           affectedPatient: normalizeText(movement.patientName) || undefined,
-          message: `Movimiento ${field}.${id} existe localmente pero no está reflejado remoto.`,
+          message: `Movimiento ${field}.${id} existe localmente pero no está reflejado en el registro remoto.`,
           evidence: {
             date: localRecord.date,
             field,
