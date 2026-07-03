@@ -1,6 +1,6 @@
 import type { DailyRecord } from '@/services/contracts/dailyRecordServiceContracts';
 import type { SyncQueueOperationSnapshot } from '@/services/storage/sync';
-import type { SyncConvergenceFinding } from '@/services/observability/syncConvergenceDiagnostics';
+import type { SyncConvergenceFinding } from '@/services/observability/syncConvergenceDiagnosticTypes';
 
 const HANDOFF_FIELDS = ['handoffNoteDayShift', 'handoffNoteNightShift'] as const;
 
