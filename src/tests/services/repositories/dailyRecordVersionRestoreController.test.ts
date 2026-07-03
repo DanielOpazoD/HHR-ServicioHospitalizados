@@ -95,6 +95,178 @@ describe('restoreDailyRecordVersion', () => {
     expect(saveRecordToFirestore).not.toHaveBeenCalled();
   });
 
+  it('blocks restore before audit/save when the selected snapshot would remove a current movement', async () => {
+    vi.mocked(getConflictVersionSnapshot).mockResolvedValue({
+      id: 's1',
+      origin: 'remote_premerge',
+      record: {
+        date: '2026-06-26',
+        beds: { R1: { patientName: 'Snapshot Antiguo', rut: '11.111.111-1' } },
+        discharges: [],
+      } as never,
+    });
+    vi.mocked(getRecordFromFirestore).mockResolvedValue({
+      date: '2026-06-26',
+      lastUpdated: '2026-06-26T18:00:00.000Z',
+      beds: { R1: { patientName: 'Snapshot Antiguo', rut: '11.111.111-1' } },
+      discharges: [
+        {
+          id: 'd-1',
+          bedName: 'R2',
+          bedId: 'R2',
+          bedType: 'Cama',
+          patientName: 'Alta Posterior',
+          rut: '22.222.222-2',
+          diagnosis: 'Alta posterior',
+          time: '15:00',
+          status: 'Vivo',
+        },
+      ],
+    } as never);
+
+    const result = await restoreDailyRecordVersion('2026-06-26', 's1');
+
+    expect(result).toMatchObject({
+      status: 'blocked',
+      impactAnalysis: {
+        risk: 'high',
+        blockingImpactCount: 1,
+        impactedModules: ['movements'],
+      },
+    });
+    expect(logRepositoryConflictVersionRestored).not.toHaveBeenCalled();
+    expect(saveRecordToFirestore).not.toHaveBeenCalled();
+  });
+
+  it('allows a review-required restore but records restore impact in the audit context', async () => {
+    vi.mocked(getConflictVersionSnapshot).mockResolvedValue({
+      id: 's1',
+      origin: 'incoming_premerge',
+      conflictId: 'cid',
+      record: {
+        date: '2026-06-26',
+        beds: {
+          R1: {
+            patientName: 'Paciente Handoff',
+            rut: '33.333.333-3',
+            handoffNoteDayShift: '',
+          },
+        },
+        discharges: [],
+      } as never,
+    });
+    vi.mocked(getRecordFromFirestore).mockResolvedValue({
+      date: '2026-06-26',
+      lastUpdated: '2026-06-26T18:00:00.000Z',
+      beds: {
+        R1: {
+          patientName: 'Paciente Handoff',
+          rut: '33.333.333-3',
+          handoffNoteDayShift: 'Nota posterior de enfermeria',
+        },
+      },
+      discharges: [],
+    } as never);
+
+    const result = await restoreDailyRecordVersion('2026-06-26', 's1', {
+      source: 'clinical_conflict_center',
+      scope: 'nursing_handoff',
+      reason: 'manual_preserve_selected_truth',
+      selectedVersionLabel: 'Versión local',
+      modules: [{ key: 'nursing_handoff', label: 'Entrega enfermería' }],
+      patientContexts: [{ patientName: 'Paciente Handoff', rut: '33.333.333-3', bedId: 'R1' }],
+      changedFields: [],
+    });
+
+    expect(result).toEqual({ status: 'restored' });
+    expect(logRepositoryConflictVersionRestored).toHaveBeenCalledWith('2026-06-26', {
+      snapshotId: 's1',
+      origin: 'incoming_premerge',
+      conflictId: 'cid',
+      reviewContext: expect.objectContaining({
+        scope: 'nursing_handoff',
+        restoreImpact: expect.objectContaining({
+          risk: 'medium',
+          status: 'review_required',
+          blockingImpactCount: 0,
+          impactedModules: ['nursing_handoff'],
+          currentRevision: '2026-06-26T18:00:00.000Z',
+        }),
+      }),
+    });
+    expect(saveRecordToFirestore).toHaveBeenCalled();
+  });
+
+  it('marks restore impact as truncated when the audit payload only includes a sample', async () => {
+    const currentBeds = Object.fromEntries(
+      Array.from({ length: 13 }, (_, index) => {
+        const bedId = `R${index + 1}`;
+        return [
+          bedId,
+          {
+            bedId,
+            bedName: bedId,
+            patientName: `Paciente Handoff ${index + 1}`,
+            rut: `44.444.44${index}-${index}`,
+            handoffNoteDayShift: `Nota posterior ${index + 1}`,
+          },
+        ];
+      })
+    );
+    const selectedBeds = Object.fromEntries(
+      Object.entries(currentBeds).map(([bedId, patient]) => [
+        bedId,
+        { ...patient, handoffNoteDayShift: '' },
+      ])
+    );
+
+    vi.mocked(getConflictVersionSnapshot).mockResolvedValue({
+      id: 's-many-impacts',
+      origin: 'incoming_premerge',
+      conflictId: 'cid-many-impacts',
+      record: {
+        date: '2026-06-26',
+        beds: selectedBeds,
+        discharges: [],
+        lastUpdated: '2026-06-26T10:00:00.000Z',
+      } as never,
+    });
+    vi.mocked(getRecordFromFirestore).mockResolvedValue({
+      date: '2026-06-26',
+      lastUpdated: '2026-06-26T18:00:00.000Z',
+      beds: currentBeds,
+      discharges: [],
+    } as never);
+
+    const result = await restoreDailyRecordVersion('2026-06-26', 's-many-impacts', {
+      source: 'clinical_conflict_center',
+      scope: 'nursing_handoff',
+      reason: 'manual_preserve_selected_truth',
+      selectedVersionLabel: 'Versión local',
+      modules: [{ key: 'nursing_handoff', label: 'Entrega enfermería' }],
+      patientContexts: [],
+      changedFields: [],
+    });
+
+    expect(result).toEqual({ status: 'restored' });
+    expect(logRepositoryConflictVersionRestored).toHaveBeenCalledWith('2026-06-26', {
+      snapshotId: 's-many-impacts',
+      origin: 'incoming_premerge',
+      conflictId: 'cid-many-impacts',
+      reviewContext: expect.objectContaining({
+        restoreImpact: expect.objectContaining({
+          impactCount: 13,
+          impactsTruncated: true,
+          impacts: expect.arrayContaining([
+            expect.objectContaining({ kind: 'nursing_handoff_loss' }),
+          ]),
+        }),
+      }),
+    });
+    const auditDetails = vi.mocked(logRepositoryConflictVersionRestored).mock.calls[0]?.[1];
+    expect(auditDetails.reviewContext?.restoreImpact?.impacts).toHaveLength(12);
+  });
+
   it('surfaces telemetry and rethrows when the save fails after a successful audit', async () => {
     vi.mocked(getConflictVersionSnapshot).mockResolvedValue({
       id: 's1',

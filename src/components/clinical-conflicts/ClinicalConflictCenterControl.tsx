@@ -11,6 +11,11 @@ import {
 } from '@/application/clinical-conflicts/clinicalConflictCenterController';
 import type { DailyRecordConflictRecoveryPort } from '@/application/ports/dailyRecordConflictRecoveryPort';
 import type { ConflictVersionRestoreAuditDetails } from '@/services/repositories/ports/repositoryAuditPort';
+import {
+  analyzeDailyRecordRestoreImpact,
+  type DailyRecordRestoreImpactAnalysis,
+} from '@/services/repositories/dailyRecordRestoreImpactAnalyzer';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 export type ClinicalConflictCenterScope = 'census' | 'nursing_handoff' | 'medical_handoff';
 
@@ -18,6 +23,7 @@ interface ClinicalConflictCenterControlProps {
   date?: string;
   scope: ClinicalConflictCenterScope;
   port?: DailyRecordConflictRecoveryPort;
+  currentRecord?: DailyRecord | null;
   buttonTestId?: string;
   className?: string;
 }
@@ -144,11 +150,45 @@ const ChangeList: React.FC<{ conflict: ClinicalConflictReviewPackage }> = ({ con
   );
 };
 
+const IMPACT_TONE_CLASS: Record<DailyRecordRestoreImpactAnalysis['status'], string> = {
+  safe: 'border-emerald-100 bg-emerald-50 text-emerald-700',
+  review_required: 'border-amber-100 bg-amber-50 text-amber-700',
+  blocked: 'border-rose-100 bg-rose-50 text-rose-700',
+};
+
+const IMPACT_TITLE: Record<DailyRecordRestoreImpactAnalysis['status'], string> = {
+  safe: 'Sin impacto posterior relevante',
+  review_required: 'Requiere revisión',
+  blocked: 'Bloqueado por seguridad clínica',
+};
+
+const RestoreImpactNotice: React.FC<{ impact?: DailyRecordRestoreImpactAnalysis }> = ({
+  impact,
+}) => {
+  if (!impact || impact.status === 'safe') return null;
+  const [firstImpact] = impact.impacts;
+  return (
+    <div
+      className={clsx(
+        'mt-2 rounded-md border px-2 py-1.5 text-[11px]',
+        IMPACT_TONE_CLASS[impact.status]
+      )}
+    >
+      <p className="font-semibold">{IMPACT_TITLE[impact.status]}</p>
+      {firstImpact && <p className="mt-0.5">{firstImpact.message}</p>}
+      {impact.impacts.length > 1 && (
+        <p className="mt-0.5 font-medium">+{impact.impacts.length - 1} impacto(s) adicional(es)</p>
+      )}
+    </div>
+  );
+};
+
 const ConflictPackageCard: React.FC<{
   conflict: ClinicalConflictReviewPackage;
   restoringId: string | null;
+  restoreImpactBySnapshotId: Map<string, DailyRecordRestoreImpactAnalysis>;
   onRestore: (snapshotId: string, option: ClinicalConflictSnapshotOption) => void;
-}> = ({ conflict, restoringId, onRestore }) => (
+}> = ({ conflict, restoringId, restoreImpactBySnapshotId, onRestore }) => (
   <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
     <div className="flex flex-wrap items-start justify-between gap-2">
       <div>
@@ -190,29 +230,39 @@ const ConflictPackageCard: React.FC<{
       <ChangeList conflict={conflict} />
 
       <div className="grid gap-2 sm:grid-cols-2">
-        {conflict.options.map(option => (
-          <div key={option.id} className="rounded-lg border border-slate-200 p-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-700">{option.label}</p>
-                <p className="text-xs text-slate-500">{option.summary}</p>
-                {option.sourceLastUpdated && (
-                  <p className="mt-0.5 font-mono text-[10px] text-slate-400">
-                    Base {option.sourceLastUpdated.slice(11, 16)}
-                  </p>
-                )}
+        {conflict.options.map(option => {
+          const impact = restoreImpactBySnapshotId.get(option.id);
+          const blocked = impact?.status === 'blocked';
+          return (
+            <div key={option.id} className="rounded-lg border border-slate-200 p-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-700">{option.label}</p>
+                  <p className="text-xs text-slate-500">{option.summary}</p>
+                  {option.sourceLastUpdated && (
+                    <p className="mt-0.5 font-mono text-[10px] text-slate-400">
+                      Base {option.sourceLastUpdated.slice(11, 16)}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRestore(option.id, option)}
+                  disabled={restoringId !== null || blocked}
+                  className={clsx(
+                    'shrink-0 rounded-md border px-2.5 py-1 text-xs font-semibold disabled:opacity-50',
+                    blocked
+                      ? 'border-rose-200 text-rose-700'
+                      : 'border-accent-200 text-accent-700 hover:bg-accent-50'
+                  )}
+                >
+                  {blocked ? 'Bloqueado' : restoringId === option.id ? 'Aplicando...' : 'Preservar'}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => onRestore(option.id, option)}
-                disabled={restoringId !== null}
-                className="shrink-0 rounded-md border border-accent-200 px-2.5 py-1 text-xs font-semibold text-accent-700 hover:bg-accent-50 disabled:opacity-50"
-              >
-                {restoringId === option.id ? 'Aplicando...' : 'Preservar'}
-              </button>
+              <RestoreImpactNotice impact={impact} />
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   </section>
@@ -222,6 +272,7 @@ export const ClinicalConflictCenterControl: React.FC<ClinicalConflictCenterContr
   date,
   scope,
   port,
+  currentRecord,
   buttonTestId = 'clinical-conflict-center-button',
   className,
 }) => {
@@ -235,12 +286,30 @@ export const ClinicalConflictCenterControl: React.FC<ClinicalConflictCenterContr
       }),
     [date, recovery.snapshotRecovery, recovery.snapshots]
   );
+  const restoreImpactBySnapshotId = React.useMemo(() => {
+    const impactById = new Map<string, DailyRecordRestoreImpactAnalysis>();
+    if (!date || !currentRecord || !recovery.isOpen) return impactById;
+    recovery.snapshots.forEach(snapshot => {
+      impactById.set(
+        snapshot.id,
+        analyzeDailyRecordRestoreImpact({
+          date,
+          current: currentRecord,
+          selectedSnapshot: { ...snapshot.record, date },
+        })
+      );
+    });
+    return impactById;
+  }, [currentRecord, date, recovery.isOpen, recovery.snapshots]);
 
   if (!date || !recovery.canManageClinicalConflicts) {
     return null;
   }
 
   const handleRestore = (snapshotId: string, option: ClinicalConflictSnapshotOption) => {
+    if (restoreImpactBySnapshotId.get(snapshotId)?.status === 'blocked') {
+      return;
+    }
     const conflict = centerModel.conflicts.find(item =>
       item.options.some(candidate => candidate.id === snapshotId)
     );
@@ -317,6 +386,7 @@ export const ClinicalConflictCenterControl: React.FC<ClinicalConflictCenterContr
                   key={conflict.id}
                   conflict={conflict}
                   restoringId={recovery.restoringId}
+                  restoreImpactBySnapshotId={restoreImpactBySnapshotId}
                   onRestore={handleRestore}
                 />
               ))}

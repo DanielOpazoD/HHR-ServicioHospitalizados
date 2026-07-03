@@ -7,8 +7,53 @@ import {
   type ConflictVersionRestoreAuditDetails,
 } from '@/services/repositories/ports/repositoryAuditPort';
 import { recordOperationalErrorTelemetry } from '@/services/observability/operationalTelemetryOutcomeRecorder';
+import {
+  analyzeDailyRecordRestoreImpact,
+  type DailyRecordRestoreImpactAnalysis,
+} from '@/services/repositories/dailyRecordRestoreImpactAnalyzer';
 
-export type RestoreDailyRecordVersionResult = { status: 'restored' } | { status: 'not_found' };
+const RESTORE_IMPACT_AUDIT_LIMIT = 12;
+
+export type RestoreDailyRecordVersionResult =
+  | { status: 'restored' }
+  | { status: 'not_found' }
+  | { status: 'blocked'; impactAnalysis: DailyRecordRestoreImpactAnalysis };
+
+const buildAuditRestoreImpact = (
+  impactAnalysis: DailyRecordRestoreImpactAnalysis
+): NonNullable<
+  NonNullable<ConflictVersionRestoreAuditDetails['reviewContext']>['restoreImpact']
+> => ({
+  status: impactAnalysis.status,
+  risk: impactAnalysis.risk,
+  impactedModules: impactAnalysis.impactedModules,
+  blockingImpactCount: impactAnalysis.blockingImpactCount,
+  currentRevision: impactAnalysis.currentRevision,
+  selectedRevision: impactAnalysis.selectedRevision,
+  impactCount: impactAnalysis.impacts.length,
+  impactsTruncated: impactAnalysis.impacts.length > RESTORE_IMPACT_AUDIT_LIMIT,
+  impacts: impactAnalysis.impacts.slice(0, RESTORE_IMPACT_AUDIT_LIMIT).map(impact => ({
+    kind: impact.kind,
+    module: impact.module,
+    severity: impact.severity,
+    path: impact.path,
+    message: impact.message,
+    ...(impact.patientName ? { patientName: impact.patientName } : {}),
+    ...(impact.rut ? { rut: impact.rut } : {}),
+    ...(impact.bedId ? { bedId: impact.bedId } : {}),
+  })),
+});
+
+const enrichReviewContextWithImpact = (
+  reviewContext: ConflictVersionRestoreAuditDetails['reviewContext'] | undefined,
+  impactAnalysis: DailyRecordRestoreImpactAnalysis
+): ConflictVersionRestoreAuditDetails['reviewContext'] | undefined => {
+  if (!reviewContext) return undefined;
+  return {
+    ...reviewContext,
+    restoreImpact: buildAuditRestoreImpact(impactAnalysis),
+  };
+};
 
 /**
  * Restores a daily-record version selected by an authorized clinical conflict manager.
@@ -34,6 +79,15 @@ export const restoreDailyRecordVersion = async (
 
   const current = await getRecordFromFirestore(date);
   const restoredRecord: DailyRecord = { ...snapshot.record, date };
+  const impactAnalysis = analyzeDailyRecordRestoreImpact({
+    date,
+    current,
+    selectedSnapshot: restoredRecord,
+  });
+
+  if (impactAnalysis.status === 'blocked') {
+    return { status: 'blocked', impactAnalysis };
+  }
 
   // Fail closed: audit BEFORE mutating the record. logRepositoryConflictVersionRestored throws when
   // the audit outcome is not successful, so a rejected audit aborts here — no unaudited overwrite.
@@ -41,7 +95,9 @@ export const restoreDailyRecordVersion = async (
     snapshotId,
     origin: snapshot.origin,
     conflictId: snapshot.conflictId,
-    ...(reviewContext ? { reviewContext } : {}),
+    ...(reviewContext
+      ? { reviewContext: enrichReviewContextWithImpact(reviewContext, impactAnalysis) }
+      : {}),
   });
 
   try {

@@ -1,5 +1,6 @@
 import { loadExecuteWriteAuditEvent } from '@/application/audit/writeAuditEventUseCaseLoader';
 import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
+import type { DailyRecordRestoreImpactAnalysis } from '@/services/repositories/dailyRecordRestoreImpactAnalyzer';
 
 export interface ConflictAuditDetails {
   /** Correlates the audit entry with the recoverable version snapshots in `conflictSnapshots/`. */
@@ -118,6 +119,28 @@ export interface ConflictVersionRestoreAuditDetails {
     }>;
     changedFieldCount?: number;
     changedFieldsTruncated?: boolean;
+    restoreImpact?: Pick<
+      DailyRecordRestoreImpactAnalysis,
+      | 'status'
+      | 'risk'
+      | 'impactedModules'
+      | 'blockingImpactCount'
+      | 'currentRevision'
+      | 'selectedRevision'
+    > & {
+      impactCount: number;
+      impactsTruncated?: boolean;
+      impacts: Array<{
+        kind: string;
+        module: string;
+        severity: string;
+        path: string;
+        message: string;
+        patientName?: string;
+        rut?: string;
+        bedId?: string;
+      }>;
+    };
   };
 }
 
