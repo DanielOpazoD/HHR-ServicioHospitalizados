@@ -4,7 +4,7 @@ import { getCurrentUserEmail } from '@/services/admin/utils/auditUtils';
 export interface ConflictAuditDetails {
   /** Correlates the audit entry with the recoverable version snapshots in `conflictSnapshots/`. */
   conflictId?: string;
-  /** Whether recoverable pre-merge snapshots were stored for the admin conflict panel. */
+  /** Whether recoverable pre-merge snapshots were stored for the clinical conflict center. */
   snapshotRecovery?: {
     status: 'saved' | 'failed';
     snapshotIds: string[];
@@ -118,7 +118,7 @@ export interface ConflictVersionRestoreAuditDetails {
 }
 
 /**
- * Audits an admin restoring a daily-record version from the conflict panel. Permanent (the
+ * Audits an authorized reviewer restoring a daily-record version from the conflict panel. Permanent (the
  * recoverable snapshots themselves expire via TTL, but this trail does not). See
  * docs/ADR_CONFLICT_VERSION_RECOVERY.md.
  */

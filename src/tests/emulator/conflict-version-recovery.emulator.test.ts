@@ -85,6 +85,7 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
   let testEnv: RulesTestEnvironment;
   let nurseDb: TestFirestore;
   let adminDb: TestFirestore;
+  let nonManagerDb: TestFirestore;
 
   beforeAll(async () => {
     const rulesPath = path.resolve(__dirname, '../../../firestore.rules');
@@ -107,6 +108,13 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
       .authenticatedContext('user_admin', {
         email: 'daniel.opazo@hospitalhangaroa.cl',
         role: 'admin',
+      })
+      .firestore();
+
+    nonManagerDb = testEnv
+      .authenticatedContext('user_doctor', {
+        email: 'doctor@hospitalhangaroa.cl',
+        role: 'doctor_specialist',
       })
       .firestore();
   });
@@ -170,7 +178,7 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
       await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(live);
     });
 
-    // A captured conflict version the admin chooses to restore.
+    // A captured conflict version the authorized reviewer chooses to restore.
     const versionToRestore = buildRecord(date, isoAt(date, '10:00:00'));
     versionToRestore.beds = {
       R1: buildPatient('R1', { patientName: 'Versión buena', pathology: 'Buena' }),
@@ -183,7 +191,7 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
         .set({ origin: 'remote_premerge', conflictId: 'cid', record: versionToRestore });
     });
 
-    // Restore is admin-only: rules restrict conflictSnapshots reads to isAdmin().
+    // Restore is restricted to clinical conflict managers.
     activeDb = adminDb;
     const result = await restoreDailyRecordVersion(date, snapshotId);
     expect(result.status).toBe('restored');
@@ -206,7 +214,33 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
     expect(historyPatients).toContain('Estado vivo');
   });
 
-  it('denies restore to a non-admin (nurse): the conflictSnapshots read is blocked by rules', async () => {
+  it('allows restore to Hospitalizados HHR nursing: conflictSnapshots reads use the conflict manager policy', async () => {
+    const date = CURRENT_RECORD_DATE;
+    const live = buildRecord(date, isoAt(date, '11:00:00'));
+    live.beds = { R1: buildPatient('R1', { patientName: 'Estado vivo' }) };
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context.firestore().doc(`hospitals/hanga_roa/dailyRecords/${date}`).set(live);
+    });
+
+    const snapshotId = 'cid__incoming_premerge';
+    const versionToRestore = buildRecord(date, isoAt(date, '10:00:00'));
+    versionToRestore.beds = { R1: buildPatient('R1', { patientName: 'Versión enfermería' }) };
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await context
+        .firestore()
+        .doc(`hospitals/hanga_roa/dailyRecords/${date}/conflictSnapshots/${snapshotId}`)
+        .set({ origin: 'incoming_premerge', conflictId: 'cid', record: versionToRestore });
+    });
+
+    activeDb = nurseDb;
+    const result = await restoreDailyRecordVersion(date, snapshotId);
+    expect(result.status).toBe('restored');
+
+    const restored = await getRecordFromFirestore(date);
+    expect(restored?.beds.R1.patientName).toBe('Versión enfermería');
+  });
+
+  it('denies restore to a non-manager role: the conflictSnapshots read is blocked by rules', async () => {
     const date = CURRENT_RECORD_DATE;
     const snapshotId = 'cid__remote_premerge';
 
@@ -219,9 +253,9 @@ describeEmulator('Firestore emulator conflict version recovery', () => {
         .set({ origin: 'remote_premerge', conflictId: 'cid', record: versionToRestore });
     });
 
-    // nurseDb is the active context (set in beforeEach). With reads restricted to isAdmin(), the
-    // repository call must be denied at the snapshot read — the client UI gate is not the only guard.
-    activeDb = nurseDb;
+    // Non-manager context: the repository call must be denied at the snapshot read — the client UI
+    // gate is not the only guard.
+    activeDb = nonManagerDb;
     await expect(restoreDailyRecordVersion(date, snapshotId)).rejects.toThrow();
   });
 });

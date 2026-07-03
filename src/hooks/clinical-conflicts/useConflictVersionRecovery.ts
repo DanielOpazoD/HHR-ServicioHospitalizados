@@ -16,7 +16,6 @@ interface UseConflictVersionRecoveryOptions {
 }
 
 export interface ConflictVersionRecoveryModel {
-  isAdmin: boolean;
   canManageClinicalConflicts: boolean;
   isOpen: boolean;
   loading: boolean;
@@ -62,7 +61,6 @@ export const useConflictVersionRecovery = ({
   const { confirm } = useConfirmDialog();
   const { success, error: notifyError } = useNotification();
   const canManageClinicalConflicts = canManageClinicalConflictCenter(role);
-  const isAdmin = canManageClinicalConflicts;
 
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -175,7 +173,6 @@ export const useConflictVersionRecovery = ({
   );
 
   return {
-    isAdmin,
     canManageClinicalConflicts,
     isOpen,
     loading,

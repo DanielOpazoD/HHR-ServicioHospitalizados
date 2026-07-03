@@ -49,7 +49,6 @@ const buildSnapshot = (
 const defaultRecovery = (
   overrides: Partial<ConflictVersionRecoveryModel> = {}
 ): ConflictVersionRecoveryModel => ({
-  isAdmin: true,
   canManageClinicalConflicts: true,
   isOpen: true,
   loading: false,

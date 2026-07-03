@@ -68,7 +68,7 @@ export const resolveConflictSnapshotRecoveryState = ({
         title: 'Snapshots sin permiso de lectura',
         message:
           `Observabilidad registró snapshots de conflicto para ${day}, ` +
-          'pero el usuario actual no tiene permisos para leerlos. Reintenta con rol admin vigente.',
+          'pero el usuario actual no tiene permisos para leerlos. Reintenta con rol admin o Hospitalizados HHR vigente.',
       };
     }
 

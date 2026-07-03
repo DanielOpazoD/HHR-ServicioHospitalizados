@@ -29,7 +29,7 @@ por campo con la matriz de políticas) y hoy es **irreversible**:
 - En el auto-merge (`attemptConflictAutoMergeRecovery`) se escribe el registro _fusionado_ vía
   cola (`setDoc(merge:true)`), **sin snapshot de ninguna de las dos versiones previas**.
 - La **versión local que "pierde" nunca se persiste server-side** (queda solo en IndexedDB del
-  cliente); un admin de otra sesión no puede recuperarla.
+  cliente); un revisor autorizado de otra sesión no puede recuperarla.
 - La auditoría de conflicto (`buildConflictAuditSummary`) guarda **solo agregados**
   (`winnerBreakdown`, `strategyBreakdown`…), **no los valores** de cada versión.
 - Los snapshots de `history/` que sí existen en el full-save **no se leen** desde ninguna parte
@@ -87,8 +87,8 @@ el campo `expireAt`):
 - **La auditoría es permanente.** `logRepositoryConflictAutoMerged` / `…VersionRestored` viven en
   la colección de auditoría **sin TTL** → la trazabilidad Ley 20.584 («qué cambió, quién, cuándo»)
   no se pierde nunca. Solo expira el **blob recuperable** (la capacidad de _restaurar_).
-- **Ventana de restauración ≈ 48 h (configurable).** Pasada la ventana, el admin conserva la
-  auditoría pero ya no puede restaurar. _Decisión clínica a confirmar: 48 h es suficiente para
+- **Ventana de restauración ≈ 48 h (configurable).** Pasada la ventana, el revisor autorizado
+  conserva la auditoría pero ya no puede restaurar. _Decisión clínica a confirmar: 48 h es suficiente para
   detectar un merge incorrecto en un censo diario (revisión por turno)._
 - **Los `pre_write` no cambian:** no llevan `expireAt`, así que la política de TTL no los toca
   (siguen permanentes). El TTL solo afecta los snapshots de conflicto.
@@ -152,8 +152,8 @@ necesario para auditoría operacional del cambio elegido.
 
 - **Unit:** captura dual en `attemptConflictAutoMergeRecovery`; contrato de `restoreDailyRecordVersion`
   (atómico, no destructivo); emisión del evento de auditoría con los campos correctos.
-- **Emulador (motor real):** conflicto real → ambas versiones quedan en `history/` → un admin
-  restaura la versión A → el historial conserva todo y el restore queda auditado.
+- **Emulador (motor real):** conflicto real → ambas versiones quedan en `history/` → un revisor
+  autorizado restaura la versión A → el historial conserva todo y el restore queda auditado.
 - **UI:** `ConflictPanel` lista versiones del día y dispara el restore (reusa el patrón de
   `ClinicalDocumentVersionHistory`).
 
@@ -164,14 +164,15 @@ necesario para auditoría operacional del cambio elegido.
 - **Definition of Done:** ADR en el mismo cambio ✅ · tests en flujo crítico ✅ · registrar en
   `DOCUMENTATION_MAP.md` (pendiente del PR de implementación) · `technical-ownership-map.json`
   si toca subsistema crítico.
-- **Rubric:** _Estabilidad_ (16), _Seguridad_ (8 — admin-only + audit append-only), _Tests_ (12).
+- **Rubric:** _Estabilidad_ (16), _Seguridad_ (8 — acceso restringido + audit append-only), _Tests_ (12).
 - **Anti-sobreingeniería:** MVP acotado; reusa `history/`, `ConflictPanel` y el patrón de
   version-history existente; sin editor de diff.
 
 ## Rollout
 
-- La captura dual es **aditiva** (no cambia comportamiento de usuarios no-admin) y la UI es
-  **admin-only**; no requiere flag, aunque puede ir tras uno si se prefiere gradualidad.
+- La captura dual es **aditiva** (no cambia comportamiento de usuarios clínicos comunes) y la UI es
+  restringida a `admin`/`nurse_hospital`; no requiere flag, aunque puede ir tras uno si se prefiere
+  gradualidad.
 - Costo de almacenamiento acotado por el **TTL ~48 h** (no por conteo): se borran solos.
 - **Paso de ops:** habilitar la política de TTL de Firestore sobre `expireAt` (config de proyecto
   vía consola/gcloud, **no** en `firestore.rules`) — debe ir en el PR de implementación.
