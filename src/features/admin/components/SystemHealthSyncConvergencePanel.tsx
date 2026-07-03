@@ -48,9 +48,9 @@ export const SystemHealthSyncConvergencePanel = ({
             <StatusIcon status={model.status} />
           </span>
           <div>
-            <h3 className="text-sm font-black text-slate-900">Convergencia clinica</h3>
+            <h3 className="text-sm font-black text-slate-900">Convergencia clínica</h3>
             <p className="text-[11px] font-medium text-slate-500">
-              Autoridad, replay y seleccion de verdad
+              Autoridad, replay y selección de verdad
             </p>
           </div>
         </div>
@@ -85,7 +85,7 @@ export const SystemHealthSyncConvergencePanel = ({
         </div>
         <div>
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-            Ultima OK
+            Última OK
           </p>
           <p className="mt-1 text-xs font-bold text-slate-700">
             {formatDateTime(model.lastConvergenceOkAt)}
@@ -102,7 +102,7 @@ export const SystemHealthSyncConvergencePanel = ({
           onClick={() => setShowTechnicalDetails(current => !current)}
           className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50"
         >
-          Detalle tecnico
+          Detalle técnico
           <ChevronDown
             size={13}
             className={clsx('transition-transform', showTechnicalDetails && 'rotate-180')}
@@ -110,10 +110,55 @@ export const SystemHealthSyncConvergencePanel = ({
         </button>
       </div>
 
+      <div className="grid gap-4 border-t border-slate-100 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+            Acciones sugeridas
+          </p>
+          <ul className="mt-2 space-y-1.5 text-xs font-medium text-slate-700">
+            {model.operatorActions.map(action => (
+              <li key={action} className="flex gap-2">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
+                <span>{action}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+            Señales clínicas
+          </p>
+          {model.clinicalSignals.length === 0 ? (
+            <p className="mt-2 text-xs font-medium text-slate-500">
+              Sin señales clínicas activas en los filtros actuales.
+            </p>
+          ) : (
+            <div className="mt-2 divide-y divide-slate-100 text-xs">
+              {model.clinicalSignals.map(signal => (
+                <div key={signal.label} className="py-2 first:pt-0 last:pb-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-black text-slate-700">{signal.label}</span>
+                    <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-black text-slate-500">
+                      {signal.count}
+                    </span>
+                  </div>
+                  <ul className="mt-1 space-y-1 text-slate-600">
+                    {signal.examples.map(example => (
+                      <li key={example}>{example}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {showTechnicalDetails ? (
         <div id={detailsId} className="border-t border-slate-100 bg-slate-50 px-4 py-3">
           {model.technicalDetails.length === 0 ? (
-            <p className="text-xs text-slate-500">Sin eventos tecnicos destacados.</p>
+            <p className="text-xs text-slate-500">Sin eventos técnicos destacados.</p>
           ) : (
             <ul className="space-y-1 text-xs text-slate-600">
               {model.technicalDetails.map(detail => (

@@ -14,6 +14,12 @@ export interface SystemHealthSyncConvergencePanelModel {
   blockedOperations: number;
   recoverableDivergences: number;
   affectedUsers: number;
+  operatorActions: string[];
+  clinicalSignals: Array<{
+    label: string;
+    count: number;
+    examples: string[];
+  }>;
   lastConvergenceOkAt?: string;
   technicalDetails: string[];
 }
@@ -22,8 +28,8 @@ const TRUTH_SELECTION_OPERATION = 'sync_queue_truth_selected';
 
 const STATUS_LABELS: Record<SystemHealthSyncConvergencePanelStatus, string> = {
   healthy: 'Convergente',
-  recoverable: 'Con recuperacion pendiente',
-  needs_review: 'Requiere revision',
+  recoverable: 'Con recuperación pendiente',
+  needs_review: 'Requiere revisión',
   unsafe: 'Inseguro',
 };
 
@@ -59,7 +65,7 @@ const buildSummary = ({
   if (status === 'healthy') {
     return affectedUsers === 0
       ? 'Sin usuarios con actividad de sincronizacion visible en los filtros actuales.'
-      : 'Sin pendientes ni conflictos de sincronizacion visibles en los filtros actuales.';
+      : 'Sin pendientes ni conflictos de sincronización visibles en los filtros actuales.';
   }
 
   const fragments: string[] = [];
@@ -76,6 +82,71 @@ const buildSummary = ({
   return fragments.join('; ');
 };
 
+const normalizeSignalLabel = (event: UserHealthRecentEvent): string => {
+  const raw = `${event.module || event.operation || 'Sincronización'}`.toLowerCase();
+  if (/m[eé]dic|medical/.test(raw)) return 'Entrega médica';
+  if (/enfermer|nursing|handoff/.test(raw)) return 'Entrega enfermería';
+  if (/censo|census|daily/.test(raw)) return 'Censo diario';
+  if (/snapshot|recover/.test(raw)) return 'Recuperación';
+  return event.module || 'Sincronización local';
+};
+
+const buildClinicalSignals = (
+  users: UserHealthStatus[],
+  syncEvents: UserHealthRecentEvent[]
+): SystemHealthSyncConvergencePanelModel['clinicalSignals'] => {
+  const userByEventId = new Map<string, UserHealthStatus>();
+  users.forEach(user => {
+    (user.recentEvents || []).forEach(event => userByEventId.set(event.id, user));
+  });
+
+  const byLabel = new Map<string, string[]>();
+  syncEvents.forEach(event => {
+    const label = normalizeSignalLabel(event);
+    const user = userByEventId.get(event.id);
+    const context = (event.contextSummary || []).join(' · ');
+    const example = [user?.displayName, event.message, context].filter(Boolean).join(' · ');
+    const examples = byLabel.get(label) || [];
+    examples.push(example);
+    byLabel.set(label, examples);
+  });
+
+  return Array.from(byLabel.entries()).map(([label, examples]) => ({
+    label,
+    count: examples.length,
+    examples: examples.slice(0, 2),
+  }));
+};
+
+const buildOperatorActions = ({
+  status,
+  pendingOperations,
+  blockedOperations,
+  recoverableDivergences,
+}: Pick<
+  SystemHealthSyncConvergencePanelModel,
+  'blockedOperations' | 'pendingOperations' | 'recoverableDivergences' | 'status'
+>): string[] => {
+  if (status === 'healthy') {
+    return ['No se requieren acciones de sincronización clínica.'];
+  }
+
+  const actions: string[] = [];
+  if (pendingOperations > 0) {
+    actions.push('Acción segura: reintentar cola local o esperar drenaje de outbox.');
+  }
+  if (recoverableDivergences > 0) {
+    actions.push('Refrescar remoto y confirmar si la mutación ya fue aplicada.');
+  }
+  if (blockedOperations > 0 || status === 'needs_review') {
+    actions.push('abrir centro de conflictos clínicos y revisar contexto antes de preservar.');
+  }
+  if (status === 'unsafe') {
+    actions.push('No autorresolver: bloquear y escalar revisión clínica/soporte.');
+  }
+  return actions;
+};
+
 export const buildSystemHealthSyncConvergencePanelModel = (
   users: UserHealthStatus[]
 ): SystemHealthSyncConvergencePanelModel => {
@@ -90,6 +161,7 @@ export const buildSystemHealthSyncConvergencePanelModel = (
   );
   const syncEvents = users.flatMap(user => user.recentEvents?.filter(isSyncEvent) || []);
   const recoverableDivergences = syncEvents.filter(isRecoverableSyncDivergenceEvent).length;
+  const clinicalSignals = buildClinicalSignals(users, syncEvents);
   const lastConvergenceOkAt = syncEvents
     .filter(isTruthSelectionOkEvent)
     .sort((left, right) => toMs(right.timestamp) - toMs(left.timestamp))[0]?.timestamp;
@@ -132,12 +204,12 @@ export const buildSystemHealthSyncConvergencePanelModel = (
         (user.syncOrphanedTasks || 0) > 0
       ) {
         details.push(
-          `${user.displayName}: ${user.failedSyncTasks} fallidas, ${user.conflictSyncTasks} en conflicto, ${user.syncOrphanedTasks || 0} huerfanas`
+          `${user.displayName}: ${user.failedSyncTasks} fallidas, ${user.conflictSyncTasks} en conflicto, ${user.syncOrphanedTasks || 0} huérfanas`
         );
       }
       (user.recentEvents || []).filter(isRecoverableSyncDivergenceEvent).forEach(event => {
         details.push(
-          `Operacion recuperable: ${event.operation || 'sync'} en ${event.module || 'Sync'}`
+          `Operación recuperable: ${event.operation || 'sync'} en ${event.module || 'Sync'}`
         );
       });
       return details;
@@ -145,7 +217,7 @@ export const buildSystemHealthSyncConvergencePanelModel = (
     .slice(0, 8);
 
   if (lastConvergenceOkAt) {
-    technicalDetails.push(`Ultima verdad aceptada: ${lastConvergenceOkAt}`);
+    technicalDetails.push(`Última verdad aceptada: ${lastConvergenceOkAt}`);
   }
 
   return {
@@ -162,6 +234,13 @@ export const buildSystemHealthSyncConvergencePanelModel = (
     blockedOperations,
     recoverableDivergences,
     affectedUsers,
+    operatorActions: buildOperatorActions({
+      status,
+      pendingOperations,
+      blockedOperations,
+      recoverableDivergences,
+    }),
+    clinicalSignals,
     lastConvergenceOkAt,
     technicalDetails,
   };
