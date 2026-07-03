@@ -296,7 +296,9 @@ describe('useAuditData', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.displayLogs).toHaveLength(2);
+    await waitFor(() => {
+      expect(result.current.displayLogs).toHaveLength(2);
+    });
 
     act(() => {
       result.current.setGroupedView(true);
