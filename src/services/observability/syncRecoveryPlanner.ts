@@ -62,7 +62,7 @@ const buildBlockAction = (finding: SyncConvergenceFinding): SyncRecoveryAction =
   action: 'block_for_review',
   safety: 'manual_only',
   target: finding.path,
-  reason: 'La correccion automatica podria elegir una verdad clinica equivocada.',
+  reason: 'La corrección automática podría elegir una verdad clínica equivocada.',
   findingType: finding.type,
   operationId: getFindingOperationId(finding),
 });
@@ -71,7 +71,7 @@ const buildRefreshRemoteAction = (finding: SyncConvergenceFinding): SyncRecovery
   action: 'refresh_remote',
   safety: 'safe',
   target: finding.path,
-  reason: 'Antes de resolver, refrescar remoto para comprobar si otro cliente ya convergio.',
+  reason: 'Antes de resolver, refrescar remoto para comprobar si otro cliente ya convergió.',
   findingType: finding.type,
   operationId: getFindingOperationId(finding),
 });
@@ -80,7 +80,7 @@ const buildRestoreSnapshotAction = (finding: SyncConvergenceFinding): SyncRecove
   action: 'restore_snapshot',
   safety: 'requires_confirmation',
   target: finding.path,
-  reason: 'Hay snapshot disponible, pero restaurarlo requiere confirmacion humana.',
+  reason: 'Hay snapshot disponible, pero restaurarlo requiere confirmación humana.',
   findingType: finding.type,
   operationId: getFindingOperationId(finding),
 });
@@ -94,7 +94,7 @@ const buildAlreadyAppliedActions = (
       action: 'mark_already_applied' as const,
       safety: 'safe' as const,
       target: operation.syncContract?.mutationId || operation.key || `syncQueue.${operation.id}`,
-      reason: 'La autoridad/remoto ya reconoce esta mutacion; corresponde confirmar ack local.',
+      reason: 'La autoridad/remoto ya reconoce esta mutación; corresponde confirmar ack local.',
       operationId: operation.id,
     }));
 
@@ -171,7 +171,7 @@ export const planSyncRecovery = ({
     actions,
     summary:
       actions.length === 0
-        ? 'No se requieren acciones de recuperacion.'
-        : `Plan de recuperacion ${status}: ${actions.length} accion(es) sugerida(s), ninguna automatica agresiva.`,
+        ? 'No se requieren acciones de recuperación.'
+        : `Plan de recuperación ${status}: ${actions.length} acción(es) sugerida(s), ninguna automática agresiva.`,
   };
 };
