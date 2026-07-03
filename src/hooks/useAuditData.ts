@@ -26,6 +26,10 @@ import {
   toggleAuditRowState,
 } from '@/hooks/controllers/auditDataPolicyController';
 import {
+  buildAuditPatientPackagePipelineBase,
+  queryAuditPatientPackagePipeline,
+} from '@/hooks/controllers/auditPatientPackagePipelineController';
+import {
   AUDIT_DEFAULT_FETCH_LIMIT,
   AUDIT_FETCH_LIMIT_STEP,
   AUDIT_MAX_FETCH_LIMIT,
@@ -38,15 +42,9 @@ import {
   type AuditDateRangePreset,
 } from '@/services/admin/auditDateRangePresets';
 import { auditDataLogger } from '@/hooks/hookLoggers';
-import {
-  buildClinicalAuditPatientPackages,
-  type ClinicalAuditPatientPackage,
-} from '@/services/admin/clinicalAuditPatientPackages';
+import { type ClinicalAuditPatientPackage } from '@/services/admin/clinicalAuditPatientPackages';
 import {
   DEFAULT_PATIENT_PACKAGE_INTENT,
-  buildClinicalAuditPatientPackageFilterOptions,
-  buildClinicalAuditPatientPackageIntentOptions,
-  filterClinicalAuditPatientPackages,
   type ClinicalAuditPatientPackageFilterId,
   type ClinicalAuditPatientPackageFilterOption,
   type ClinicalAuditPatientPackageIntentId,
@@ -234,50 +232,47 @@ export function useAuditData(): UseAuditDataReturn {
     return filterAuditLogs(logs, params);
   }, [logs, filterAction, activeSection, startDate, endDate, groupedView]);
 
-  const unfilteredPatientPackages = useMemo(
-    () => buildClinicalAuditPatientPackages(patientPackageSourceLogs),
+  const patientPackagePipelineBase = useMemo(
+    () => buildAuditPatientPackagePipelineBase({ sourceLogs: patientPackageSourceLogs }),
     [patientPackageSourceLogs]
   );
 
-  const patientPackageIntentOptions = useMemo(
-    () => buildClinicalAuditPatientPackageIntentOptions(unfilteredPatientPackages),
-    [unfilteredPatientPackages]
-  );
-
-  const intentPatientPackages = useMemo(
+  const patientPackagePipeline = useMemo(
     () =>
-      filterClinicalAuditPatientPackages(unfilteredPatientPackages, {
-        activeIntent: activePatientPackageIntent,
-      }),
-    [unfilteredPatientPackages, activePatientPackageIntent]
-  );
-
-  const patientPackageFilterOptions = useMemo(
-    () => buildClinicalAuditPatientPackageFilterOptions(intentPatientPackages),
-    [intentPatientPackages]
-  );
-
-  const patientPackages = useMemo(
-    () =>
-      filterClinicalAuditPatientPackages(intentPatientPackages, {
+      queryAuditPatientPackagePipeline({
+        base: patientPackagePipelineBase,
         searchTerm,
         activeFilter: activePatientPackageFilter,
+        activeIntent: activePatientPackageIntent,
+        currentPage,
+        itemsPerPage: ITEMS_PER_PAGE,
       }),
-    [intentPatientPackages, searchTerm, activePatientPackageFilter]
+    [
+      patientPackagePipelineBase,
+      searchTerm,
+      activePatientPackageFilter,
+      activePatientPackageIntent,
+      currentPage,
+      ITEMS_PER_PAGE,
+    ]
   );
 
+  const {
+    patientPackages,
+    paginatedPatientPackages,
+    patientPackageFilterOptions,
+    patientPackageIntentOptions,
+  } = patientPackagePipeline;
+
   // Pagination
-  const activeDisplayCount = groupedView ? patientPackages.length : displayLogs.length;
+  const activeDisplayCount = groupedView
+    ? patientPackagePipeline.activeDisplayCount
+    : displayLogs.length;
   const totalPages = Math.ceil(activeDisplayCount / ITEMS_PER_PAGE);
 
   const paginatedLogs = useMemo(() => {
     return paginateAuditDisplayLogs(displayLogs, currentPage, ITEMS_PER_PAGE);
   }, [displayLogs, currentPage, ITEMS_PER_PAGE]);
-
-  const paginatedPatientPackages = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return patientPackages.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [patientPackages, currentPage, ITEMS_PER_PAGE]);
 
   const canLoadMoreLogs = logs.length >= fetchLimit && fetchLimit < AUDIT_MAX_FETCH_LIMIT;
 

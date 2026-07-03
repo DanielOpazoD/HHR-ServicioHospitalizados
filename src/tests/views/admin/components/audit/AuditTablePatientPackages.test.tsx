@@ -125,9 +125,32 @@ describe('AuditTable patient-centered packages', () => {
     const onLoadMoreLogs = vi.fn();
     render(<AuditTable {...baseProps} canLoadMoreLogs onLoadMoreLogs={onLoadMoreLogs} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /cargar m[aá]s/i }));
+    fireEvent.click(screen.getByRole('button', { name: /cargar m[aá]s registros de auditoría/i }));
 
     expect(onLoadMoreLogs).toHaveBeenCalledTimes(1);
+  });
+
+  it('explains empty patient-package filters and suggests expanding the audit window', () => {
+    render(
+      <AuditTable
+        {...baseProps}
+        patientPackages={[]}
+        paginatedPatientPackages={[]}
+        activePatientPackageFilter="DISCHARGE"
+        canLoadMoreLogs
+      />
+    );
+
+    expect(
+      screen.getByText(/no hay paquetes por paciente para esta combinación/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/amplía la ventana de auditoría/i)).toBeInTheDocument();
+  });
+
+  it('shows the loaded audit window when no more logs can be requested', () => {
+    render(<AuditTable {...baseProps} fetchLimit={750} canLoadMoreLogs={false} />);
+
+    expect(screen.getByText(/ventana cargada: 750 registros/i)).toBeInTheDocument();
   });
 
   it('shows patient package quick filters with counts', () => {

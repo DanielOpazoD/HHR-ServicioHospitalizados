@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Search,
   List,
   Rows3,
   Box,
@@ -18,7 +17,11 @@ import {
   AuditPatientPackageIntentTabs,
   buildPatientPackageIntentTabId,
 } from './AuditPatientPackageIntentTabs';
-import { AuditSkeleton } from '@/components/shared/Skeleton';
+import {
+  AuditTableEmptyState,
+  AuditTableLoadingState,
+  AuditWindowStatus,
+} from './AuditTableOperationalState';
 import type { ClinicalAuditPatientPackage } from '@/services/admin/clinicalAuditPatientPackages';
 import type {
   ClinicalAuditPatientPackageFilterId,
@@ -95,6 +98,12 @@ export const AuditTable: React.FC<AuditTableProps> = ({
   const hasVisibleRows = isPatientPackageView
     ? patientPackages.length > 0
     : filteredLogs.length > 0;
+  const emptyStateTitle = isPatientPackageView
+    ? 'No hay paquetes por paciente para esta combinación'
+    : 'No se encontraron rastros para los filtros aplicados';
+  const emptyStateDetail = canLoadMoreLogs
+    ? 'Amplía la ventana de auditoría para buscar en registros anteriores.'
+    : 'Ajusta filtros, fecha o vista para ampliar el resultado visible.';
   const patientPackagePanelId = React.useId();
   const patientPackageTabsId = React.useId();
   const activeIntentTabId = buildPatientPackageIntentTabId(
@@ -158,9 +167,10 @@ export const AuditTable: React.FC<AuditTableProps> = ({
               title="Ampliar historial de auditoria"
             >
               <Rows3 size={14} />
-              Cargar más
+              Cargar más registros de auditoría
             </button>
           )}
+          {!loading && !canLoadMoreLogs && <AuditWindowStatus fetchLimit={fetchLimit} />}
           {/* PDF Export Button */}
           <button
             type="button"
@@ -260,22 +270,13 @@ export const AuditTable: React.FC<AuditTableProps> = ({
           </thead>
           <tbody className="divide-y divide-slate-50">
             {loading ? (
-              <tr>
-                <td colSpan={tableColSpan} className="p-4">
-                  <AuditSkeleton entries={10} />
-                </td>
-              </tr>
+              <AuditTableLoadingState colSpan={tableColSpan} />
             ) : !hasVisibleRows ? (
-              <tr>
-                <td colSpan={tableColSpan} className="px-4 py-20 text-center">
-                  <div className="flex flex-col items-center gap-3 opacity-30">
-                    <Search size={48} className="text-slate-300" />
-                    <p className="text-slate-500 font-bold">
-                      No se encontraron rastros para los filtros aplicados
-                    </p>
-                  </div>
-                </td>
-              </tr>
+              <AuditTableEmptyState
+                colSpan={tableColSpan}
+                title={emptyStateTitle}
+                detail={emptyStateDetail}
+              />
             ) : isPatientPackageView ? (
               paginatedPatientPackages.map(auditPackage => (
                 <PatientAuditPackageRow
