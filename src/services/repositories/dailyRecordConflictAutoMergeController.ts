@@ -2,6 +2,7 @@ import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { ConflictAutoMergeRecoveryResult } from '@/services/repositories/contracts/dailyRecordWriteRecoveryResult';
 import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRecordQueries';
 import { resolveDailyRecordConflictWithTrace } from '@/services/repositories/conflictResolutionMatrix';
+import { evaluateDailyRecordConflictPostMergeInvariants } from '@/services/repositories/dailyRecordConflictPostMergeInvariantChecker';
 import { buildConflictAutoMergeAuditDetails } from '@/services/repositories/conflictResolutionAuditSummary';
 import { logRepositoryConflictAutoMerged } from '@/services/repositories/ports/repositoryAuditPort';
 import { dailyRecordWriteSupportLogger } from '@/services/repositories/repositoryLoggers';
@@ -61,9 +62,43 @@ export const attemptConflictAutoMergeRecovery = async (
         changedPaths: effectiveChangedPaths,
       }
     );
+    const postMergeInvariants = evaluateDailyRecordConflictPostMergeInvariants({
+      remote: remoteRecord,
+      local: localRecord,
+      resolved: merged,
+      context: { date, phase: 'persistence' },
+    });
+
+    if (postMergeInvariants.status === 'blocked') {
+      recordOperationalErrorTelemetry(
+        'firestore',
+        'conflict_auto_merge_invariants',
+        new Error(
+          `Auto-merge blocked by post-merge invariants: ${postMergeInvariants.violations
+            .map(violation => violation.path)
+            .join(', ')}`
+        ),
+        {
+          code: 'firestore_conflict_auto_merge_invariants_blocked',
+          message: 'El auto-merge de conflicto fue bloqueado por invariantes clinicas.',
+          severity: 'warning',
+          userSafeMessage: 'No se pudo resolver automaticamente el conflicto clinico.',
+          context: {
+            date,
+            changedPaths: effectiveChangedPaths,
+            violations: postMergeInvariants.violations.map(violation => ({
+              type: violation.type,
+              path: violation.path,
+              message: violation.message,
+            })),
+          },
+        }
+      );
+      return { status: 'not_possible' };
+    }
 
     const { accepted: queued, syncContract } = await queueMergedRecoveryTask(
-      merged,
+      postMergeInvariants.record,
       effectiveChangedPaths,
       remoteRecord.lastUpdated
     );
