@@ -18,12 +18,9 @@ describe('userAvatarPresentationController', () => {
   });
 
   it('keeps the default initial view after deleting the in-app avatar, even if Google has a photo', () => {
-    expect(resolveVisibleUserAvatarUrl(null, 'https://google.test/photo.png')).toBeNull();
-    expect(
-      resolveVisibleUserAvatarUrl(
-        'https://storage.test/user-avatar.png',
-        'https://google.test/photo.png'
-      )
-    ).toBe('https://storage.test/user-avatar.png');
+    expect(resolveVisibleUserAvatarUrl(null)).toBeNull();
+    expect(resolveVisibleUserAvatarUrl('https://storage.test/user-avatar.png')).toBe(
+      'https://storage.test/user-avatar.png'
+    );
   });
 });

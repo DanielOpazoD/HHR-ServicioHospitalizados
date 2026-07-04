@@ -14,6 +14,7 @@ import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { getVisibleAppModules } from '@/shared/access/operationalAccessPolicy';
 import { useUserAvatarProfile } from '@/hooks/useUserAvatarProfile';
 import { useNotification } from '@/context/UIContext';
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import {
   buildUserAvatarFeedback,
   resolveVisibleUserAvatarUrl,
@@ -22,13 +23,13 @@ import {
 import { ModuleType } from '@/constants/navigationConfig';
 type ViewMode = 'REGISTER' | 'ANALYTICS';
 
-const ReminderBadge = React.lazy(() =>
+const ReminderBadge = lazyWithRetry(() =>
   import('@/components/reminders/ReminderBadge').then(module => ({
     default: module.ReminderBadge,
   }))
 );
 
-const UserAvatarModal = React.lazy(() =>
+const UserAvatarModal = lazyWithRetry(() =>
   import('./UserAvatarModal').then(module => ({
     default: module.UserAvatarModal,
   }))
@@ -80,10 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { success, error: notifyError } = useNotification();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const avatarUrl = resolveVisibleUserAvatarUrl(
-    userAvatar.profile?.photoURL,
-    currentUser?.photoURL
-  );
+  const avatarUrl = resolveVisibleUserAvatarUrl(userAvatar.profile?.photoURL);
   const runtimeIndicatorSlot = hideRuntimeIndicators ? (
     <div className="hidden sm:flex items-center gap-3 invisible" aria-hidden="true">
       <div className="h-8 w-[88px] rounded-full" />

@@ -338,6 +338,50 @@ describe('buildReleaseReadinessScorecard', () => {
     expect(hotspotIndicator?.summary).toContain('near-limit');
   });
 
+  it('degrades unknown future asset statuses by default', () => {
+    const root = createScorecardRoot();
+    writeJson(root, 'reports/compatibility-import-governance.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      checkedEntries: 0,
+      issues: [],
+    });
+    writeJson(root, 'reports/operational-health.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      flowPerformance: { status: 'passing' },
+      frontendStartup: {
+        status: 'ok',
+        previewGate: { status: 'ok' },
+        issues: [],
+      },
+      buildAssets: {
+        chunkMaxBytes: 1_250_000,
+        largestAssets: [
+          {
+            file: 'dist/assets/app-authenticated-shell-new.js',
+            sizeBytes: 536_000,
+            maxBytes: 600_000,
+            status: 'needs-review',
+          },
+        ],
+      },
+    });
+
+    const report = buildReleaseReadinessScorecard(root);
+
+    expect(report.overallStatus).toBe('degraded');
+    expect(
+      report.indicators.find(indicator => indicator.name === 'operational_readiness')
+    ).toMatchObject({
+      status: 'degraded',
+      summary: 'flow=passing, bundle=degraded',
+    });
+    expect(
+      report.indicators.find(indicator => indicator.name === 'release_hotspots')
+    ).toMatchObject({
+      status: 'degraded',
+    });
+  });
+
   it('falls back to operational health assets when dist assets are absent', () => {
     const root = createScorecardRoot();
     writeJson(root, 'reports/compatibility-import-governance.json', {

@@ -49,3 +49,11 @@ export const writeCachedUserAvatarProfile = (
     // Local fallback must not block the authenticated shell.
   }
 };
+
+export const clearCachedUserAvatarProfiles = (): void => {
+  try {
+    globalThis.localStorage?.removeItem(LOCAL_USER_AVATAR_PROFILES_KEY);
+  } catch {
+    // Logout/session cleanup must not be blocked by storage availability.
+  }
+};

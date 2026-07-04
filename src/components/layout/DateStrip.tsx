@@ -210,7 +210,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
             )}
 
             {currentModule === 'NURSING_HANDOFF' && !isGuest && (
-              <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[46px]" />}>
+              <React.Suspense fallback={<DateStripActionFallback widthClassName="min-w-[40px]" />}>
                 <HandoffSaveDropdown
                   onExportPDF={onExportPDF}
                   onPrintWithBrowserOptions={onPrintWithBrowserOptions}
@@ -223,7 +223,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
             )}
 
             {currentModule === 'CENSUS' && canShowRoleRestrictedActions && (
-              <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[46px]" />}>
+              <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[34px]" />}>
                 <SaveDropdown
                   onExportExcel={onExportExcel}
                   onBackupExcel={onBackupExcel}
@@ -235,7 +235,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
             )}
 
             {canShowRoleRestrictedActions && (
-              <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[92px]" />}>
+              <React.Suspense fallback={<DateStripActionFallback widthClassName="min-w-[116px]" />}>
                 <EmailDropdown
                   onSendEmail={onSendEmail}
                   onCopyShareLink={onCopyShareLink}

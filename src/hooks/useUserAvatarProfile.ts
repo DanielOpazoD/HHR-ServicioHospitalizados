@@ -55,10 +55,16 @@ export const useUserAvatarProfile = (
         unsubscribe = service.subscribeProfile(
           uid,
           nextProfile => {
+            if (isDisposed) {
+              return;
+            }
             setProfile(nextProfile);
             setIsLoading(false);
           },
           subscriptionError => {
+            if (isDisposed) {
+              return;
+            }
             setError(resolveErrorMessage(subscriptionError));
             setIsLoading(false);
           }

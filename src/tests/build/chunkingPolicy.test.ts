@@ -6,6 +6,21 @@ import { chunkForModule } from '../../../scripts/config/chunkingPolicy';
 const readSource = (relativePath: string): string =>
   fs.readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 
+const assertDynamicBoundary = ({
+  sourcePath,
+  forbiddenStaticImport,
+  requiredDynamicImport,
+}: {
+  sourcePath: string;
+  forbiddenStaticImport: RegExp;
+  requiredDynamicImport: string;
+}) => {
+  const source = readSource(sourcePath);
+
+  expect(source, sourcePath).not.toMatch(forbiddenStaticImport);
+  expect(source, sourcePath).toContain(requiredDynamicImport);
+};
+
 const directAuditWriterImportPattern =
   /import\s+\{[\s\S]*executeWriteAuditEvent[\s\S]*\}\s+from ['"][^'"]*application\/audit\/writeAuditEventUseCase(?:\.ts)?['"]/;
 
@@ -125,18 +140,7 @@ describe('chunkingPolicy', () => {
       /import\s+\{[^}]*UserAvatarModal[^}]*\}\s+from ['"]\.\/UserAvatarModal['"]/
     );
     expect(navbarSource).toContain("import('./UserAvatarModal')");
-  });
-
-  it('keeps user avatar remote profile service out of the static authenticated shell import graph', () => {
-    const userAvatarHookSource = readSource('src/hooks/useUserAvatarProfile.ts');
-
-    expect(userAvatarHookSource).not.toMatch(
-      /from ['"]@\/services\/user-profile\/userAvatarProfileService['"]/
-    );
-    expect(userAvatarHookSource).toContain("from '@/services/user-profile/userAvatarProfileCache'");
-    expect(userAvatarHookSource).toContain(
-      "import('@/services/user-profile/userAvatarProfileService')"
-    );
+    expect(navbarSource).toContain("from '@/utils/lazyWithRetry'");
   });
 
   it('keeps user avatar image processing helpers out of the static authenticated shell import graph', () => {
@@ -146,69 +150,73 @@ describe('chunkingPolicy', () => {
     expect(navbarSource).toContain('@/components/layout/userAvatarPresentationController');
   });
 
-  it('keeps census email delivery use cases out of the static authenticated shell import graph', () => {
-    const deliveryActionsSource = readSource('src/hooks/useCensusEmailDeliveryActions.ts');
-
-    expect(deliveryActionsSource).not.toMatch(
-      /from ['"]@\/application\/census-email\/sendCensusEmailUseCases['"]/
-    );
-    expect(deliveryActionsSource).toContain(
-      "import('@/application/census-email/sendCensusEmailUseCases')"
-    );
-  });
-
-  it('keeps secondary DateStrip action dropdowns out of the static authenticated shell import graph', () => {
-    const dateStripSource = readSource('src/components/layout/DateStrip.tsx');
-
-    expect(dateStripSource).not.toMatch(
-      /from ['"]\.\/date-strip\/actions\/(?:SaveDropdown|HandoffSaveDropdown|EmailDropdown)['"]/
-    );
-    expect(dateStripSource).toContain("import('./date-strip/actions/SaveDropdown')");
-    expect(dateStripSource).toContain("import('./date-strip/actions/HandoffSaveDropdown')");
-    expect(dateStripSource).toContain("import('./date-strip/actions/EmailDropdown')");
-  });
-
-  it('keeps the census PDF quick action out of the static DateStrip shell import graph', () => {
-    const dateStripSource = readSource('src/components/layout/DateStrip.tsx');
-
-    expect(dateStripSource).not.toMatch(/from ['"]\.\/date-strip\/actions\/PdfButtons['"]/);
-    expect(dateStripSource).toContain("import('./date-strip/actions/PdfButtons')");
-  });
-
-  it('keeps secondary DateStrip quick actions out of the static DateStrip shell import graph', () => {
-    const dateStripSource = readSource('src/components/layout/DateStrip.tsx');
-
-    expect(dateStripSource).not.toMatch(
-      /from ['"]@\/components\/layout\/date-strip\/DateStripQuickActions['"]/
-    );
-    expect(dateStripSource).toContain(
-      "import('@/components/layout/date-strip/DateStripQuickActions')"
-    );
-  });
-
-  it('keeps the DateStrip bookmark toggle out of the static DateStrip shell import graph', () => {
-    const dateStripSource = readSource('src/components/layout/DateStrip.tsx');
-
-    expect(dateStripSource).not.toMatch(
-      /from ['"]@\/components\/layout\/date-strip\/DateStripBookmarkToggle['"]/
-    );
-    expect(dateStripSource).toContain(
-      "import('@/components/layout/date-strip/DateStripBookmarkToggle')"
-    );
-  });
-
-  it('keeps DateStrip month and year navigators out of the static DateStrip shell import graph', () => {
-    const dateStripSource = readSource('src/components/layout/DateStrip.tsx');
-
-    expect(dateStripSource).not.toMatch(
-      /from ['"]@\/components\/layout\/date-strip\/DateStrip(?:Month|Year)Navigator['"]/
-    );
-    expect(dateStripSource).toContain(
-      "import('@/components/layout/date-strip/DateStripYearNavigator')"
-    );
-    expect(dateStripSource).toContain(
-      "import('@/components/layout/date-strip/DateStripMonthNavigator')"
-    );
+  it.each([
+    {
+      label: 'user avatar remote profile service',
+      sourcePath: 'src/hooks/useUserAvatarProfile.ts',
+      forbiddenStaticImport: /from ['"]@\/services\/user-profile\/userAvatarProfileService['"]/,
+      requiredDynamicImport: "import('@/services/user-profile/userAvatarProfileService')",
+    },
+    {
+      label: 'census email delivery use cases',
+      sourcePath: 'src/hooks/useCensusEmailDeliveryActions.ts',
+      forbiddenStaticImport: /from ['"]@\/application\/census-email\/sendCensusEmailUseCases['"]/,
+      requiredDynamicImport: "import('@/application/census-email/sendCensusEmailUseCases')",
+    },
+    {
+      label: 'DateStrip SaveDropdown',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport: /from ['"]\.\/date-strip\/actions\/SaveDropdown['"]/,
+      requiredDynamicImport: "import('./date-strip/actions/SaveDropdown')",
+    },
+    {
+      label: 'DateStrip HandoffSaveDropdown',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport: /from ['"]\.\/date-strip\/actions\/HandoffSaveDropdown['"]/,
+      requiredDynamicImport: "import('./date-strip/actions/HandoffSaveDropdown')",
+    },
+    {
+      label: 'DateStrip EmailDropdown',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport: /from ['"]\.\/date-strip\/actions\/EmailDropdown['"]/,
+      requiredDynamicImport: "import('./date-strip/actions/EmailDropdown')",
+    },
+    {
+      label: 'DateStrip PdfButtons',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport: /from ['"]\.\/date-strip\/actions\/PdfButtons['"]/,
+      requiredDynamicImport: "import('./date-strip/actions/PdfButtons')",
+    },
+    {
+      label: 'DateStrip quick actions',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport:
+        /from ['"]@\/components\/layout\/date-strip\/DateStripQuickActions['"]/,
+      requiredDynamicImport: "import('@/components/layout/date-strip/DateStripQuickActions')",
+    },
+    {
+      label: 'DateStrip bookmark toggle',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport:
+        /from ['"]@\/components\/layout\/date-strip\/DateStripBookmarkToggle['"]/,
+      requiredDynamicImport: "import('@/components/layout/date-strip/DateStripBookmarkToggle')",
+    },
+    {
+      label: 'DateStrip year navigator',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport:
+        /from ['"]@\/components\/layout\/date-strip\/DateStripYearNavigator['"]/,
+      requiredDynamicImport: "import('@/components/layout/date-strip/DateStripYearNavigator')",
+    },
+    {
+      label: 'DateStrip month navigator',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport:
+        /from ['"]@\/components\/layout\/date-strip\/DateStripMonthNavigator['"]/,
+      requiredDynamicImport: "import('@/components/layout/date-strip/DateStripMonthNavigator')",
+    },
+  ])('keeps $label out of the static shell import graph', boundary => {
+    assertDynamicBoundary(boundary);
   });
 
   it('keeps authenticated shell runtime off the hooks barrel to avoid pulling feature hooks into startup', () => {

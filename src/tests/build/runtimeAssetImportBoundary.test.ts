@@ -114,5 +114,6 @@ describe('runtime asset import boundary', () => {
       "from '@/services/user-profile/userAvatarStorageRuntime'"
     );
     expect(avatarStorageRuntimeSource).toContain("import('firebase/storage')");
+    expect(avatarStorageRuntimeSource).toContain('storageModulePromise = null');
   });
 });

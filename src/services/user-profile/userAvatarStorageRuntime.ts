@@ -14,12 +14,17 @@ export interface UserAvatarStorageRuntime {
 let storageModulePromise: Promise<FirebaseStorageModule> | null = null;
 
 export const loadUserAvatarStorageModule = (): Promise<FirebaseStorageModule> => {
-  storageModulePromise ??= import('firebase/storage').then(module => ({
-    deleteObject: module.deleteObject,
-    getDownloadURL: module.getDownloadURL,
-    ref: module.ref,
-    uploadBytes: module.uploadBytes,
-  }));
+  storageModulePromise ??= import('firebase/storage')
+    .then(module => ({
+      deleteObject: module.deleteObject,
+      getDownloadURL: module.getDownloadURL,
+      ref: module.ref,
+      uploadBytes: module.uploadBytes,
+    }))
+    .catch(error => {
+      storageModulePromise = null;
+      throw error;
+    });
   return storageModulePromise;
 };
 

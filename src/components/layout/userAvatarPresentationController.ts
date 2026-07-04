@@ -11,7 +11,5 @@ export const buildUserAvatarFeedback = (kind: UserAvatarFeedbackKind) =>
         message: 'Se restauró la visualización por defecto.',
       };
 
-export const resolveVisibleUserAvatarUrl = (
-  inAppAvatarUrl?: string | null,
-  _providerAvatarUrl?: string | null
-): string | null => inAppAvatarUrl || null;
+export const resolveVisibleUserAvatarUrl = (inAppAvatarUrl?: string | null): string | null =>
+  inAppAvatarUrl || null;
