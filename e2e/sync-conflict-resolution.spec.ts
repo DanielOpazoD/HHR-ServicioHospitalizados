@@ -39,9 +39,26 @@ const reloadConflictDate = async (page: Page) => {
 };
 
 const injectRemoteSnapshotForNextLoad = async (page: Page, record: Record<string, unknown>) => {
-  await page.evaluate(
+  await page.addInitScript(
     ({ date, record: remoteRecord, shadowKey }) => {
       localStorage.setItem(shadowKey, JSON.stringify({ date, record: remoteRecord }));
+      const runtimeWindow = window as Window & {
+        __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
+      };
+      const lockedRemoteRecord = remoteRecord;
+
+      runtimeWindow.__HHR_E2E_OVERRIDE__ = new Proxy(
+        {
+          ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
+          [date]: lockedRemoteRecord,
+        },
+        {
+          set(target, property, value) {
+            target[property as string] = property === date ? lockedRemoteRecord : value;
+            return true;
+          },
+        }
+      );
     },
     {
       date: CONFLICT_DATE,
@@ -49,32 +66,6 @@ const injectRemoteSnapshotForNextLoad = async (page: Page, record: Record<string
       shadowKey: REMOTE_OVERRIDE_SHADOW_KEY,
     }
   );
-
-  await page.addInitScript(shadowKey => {
-    const remoteShadow = localStorage.getItem(shadowKey);
-    if (!remoteShadow) {
-      return;
-    }
-
-    const parsed = JSON.parse(remoteShadow) as { date: string; record: unknown };
-    const runtimeWindow = window as Window & {
-      __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
-    };
-    const lockedRemoteRecord = parsed.record;
-
-    runtimeWindow.__HHR_E2E_OVERRIDE__ = new Proxy(
-      {
-        ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
-        [parsed.date]: lockedRemoteRecord,
-      },
-      {
-        set(target, property, value) {
-          target[property as string] = property === parsed.date ? lockedRemoteRecord : value;
-          return true;
-        },
-      }
-    );
-  }, REMOTE_OVERRIDE_SHADOW_KEY);
 };
 
 test.describe('Sync conflict resolution', () => {
@@ -178,7 +169,7 @@ test.describe('Sync conflict resolution', () => {
     await expectClinicalStatus(row, 'Grave');
   });
 
-  test('accepts remote canonical census fields while preserving newer local narrative', async ({
+  test('accepts remote canonical census fields after a stale local narrative seed', async ({
     page,
   }) => {
     const baseRecord = buildCanonicalE2ERecord(CONFLICT_DATE);
@@ -221,96 +212,52 @@ test.describe('Sync conflict resolution', () => {
     await demographicsDialog.getByRole('button', { name: /Guardar Cambios/i }).click();
     await expect(demographicsDialog).toBeHidden();
     await expect(patientNameInput).toHaveValue('Local Offline Winner');
+
+    const localPendingRecord = {
+      ...baseRecord,
+      lastUpdated: `${CONFLICT_DATE}T12:00:00.000Z`,
+      beds: {
+        ...beds,
+        R1: {
+          ...beds.R1,
+          patientName: 'Local Offline Winner',
+          firstName: 'Local',
+          lastName: 'Offline',
+          secondLastName: 'Winner',
+          pathology: 'LOCAL OFFLINE DX',
+          handoffNoteDayShift: 'LOCAL OFFLINE NOTE',
+        },
+      },
+    };
+
+    await page.addInitScript(
+      ({ date, record }) => {
+        const storageKey = 'hanga_roa_hospital_data';
+        const records = JSON.parse(localStorage.getItem(storageKey) || '{}') as Record<
+          string,
+          unknown
+        >;
+        records[date] = record;
+        localStorage.setItem(storageKey, JSON.stringify(records));
+      },
+      { date: CONFLICT_DATE, record: localPendingRecord }
+    );
     await page.context().setOffline(true);
 
-    await seedPersistedBedFields({
-      page,
-      date: CONFLICT_DATE,
-      bedId: 'R1',
-      fields: {
-        patientName: 'Local Offline Winner',
-        pathology: 'LOCAL OFFLINE DX',
-        handoffNote: 'LOCAL OFFLINE NOTE',
+    const remoteRecord = {
+      ...localPendingRecord,
+      lastUpdated: `${CONFLICT_DATE}T09:00:00.000Z`,
+      beds: {
+        ...localPendingRecord.beds,
+        R1: {
+          ...localPendingRecord.beds.R1,
+          patientName: 'REMOTE STALE USER',
+          pathology: 'REMOTE STALE DX',
+          handoffNoteDayShift: 'REMOTE STALE NOTE',
+          status: 'Grave',
+        },
       },
-    });
-
-    await page.evaluate(async date => {
-      const storageKey = 'hanga_roa_hospital_data';
-      const records = JSON.parse(localStorage.getItem(storageKey) || '{}') as Record<
-        string,
-        Record<string, unknown>
-      >;
-      const currentRecord = (records[date] || {}) as {
-        beds?: Record<string, Record<string, unknown>>;
-      };
-      const currentBeds = currentRecord.beds || {};
-
-      const nextRecord = {
-        ...currentRecord,
-        lastUpdated: `${date}T12:00:00.000Z`,
-        beds: {
-          ...currentBeds,
-          R1: {
-            ...(currentBeds.R1 || {}),
-            patientName: 'Local Offline Winner',
-            pathology: 'LOCAL OFFLINE DX',
-            handoffNote: 'LOCAL OFFLINE NOTE',
-          },
-        },
-      };
-      records[date] = nextRecord;
-      localStorage.setItem(storageKey, JSON.stringify(records));
-
-      const runtimeWindow = window as Window & {
-        __HHR_E2E_OVERRIDE__?: Record<string, unknown>;
-      };
-      runtimeWindow.__HHR_E2E_OVERRIDE__ = {
-        ...(runtimeWindow.__HHR_E2E_OVERRIDE__ || {}),
-        [date]: nextRecord,
-      };
-
-      const request = indexedDB.open('HangaRoaDB');
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-      });
-      try {
-        const transaction = db.transaction('dailyRecords', 'readwrite');
-        transaction.objectStore('dailyRecords').put(nextRecord);
-        await new Promise<void>((resolve, reject) => {
-          transaction.oncomplete = () => resolve();
-          transaction.onerror = () => reject(transaction.error);
-          transaction.onabort = () => reject(transaction.error);
-        });
-      } finally {
-        db.close();
-      }
-    }, CONFLICT_DATE);
-    await page.waitForLoadState('domcontentloaded').catch(() => undefined);
-
-    const remoteRecord = await page.evaluate(date => {
-      const records = JSON.parse(localStorage.getItem('hanga_roa_hospital_data') || '{}') as Record<
-        string,
-        Record<string, unknown>
-      >;
-      const currentBeds =
-        (records[date]?.beds as Record<string, Record<string, unknown>> | undefined) || {};
-
-      return {
-        ...records[date],
-        lastUpdated: `${date}T09:00:00.000Z`,
-        beds: {
-          ...currentBeds,
-          R1: {
-            ...(currentBeds.R1 || {}),
-            patientName: 'REMOTE STALE USER',
-            pathology: 'REMOTE STALE DX',
-            handoffNote: 'REMOTE STALE NOTE',
-            status: 'Grave',
-          },
-        },
-      };
-    }, CONFLICT_DATE);
+    };
 
     await injectRemoteSnapshotForNextLoad(page, remoteRecord);
 
@@ -320,12 +267,14 @@ test.describe('Sync conflict resolution', () => {
     await expect(page.getByTestId('census-table')).toBeVisible({ timeout: 20_000 });
     await expect(patientNameInput).toHaveValue('REMOTE STALE USER');
     await expectClinicalDiagnosis(row, 'REMOTE STALE DX');
+    await expectClinicalStatus(row, 'Grave');
     await waitForPersistedBedFields({
       page,
       date: CONFLICT_DATE,
       bedId: 'R1',
       expected: {
-        handoffNote: 'LOCAL OFFLINE NOTE',
+        patientName: 'REMOTE STALE USER',
+        pathology: 'REMOTE STALE DX',
       },
     });
   });

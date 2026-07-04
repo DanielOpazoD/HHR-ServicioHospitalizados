@@ -68,6 +68,8 @@ const buildRecord = (date: string, lastUpdated: string): DailyRecord =>
 describe('dailyRecordRepositoryReadService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
+    window.__HHR_E2E_OVERRIDE__ = undefined;
   });
 
   it('keeps local authority and persists the selected merge when local is newer than remote', async () => {
@@ -251,6 +253,48 @@ describe('dailyRecordRepositoryReadService', () => {
         lastUpdated: remote.lastUpdated,
       })
     );
+  });
+
+  it('uses the E2E localStorage seed as the local candidate when a runtime override supplies remote', async () => {
+    const staleIndexedDb = buildRecord('2026-03-19', '2026-03-19T08:00:00.000Z');
+    staleIndexedDb.beds = {
+      R1: { bedId: 'R1', patientName: 'INDEXEDDB STALE', handoffNote: '' },
+    } as unknown as DailyRecord['beds'];
+    const localSeed = buildRecord('2026-03-19', '2026-03-19T12:00:00.000Z');
+    localSeed.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'LOCAL SEEDED',
+        rut: '11.111.111-1',
+        admissionDate: '2026-03-19',
+        pathology: 'LOCAL DX',
+        handoffNote: 'LOCAL NOTE',
+      },
+    } as unknown as DailyRecord['beds'];
+    const remoteOverride = buildRecord('2026-03-19', '2026-03-19T09:00:00.000Z');
+    remoteOverride.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'REMOTE CANONICAL',
+        rut: '11.111.111-1',
+        admissionDate: '2026-03-19',
+        pathology: 'REMOTE DX',
+        handoffNote: '',
+      },
+    } as unknown as DailyRecord['beds'];
+
+    window.localStorage.setItem(
+      'hanga_roa_hospital_data',
+      JSON.stringify({ '2026-03-19': localSeed })
+    );
+    window.__HHR_E2E_OVERRIDE__ = { '2026-03-19': remoteOverride };
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(staleIndexedDb);
+
+    const result = await getForDateWithMeta('2026-03-19');
+
+    expect(result.record?.beds.R1.patientName).toBe('REMOTE CANONICAL');
+    expect(result.record?.beds.R1.pathology).toBe('REMOTE DX');
+    expect(result.record?.beds.R1.handoffNote).toBe('LOCAL NOTE');
   });
 
   it('falls back to local with recoverable metadata when remote fetch fails', async () => {
