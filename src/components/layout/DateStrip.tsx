@@ -40,6 +40,7 @@ export interface DateNavigationProps {
 
 export interface DateStripActionsProps {
   onExportPDF?: () => void;
+  onPrintWithBrowserOptions?: () => void;
   onOpenBedManager?: () => void;
   onExportExcel?: () => void;
   onBackupExcel?: () => Promise<void>;
@@ -96,6 +97,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
   daysInMonth,
   existingDaysInMonth,
   onExportPDF,
+  onPrintWithBrowserOptions,
   onOpenBedManager,
   onExportExcel,
   onBackupExcel,
@@ -168,6 +170,7 @@ export const DateStrip: React.FC<DateStripProps> = ({
             {currentModule === 'NURSING_HANDOFF' && !isGuest && (
               <HandoffSaveDropdown
                 onExportPDF={onExportPDF}
+                onPrintWithBrowserOptions={onPrintWithBrowserOptions}
                 onBackupPDF={onBackupPDF}
                 isArchived={isArchived}
                 isBackingUp={isBackingUp}
