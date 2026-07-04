@@ -88,14 +88,14 @@ describe('UserMenu', () => {
     expect(button.textContent).toBe('A');
   });
 
-  it('shows the saved avatar image instead of the user initial', () => {
+  it('keeps a stable user mark under the saved avatar while the image loads', () => {
     render(<UserMenu {...defaultProps} avatarUrl="https://storage.test/avatar.png" />);
 
     expect(screen.getByAltText('Foto de perfil de doctor@hospital.cl')).toHaveAttribute(
       'src',
       'https://storage.test/avatar.png'
     );
-    expect(screen.getByRole('button').textContent).not.toContain('d');
+    expect(screen.getByTestId('user-avatar-initial-fallback')).toHaveTextContent('d');
   });
 
   it('renders the expanded profile menu from the avatar with preview, status and actions', () => {

@@ -71,7 +71,24 @@ const readLocalProfiles = (): Record<string, UserAvatarProfile> => {
   }
 };
 
-const writeLocalProfile = (profile: UserAvatarProfile | null, uid: string): void => {
+export const readCachedUserAvatarProfile = (
+  uidInput: string | null | undefined
+): UserAvatarProfile | null => {
+  const uid = normalizeUid(uidInput || '');
+  if (!uid) {
+    return null;
+  }
+  return readLocalProfiles()[uid] || null;
+};
+
+export const writeCachedUserAvatarProfile = (
+  profile: UserAvatarProfile | null,
+  uidInput: string
+): void => {
+  const uid = normalizeUid(uidInput);
+  if (!uid) {
+    return;
+  }
   try {
     const profiles = readLocalProfiles();
     if (profile) {
@@ -164,7 +181,9 @@ export const createUserAvatarProfileService = ({
       USER_SETTINGS_COLLECTION,
       normalizedUid
     );
-    return parseProfile(normalizedUid, settings?.userAvatarProfile);
+    const profile = parseProfile(normalizedUid, settings?.userAvatarProfile);
+    writeCachedUserAvatarProfile(profile, normalizedUid);
+    return profile;
   };
 
   return {
@@ -187,7 +206,11 @@ export const createUserAvatarProfileService = ({
         return repository.subscribeDoc<UserSettingsDocument>(
           USER_SETTINGS_COLLECTION,
           normalizedUid,
-          settings => onProfile(parseProfile(normalizedUid, settings?.userAvatarProfile))
+          settings => {
+            const profile = parseProfile(normalizedUid, settings?.userAvatarProfile);
+            writeCachedUserAvatarProfile(profile, normalizedUid);
+            onProfile(profile);
+          }
         );
       } catch (error) {
         onError?.(error);
@@ -240,7 +263,7 @@ export const createUserAvatarProfileService = ({
       }
 
       if (!isFirestoreEnabled()) {
-        writeLocalProfile(profile, uid);
+        writeCachedUserAvatarProfile(profile, uid);
         return profile;
       }
 
@@ -250,6 +273,7 @@ export const createUserAvatarProfileService = ({
         { userAvatarProfile: profile },
         { merge: true }
       );
+      writeCachedUserAvatarProfile(profile, uid);
       return profile;
     },
 
@@ -273,7 +297,7 @@ export const createUserAvatarProfileService = ({
       }
 
       if (!isFirestoreEnabled()) {
-        writeLocalProfile(null, uid);
+        writeCachedUserAvatarProfile(null, uid);
         return;
       }
 
@@ -283,6 +307,7 @@ export const createUserAvatarProfileService = ({
         { userAvatarProfile: null },
         { merge: true }
       );
+      writeCachedUserAvatarProfile(null, uid);
     },
   };
 };

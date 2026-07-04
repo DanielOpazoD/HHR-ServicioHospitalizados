@@ -40,24 +40,32 @@ export const UserMenu: React.FC<UserMenuProps> = ({
           ? 'Online'
           : 'Offline';
   const isRemoteReady = remoteSyncStatus ? remoteSyncStatus === 'ready' : isFirebaseConnected;
+  const userInitial = userEmail.charAt(0);
 
   return (
     <div className="relative" ref={menuRef}>
       <button
         onClick={toggle}
-        className="relative w-9 h-9 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.12] flex items-center justify-center text-white/90 font-bold text-sm uppercase shadow-glass transition-transform active:scale-90"
+        className="relative w-9 h-9 overflow-hidden rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.12] flex items-center justify-center text-white/90 font-bold text-sm uppercase shadow-glass transition-transform active:scale-90"
         title={userEmail}
         aria-label={`Usuario ${userEmail}. Rol ${roleLabel}. Firebase ${connectionLabel}`}
         data-testid="authenticated-user-menu-button"
       >
-        {avatarUrl ? (
+        <span
+          className="flex h-full w-full items-center justify-center"
+          data-testid="user-avatar-initial-fallback"
+        >
+          {userInitial}
+        </span>
+        {avatarUrl && (
           <img
             src={avatarUrl}
             alt={`Foto de perfil de ${userEmail}`}
-            className="h-full w-full rounded-full object-cover"
+            className="absolute inset-0 h-full w-full rounded-full object-cover"
+            loading="eager"
+            decoding="async"
+            draggable={false}
           />
-        ) : (
-          userEmail.charAt(0)
         )}
         <span
           className={`absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border border-[#0a1628] ${isRemoteReady ? 'bg-emerald-400' : 'bg-rose-400'}`}
@@ -76,14 +84,21 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                 className="relative h-16 w-16 shrink-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 shadow-inner flex items-center justify-center overflow-hidden text-xl font-bold uppercase text-slate-500"
                 data-testid="user-profile-menu-preview"
               >
-                {avatarUrl ? (
+                <span
+                  className="flex h-full w-full items-center justify-center"
+                  data-testid="user-profile-preview-initial-fallback"
+                >
+                  {userInitial}
+                </span>
+                {avatarUrl && (
                   <img
                     src={avatarUrl}
                     alt={`Foto de perfil de ${userEmail}`}
-                    className="h-full w-full rounded-full object-cover"
+                    className="absolute inset-0 h-full w-full rounded-full object-cover"
+                    loading="eager"
+                    decoding="async"
+                    draggable={false}
                   />
-                ) : (
-                  userEmail.charAt(0)
                 )}
               </div>
               <div className="min-w-0 flex-1">

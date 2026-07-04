@@ -60,6 +60,21 @@ const getE2EOverrideRecord = (date: string): DailyRecord | null => {
   return window.__HHR_E2E_OVERRIDE__[date] || null;
 };
 
+const getE2ELocalStorageRecord = (date: string): DailyRecord | null => {
+  if (typeof window === 'undefined' || !window.__HHR_E2E_OVERRIDE__) {
+    return null;
+  }
+
+  try {
+    const records = JSON.parse(
+      window.localStorage.getItem('hanga_roa_hospital_data') || '{}'
+    ) as Record<string, DailyRecord> | null;
+    return records?.[date] || null;
+  } catch {
+    return null;
+  }
+};
+
 const logRemoteFetchAttempt = (date: string): void => {
   if (!isRepositoryDebugEnabled()) return;
   logLegacyInfo(`[Repository DEBUG] Attempting Firestore fetch for ${date}`);
@@ -93,11 +108,14 @@ export const getForDateWithMeta = async (
     'dailyRecord.getForDate',
     async () => {
       const query = createGetDailyRecordQuery(date, syncFromRemote);
-      const localRecord = await getRecordFromIndexedDB(query.date);
+      const indexedDbLocalRecord = await getRecordFromIndexedDB(query.date);
+      const e2eOverride = getE2EOverrideRecord(query.date);
+      const localRecord = e2eOverride
+        ? getE2ELocalStorageRecord(query.date) || indexedDbLocalRecord
+        : indexedDbLocalRecord;
       const localCandidate = localRecord
         ? createLocalRuntimeReadCandidate(query.date, localRecord)
         : null;
-      const e2eOverride = getE2EOverrideRecord(query.date);
       if (e2eOverride) {
         dailyRecordReadLogger.warn(`Using E2E override record for ${query.date}`);
         return resolveRemoteGoldenPathReadResult({

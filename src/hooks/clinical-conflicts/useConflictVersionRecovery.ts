@@ -57,7 +57,7 @@ const resolveSnapshotListUnavailableReason = (
 /**
  * Recovery model for the clinical conflict center: lists recoverable conflict snapshots for a day
  * and preserves one selected version with confirmation + notifications. Access is limited to
- * clinical conflict managers (admin and Hospitalizados HHR nursing). All restores are audited.
+ * administrators. All restores are audited.
  * See docs/ADR_CONFLICT_VERSION_RECOVERY.md.
  */
 export const useConflictVersionRecovery = ({

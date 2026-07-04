@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { FlaskConical, Lock, Radio } from 'lucide-react';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
+import { DATE_STRIP_QUICK_ACTION_BASE_CLASS } from '@/shared/ui/dateStripQuickActionStyles';
 
 const FEATURE_QUICK_ACTIONS_STARTUP_DELAY_MS = 1200;
 
@@ -64,7 +65,7 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
       disabled
       aria-disabled="true"
       tabIndex={-1}
-      className="flex h-[30px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-0 text-[10px] font-semibold text-slate-400 opacity-70 min-w-[76px]"
+      className={`${DATE_STRIP_QUICK_ACTION_BASE_CLASS} border-slate-200 bg-slate-50 text-slate-400 opacity-70`}
       title={`${label} (cargando...)`}
     >
       <Icon size={13} />
@@ -77,7 +78,7 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
       {onOpenBedManager && (
         <button
           onClick={onOpenBedManager}
-          className="flex h-[30px] items-center justify-center gap-1 px-2.5 py-0 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg border border-slate-200 transition-colors text-[10px] font-semibold min-w-[76px]"
+          className={`${DATE_STRIP_QUICK_ACTION_BASE_CLASS} border-slate-200 bg-slate-50 text-slate-600 transition-colors hover:bg-slate-100`}
           title="Bloqueo de camas"
         >
           <Lock size={13} />
@@ -91,7 +92,7 @@ export const DateStripQuickActions: React.FC<DateStripQuickActionsProps> = ({
             <>
               <button
                 onClick={() => setIsRadiologyOpen(true)}
-                className="flex h-[30px] items-center justify-center gap-1 px-2.5 py-0 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg border border-violet-200 transition-colors text-[10px] font-semibold min-w-[76px]"
+                className={`${DATE_STRIP_QUICK_ACTION_BASE_CLASS} border-violet-200 bg-violet-50 text-violet-700 transition-colors hover:bg-violet-100`}
                 title="Radiología / Imagenología"
               >
                 <Radio size={13} />
