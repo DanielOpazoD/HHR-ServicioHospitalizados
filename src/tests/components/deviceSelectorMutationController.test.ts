@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildDeviceConfigMutation,
   buildRetireDeviceMutation,
+  renameCustomDeviceBundle,
   resolveRetiringDeviceLabel,
 } from '@/components/device-selector/deviceSelectorMutationController';
 
@@ -69,6 +70,46 @@ describe('deviceSelectorMutationController', () => {
       installationDate: '2026-02-10',
       note: 'reconfigurado',
     });
+  });
+
+  it('renames a custom device across active list, details and history', () => {
+    const renamed = renameCustomDeviceBundle({
+      previousDevice: 'drenaje pleural izquierdo',
+      nextDevice: 'drenaje pleural',
+      normalizedDevices: ['VVP#1', 'drenaje pleural izquierdo'],
+      deviceDetails: {
+        'VVP#1': { installationDate: '2026-02-14' },
+        'drenaje pleural izquierdo': {
+          installationDate: '2026-02-15',
+          note: 'lado izquierdo',
+        },
+      },
+      history: [
+        {
+          id: 'custom-1',
+          type: 'drenaje pleural izquierdo',
+          status: 'Active',
+          installationDate: '2026-02-15',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ],
+    });
+
+    expect(renamed.nextDevices).toEqual(['VVP#1', 'drenaje pleural']);
+    expect(renamed.nextDetails).toEqual({
+      'VVP#1': { installationDate: '2026-02-14' },
+      'drenaje pleural': {
+        installationDate: '2026-02-15',
+        note: 'lado izquierdo',
+      },
+    });
+    expect(renamed.nextHistory).toEqual([
+      expect.objectContaining({
+        id: 'custom-1',
+        type: 'drenaje pleural',
+      }),
+    ]);
   });
 
   it('returns noop mutation when neither pending nor editing device exists', () => {

@@ -33,7 +33,11 @@ interface DeviceSelectorProps {
   deviceDetails?: DeviceDetails;
   onChange: (newDevices: string[]) => void;
   onDetailsChange?: (details: DeviceDetails) => void;
-  onConfigChange?: (newDevices: string[] | null, details: DeviceDetails) => void;
+  onConfigChange?: (
+    newDevices: string[] | null,
+    details: DeviceDetails,
+    options?: { renamedDevice?: { from: string; to: string } | null }
+  ) => void;
   onRetireChange?: (newDevices: string[], details: DeviceDetails) => void;
   disabled?: boolean;
   currentDate?: string;
@@ -183,10 +187,11 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
   );
 
   const handleDeviceConfigSave = useCallback(
-    (info: DeviceInfo) => {
+    (info: DeviceInfo, nextDeviceName?: string) => {
       const mutation = buildDeviceConfigMutation({
         pendingAddition,
         editingDevice,
+        nextDeviceName,
         normalizedDevices,
         deviceDetails: draftDetails,
         info,
@@ -212,7 +217,13 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
       }
 
       if (mutation.nextDetails && onConfigChangeRef.current) {
-        onConfigChangeRef.current(mutation.nextDevices, mutation.nextDetails);
+        if (mutation.renamedDevice) {
+          onConfigChangeRef.current(mutation.nextDevices, mutation.nextDetails, {
+            renamedDevice: mutation.renamedDevice,
+          });
+        } else {
+          onConfigChangeRef.current(mutation.nextDevices, mutation.nextDetails);
+        }
       } else {
         if (mutation.nextDevices && onChangeRef.current) {
           onChangeRef.current(mutation.nextDevices);

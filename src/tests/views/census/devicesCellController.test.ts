@@ -186,4 +186,47 @@ describe('devicesCellController', () => {
       ])
     );
   });
+
+  it('preserves the same custom device history entry when a custom device is renamed', () => {
+    const result = buildDeviceBundleChangeResult({
+      previousDevices: ['drenaje pleural izquierdo'],
+      nextDevices: ['drenaje pleural'],
+      nextDetails: {
+        'drenaje pleural': {
+          installationDate: '2026-02-14',
+          note: 'con oscilación',
+        },
+      },
+      previousHistory: [
+        {
+          id: 'custom-history',
+          type: 'drenaje pleural izquierdo',
+          status: 'Active',
+          installationDate: '2026-02-14',
+          clinicalEpisodeId: 'episode-1',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ],
+      owner: { clinicalEpisodeId: 'episode-1', patientRut: '12.345.678-9' },
+      renamedDevice: {
+        from: 'drenaje pleural izquierdo',
+        to: 'drenaje pleural',
+      },
+      dateProvider: () => new Date('2026-02-15T06:00:00'),
+      createId: vi.fn(() => 'should-not-create'),
+    });
+
+    expect(result.nextDevices).toEqual(['drenaje pleural']);
+    expect(result.nextHistory).toEqual([
+      expect.objectContaining({
+        id: 'custom-history',
+        type: 'drenaje pleural',
+        status: 'Active',
+        clinicalEpisodeId: 'episode-1',
+        patientRut: '12.345.678-9',
+      }),
+    ]);
+    expect(result.nextHistory.some(item => item.id === 'should-not-create')).toBe(false);
+  });
 });
