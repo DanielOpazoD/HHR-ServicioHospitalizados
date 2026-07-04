@@ -98,5 +98,23 @@ describe('resolveConflictSnapshotRecoveryState', () => {
       title: 'Consulta de snapshots no disponible',
       message: expect.stringContaining('índice'),
     });
+
+    expect(
+      resolveConflictSnapshotRecoveryState({
+        date: '2026-07-03',
+        snapshotCount: 0,
+        snapshotRecovery: {
+          status: 'saved',
+          snapshotIds: ['cid__remote_premerge'],
+          origins: ['remote_premerge'],
+          ttlMs: 172800000,
+          unavailableReason: 'query_index_missing',
+        },
+      })
+    ).toMatchObject({
+      kind: 'query_unavailable',
+      title: 'Consulta de snapshots no disponible',
+      message: expect.stringContaining('índice'),
+    });
   });
 });

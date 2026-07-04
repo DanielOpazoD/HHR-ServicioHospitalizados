@@ -83,9 +83,7 @@ const buildRestoreReviewContext = ({
   changedFieldsTruncated: conflict.totalChangeCount > 12,
 });
 
-const PatientContextList: React.FC<{ conflict: ClinicalConflictReviewPackage }> = ({
-  conflict,
-}) => {
+function PatientContextList({ conflict }: { conflict: ClinicalConflictReviewPackage }) {
   if (conflict.patientContexts.length === 0) {
     return <p className="text-xs text-slate-500">Sin paciente específico identificado.</p>;
   }
@@ -109,7 +107,7 @@ const PatientContextList: React.FC<{ conflict: ClinicalConflictReviewPackage }> 
       )}
     </div>
   );
-};
+}
 
 const ChangeList: React.FC<{ conflict: ClinicalConflictReviewPackage }> = ({ conflict }) => {
   if (conflict.changes.length === 0) {
@@ -163,9 +161,7 @@ const IMPACT_TITLE: Record<DailyRecordRestoreImpactAnalysis['status'], string> =
   blocked: 'Bloqueado por seguridad clínica',
 };
 
-const RestoreImpactNotice: React.FC<{ impact?: DailyRecordRestoreImpactAnalysis }> = ({
-  impact,
-}) => {
+function RestoreImpactNotice({ impact }: { impact?: DailyRecordRestoreImpactAnalysis }) {
   if (!impact || impact.status === 'safe') return null;
   const [firstImpact] = impact.impacts;
   return (
@@ -182,7 +178,7 @@ const RestoreImpactNotice: React.FC<{ impact?: DailyRecordRestoreImpactAnalysis 
       )}
     </div>
   );
-};
+}
 
 const ConflictPackageCard: React.FC<{
   conflict: ClinicalConflictReviewPackage;

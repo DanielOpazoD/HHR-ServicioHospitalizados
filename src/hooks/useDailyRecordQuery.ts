@@ -39,6 +39,7 @@ import {
   forgetDailyRecordPatchBaseRecord,
   getDailyRecordPatchBaseRecord,
   rememberDailyRecordPatchBaseRecord,
+  type DailyRecordPatchBaseRecordRegistry,
 } from '@/hooks/controllers/dailyRecordPatchBaseRecordController';
 
 export const useDailyRecordQuery = (
@@ -221,11 +222,15 @@ export const useSaveDailyRecordMutation = () => {
 export const usePatchDailyRecordMutation = (date: string) => {
   const queryClient = useQueryClient();
   const { dailyRecord } = useRepositories();
-  const patchBaseRecordsRef = useRef(createDailyRecordPatchBaseRecordRegistry());
+  const patchBaseRecordsRef = useRef<DailyRecordPatchBaseRecordRegistry | null>(null);
+  if (patchBaseRecordsRef.current == null) {
+    patchBaseRecordsRef.current = createDailyRecordPatchBaseRecordRegistry();
+  }
+  const patchBaseRecords = patchBaseRecordsRef.current;
 
   return useMutation({
     mutationFn: async (partial: DailyRecordPatch) => {
-      const baseRecord = getDailyRecordPatchBaseRecord(patchBaseRecordsRef.current, partial);
+      const baseRecord = getDailyRecordPatchBaseRecord(patchBaseRecords, partial);
       const result = await patchDailyRecordWithCompatibility(
         dailyRecord,
         date,
@@ -247,7 +252,7 @@ export const usePatchDailyRecordMutation = (date: string) => {
         freshness,
         remoteConfirmedAtBeforeMutation,
       });
-      rememberDailyRecordPatchBaseRecord(patchBaseRecordsRef.current, partial, freshness.record);
+      rememberDailyRecordPatchBaseRecord(patchBaseRecords, partial, freshness.record);
 
       await queryClient.cancelQueries({
         queryKey: queryKeys.dailyRecord.byDate(date),
@@ -290,16 +295,16 @@ export const usePatchDailyRecordMutation = (date: string) => {
         confirmedRecord: current,
       });
     },
-    onSettled: (payload, error, _partial, context) => {
+    onSettled: (payload, error, partial, context) => {
       if (!context?.unregisterPendingPatch) {
         return;
       }
       if (error || isDailyRecordWriteBlockedResult(payload?.result)) {
         context.unregisterPendingPatch();
-        forgetDailyRecordPatchBaseRecord(patchBaseRecordsRef.current, _partial);
+        forgetDailyRecordPatchBaseRecord(patchBaseRecords, partial);
         return;
       }
-      forgetDailyRecordPatchBaseRecord(patchBaseRecordsRef.current, _partial);
+      forgetDailyRecordPatchBaseRecord(patchBaseRecords, partial);
       releasePendingPatchAfterFallbackTtl(context.unregisterPendingPatch);
     },
   });

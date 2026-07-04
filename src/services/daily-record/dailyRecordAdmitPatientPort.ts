@@ -59,7 +59,11 @@ const assertAdmissionPersistenceAccepted = (
     return;
   }
 
-  if (result.outcome === 'blocked' || isDailyRecordWriteBlockedResult(result)) {
+  if (
+    result.outcome === 'blocked' ||
+    result.outcome === 'unrecoverable' ||
+    isDailyRecordWriteBlockedResult(result)
+  ) {
     throw (
       result.blockingError ||
       new Error(

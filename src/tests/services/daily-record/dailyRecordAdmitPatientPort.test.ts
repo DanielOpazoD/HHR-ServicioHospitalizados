@@ -125,4 +125,25 @@ describe('createDailyRecordAdmitPatientPort', () => {
       'No se encontró un registro local válido para aplicar el cambio.'
     );
   });
+
+  it('rejects an unrecoverable repository outcome instead of returning an admitted snapshot', async () => {
+    const persist = vi.fn().mockResolvedValueOnce(
+      createUpdatePartialDailyRecordResult({
+        date: '2026-05-03',
+        outcome: 'unrecoverable',
+        savedLocally: false,
+        updatedRemotely: false,
+        queuedForRetry: false,
+        autoMerged: false,
+        patchedFields: 4,
+        consistencyState: 'unrecoverable',
+        userSafeMessage: 'La escritura no pudo recuperarse de forma segura.',
+      })
+    ) as unknown as AdmitPatientPersistenceFn;
+    const port = createDailyRecordAdmitPatientPort(persist);
+
+    await expect(port.persistAdmission(baseInput())).rejects.toThrow(
+      'La escritura no pudo recuperarse de forma segura.'
+    );
+  });
 });

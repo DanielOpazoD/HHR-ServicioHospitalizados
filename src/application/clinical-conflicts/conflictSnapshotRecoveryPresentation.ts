@@ -105,6 +105,17 @@ export const resolveConflictSnapshotRecoveryState = ({
       };
     }
 
+    if (snapshotRecovery.unavailableReason === 'query_index_missing') {
+      return {
+        kind: 'query_unavailable',
+        title: 'Consulta de snapshots no disponible',
+        message:
+          `Observabilidad registró snapshots de conflicto para ${day}, ` +
+          'pero falta un índice/consulta de Firestore para recuperarlos. ' +
+          'El centro queda abierto para que el problema sea visible y accionable.',
+      };
+    }
+
     return {
       kind: 'saved_but_unavailable',
       title: 'Snapshots no disponibles',
