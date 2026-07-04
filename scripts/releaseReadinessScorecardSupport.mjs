@@ -86,7 +86,9 @@ const buildReleaseHotspots = operationalHealth => {
     ? operationalHealth.buildAssets.largestAssets
     : [];
   const topAssets = buildAssets.slice(0, 5);
-  const hasProblematicAsset = topAssets.some(asset => asset?.status && asset.status !== 'ok');
+  const hasProblematicAsset = topAssets.some(asset =>
+    ['blocking', 'target-miss', 'warn', 'error', 'unknown'].includes(asset?.status)
+  );
 
   return {
     status: hasProblematicAsset ? 'degraded' : 'ok',
@@ -162,7 +164,9 @@ export const buildReleaseReadinessScorecard = root => {
         : [];
   let releaseHotspots = null;
   if (operationalHealth) {
-    const bundleOk = currentBuildAssets.every(asset => asset?.status === 'ok');
+    const bundleOk = currentBuildAssets.every(
+      asset => !['blocking', 'target-miss', 'warn', 'error', 'unknown'].includes(asset?.status)
+    );
     const flowOk = operationalHealth.flowPerformance?.status === 'passing';
     const frontendStartupOk = operationalHealth.frontendStartup?.status === 'ok';
     indicators.push({

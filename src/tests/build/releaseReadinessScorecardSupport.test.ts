@@ -292,6 +292,52 @@ describe('buildReleaseReadinessScorecard', () => {
     });
   });
 
+  it('treats near-limit runtime assets as advisory when hard budgets and ledgers remain healthy', () => {
+    const root = createScorecardRoot();
+    writeJson(root, 'reports/compatibility-import-governance.json', {
+      generatedAt: '2026-04-10T00:00:00.000Z',
+      checkedEntries: 0,
+      issues: [],
+    });
+    writeJson(root, 'scripts/config/bundle-budget.json', {
+      chunkMaxBytes: 1_250_000,
+      startupChunkBudgets: [
+        {
+          label: 'app-authenticated-shell',
+          pattern: '^app-authenticated-shell-.*\\.js$',
+          maxBytes: 600_000,
+        },
+      ],
+      chunkPatternBudgets: [
+        {
+          label: 'vendor-heic2any',
+          pattern: '^vendor-heic2any-.*\\.js$',
+          maxBytes: 1_450_000,
+        },
+      ],
+    });
+    writeText(root, 'dist/assets/vendor-heic2any-real.js', 'x'.repeat(1_352_000));
+    writeText(root, 'dist/assets/app-authenticated-shell-real.js', 'x'.repeat(536_000));
+
+    const report = buildReleaseReadinessScorecard(root);
+    const operationalIndicator = report.indicators.find(
+      indicator => indicator.name === 'operational_readiness'
+    );
+    const hotspotIndicator = report.indicators.find(
+      indicator => indicator.name === 'release_hotspots'
+    );
+
+    expect(report.overallStatus).toBe('ok');
+    expect(operationalIndicator).toMatchObject({
+      status: 'ok',
+      summary: 'flow=passing, bundle=ok',
+    });
+    expect(hotspotIndicator).toMatchObject({
+      status: 'ok',
+    });
+    expect(hotspotIndicator?.summary).toContain('near-limit');
+  });
+
   it('falls back to operational health assets when dist assets are absent', () => {
     const root = createScorecardRoot();
     writeJson(root, 'reports/compatibility-import-governance.json', {
