@@ -37,7 +37,7 @@ const extractActionBlocks = (job, actionName) => {
 
     const blockLines = [];
     for (let blockIndex = index; blockIndex < lines.length; blockIndex += 1) {
-      if (blockIndex > index && /^\s{6}-\s+name:/.test(lines[blockIndex])) {
+      if (blockIndex > index && /^\s{6}-\s/.test(lines[blockIndex])) {
         break;
       }
       blockLines.push(lines[blockIndex]);
@@ -170,7 +170,8 @@ export const collectCiArtifactContractIssues = workflowText => {
 
   const distProducers = uploads.filter(upload => upload.name === 'dist');
   for (const producer of distProducers) {
-    if (!normalizePath(producer.path).startsWith('dist')) {
+    const normalizedPath = normalizePath(producer.path);
+    if (normalizedPath !== 'dist' && !normalizedPath.startsWith('dist/')) {
       issues.push(
         `${producer.jobName}: uploads artifact "dist" from "${producer.path || 'missing path'}"; expected dist/.`
       );

@@ -152,6 +152,68 @@ jobs:
     );
   });
 
+  it('does not read artifact fields across unnamed step boundaries', () => {
+    const brokenWorkflow = `
+jobs:
+  build:
+    steps:
+      - name: Build production bundle
+        run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+      - run: echo "unnamed follow-up step"
+        with:
+          name: wrong-artifact-name
+          path: distribution/
+  postmerge-evidence:
+    needs: [build]
+    steps:
+      - name: Validate CI artifact contract
+        run: npm run check:ci-artifact-contracts
+      - name: Verify build artifact availability
+        run: node scripts/verify-github-run-artifact.mjs --artifact dist --producer build-budget
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+`;
+
+    expect(collectCiArtifactContractIssues(brokenWorkflow)).toEqual([]);
+  });
+
+  it('requires dist artifacts to use an exact dist path boundary', () => {
+    const brokenWorkflow = `
+jobs:
+  build:
+    steps:
+      - name: Build production bundle
+        run: npm run build
+      - name: Upload production build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: distribution/
+  postmerge-evidence:
+    needs: [build]
+    steps:
+      - name: Validate CI artifact contract
+        run: npm run check:ci-artifact-contracts
+      - name: Verify build artifact availability
+        run: node scripts/verify-github-run-artifact.mjs --artifact dist --producer build-budget
+      - name: Download build artifacts
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+`;
+
+    expect(collectCiArtifactContractIssues(brokenWorkflow)).toContain(
+      'build: uploads artifact "dist" from "distribution/"; expected dist/.'
+    );
+  });
+
   it('keeps Firefox compatibility out of PR CI unless Firefox becomes a supported browser', () => {
     const workflow = readText('.github/workflows/ci-cd.yml');
 
