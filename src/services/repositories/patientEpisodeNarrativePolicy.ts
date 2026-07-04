@@ -1,7 +1,13 @@
 import type { PatientData } from '@/services/contracts/patientServiceContracts';
 import { resolveClinicalEpisodeIdentifier } from '@/application/patient-flow/clinicalEpisode';
 
-const EPISODE_SCOPED_PATIENT_ARRAY_FIELDS = new Set(['clinicalEvents', 'medicalHandoffEntries']);
+const EPISODE_SCOPED_PATIENT_STRUCTURED_FIELDS = new Set([
+  'clinicalEvents',
+  'devices',
+  'deviceDetails',
+  'deviceInstanceHistory',
+  'medicalHandoffEntries',
+]);
 
 const normalizeEpisodeValue = (value: unknown): string =>
   String(value || '')
@@ -92,7 +98,7 @@ export const shouldUseRemoteEpisodeScopedValue = (
   remotePatient: PatientData | undefined,
   localPatient: PatientData | undefined
 ): boolean =>
-  EPISODE_SCOPED_PATIENT_ARRAY_FIELDS.has(field) &&
+  EPISODE_SCOPED_PATIENT_STRUCTURED_FIELDS.has(field) &&
   !shouldPreserveLocalPatientNarrative(remotePatient, localPatient);
 
 export const hasPatientIdentityOrClinicalContent = (patient: PatientData | undefined): boolean => {
