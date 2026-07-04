@@ -69,9 +69,9 @@ const buildManyBeds = (count: number, pathologyPrefix: string): DailyRecord['bed
   ) as DailyRecord['beds'];
 
 describe('clinicalConflictCenterController', () => {
-  it('allows only admin and Hospitalizados HHR/enfermeria roles to manage clinical conflicts', () => {
+  it('allows only admin to manage clinical conflicts', () => {
     expect(canManageClinicalConflictCenter('admin')).toBe(true);
-    expect(canManageClinicalConflictCenter('nurse_hospital')).toBe(true);
+    expect(canManageClinicalConflictCenter('nurse_hospital')).toBe(false);
     expect(canManageClinicalConflictCenter('doctor_urgency')).toBe(false);
     expect(canManageClinicalConflictCenter('doctor_specialist')).toBe(false);
     expect(canManageClinicalConflictCenter('viewer')).toBe(false);

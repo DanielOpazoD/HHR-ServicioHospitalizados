@@ -123,6 +123,33 @@ describe('useCensusTableBindingsModel', () => {
     expect(buildCensusTableLayoutBindings).not.toHaveBeenCalled();
   });
 
+  it('returns not-ready while table column config is loading to avoid first-paint width shifts', () => {
+    vi.mocked(useCensusTableViewModel).mockReturnValue(
+      asHookValue<ReturnType<typeof useCensusTableViewModel>>({
+        beds: {},
+        unifiedRows: [],
+        role: 'viewer',
+        tableConfigLoading: true,
+      })
+    );
+    vi.mocked(useClinicalDocumentPresenceByBed).mockReturnValue({
+      byBedId: {},
+      infoByBedId: {},
+    });
+
+    const { result } = renderHook(
+      () =>
+        useCensusTableBindingsModel({
+          currentDateString: '2026-03-10',
+        }),
+      { wrapper: createDailyRecordWrapper() }
+    );
+
+    expect(result.current.isReady).toBe(false);
+    expect(result.current.bindings).toBeNull();
+    expect(buildCensusTableLayoutBindings).not.toHaveBeenCalled();
+  });
+
   it('defers the remote clinical document presence lookup until after the table can paint', async () => {
     vi.useFakeTimers();
     const layoutBindings = {

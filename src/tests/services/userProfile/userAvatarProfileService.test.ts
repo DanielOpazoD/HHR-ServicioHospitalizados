@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createUserAvatarProfileService } from '@/services/user-profile/userAvatarProfileService';
+import {
+  createUserAvatarProfileService,
+  readCachedUserAvatarProfile,
+} from '@/services/user-profile/userAvatarProfileService';
 
 const repository = {
   getDoc: vi.fn(),
@@ -22,6 +25,7 @@ const createImageFile = (size = 128) =>
 describe('userAvatarProfileService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     repository.getDoc.mockResolvedValue(null);
     storageRuntime.getStorage.mockResolvedValue({ bucket: 'test' });
     storageRuntime.ref.mockReturnValue(storageRef);
@@ -72,6 +76,38 @@ describe('userAvatarProfileService', () => {
       { merge: true }
     );
     expect(profile.photoURL).toContain('v=2026-05-30T12%3A00%3A00.000Z');
+    expect(readCachedUserAvatarProfile('user-1')).toEqual(profile);
+  });
+
+  it('hydrates and updates the local avatar cache from Firestore subscriptions', () => {
+    const subscribeDoc = vi.fn((_collection, _id, onSnapshot: (settings: unknown) => void) => {
+      onSnapshot({
+        userAvatarProfile: {
+          uid: 'user-1',
+          email: 'doctor@hospital.cl',
+          photoURL: 'https://storage.test/avatar.png',
+          storagePath: 'user-avatars/user-1/avatar',
+          updatedAt: '2026-05-30T12:00:00.000Z',
+        },
+      });
+      return vi.fn();
+    });
+    const service = createUserAvatarProfileService({
+      repository: { ...repository, subscribeDoc },
+      storageRuntime,
+    });
+    const onProfile = vi.fn();
+
+    service.subscribeProfile(' user-1 ', onProfile);
+
+    expect(onProfile).toHaveBeenCalledWith({
+      uid: 'user-1',
+      email: 'doctor@hospital.cl',
+      photoURL: 'https://storage.test/avatar.png',
+      storagePath: 'user-avatars/user-1/avatar',
+      updatedAt: '2026-05-30T12:00:00.000Z',
+    });
+    expect(readCachedUserAvatarProfile('user-1')?.photoURL).toBe('https://storage.test/avatar.png');
   });
 
   it('rejects non-image avatar files before touching storage', async () => {
@@ -144,6 +180,7 @@ describe('userAvatarProfileService', () => {
       { userAvatarProfile: null },
       { merge: true }
     );
+    expect(readCachedUserAvatarProfile('user-1')).toBeNull();
   });
 
   it('clears a Firestore-backed fallback avatar without trying to delete a Storage object', async () => {

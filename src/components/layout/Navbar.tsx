@@ -4,7 +4,7 @@
  */
 
 import React, { useRef, useState } from 'react';
-import { WifiOff } from 'lucide-react';
+import { BellRing, WifiOff } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/context/AuthContext';
 import { NavbarMenu } from './NavbarMenu';
@@ -29,11 +29,18 @@ const ReminderBadge = React.lazy(() =>
   }))
 );
 
-const ReminderBadgeFallback = () => (
+export const ReminderBadgeFallback = () => (
   <div
-    className="h-8 w-[58px] rounded-full border border-white/10 bg-white/10"
-    aria-hidden="true"
-  />
+    className="relative flex h-8 w-[58px] items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-0 py-0 text-white/70"
+    aria-label="Avisos cargando"
+    aria-busy="true"
+    role="status"
+  >
+    <BellRing size={14} aria-hidden="true" />
+    <span className="w-5 rounded-full bg-white/10 px-0 py-0.5 text-center text-[10px] leading-none">
+      ...
+    </span>
+  </div>
 );
 
 export interface NavbarProps {
@@ -75,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const runtimeIndicatorSlot = hideRuntimeIndicators ? (
     <div className="hidden sm:flex items-center gap-3 invisible" aria-hidden="true">
       <div className="h-8 w-[88px] rounded-full" />
-      <div className="h-8 w-[52px] rounded-full" />
+      <div className="h-8 w-[58px] rounded-full" />
     </div>
   ) : (
     <div className="flex items-center gap-3">

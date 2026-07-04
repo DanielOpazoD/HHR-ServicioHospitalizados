@@ -64,7 +64,7 @@ export const useCensusTableBindingsModel = ({
   );
 
   const bindings = useMemo(() => {
-    if (!tableViewModel.beds) {
+    if (!tableViewModel.beds || tableViewModel.tableConfigLoading) {
       return null;
     }
 
@@ -109,6 +109,7 @@ export const useCensusTableBindingsModel = ({
     tableViewModel.handleColumnResize,
     tableViewModel.handleRowAction,
     tableViewModel.isEditMode,
+    tableViewModel.tableConfigLoading,
     tableViewModel.unifiedRows,
     tableViewModel.resetDayDeniedMessage,
     tableViewModel.role,

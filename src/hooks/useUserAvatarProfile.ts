@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AuthUser } from '@/types/authRoleTypes';
 import {
+  readCachedUserAvatarProfile,
   userAvatarProfileService,
   type UserAvatarProfile,
 } from '@/services/user-profile/userAvatarProfileService';
@@ -21,7 +22,9 @@ const resolveErrorMessage = (error: unknown): string =>
 export const useUserAvatarProfile = (
   user: AuthUser | null | undefined
 ): UseUserAvatarProfileResult => {
-  const [profile, setProfile] = useState<UserAvatarProfile | null>(null);
+  const [profile, setProfile] = useState<UserAvatarProfile | null>(() =>
+    readCachedUserAvatarProfile(user?.uid)
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +37,7 @@ export const useUserAvatarProfile = (
       return undefined;
     }
 
+    setProfile(readCachedUserAvatarProfile(uid));
     setIsLoading(true);
     setError(null);
     const unsubscribe = userAvatarProfileService.subscribeProfile(

@@ -8,6 +8,7 @@ import {
   TableConfig,
   TableColumnConfig,
   getDefaultConfig,
+  getInitialTableConfig,
   DEFAULT_COLUMN_WIDTHS,
   saveTableConfig,
   setFirestoreEnabled as setTableConfigFirestoreEnabled,
@@ -46,7 +47,7 @@ const TableConfigContext = createContext<TableConfigContextType | undefined>(und
 
 export const TableConfigProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { remoteSyncStatus } = useAuth();
-  const [config, setConfig] = useState<TableConfig>(getDefaultConfig);
+  const [config, setConfig] = useState<TableConfig>(getInitialTableConfig);
   const [isEditMode, setIsEditMode] = useState(false);
   const [hasRemoteConfigSnapshot, setHasRemoteConfigSnapshot] = useState(false);
 
@@ -164,7 +165,10 @@ export const TableConfigProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setIsEditMode(enabled);
   }, []);
 
-  const visibleConfig = remoteSyncStatus === 'ready' ? config : getDefaultConfig();
+  const visibleConfig =
+    remoteSyncStatus === 'ready' || remoteSyncStatus === 'bootstrapping'
+      ? config
+      : getDefaultConfig();
   const isLoading =
     remoteSyncStatus === 'bootstrapping' ||
     (remoteSyncStatus === 'ready' && !hasRemoteConfigSnapshot);

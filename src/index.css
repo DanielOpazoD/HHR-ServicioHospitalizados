@@ -148,6 +148,7 @@
     scroll-behavior: smooth;
     overscroll-behavior: none;
     scrollbar-gutter: stable;
+    overflow-y: scroll;
   }
 
   body {
