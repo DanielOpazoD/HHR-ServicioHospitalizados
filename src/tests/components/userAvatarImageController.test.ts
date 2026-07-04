@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildUserAvatarFeedback,
-  calculateCenteredAvatarCrop,
-  resolveVisibleUserAvatarUrl,
-} from '@/components/layout/userAvatarImageController';
+import { calculateCenteredAvatarCrop } from '@/components/layout/userAvatarImageController';
 
 describe('userAvatarImageController', () => {
   it('centers a landscape image into a square avatar crop', () => {
@@ -21,26 +17,5 @@ describe('userAvatarImageController', () => {
       sourceY: 150,
       sourceSize: 600,
     });
-  });
-
-  it('builds concise toast feedback for save and delete outcomes', () => {
-    expect(buildUserAvatarFeedback('saved')).toEqual({
-      title: 'Foto de perfil actualizada',
-      message: 'Tu foto quedó sincronizada para este usuario.',
-    });
-    expect(buildUserAvatarFeedback('removed')).toEqual({
-      title: 'Foto de perfil eliminada',
-      message: 'Se restauró la visualización por defecto.',
-    });
-  });
-
-  it('keeps the default initial view after deleting the in-app avatar, even if Google has a photo', () => {
-    expect(resolveVisibleUserAvatarUrl(null, 'https://google.test/photo.png')).toBeNull();
-    expect(
-      resolveVisibleUserAvatarUrl(
-        'https://storage.test/user-avatar.png',
-        'https://google.test/photo.png'
-      )
-    ).toBe('https://storage.test/user-avatar.png');
   });
 });

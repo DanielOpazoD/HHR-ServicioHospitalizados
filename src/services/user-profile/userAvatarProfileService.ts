@@ -1,23 +1,20 @@
-import {
-  deleteObject,
-  getDownloadURL,
-  ref,
-  uploadBytes,
-  type FirebaseStorage,
-} from 'firebase/storage';
 import { firestoreDb, type IDatabaseProvider } from '@/services/storage/firestore';
-import { defaultStorageRuntime } from '@/services/firebase-runtime/storageRuntime';
 import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
+import {
+  defaultUserAvatarStorageRuntime,
+  type UserAvatarStorageRuntime,
+} from '@/services/user-profile/userAvatarStorageRuntime';
+import {
+  normalizeUserAvatarUid,
+  readCachedUserAvatarProfile,
+  writeCachedUserAvatarProfile,
+  type UserAvatarProfile,
+} from '@/services/user-profile/userAvatarProfileCache';
+
+export { readCachedUserAvatarProfile, writeCachedUserAvatarProfile };
+export type { UserAvatarProfile };
 
 export const USER_AVATAR_MAX_BYTES = 2 * 1024 * 1024;
-
-export interface UserAvatarProfile {
-  uid: string;
-  email: string;
-  photoURL: string;
-  storagePath: string;
-  updatedAt: string;
-}
 
 export interface UserAvatarUploadInput {
   uid: string;
@@ -27,14 +24,6 @@ export interface UserAvatarUploadInput {
 
 interface UserSettingsDocument {
   userAvatarProfile?: Partial<UserAvatarProfile> | null;
-}
-
-export interface UserAvatarStorageRuntime {
-  getStorage: () => Promise<FirebaseStorage>;
-  ref: typeof ref;
-  uploadBytes: typeof uploadBytes;
-  getDownloadURL: typeof getDownloadURL;
-  deleteObject: typeof deleteObject;
 }
 
 interface UserAvatarRepository {
@@ -50,60 +39,8 @@ interface UserAvatarProfileServiceDependencies {
 }
 
 const USER_SETTINGS_COLLECTION = 'userSettings';
-const LOCAL_USER_AVATAR_PROFILES_KEY = 'hhr_user_avatar_profiles_v1';
-
-const defaultUserAvatarStorageRuntime: UserAvatarStorageRuntime = {
-  getStorage: defaultStorageRuntime.getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject,
-};
-
-const normalizeUid = (uid: string): string => String(uid || '').trim();
-
-const readLocalProfiles = (): Record<string, UserAvatarProfile> => {
-  try {
-    const raw = globalThis.localStorage?.getItem(LOCAL_USER_AVATAR_PROFILES_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, UserAvatarProfile>) : {};
-  } catch {
-    return {};
-  }
-};
-
-export const readCachedUserAvatarProfile = (
-  uidInput: string | null | undefined
-): UserAvatarProfile | null => {
-  const uid = normalizeUid(uidInput || '');
-  if (!uid) {
-    return null;
-  }
-  return readLocalProfiles()[uid] || null;
-};
-
-export const writeCachedUserAvatarProfile = (
-  profile: UserAvatarProfile | null,
-  uidInput: string
-): void => {
-  const uid = normalizeUid(uidInput);
-  if (!uid) {
-    return;
-  }
-  try {
-    const profiles = readLocalProfiles();
-    if (profile) {
-      profiles[uid] = profile;
-    } else {
-      delete profiles[uid];
-    }
-    globalThis.localStorage?.setItem(LOCAL_USER_AVATAR_PROFILES_KEY, JSON.stringify(profiles));
-  } catch {
-    // Local fallback must not block the authenticated shell.
-  }
-};
-
 export const buildUserAvatarStoragePath = (uid: string): string =>
-  `user-avatars/${normalizeUid(uid)}/avatar`;
+  `user-avatars/${normalizeUserAvatarUid(uid)}/avatar`;
 
 const buildFirestoreBackedAvatarPath = (uid: string): string => `firestore:user-avatar:${uid}`;
 
@@ -168,13 +105,13 @@ export const createUserAvatarProfileService = ({
   now = () => new Date().toISOString(),
 }: UserAvatarProfileServiceDependencies = {}) => {
   const getProfile = async (uid: string): Promise<UserAvatarProfile | null> => {
-    const normalizedUid = normalizeUid(uid);
+    const normalizedUid = normalizeUserAvatarUid(uid);
     if (!normalizedUid) {
       return null;
     }
 
     if (!isFirestoreEnabled()) {
-      return readLocalProfiles()[normalizedUid] || null;
+      return readCachedUserAvatarProfile(normalizedUid);
     }
 
     const settings = await repository.getDoc<UserSettingsDocument>(
@@ -194,7 +131,7 @@ export const createUserAvatarProfileService = ({
       onProfile: (profile: UserAvatarProfile | null) => void,
       onError?: (error: unknown) => void
     ): () => void {
-      const normalizedUid = normalizeUid(uid);
+      const normalizedUid = normalizeUserAvatarUid(uid);
       if (!normalizedUid || !isFirestoreEnabled() || !repository.subscribeDoc) {
         void getProfile(normalizedUid)
           .then(onProfile)
@@ -219,20 +156,21 @@ export const createUserAvatarProfileService = ({
     },
 
     async uploadAvatar(input: UserAvatarUploadInput): Promise<UserAvatarProfile> {
-      const uid = normalizeUid(input.uid);
+      const uid = normalizeUserAvatarUid(input.uid);
       if (!uid) {
         throw new Error('No se pudo identificar al usuario actual.');
       }
       assertValidAvatarFile(input.file);
 
       const storage = await storageRuntime.getStorage();
+      const storageModule = await storageRuntime.loadStorageModule();
       const storagePath = buildUserAvatarStoragePath(uid);
-      const storageRef = storageRuntime.ref(storage, storagePath);
+      const storageRef = storageModule.ref(storage, storagePath);
       const updatedAt = now();
       let profile: UserAvatarProfile;
 
       try {
-        await storageRuntime.uploadBytes(storageRef, input.file, {
+        await storageModule.uploadBytes(storageRef, input.file, {
           contentType: input.file.type,
           customMetadata: {
             module: 'user-profile',
@@ -240,7 +178,7 @@ export const createUserAvatarProfileService = ({
           },
         });
 
-        const downloadUrl = await storageRuntime.getDownloadURL(storageRef);
+        const downloadUrl = await storageModule.getDownloadURL(storageRef);
         profile = {
           uid,
           email: String(input.email || '').trim(),
@@ -278,7 +216,7 @@ export const createUserAvatarProfileService = ({
     },
 
     async removeAvatar(uidInput: string): Promise<void> {
-      const uid = normalizeUid(uidInput);
+      const uid = normalizeUserAvatarUid(uidInput);
       if (!uid) {
         return;
       }
@@ -286,9 +224,10 @@ export const createUserAvatarProfileService = ({
       const profile = await getProfile(uid);
       if (profile?.storagePath && !isFirestoreBackedAvatarPath(profile.storagePath)) {
         const storage = await storageRuntime.getStorage();
-        const storageRef = storageRuntime.ref(storage, profile.storagePath);
+        const storageModule = await storageRuntime.loadStorageModule();
+        const storageRef = storageModule.ref(storage, profile.storagePath);
         try {
-          await storageRuntime.deleteObject(storageRef);
+          await storageModule.deleteObject(storageRef);
         } catch (error) {
           if (!isObjectNotFoundError(error)) {
             throw error;

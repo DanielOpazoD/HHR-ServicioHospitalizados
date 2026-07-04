@@ -5,21 +5,61 @@
 
 import React, { useRef } from 'react';
 import { CalendarClock, Search } from 'lucide-react';
-import { PdfButtons } from './date-strip/actions/PdfButtons';
-import { SaveDropdown } from './date-strip/actions/SaveDropdown';
-import { HandoffSaveDropdown } from './date-strip/actions/HandoffSaveDropdown';
-import { EmailDropdown } from './date-strip/actions/EmailDropdown';
 import { resolveShiftedMonthYear } from '@/components/layout/date-strip/dateStripNavigationController';
 import { DateStripDayButtons } from '@/components/layout/date-strip/DateStripDayButtons';
-import { DateStripQuickActions } from '@/components/layout/date-strip/DateStripQuickActions';
-import { DateStripBookmarkToggle } from '@/components/layout/date-strip/DateStripBookmarkToggle';
-import { DateStripYearNavigator } from '@/components/layout/date-strip/DateStripYearNavigator';
-import { DateStripMonthNavigator } from '@/components/layout/date-strip/DateStripMonthNavigator';
 import type { MedicalIndicationsPatientOption } from '@/shared/contracts/medicalIndications';
 import { useDateStripWheelNavigation } from '@/components/layout/date-strip/useDateStripWheelNavigation';
 import type { CensusAccessProfile } from '@/shared/access/censusAccessProfile';
 import { isSpecialistCensusAccessProfile } from '@/shared/access/censusAccessProfile';
 import type { ModuleType } from '@/constants/navigationConfig';
+
+const SaveDropdown = React.lazy(() =>
+  import('./date-strip/actions/SaveDropdown').then(module => ({
+    default: module.SaveDropdown,
+  }))
+);
+const HandoffSaveDropdown = React.lazy(() =>
+  import('./date-strip/actions/HandoffSaveDropdown').then(module => ({
+    default: module.HandoffSaveDropdown,
+  }))
+);
+const EmailDropdown = React.lazy(() =>
+  import('./date-strip/actions/EmailDropdown').then(module => ({
+    default: module.EmailDropdown,
+  }))
+);
+const PdfButtons = React.lazy(() =>
+  import('./date-strip/actions/PdfButtons').then(module => ({
+    default: module.PdfButtons,
+  }))
+);
+const DateStripQuickActions = React.lazy(() =>
+  import('@/components/layout/date-strip/DateStripQuickActions').then(module => ({
+    default: module.DateStripQuickActions,
+  }))
+);
+const DateStripBookmarkToggle = React.lazy(() =>
+  import('@/components/layout/date-strip/DateStripBookmarkToggle').then(module => ({
+    default: module.DateStripBookmarkToggle,
+  }))
+);
+const DateStripYearNavigator = React.lazy(() =>
+  import('@/components/layout/date-strip/DateStripYearNavigator').then(module => ({
+    default: module.DateStripYearNavigator,
+  }))
+);
+const DateStripMonthNavigator = React.lazy(() =>
+  import('@/components/layout/date-strip/DateStripMonthNavigator').then(module => ({
+    default: module.DateStripMonthNavigator,
+  }))
+);
+
+const DateStripActionFallback = ({ widthClassName }: { widthClassName: string }) => (
+  <div
+    className={`h-[30px] shrink-0 rounded-lg border border-slate-100 bg-slate-50/70 ${widthClassName}`}
+    aria-hidden="true"
+  />
+);
 
 export interface DateNavigationProps {
   selectedYear: number;
@@ -161,60 +201,76 @@ export const DateStrip: React.FC<DateStripProps> = ({
         <div className="flex w-full items-center justify-center gap-2 max-md:justify-start max-md:overflow-x-auto">
           <div className="flex items-center gap-1 shrink-0 min-w-0">
             {!isGuest && onToggleBookmarks && (
-              <DateStripBookmarkToggle
-                onToggleBookmarks={onToggleBookmarks}
-                showBookmarks={showBookmarks}
-              />
+              <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[30px]" />}>
+                <DateStripBookmarkToggle
+                  onToggleBookmarks={onToggleBookmarks}
+                  showBookmarks={showBookmarks}
+                />
+              </React.Suspense>
             )}
 
             {currentModule === 'NURSING_HANDOFF' && !isGuest && (
-              <HandoffSaveDropdown
-                onExportPDF={onExportPDF}
-                onPrintWithBrowserOptions={onPrintWithBrowserOptions}
-                onBackupPDF={onBackupPDF}
-                isArchived={isArchived}
-                isBackingUp={isBackingUp}
-                showFirebaseBackupOption={false}
-              />
+              <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[46px]" />}>
+                <HandoffSaveDropdown
+                  onExportPDF={onExportPDF}
+                  onPrintWithBrowserOptions={onPrintWithBrowserOptions}
+                  onBackupPDF={onBackupPDF}
+                  isArchived={isArchived}
+                  isBackingUp={isBackingUp}
+                  showFirebaseBackupOption={false}
+                />
+              </React.Suspense>
             )}
 
             {currentModule === 'CENSUS' && canShowRoleRestrictedActions && (
-              <SaveDropdown
-                onExportExcel={onExportExcel}
-                onBackupExcel={onBackupExcel}
-                isArchived={isArchived}
-                isBackingUp={isBackingUp}
-                showFirebaseBackupOption={false}
-              />
+              <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[46px]" />}>
+                <SaveDropdown
+                  onExportExcel={onExportExcel}
+                  onBackupExcel={onBackupExcel}
+                  isArchived={isArchived}
+                  isBackingUp={isBackingUp}
+                  showFirebaseBackupOption={false}
+                />
+              </React.Suspense>
             )}
 
             {canShowRoleRestrictedActions && (
-              <EmailDropdown
-                onSendEmail={onSendEmail}
-                onCopyShareLink={onCopyShareLink}
-                onConfigureEmail={onConfigureEmail}
-                emailStatus={emailStatus}
-                emailErrorMessage={emailErrorMessage}
-              />
+              <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[92px]" />}>
+                <EmailDropdown
+                  onSendEmail={onSendEmail}
+                  onCopyShareLink={onCopyShareLink}
+                  onConfigureEmail={onConfigureEmail}
+                  emailStatus={emailStatus}
+                  emailErrorMessage={emailErrorMessage}
+                />
+              </React.Suspense>
             )}
 
-            {currentModule === 'CENSUS' && <PdfButtons onExportPDF={onExportPDF} />}
+            {currentModule === 'CENSUS' && (
+              <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[54px]" />}>
+                <PdfButtons onExportPDF={onExportPDF} />
+              </React.Suspense>
+            )}
           </div>
 
           <div className="h-4 w-px bg-slate-200/70" />
 
-          <DateStripYearNavigator selectedYear={selectedYear} setSelectedYear={setSelectedYear} />
+          <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[78px]" />}>
+            <DateStripYearNavigator selectedYear={selectedYear} setSelectedYear={setSelectedYear} />
+          </React.Suspense>
 
           <div className="h-4 w-px bg-slate-200/70" />
 
-          <DateStripMonthNavigator
-            selectedMonth={selectedMonth}
-            onChangeMonth={changeMonth}
-            onSelectMonth={(month: number) => {
-              setSelectedMonth(month);
-              setSelectedDay(1);
-            }}
-          />
+          <React.Suspense fallback={<DateStripActionFallback widthClassName="w-[104px]" />}>
+            <DateStripMonthNavigator
+              selectedMonth={selectedMonth}
+              onChangeMonth={changeMonth}
+              onSelectMonth={(month: number) => {
+                setSelectedMonth(month);
+                setSelectedDay(1);
+              }}
+            />
+          </React.Suspense>
 
           <div className="h-4 w-px bg-slate-200/70" />
 
@@ -262,14 +318,23 @@ export const DateStrip: React.FC<DateStripProps> = ({
               </button>
             )}
 
-            <DateStripQuickActions
-              onOpenBedManager={specialistCensusAccess ? undefined : onOpenBedManager}
-              renderFeatureQuickActions={renderFeatureQuickActions}
-              hideClinicalQuickActions={isHandoffModule}
-              medicalIndicationsPatients={
-                currentModule === 'CENSUS' ? medicalIndicationsPatients : []
+            <React.Suspense
+              fallback={
+                <div
+                  className="h-[30px] w-[168px] shrink-0 rounded-lg border border-slate-100 bg-slate-50/70"
+                  aria-hidden="true"
+                />
               }
-            />
+            >
+              <DateStripQuickActions
+                onOpenBedManager={specialistCensusAccess ? undefined : onOpenBedManager}
+                renderFeatureQuickActions={renderFeatureQuickActions}
+                hideClinicalQuickActions={isHandoffModule}
+                medicalIndicationsPatients={
+                  currentModule === 'CENSUS' ? medicalIndicationsPatients : []
+                }
+              />
+            </React.Suspense>
           </div>
         </div>
       </div>

@@ -98,4 +98,21 @@ describe('runtime asset import boundary', () => {
       expect(source, file).not.toMatch(/heic2any|pdf-lib|pdfjs-dist/);
     }
   });
+
+  it('keeps Firebase Storage avatar operations behind a profile storage runtime loader', () => {
+    const avatarProfileServiceSource = readSource(
+      'src/services/user-profile/userAvatarProfileService.ts'
+    );
+    const avatarStorageRuntimeSource = readSource(
+      'src/services/user-profile/userAvatarStorageRuntime.ts'
+    );
+
+    expect(avatarProfileServiceSource).not.toMatch(
+      /from ['"]firebase\/storage['"]|import\(\s*['"]firebase\/storage['"]/
+    );
+    expect(avatarProfileServiceSource).toContain(
+      "from '@/services/user-profile/userAvatarStorageRuntime'"
+    );
+    expect(avatarStorageRuntimeSource).toContain("import('firebase/storage')");
+  });
 });

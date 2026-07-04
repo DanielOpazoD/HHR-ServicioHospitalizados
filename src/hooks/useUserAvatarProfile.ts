@@ -2,9 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AuthUser } from '@/types/authRoleTypes';
 import {
   readCachedUserAvatarProfile,
-  userAvatarProfileService,
   type UserAvatarProfile,
-} from '@/services/user-profile/userAvatarProfileService';
+} from '@/services/user-profile/userAvatarProfileCache';
 
 export interface UseUserAvatarProfileResult {
   profile: UserAvatarProfile | null;
@@ -18,6 +17,11 @@ export interface UseUserAvatarProfileResult {
 
 const resolveErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : 'No se pudo actualizar la foto de perfil.';
+
+const loadUserAvatarProfileService = () =>
+  import('@/services/user-profile/userAvatarProfileService').then(
+    module => module.userAvatarProfileService
+  );
 
 export const useUserAvatarProfile = (
   user: AuthUser | null | undefined
@@ -40,19 +44,38 @@ export const useUserAvatarProfile = (
     setProfile(readCachedUserAvatarProfile(uid));
     setIsLoading(true);
     setError(null);
-    const unsubscribe = userAvatarProfileService.subscribeProfile(
-      uid,
-      nextProfile => {
-        setProfile(nextProfile);
-        setIsLoading(false);
-      },
-      subscriptionError => {
+    let isDisposed = false;
+    let unsubscribe: (() => void) | undefined;
+
+    void loadUserAvatarProfileService()
+      .then(service => {
+        if (isDisposed) {
+          return;
+        }
+        unsubscribe = service.subscribeProfile(
+          uid,
+          nextProfile => {
+            setProfile(nextProfile);
+            setIsLoading(false);
+          },
+          subscriptionError => {
+            setError(resolveErrorMessage(subscriptionError));
+            setIsLoading(false);
+          }
+        );
+      })
+      .catch(subscriptionError => {
+        if (isDisposed) {
+          return;
+        }
         setError(resolveErrorMessage(subscriptionError));
         setIsLoading(false);
-      }
-    );
+      });
 
-    return unsubscribe;
+    return () => {
+      isDisposed = true;
+      unsubscribe?.();
+    };
   }, [user?.uid]);
 
   const uploadAvatar = useCallback(
@@ -64,7 +87,8 @@ export const useUserAvatarProfile = (
       setIsSaving(true);
       setError(null);
       try {
-        const nextProfile = await userAvatarProfileService.uploadAvatar({
+        const service = await loadUserAvatarProfileService();
+        const nextProfile = await service.uploadAvatar({
           uid: user.uid,
           email: user.email,
           file,
@@ -90,7 +114,8 @@ export const useUserAvatarProfile = (
     setIsSaving(true);
     setError(null);
     try {
-      await userAvatarProfileService.removeAvatar(user.uid);
+      const service = await loadUserAvatarProfileService();
+      await service.removeAvatar(user.uid);
       setProfile(null);
     } catch (removeError) {
       const message = resolveErrorMessage(removeError);

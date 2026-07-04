@@ -118,6 +118,99 @@ describe('chunkingPolicy', () => {
     expect(navbarSource).toContain("import('@/components/reminders/ReminderBadge')");
   });
 
+  it('keeps user avatar editing modal out of the static authenticated shell import graph', () => {
+    const navbarSource = readSource('src/components/layout/Navbar.tsx');
+
+    expect(navbarSource).not.toMatch(
+      /import\s+\{[^}]*UserAvatarModal[^}]*\}\s+from ['"]\.\/UserAvatarModal['"]/
+    );
+    expect(navbarSource).toContain("import('./UserAvatarModal')");
+  });
+
+  it('keeps user avatar remote profile service out of the static authenticated shell import graph', () => {
+    const userAvatarHookSource = readSource('src/hooks/useUserAvatarProfile.ts');
+
+    expect(userAvatarHookSource).not.toMatch(
+      /from ['"]@\/services\/user-profile\/userAvatarProfileService['"]/
+    );
+    expect(userAvatarHookSource).toContain("from '@/services/user-profile/userAvatarProfileCache'");
+    expect(userAvatarHookSource).toContain(
+      "import('@/services/user-profile/userAvatarProfileService')"
+    );
+  });
+
+  it('keeps user avatar image processing helpers out of the static authenticated shell import graph', () => {
+    const navbarSource = readSource('src/components/layout/Navbar.tsx');
+
+    expect(navbarSource).not.toContain('@/components/layout/userAvatarImageController');
+    expect(navbarSource).toContain('@/components/layout/userAvatarPresentationController');
+  });
+
+  it('keeps census email delivery use cases out of the static authenticated shell import graph', () => {
+    const deliveryActionsSource = readSource('src/hooks/useCensusEmailDeliveryActions.ts');
+
+    expect(deliveryActionsSource).not.toMatch(
+      /from ['"]@\/application\/census-email\/sendCensusEmailUseCases['"]/
+    );
+    expect(deliveryActionsSource).toContain(
+      "import('@/application/census-email/sendCensusEmailUseCases')"
+    );
+  });
+
+  it('keeps secondary DateStrip action dropdowns out of the static authenticated shell import graph', () => {
+    const dateStripSource = readSource('src/components/layout/DateStrip.tsx');
+
+    expect(dateStripSource).not.toMatch(
+      /from ['"]\.\/date-strip\/actions\/(?:SaveDropdown|HandoffSaveDropdown|EmailDropdown)['"]/
+    );
+    expect(dateStripSource).toContain("import('./date-strip/actions/SaveDropdown')");
+    expect(dateStripSource).toContain("import('./date-strip/actions/HandoffSaveDropdown')");
+    expect(dateStripSource).toContain("import('./date-strip/actions/EmailDropdown')");
+  });
+
+  it('keeps the census PDF quick action out of the static DateStrip shell import graph', () => {
+    const dateStripSource = readSource('src/components/layout/DateStrip.tsx');
+
+    expect(dateStripSource).not.toMatch(/from ['"]\.\/date-strip\/actions\/PdfButtons['"]/);
+    expect(dateStripSource).toContain("import('./date-strip/actions/PdfButtons')");
+  });
+
+  it('keeps secondary DateStrip quick actions out of the static DateStrip shell import graph', () => {
+    const dateStripSource = readSource('src/components/layout/DateStrip.tsx');
+
+    expect(dateStripSource).not.toMatch(
+      /from ['"]@\/components\/layout\/date-strip\/DateStripQuickActions['"]/
+    );
+    expect(dateStripSource).toContain(
+      "import('@/components/layout/date-strip/DateStripQuickActions')"
+    );
+  });
+
+  it('keeps the DateStrip bookmark toggle out of the static DateStrip shell import graph', () => {
+    const dateStripSource = readSource('src/components/layout/DateStrip.tsx');
+
+    expect(dateStripSource).not.toMatch(
+      /from ['"]@\/components\/layout\/date-strip\/DateStripBookmarkToggle['"]/
+    );
+    expect(dateStripSource).toContain(
+      "import('@/components/layout/date-strip/DateStripBookmarkToggle')"
+    );
+  });
+
+  it('keeps DateStrip month and year navigators out of the static DateStrip shell import graph', () => {
+    const dateStripSource = readSource('src/components/layout/DateStrip.tsx');
+
+    expect(dateStripSource).not.toMatch(
+      /from ['"]@\/components\/layout\/date-strip\/DateStrip(?:Month|Year)Navigator['"]/
+    );
+    expect(dateStripSource).toContain(
+      "import('@/components/layout/date-strip/DateStripYearNavigator')"
+    );
+    expect(dateStripSource).toContain(
+      "import('@/components/layout/date-strip/DateStripMonthNavigator')"
+    );
+  });
+
   it('keeps authenticated shell runtime off the hooks barrel to avoid pulling feature hooks into startup', () => {
     const guardedFiles = [
       'src/app-shell/runtime/useAuthenticatedAppRuntime.ts',
