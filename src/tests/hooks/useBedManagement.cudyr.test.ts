@@ -41,6 +41,13 @@ describe('useBedManagement CUDYR updates', () => {
   const mockSaveAndUpdate = vi.fn().mockResolvedValue(undefined) as PersistDailyRecord;
   const mockPatchRecord = vi.fn().mockResolvedValue(undefined);
 
+  const runBedAction = async (action: () => void) => {
+    await act(async () => {
+      action();
+      await Promise.resolve();
+    });
+  };
+
   const createMockPatient = (bedId: string, overrides: Partial<PatientData> = {}): PatientData => ({
     bedId,
     patientName: 'Test Patient',
@@ -76,7 +83,7 @@ describe('useBedManagement CUDYR updates', () => {
     vi.useRealTimers();
   });
 
-  it('updates the Cudyr field and logs modification', () => {
+  it('updates the Cudyr field and logs modification', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-23T10:15:00.000Z'));
     const patient = createMockPatient('R1');
@@ -86,9 +93,7 @@ describe('useBedManagement CUDYR updates', () => {
       useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
     );
 
-    act(() => {
-      result.current.updateCudyr('R1', 'changeClothes', 3);
-    });
+    await runBedAction(() => result.current.updateCudyr('R1', 'changeClothes', 3));
 
     expect(mockPatchRecord).toHaveBeenCalledWith({
       'beds.R1.cudyr.changeClothes': 3,
@@ -106,7 +111,7 @@ describe('useBedManagement CUDYR updates', () => {
     );
   });
 
-  it('persists multiple CUDYR field changes in one patch and audits each changed field', () => {
+  it('persists multiple CUDYR field changes in one patch and audits each changed field', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-23T10:15:00.000Z'));
     const patient = createMockPatient('R1', {
@@ -121,12 +126,12 @@ describe('useBedManagement CUDYR updates', () => {
       useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
     );
 
-    act(() => {
+    await runBedAction(() =>
       result.current.updateCudyrMultiple('R1', {
         changeClothes: 3,
         mobilization: 2,
-      });
-    });
+      })
+    );
 
     expect(mockPatchRecord).toHaveBeenCalledTimes(1);
     expect(mockPatchRecord).toHaveBeenCalledWith({
@@ -301,7 +306,7 @@ describe('useBedManagement CUDYR updates', () => {
     expect(mockAuditContextValue.logDebouncedEvent).not.toHaveBeenCalled();
   });
 
-  it('updates clinical crib CUDYR', () => {
+  it('updates clinical crib CUDYR', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-23T11:05:00.000Z'));
     const patient = createMockPatient('R1', {
@@ -313,9 +318,7 @@ describe('useBedManagement CUDYR updates', () => {
       useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
     );
 
-    act(() => {
-      result.current.updateClinicalCribCudyr('R1', 'feeding', 2);
-    });
+    await runBedAction(() => result.current.updateClinicalCribCudyr('R1', 'feeding', 2));
 
     expect(mockPatchRecord).toHaveBeenCalledWith({
       'beds.R1.clinicalCrib.cudyr.feeding': 2,

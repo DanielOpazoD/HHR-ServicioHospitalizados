@@ -141,7 +141,21 @@ describe('daily record freshness gate full-bed move patches', () => {
       await expect(result.current.mutateAsync(movePatch as never)).resolves.toBeDefined();
     });
 
-    expect(dailyRecord.updatePartialDetailed).toHaveBeenCalledWith(date, movePatch);
+    expect(dailyRecord.updatePartialDetailed).toHaveBeenCalledWith(
+      date,
+      movePatch,
+      expect.objectContaining({
+        baseRecord: expect.objectContaining({
+          date,
+          beds: expect.objectContaining({
+            R2: expect.objectContaining({
+              patientName: 'Paciente en R2',
+              clinicalEpisodeId: 'episode-r2',
+            }),
+          }),
+        }),
+      })
+    );
     expect(
       queryClient.getQueryData<ReturnType<typeof createDailyRecordQueryResult>>(
         getDailyRecordQueryKey(date)

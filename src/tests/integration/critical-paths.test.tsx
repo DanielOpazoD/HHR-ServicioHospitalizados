@@ -271,6 +271,17 @@ describe('Critical Integration Paths', () => {
           patientName: '',
           rut: '',
         }),
+      }),
+      expect.objectContaining({
+        baseRecord: expect.objectContaining({
+          date: mockDate,
+          beds: expect.objectContaining({
+            'bed-1': expect.objectContaining({
+              patientName: 'Maria Silva',
+              rut: '11.111.111-1',
+            }),
+          }),
+        }),
       })
     );
   });
