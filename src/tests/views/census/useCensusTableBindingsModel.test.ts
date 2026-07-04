@@ -123,11 +123,29 @@ describe('useCensusTableBindingsModel', () => {
     expect(buildCensusTableLayoutBindings).not.toHaveBeenCalled();
   });
 
-  it('returns not-ready while table column config is loading to avoid first-paint width shifts', () => {
+  it('keeps the table paintable while remote table config is still loading', () => {
+    const layoutBindings = {
+      headerProps: { readOnly: false },
+      bodyProps: { currentDateString: '2026-03-10' },
+      tableStyle: { width: '1200px', minWidth: '100%' },
+    };
+
     vi.mocked(useCensusTableViewModel).mockReturnValue(
       asHookValue<ReturnType<typeof useCensusTableViewModel>>({
         beds: {},
+        columns: {} as never,
+        isEditMode: false,
+        canDeleteRecord: true,
+        resetDayDeniedMessage: '',
         unifiedRows: [],
+        bedTypes: {},
+        totalWidth: 1200,
+        handleClearAll: vi.fn(),
+        diagnosisMode: 'free',
+        toggleDiagnosisMode: vi.fn(),
+        handleRowAction: vi.fn(),
+        activateEmptyBed: vi.fn(),
+        handleColumnResize: vi.fn(),
         role: 'viewer',
         tableConfigLoading: true,
       })
@@ -136,6 +154,7 @@ describe('useCensusTableBindingsModel', () => {
       byBedId: {},
       infoByBedId: {},
     });
+    vi.mocked(buildCensusTableLayoutBindings).mockReturnValue(layoutBindings as never);
 
     const { result } = renderHook(
       () =>
@@ -145,9 +164,14 @@ describe('useCensusTableBindingsModel', () => {
       { wrapper: createDailyRecordWrapper() }
     );
 
-    expect(result.current.isReady).toBe(false);
-    expect(result.current.bindings).toBeNull();
-    expect(buildCensusTableLayoutBindings).not.toHaveBeenCalled();
+    expect(result.current.isReady).toBe(true);
+    expect(result.current.bindings).toBe(layoutBindings);
+    expect(buildCensusTableLayoutBindings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        currentDateString: '2026-03-10',
+        totalWidth: 1200,
+      })
+    );
   });
 
   it('defers the remote clinical document presence lookup until after the table can paint', async () => {
