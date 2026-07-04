@@ -26,5 +26,6 @@ export const ConflictVersionsAdminControl: React.FC<ConflictVersionsAdminControl
     port={port}
     buttonTestId="conflict-versions-button"
     className="self-center"
+    hideButtonLabel
   />
 );

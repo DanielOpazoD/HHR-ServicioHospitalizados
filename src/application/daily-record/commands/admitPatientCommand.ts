@@ -37,6 +37,7 @@ import {
   type RuntimeOperationStatusSnapshot,
 } from '@/shared/contracts/runtimeOperationStatus';
 import { resolveClinicalEpisodeIdForAdmission } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
+import type { DailyRecord } from '@/application/shared/dailyRecordCoreContracts';
 
 export interface AdmitPatientInput {
   bedId: string;
@@ -45,6 +46,7 @@ export interface AdmitPatientInput {
   pathology?: string;
   admissionDate: string;
   clinicalEpisodeId?: string;
+  baseRecord?: DailyRecord | null;
   recordDate: string;
   /** uid / email of the authenticated actor performing the admission. */
   actor: string;

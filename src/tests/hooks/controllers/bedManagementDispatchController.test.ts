@@ -83,7 +83,7 @@ describe('bedManagementDispatchController', () => {
     expect(patchRecord).not.toHaveBeenCalled();
   });
 
-  it('applies patch after validation and audit', () => {
+  it('applies patch after validation and audit', async () => {
     const patchRecord = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
     const auditPatientChange = vi.fn();
     const action: BedAction = {
@@ -104,7 +104,7 @@ describe('bedManagementDispatchController', () => {
       auditPatientMovement: vi.fn(),
     };
 
-    executeBedManagementAction({
+    await executeBedManagementAction({
       currentRecord: buildRecord(),
       action,
       validation,
@@ -118,7 +118,7 @@ describe('bedManagementDispatchController', () => {
     });
   });
 
-  it('audits patient creation when demographics are saved as a multiple update', () => {
+  it('audits patient creation when demographics are saved as a multiple update', async () => {
     const record = buildRecord();
     record.beds.R1 = {
       ...record.beds.R1,
@@ -151,7 +151,7 @@ describe('bedManagementDispatchController', () => {
       auditPatientMovement: vi.fn(),
     };
 
-    executeBedManagementAction({
+    await executeBedManagementAction({
       currentRecord: record,
       action,
       validation,
@@ -171,7 +171,7 @@ describe('bedManagementDispatchController', () => {
     );
   });
 
-  it('audits diagnosis changes when they are saved as a multiple update', () => {
+  it('audits diagnosis changes when they are saved as a multiple update', async () => {
     const patchRecord = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
     const auditPatientChange = vi.fn();
     const action: BedAction = {
@@ -194,7 +194,7 @@ describe('bedManagementDispatchController', () => {
     };
 
     const record = buildRecord();
-    executeBedManagementAction({
+    await executeBedManagementAction({
       currentRecord: record,
       action,
       validation,
@@ -261,6 +261,50 @@ describe('bedManagementDispatchController', () => {
         patchType: 'UPDATE_PATIENT',
       }),
     });
+    warnSpy.mockRestore();
+  });
+
+  it('does not emit patient-change audit when the patch is rejected', async () => {
+    const patchError = new Error('No se encontró un registro local válido para aplicar el cambio.');
+    const patchRecord = vi.fn<() => Promise<void>>().mockRejectedValueOnce(patchError);
+    const auditPatientChange = vi.fn();
+    const warnSpy = vi.spyOn(bedManagementDispatchLogger, 'warn').mockImplementation(() => {});
+    const action: BedAction = {
+      type: 'UPDATE_PATIENT_MULTIPLE',
+      bedId: 'R1',
+      fields: {
+        pathology: 'Diagnostico no persistido',
+      },
+    };
+    const validation: BedManagementValidationPort = {
+      processFieldValue: vi.fn((_field, value) => ({ valid: true, value })),
+    };
+    const bedAudit: BedManagementAuditPort = {
+      auditPatientChange,
+      auditCudyrChange: vi.fn(),
+      auditCribCudyrChange: vi.fn(),
+      auditPatientCleared: vi.fn(),
+      auditPatientModified: vi.fn(),
+      auditPatientMovement: vi.fn(),
+    };
+
+    const result = await executeBedManagementAction({
+      currentRecord: buildRecord(),
+      action,
+      validation,
+      bedAudit,
+      patchRecord,
+    });
+
+    expect(result).toBe(false);
+    expect(auditPatientChange).not.toHaveBeenCalled();
+    expect(telemetryMocks.recordOperationalTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        operation: 'daily_record_bed_patch_failed',
+        status: 'failed',
+        runtimeState: 'blocked',
+      })
+    );
     warnSpy.mockRestore();
   });
 });

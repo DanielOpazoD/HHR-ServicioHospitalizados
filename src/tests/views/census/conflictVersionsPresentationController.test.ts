@@ -66,7 +66,7 @@ describe('resolveConflictSnapshotRecoveryState', () => {
     ).toMatchObject({
       kind: 'permission_denied',
       title: 'Snapshots sin permiso de lectura',
-      message: expect.stringContaining('permisos'),
+      message: expect.stringContaining('sincroniza claims'),
     });
   });
 
@@ -80,6 +80,23 @@ describe('resolveConflictSnapshotRecoveryState', () => {
       kind: 'unknown_empty',
       title: 'Sin snapshots recuperables',
       message: expect.stringContaining('observabilidad'),
+    });
+  });
+
+  it('surfaces query/index failures as actionable conflict-center states', () => {
+    expect(
+      resolveConflictSnapshotRecoveryState({
+        date: '2026-07-03',
+        snapshotCount: 0,
+        snapshotRecovery: {
+          status: 'failed',
+          unavailableReason: 'query_index_missing',
+        },
+      })
+    ).toMatchObject({
+      kind: 'query_unavailable',
+      title: 'Consulta de snapshots no disponible',
+      message: expect.stringContaining('índice'),
     });
   });
 });

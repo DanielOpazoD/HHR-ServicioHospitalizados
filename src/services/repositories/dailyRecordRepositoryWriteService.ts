@@ -14,6 +14,7 @@ import { isFirestoreEnabled } from '@/services/repositories/repositoryConfig';
 import {
   createPartialUpdateDailyRecordCommand,
   createSaveDailyRecordCommand,
+  type PartialUpdateDailyRecordOptions,
 } from '@/services/repositories/contracts/dailyRecordCommands';
 import { buildDailyRecordSyncContract } from '@/services/storage/sync/syncTaskContractPolicy';
 import { queueDailyRecordSyncTaskWithLocalRecord } from '@/services/storage/sync';
@@ -46,6 +47,8 @@ import { dailyRecordWriteLogger } from '@/services/repositories/repositoryLogger
 import { DataRegressionError, VersionMismatchError } from '@/utils/integrityGuard';
 import { AdmissionDatePolicyViolationError } from '@/application/patient-flow/admissionDatePolicy';
 import { classifyConflictChangedContexts } from '@/services/repositories/conflictResolutionDomainPolicy';
+import { isDailyRecordWriteBlockedResult } from '@/services/repositories/contracts/dailyRecordResults';
+import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
 
 const runRemoteSaveIntegrityCheck = async (date: string, record: DailyRecord): Promise<void> => {
   if (!isFirestoreEnabled()) return;
@@ -94,7 +97,14 @@ const tryAutoMergeBlockedFullSaveRegression = async (
   return true;
 };
 
-const resolvePartialUpdateBaseRecord = async (date: string): Promise<DailyRecord | null> => {
+const resolvePartialUpdateBaseRecord = async (
+  date: string,
+  options: PartialUpdateDailyRecordOptions = {}
+): Promise<DailyRecord | null> => {
+  if (options.baseRecord?.date === date) {
+    return options.baseRecord;
+  }
+
   const localRecord = await getRecordFromIndexedDB(date);
   if (localRecord) {
     return localRecord;
@@ -250,10 +260,14 @@ export const save = async (record: DailyRecord, expectedLastUpdated?: string): P
   }
 };
 
-export const updatePartialDetailed = async (date: string, partialData: DailyRecordPatch) => {
+export const updatePartialDetailed = async (
+  date: string,
+  partialData: DailyRecordPatch,
+  options: PartialUpdateDailyRecordOptions = {}
+) => {
   const command = createPartialUpdateDailyRecordCommand(date, partialData);
   const remoteState = createRemoteWriteState();
-  const current = await resolvePartialUpdateBaseRecord(command.date);
+  const current = await resolvePartialUpdateBaseRecord(command.date, options);
 
   if (!current) {
     dailyRecordWriteLogger.warn(`No record found for ${command.date}; partial update aborted`);
@@ -341,5 +355,13 @@ export const updatePartial = async (date: string, partialData: DailyRecordPatch)
   const result = await updatePartialDetailed(date, partialData);
   if (result.blockingError) {
     throw result.blockingError;
+  }
+  if (result.outcome === 'blocked' || isDailyRecordWriteBlockedResult(result)) {
+    throw new Error(
+      resolveApplicationOutcomeMessage(
+        result,
+        'La actualización quedó bloqueada por una validación de consistencia.'
+      )
+    );
   }
 };

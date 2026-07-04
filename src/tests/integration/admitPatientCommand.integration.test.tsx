@@ -8,7 +8,7 @@
  *      ↓ port.persistAdmission
  *   defaultDailyRecordAdmitPatientPort (services/daily-record)
  *      ↓ buildAdmitPatientPatch
- *   updatePartial (services/repositories) — mocked at the boundary
+ *   updatePartialDetailed (services/repositories) — mocked at the boundary
  *
  * The test mocks the repository write only (the lowest sensible boundary)
  * so every other layer runs the real code path: input validation, anon
@@ -33,6 +33,7 @@ const { updatePartialMock, useAuthMock, executeWriteAuditEventMock } = vi.hoiste
 
 vi.mock('@/services/repositories/dailyRecordRepositoryWriteService', () => ({
   updatePartial: updatePartialMock,
+  updatePartialDetailed: updatePartialMock,
 }));
 
 vi.mock('@/context/AuthContext', () => ({

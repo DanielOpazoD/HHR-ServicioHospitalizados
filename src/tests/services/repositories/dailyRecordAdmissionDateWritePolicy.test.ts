@@ -101,4 +101,66 @@ describe('dailyRecordAdmissionDateWritePolicy carryover episodes', () => {
       'La fecha no coincide con la primera aparición observada.'
     );
   });
+
+  it('does not compare a diagnosis patch against another bed with the same RUT', () => {
+    const mariaH5C2 = buildPatient('H5C2', {
+      patientName: 'Maria Nahoe Calderon',
+      rut: '12.957.666-9',
+      firstSeenDate: '2026-07-01',
+      admissionDate: '2026-07-01',
+    });
+    const mariaR3 = buildPatient('R3', {
+      patientName: 'Maria Nahoe Calderon',
+      rut: '12.957.666-9',
+      firstSeenDate: '2026-07-01',
+      admissionDate: '2026-07-02',
+      pathology: 'Diagnostico anterior',
+    });
+    const previous = buildRecord('2026-07-03', {
+      H5C2: mariaH5C2,
+      R3: mariaR3,
+    });
+    const next = buildRecord('2026-07-03', {
+      H5C2: mariaH5C2,
+      R3: {
+        ...mariaR3,
+        pathology: 'Diagnostico actualizado',
+      },
+    });
+
+    expect(() =>
+      assertAdmissionDatePersistencePolicy('2026-07-03', next, previous, {
+        changedPaths: ['beds.R3.pathology'],
+      })
+    ).not.toThrow();
+  });
+
+  it('does not let a non-bed handoff patch surface unrelated admission-date debt', () => {
+    const mariaH5C2 = buildPatient('H5C2', {
+      patientName: 'Maria Nahoe Calderon',
+      rut: '12.957.666-9',
+      firstSeenDate: '2026-07-01',
+      admissionDate: '2026-07-01',
+    });
+    const mariaR3 = buildPatient('R3', {
+      patientName: 'Maria Nahoe Calderon',
+      rut: '12.957.666-9',
+      firstSeenDate: '2026-07-01',
+      admissionDate: '2026-07-02',
+    });
+    const previous = buildRecord('2026-07-03', {
+      H5C2: mariaH5C2,
+      R3: mariaR3,
+    });
+    const next = {
+      ...previous,
+      handoffNoteDayShift: 'Entrega actualizada',
+    };
+
+    expect(() =>
+      assertAdmissionDatePersistencePolicy('2026-07-03', next, previous, {
+        changedPaths: ['handoffNoteDayShift'],
+      })
+    ).not.toThrow();
+  });
 });

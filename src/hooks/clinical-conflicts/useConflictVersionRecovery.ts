@@ -41,8 +41,15 @@ const resolveSnapshotListUnavailableReason = (
   error: unknown
 ): ConflictSnapshotRecoveryEvidence['unavailableReason'] => {
   const code = String((error as { code?: unknown })?.code || '').toLowerCase();
+  const message = String((error as { message?: unknown })?.message || '').toLowerCase();
   if (code.includes('permission-denied') || code.includes('permission_denied')) {
     return 'permission_denied';
+  }
+  if (
+    code.includes('failed-precondition') &&
+    (message.includes('index') || message.includes('requires an index'))
+  ) {
+    return 'query_index_missing';
   }
   return 'unknown';
 };
@@ -99,7 +106,6 @@ export const useConflictVersionRecovery = ({
         return;
       }
 
-      notifyError('No se pudieron cargar las versiones en conflicto.');
       setSnapshots([]);
       setSnapshotRecovery(
         nextSnapshotRecovery
@@ -107,12 +113,15 @@ export const useConflictVersionRecovery = ({
               ...nextSnapshotRecovery,
               unavailableReason: resolveSnapshotListUnavailableReason(snapshotsResult.reason),
             }
-          : null
+          : {
+              status: 'failed',
+              unavailableReason: resolveSnapshotListUnavailableReason(snapshotsResult.reason),
+            }
       );
     } finally {
       setLoading(false);
     }
-  }, [date, port, notifyError]);
+  }, [date, port]);
 
   const open = useCallback(() => {
     setIsOpen(true);

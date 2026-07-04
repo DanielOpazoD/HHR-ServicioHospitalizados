@@ -146,10 +146,17 @@ export const resolvePatchOutcomeFeedback = (
     return null;
   }
 
-  if (result.outcome === 'blocked') {
+  if (isDailyRecordWriteBlockedResult(result)) {
     return createSyncBlocked(
-      'Actualización bloqueada',
-      'No se encontró un registro local válido para aplicar el cambio.'
+      result.consistencyState === 'blocked_regression'
+        ? 'Protección de Datos'
+        : result.consistencyState === 'blocked_version_mismatch'
+          ? 'Versión de Datos Antigua'
+          : 'Actualización bloqueada',
+      resolveSyncConsistencyMessage(
+        result,
+        'La actualización quedó bloqueada por una validación de datos recientes.'
+      )
     );
   }
 
@@ -167,26 +174,22 @@ export const resolvePatchOutcomeFeedback = (
     );
   }
 
+  if (result.outcome === 'blocked') {
+    return createSyncBlocked(
+      'Actualización bloqueada',
+      resolveSyncConsistencyMessage(
+        result,
+        'No se encontró un registro local válido para aplicar el cambio.'
+      )
+    );
+  }
+
   if (result.consistencyState === 'unrecoverable') {
     return createSyncDegraded(
       'Cambio local sin sincronización',
       resolveSyncConsistencyMessage(
         result,
         'El cambio quedó guardado localmente, pero requiere revisión antes de quedar confirmado.'
-      )
-    );
-  }
-
-  if (isDailyRecordWriteBlockedResult(result)) {
-    return createSyncBlocked(
-      result.consistencyState === 'blocked_regression'
-        ? 'Protección de Datos'
-        : result.consistencyState === 'blocked_version_mismatch'
-          ? 'Versión de Datos Antigua'
-          : 'Fecha de Ingreso Bloqueada',
-      resolveSyncConsistencyMessage(
-        result,
-        'La actualización quedó bloqueada por una validación de datos recientes.'
       )
     );
   }

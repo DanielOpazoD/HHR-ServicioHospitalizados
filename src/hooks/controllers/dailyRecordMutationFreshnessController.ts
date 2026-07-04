@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { DailyRecord, DailyRecordPatch } from '@/application/shared/dailyRecordCoreContracts';
 import type { DailyRecordRepositoryPort } from '@/application/ports/dailyRecordPort';
+import type { PartialUpdateDailyRecordOptions } from '@/services/repositories/contracts/dailyRecordCommands';
 import {
   createDailyRecordQueryFn,
   getDailyRecordQueryKey,
@@ -47,13 +48,20 @@ export const saveDailyRecordWithCompatibility = async (
 export const patchDailyRecordWithCompatibility = async (
   dailyRecord: DailyRecordRepositoryPort,
   date: string,
-  partial: DailyRecordPatch
+  partial: DailyRecordPatch,
+  options?: PartialUpdateDailyRecordOptions
 ): Promise<UpdatePartialDailyRecordResult | null> => {
   if (typeof dailyRecord.updatePartialDetailed === 'function') {
-    return dailyRecord.updatePartialDetailed(date, partial);
+    return options
+      ? dailyRecord.updatePartialDetailed(date, partial, options)
+      : dailyRecord.updatePartialDetailed(date, partial);
   }
 
-  await dailyRecord.updatePartial(date, partial);
+  if (options) {
+    await dailyRecord.updatePartial(date, partial, options);
+  } else {
+    await dailyRecord.updatePartial(date, partial);
+  }
   return null;
 };
 

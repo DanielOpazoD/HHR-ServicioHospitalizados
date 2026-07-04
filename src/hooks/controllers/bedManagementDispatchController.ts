@@ -235,24 +235,12 @@ export const executeBedManagementAction = async ({
       return false;
     }
 
-    const shouldAuditAfterPatch = validatedAction.type === 'UPDATE_CUDYR_BATCH';
-
-    if (!shouldAuditAfterPatch) {
+    try {
+      await patchRecord(patch);
       try {
         auditActionIntent(validatedAction, currentRecord, bedAudit);
       } catch (error) {
         bedManagementDispatchLogger.error('Audit logging failed', error);
-      }
-    }
-
-    try {
-      await patchRecord(patch);
-      if (shouldAuditAfterPatch) {
-        try {
-          auditActionIntent(validatedAction, currentRecord, bedAudit);
-        } catch (error) {
-          bedManagementDispatchLogger.error('Audit logging failed', error);
-        }
       }
       return true;
     } catch (error) {

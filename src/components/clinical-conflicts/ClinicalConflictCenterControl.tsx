@@ -26,6 +26,7 @@ interface ClinicalConflictCenterControlProps {
   currentRecord?: DailyRecord | null;
   buttonTestId?: string;
   className?: string;
+  hideButtonLabel?: boolean;
 }
 
 const MODULE_TONE_CLASS: Record<ClinicalConflictModuleDescriptor['tone'], string> = {
@@ -275,6 +276,7 @@ export const ClinicalConflictCenterControl: React.FC<ClinicalConflictCenterContr
   currentRecord,
   buttonTestId = 'clinical-conflict-center-button',
   className,
+  hideButtonLabel = false,
 }) => {
   const recovery = useConflictVersionRecovery({ date, port });
   const centerModel = React.useMemo(
@@ -343,7 +345,7 @@ export const ClinicalConflictCenterControl: React.FC<ClinicalConflictCenterContr
         )}
       >
         <History size={14} />
-        <span className="hidden sm:inline">Conflictos</span>
+        {!hideButtonLabel && <span className="hidden sm:inline">Conflictos</span>}
         {recovery.snapshots.length > 0 && (
           <span className="ml-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">
             {recovery.snapshots.length}

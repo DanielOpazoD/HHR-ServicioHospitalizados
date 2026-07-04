@@ -60,12 +60,40 @@ describe('dailyRecordSyncNotificationController', () => {
           queuedForRetry: false,
           autoMerged: false,
           patchedFields: 1,
+          consistencyState: 'unrecoverable',
+          userSafeMessage: 'No se encontró un registro local válido para aplicar el cambio.',
         })
       )
     ).toEqual({
       channel: 'error',
       title: 'Actualización bloqueada',
       message: 'No se encontró un registro local válido para aplicar el cambio.',
+      state: 'blocked',
+      actionRequired: true,
+    });
+  });
+
+  it('surfaces the specific blocked patch reason before falling back to missing-base copy', () => {
+    expect(
+      resolvePatchOutcomeFeedback(
+        createUpdatePartialDailyRecordResult({
+          date: '2026-03-03',
+          outcome: 'blocked',
+          savedLocally: false,
+          updatedRemotely: false,
+          queuedForRetry: false,
+          autoMerged: false,
+          patchedFields: 1,
+          consistencyState: 'blocked_regression',
+          blockingReason: 'regression',
+          userSafeMessage:
+            'Se bloqueó una reducción sospechosa de texto clínico. Recarga antes de reintentar.',
+        })
+      )
+    ).toEqual({
+      channel: 'error',
+      title: 'Protección de Datos',
+      message: 'Se bloqueó una reducción sospechosa de texto clínico. Recarga antes de reintentar.',
       state: 'blocked',
       actionRequired: true,
     });

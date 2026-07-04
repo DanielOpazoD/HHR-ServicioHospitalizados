@@ -12,11 +12,19 @@ import type {
   AdmitPatientPort,
   AdmittedPatientSnapshot,
 } from '@/application/daily-record/commands/admitPatientCommand';
-import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
+import { updatePartialDetailed } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import type { DailyRecordPatch } from '@/services/contracts/dailyRecordServiceContracts';
 import { resolveClinicalEpisodeIdForAdmission } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
+import type { UpdatePartialDailyRecordResult } from '@/services/repositories/contracts/dailyRecordResults';
+import { isDailyRecordWriteBlockedResult } from '@/services/repositories/contracts/dailyRecordResults';
+import { resolveApplicationOutcomeMessage } from '@/shared/contracts/applicationOutcomeMessage';
+import type { PartialUpdateDailyRecordOptions } from '@/services/repositories/contracts/dailyRecordCommands';
 
-export type AdmitPatientPersistenceFn = (date: string, patch: DailyRecordPatch) => Promise<void>;
+export type AdmitPatientPersistenceFn = (
+  date: string,
+  patch: DailyRecordPatch,
+  options?: PartialUpdateDailyRecordOptions
+) => Promise<void | UpdatePartialDailyRecordResult>;
 
 export const buildAdmitPatientPatch = (input: AdmitPatientInput): DailyRecordPatch => {
   // Patch keys use computed string template paths; the strict
@@ -44,15 +52,41 @@ const buildSnapshotFromInput = (input: AdmitPatientInput): AdmittedPatientSnapsh
   recordDate: input.recordDate,
 });
 
+const assertAdmissionPersistenceAccepted = (
+  result: void | UpdatePartialDailyRecordResult
+): void => {
+  if (!result) {
+    return;
+  }
+
+  if (result.outcome === 'blocked' || isDailyRecordWriteBlockedResult(result)) {
+    throw (
+      result.blockingError ||
+      new Error(
+        resolveApplicationOutcomeMessage(
+          result,
+          'La admisión quedó bloqueada por una validación de consistencia.'
+        )
+      )
+    );
+  }
+};
+
 export const createDailyRecordAdmitPatientPort = (
-  persist: AdmitPatientPersistenceFn = updatePartial
+  persist: AdmitPatientPersistenceFn = updatePartialDetailed
 ): AdmitPatientPort => ({
   persistAdmission: async (input: AdmitPatientInput): Promise<AdmittedPatientSnapshot> => {
     const inputWithEpisodeId: AdmitPatientInput = {
       ...input,
       clinicalEpisodeId: resolveClinicalEpisodeIdForAdmission(input),
     };
-    await persist(inputWithEpisodeId.recordDate, buildAdmitPatientPatch(inputWithEpisodeId));
+    const patch = buildAdmitPatientPatch(inputWithEpisodeId);
+    const result = inputWithEpisodeId.baseRecord
+      ? await persist(inputWithEpisodeId.recordDate, patch, {
+          baseRecord: inputWithEpisodeId.baseRecord,
+        })
+      : await persist(inputWithEpisodeId.recordDate, patch);
+    assertAdmissionPersistenceAccepted(result);
     return buildSnapshotFromInput(inputWithEpisodeId);
   },
 });

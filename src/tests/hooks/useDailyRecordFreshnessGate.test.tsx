@@ -182,19 +182,22 @@ describe('daily record remote freshness gate', () => {
       await expect(mutationPromise).resolves.toBeDefined();
     });
 
-    expect(dailyRecord.updatePartialDetailed).toHaveBeenCalledWith(date, {
-      'beds.R1.status': PatientStatus.GRAVE,
-    });
-    expect(
-      queryClient.getQueryData<ReturnType<typeof createDailyRecordQueryResult>>(
-        getDailyRecordQueryKey(date)
-      )?.record?.beds.R1.pathology
-    ).toBe('Diagnostico Firebase vigente');
-    expect(
-      queryClient.getQueryData<ReturnType<typeof createDailyRecordQueryResult>>(
-        getDailyRecordQueryKey(date)
-      )?.record?.beds.R1.status
-    ).toBe(PatientStatus.GRAVE);
+    expect(dailyRecord.updatePartialDetailed).toHaveBeenCalledWith(
+      date,
+      {
+        'beds.R1.status': PatientStatus.GRAVE,
+      },
+      expect.any(Object)
+    );
+    const [, , baseOptions] = vi.mocked(dailyRecord.updatePartialDetailed).mock.calls[0] ?? [];
+    expect(baseOptions?.baseRecord?.lastUpdated).toBe('2026-05-16T10:30:00.000Z');
+    expect(baseOptions?.baseRecord?.beds.R1.pathology).toBe('Diagnostico Firebase vigente');
+    expect(baseOptions?.baseRecord?.beds.R1.status).toBe('');
+    const patchedRecord = queryClient.getQueryData<ReturnType<typeof createDailyRecordQueryResult>>(
+      getDailyRecordQueryKey(date)
+    )?.record;
+    expect(patchedRecord?.beds.R1.pathology).toBe('Diagnostico Firebase vigente');
+    expect(patchedRecord?.beds.R1.status).toBe(PatientStatus.GRAVE);
   });
 
   it('blocks the clinical patch when Firebase cannot be confirmed after stale resume', async () => {
@@ -345,8 +348,12 @@ describe('daily record remote freshness gate', () => {
       date,
       expect.objectContaining({
         'beds.R1.pathology': 'Diagnostico usuario despues de ver remoto',
-      })
+      }),
+      expect.any(Object)
     );
+    const [, , baseOptions] = vi.mocked(dailyRecord.updatePartialDetailed).mock.calls[0] ?? [];
+    expect(baseOptions?.baseRecord?.lastUpdated).toBe('2026-05-16T10:30:00.000Z');
+    expect(baseOptions?.baseRecord?.beds.R1.pathology).toBe('Diagnostico Firebase vigente');
   });
 
   it('requires a new remote confirmation when the previous freshness check is older than the threshold', async () => {
