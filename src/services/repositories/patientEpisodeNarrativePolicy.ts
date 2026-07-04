@@ -1,5 +1,5 @@
 import type { PatientData } from '@/services/contracts/patientServiceContracts';
-import { resolveClinicalEpisodeIdentifier } from '@/application/patient-flow/clinicalEpisode';
+import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
 
 const EPISODE_SCOPED_PATIENT_STRUCTURED_FIELDS = new Set([
   'clinicalEvents',
@@ -23,12 +23,15 @@ const resolveEpisodeTime = (patient: PatientData | undefined): string =>
 const resolvePersistedClinicalEpisodeId = (patient: PatientData | undefined): string =>
   normalizeEpisodeValue(patient?.clinicalEpisodeId);
 
+const isLegacyGeneratedEpisodeId = (value: string): boolean => value.startsWith('legacy_ep_');
+
 const resolveEpisodeTuple = (patient: PatientData | undefined): string => {
   if (!patient) return '';
   const rut = normalizeEpisodeValue(patient?.rut);
   const anchor = resolveEpisodeAnchor(patient);
   if (!rut || !anchor) return '';
-  return normalizeEpisodeValue(resolveClinicalEpisodeIdentifier(patient));
+  const time = resolveEpisodeTime(patient);
+  return normalizeEpisodeValue(buildClinicalEpisodeKey(rut, anchor, time));
 };
 
 const areSameRutEpisode = (
@@ -65,7 +68,15 @@ export const shouldPreserveLocalPatientNarrative = (
   const remoteClinicalEpisodeId = resolvePersistedClinicalEpisodeId(remotePatient);
   const localClinicalEpisodeId = resolvePersistedClinicalEpisodeId(localPatient);
   if (remoteClinicalEpisodeId && localClinicalEpisodeId) {
-    return remoteClinicalEpisodeId === localClinicalEpisodeId;
+    if (remoteClinicalEpisodeId === localClinicalEpisodeId) {
+      return true;
+    }
+    if (
+      !isLegacyGeneratedEpisodeId(remoteClinicalEpisodeId) &&
+      !isLegacyGeneratedEpisodeId(localClinicalEpisodeId)
+    ) {
+      return false;
+    }
   }
 
   const remoteRut = normalizeEpisodeValue(remotePatient.rut);
