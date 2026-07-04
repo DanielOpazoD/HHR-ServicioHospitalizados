@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { collectCiArtifactContractIssues } from '../../../scripts/ciArtifactContractSupport.mjs';
+
 const readText = (relativePath: string) =>
   fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
 
@@ -80,22 +82,136 @@ describe('CI workflow governance', () => {
 
   it('self-checks post-merge evidence before uploading the main artifact', () => {
     const workflow = readText('.github/workflows/ci-cd.yml');
+    const scripts = readPackageScripts();
+    const buildJob = workflow.slice(workflow.indexOf('build:'), workflow.indexOf('lighthouse-ci:'));
+    const summaryJob = workflow.slice(
+      workflow.indexOf('ci-strict-summary:'),
+      workflow.indexOf('postmerge-evidence:')
+    );
     const postmergeJob = workflow.slice(workflow.indexOf('postmerge-evidence:'));
+    const buildStep = buildJob.indexOf('npm run build');
+    const uploadDistStep = buildJob.indexOf('name: dist');
+    const artifactContractStep = postmergeJob.indexOf('npm run check:ci-artifact-contracts');
+    const availabilityStep = postmergeJob.indexOf('scripts/verify-github-run-artifact.mjs');
     const downloadDistStep = postmergeJob.indexOf('name: dist');
     const generateStep = postmergeJob.indexOf('npm run postmerge:evidence');
     const checkStep = postmergeJob.indexOf('npm run check:postmerge-evidence:strict');
     const uploadStep = postmergeJob.indexOf('name: postmerge-release-evidence');
 
+    expect(scripts['check:ci-artifact-contracts']).toBe(
+      'node scripts/check-ci-artifact-contracts.mjs'
+    );
+    expect(collectCiArtifactContractIssues(workflow)).toEqual([]);
+    expect(buildStep).toBeGreaterThanOrEqual(0);
+    expect(uploadDistStep).toBeGreaterThan(buildStep);
+    expect(summaryJob).not.toContain('actions/upload-artifact@v7');
     expect(postmergeJob).toContain('postmerge-evidence:');
     expect(postmergeJob).toContain(
       "if: github.event_name == 'push' && github.ref == 'refs/heads/main'"
     );
+    expect(postmergeJob).toContain('needs: [build, ci-strict-summary]');
+    expect(postmergeJob).toContain('actions: read');
     expect(postmergeJob).toContain('uses: actions/download-artifact@v7');
+    expect(artifactContractStep).toBeGreaterThanOrEqual(0);
+    expect(availabilityStep).toBeGreaterThan(artifactContractStep);
     expect(downloadDistStep).toBeGreaterThanOrEqual(0);
+    expect(downloadDistStep).toBeGreaterThan(availabilityStep);
     expect(generateStep).toBeGreaterThanOrEqual(0);
     expect(generateStep).toBeGreaterThan(downloadDistStep);
     expect(checkStep).toBeGreaterThan(generateStep);
     expect(uploadStep).toBeGreaterThan(checkStep);
+  });
+
+  it('rejects dist artifacts uploaded by jobs that did not build production assets', () => {
+    const brokenWorkflow = `
+jobs:
+  build:
+    steps:
+      - name: Build production bundle
+        run: npm run build
+  ci-strict-summary:
+    needs: [build]
+    steps:
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+  postmerge-evidence:
+    needs: [ci-strict-summary]
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+`;
+
+    expect(collectCiArtifactContractIssues(brokenWorkflow)).toContain(
+      'ci-strict-summary: uploads artifact "dist" without running npm run build earlier in the same job.'
+    );
+  });
+
+  it('does not read artifact fields across unnamed step boundaries', () => {
+    const brokenWorkflow = `
+jobs:
+  build:
+    steps:
+      - name: Build production bundle
+        run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+      - run: echo "unnamed follow-up step"
+        with:
+          name: wrong-artifact-name
+          path: distribution/
+  postmerge-evidence:
+    needs: [build]
+    steps:
+      - name: Validate CI artifact contract
+        run: npm run check:ci-artifact-contracts
+      - name: Verify build artifact availability
+        run: node scripts/verify-github-run-artifact.mjs --artifact dist --producer build-budget
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+`;
+
+    expect(collectCiArtifactContractIssues(brokenWorkflow)).toEqual([]);
+  });
+
+  it('requires dist artifacts to use an exact dist path boundary', () => {
+    const brokenWorkflow = `
+jobs:
+  build:
+    steps:
+      - name: Build production bundle
+        run: npm run build
+      - name: Upload production build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: distribution/
+  postmerge-evidence:
+    needs: [build]
+    steps:
+      - name: Validate CI artifact contract
+        run: npm run check:ci-artifact-contracts
+      - name: Verify build artifact availability
+        run: node scripts/verify-github-run-artifact.mjs --artifact dist --producer build-budget
+      - name: Download build artifacts
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist
+`;
+
+    expect(collectCiArtifactContractIssues(brokenWorkflow)).toContain(
+      'build: uploads artifact "dist" from "distribution/"; expected dist/.'
+    );
   });
 
   it('keeps Firefox compatibility out of PR CI unless Firefox becomes a supported browser', () => {

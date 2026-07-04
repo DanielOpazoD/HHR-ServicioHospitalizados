@@ -16,6 +16,7 @@ describe('postMergeEvidenceSupport', () => {
       'operational-health',
       'clinical-release-validation',
       'clinical-release-signoff',
+      'release-confidence-matrix',
       'release-readiness-scorecard',
       'maintenance-debt-scorecard',
       'report-freshness-strict',

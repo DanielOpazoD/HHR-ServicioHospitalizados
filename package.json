@@ -139,6 +139,7 @@
     "check:bundle-risk-ledger": "node scripts/check-bundle-risk-ledger.mjs",
     "check:runtime-asset-margin": "node scripts/check-runtime-asset-margin.mjs",
     "check:chunk-graph": "node scripts/check-chunk-graph.mjs",
+    "check:ci-artifact-contracts": "node scripts/check-ci-artifact-contracts.mjs",
     "check:ci-risk-pack-membership": "node scripts/check-ci-risk-pack-membership.mjs",
     "check:flow-performance-budget": "node scripts/check-flow-performance-budget.mjs && node scripts/report-flow-performance-budget.mjs",
     "report:dependency-debt": "node scripts/report-folder-dependency-debt.mjs",
