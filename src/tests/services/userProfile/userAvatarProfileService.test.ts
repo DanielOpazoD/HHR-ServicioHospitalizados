@@ -13,6 +13,9 @@ const repository = {
 const storageRef = { fullPath: 'user-avatars/user-1/avatar' };
 const storageRuntime = {
   getStorage: vi.fn(),
+  loadStorageModule: vi.fn(),
+};
+const storageModule = {
   ref: vi.fn(),
   uploadBytes: vi.fn(),
   getDownloadURL: vi.fn(),
@@ -28,12 +31,13 @@ describe('userAvatarProfileService', () => {
     localStorage.clear();
     repository.getDoc.mockResolvedValue(null);
     storageRuntime.getStorage.mockResolvedValue({ bucket: 'test' });
-    storageRuntime.ref.mockReturnValue(storageRef);
-    storageRuntime.uploadBytes.mockResolvedValue(undefined);
-    storageRuntime.getDownloadURL.mockResolvedValue(
+    storageRuntime.loadStorageModule.mockResolvedValue(storageModule);
+    storageModule.ref.mockReturnValue(storageRef);
+    storageModule.uploadBytes.mockResolvedValue(undefined);
+    storageModule.getDownloadURL.mockResolvedValue(
       'https://storage.test/user-avatars/user-1/avatar?token=abc'
     );
-    storageRuntime.deleteObject.mockResolvedValue(undefined);
+    storageModule.deleteObject.mockResolvedValue(undefined);
   });
 
   it('uploads an avatar to a stable user-owned path and stores profile metadata in user settings', async () => {
@@ -49,11 +53,11 @@ describe('userAvatarProfileService', () => {
       file: createImageFile(),
     });
 
-    expect(storageRuntime.ref).toHaveBeenCalledWith(
+    expect(storageModule.ref).toHaveBeenCalledWith(
       { bucket: 'test' },
       'user-avatars/user-1/avatar'
     );
-    expect(storageRuntime.uploadBytes).toHaveBeenCalledWith(storageRef, expect.any(File), {
+    expect(storageModule.uploadBytes).toHaveBeenCalledWith(storageRef, expect.any(File), {
       contentType: 'image/png',
       customMetadata: {
         module: 'user-profile',
@@ -118,12 +122,12 @@ describe('userAvatarProfileService', () => {
       service.uploadAvatar({ uid: 'user-1', email: 'doctor@hospital.cl', file })
     ).rejects.toThrow('Solo se permiten imágenes');
 
-    expect(storageRuntime.uploadBytes).not.toHaveBeenCalled();
+    expect(storageRuntime.loadStorageModule).not.toHaveBeenCalled();
     expect(repository.setDoc).not.toHaveBeenCalled();
   });
 
   it('falls back to synchronized user settings when Storage rules deny the avatar path', async () => {
-    storageRuntime.uploadBytes.mockRejectedValueOnce({ code: 'storage/unauthorized' });
+    storageModule.uploadBytes.mockRejectedValueOnce({ code: 'storage/unauthorized' });
     const service = createUserAvatarProfileService({
       repository,
       storageRuntime,
@@ -136,7 +140,7 @@ describe('userAvatarProfileService', () => {
       file: createImageFile(),
     });
 
-    expect(storageRuntime.getDownloadURL).not.toHaveBeenCalled();
+    expect(storageModule.getDownloadURL).not.toHaveBeenCalled();
     expect(profile.photoURL).toMatch(/^data:image\/png;base64,/);
     expect(profile.storagePath).toBe('firestore:user-avatar:user-1');
     expect(repository.setDoc).toHaveBeenCalledWith(
@@ -169,11 +173,11 @@ describe('userAvatarProfileService', () => {
 
     await service.removeAvatar(' user-1 ');
 
-    expect(storageRuntime.ref).toHaveBeenCalledWith(
+    expect(storageModule.ref).toHaveBeenCalledWith(
       { bucket: 'test' },
       'user-avatars/user-1/avatar'
     );
-    expect(storageRuntime.deleteObject).toHaveBeenCalledWith(storageRef);
+    expect(storageModule.deleteObject).toHaveBeenCalledWith(storageRef);
     expect(repository.setDoc).toHaveBeenCalledWith(
       'userSettings',
       'user-1',
@@ -197,7 +201,7 @@ describe('userAvatarProfileService', () => {
 
     await service.removeAvatar('user-1');
 
-    expect(storageRuntime.deleteObject).not.toHaveBeenCalled();
+    expect(storageRuntime.loadStorageModule).not.toHaveBeenCalled();
     expect(repository.setDoc).toHaveBeenCalledWith(
       'userSettings',
       'user-1',

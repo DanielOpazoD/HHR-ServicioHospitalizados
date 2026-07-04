@@ -10,22 +10,28 @@ import { useAuth } from '@/context/AuthContext';
 import { NavbarMenu } from './NavbarMenu';
 import { NavbarTabs } from './NavbarTabs';
 import { UserMenu } from './UserMenu';
-import { UserAvatarModal } from './UserAvatarModal';
 import { SyncStatusIndicator } from './SyncStatusIndicator';
 import { getVisibleAppModules } from '@/shared/access/operationalAccessPolicy';
 import { useUserAvatarProfile } from '@/hooks/useUserAvatarProfile';
 import { useNotification } from '@/context/UIContext';
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
 import {
   buildUserAvatarFeedback,
   resolveVisibleUserAvatarUrl,
-} from '@/components/layout/userAvatarImageController';
+} from '@/components/layout/userAvatarPresentationController';
 
 import { ModuleType } from '@/constants/navigationConfig';
 type ViewMode = 'REGISTER' | 'ANALYTICS';
 
-const ReminderBadge = React.lazy(() =>
+const ReminderBadge = lazyWithRetry(() =>
   import('@/components/reminders/ReminderBadge').then(module => ({
     default: module.ReminderBadge,
+  }))
+);
+
+const UserAvatarModal = lazyWithRetry(() =>
+  import('./UserAvatarModal').then(module => ({
+    default: module.UserAvatarModal,
   }))
 );
 
@@ -75,10 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { success, error: notifyError } = useNotification();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const avatarUrl = resolveVisibleUserAvatarUrl(
-    userAvatar.profile?.photoURL,
-    currentUser?.photoURL
-  );
+  const avatarUrl = resolveVisibleUserAvatarUrl(userAvatar.profile?.photoURL);
   const runtimeIndicatorSlot = hideRuntimeIndicators ? (
     <div className="hidden sm:flex items-center gap-3 invisible" aria-hidden="true">
       <div className="h-8 w-[88px] rounded-full" />
@@ -184,38 +187,40 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
       </div>
-      {userEmail && currentUser?.uid && (
-        <UserAvatarModal
-          isOpen={isAvatarModalOpen}
-          userEmail={userEmail}
-          avatarUrl={avatarUrl}
-          isSaving={userAvatar.isSaving}
-          onClose={() => setIsAvatarModalOpen(false)}
-          onUpload={async file => {
-            try {
-              await userAvatar.uploadAvatar(file);
-              const feedback = buildUserAvatarFeedback('saved');
-              success(feedback.title, feedback.message);
-            } catch (error) {
-              const message =
-                error instanceof Error ? error.message : 'No se pudo guardar la foto de perfil.';
-              notifyError('No se pudo guardar la foto', message);
-              throw error;
-            }
-          }}
-          onRemove={async () => {
-            try {
-              await userAvatar.removeAvatar();
-              const feedback = buildUserAvatarFeedback('removed');
-              success(feedback.title, feedback.message);
-            } catch (error) {
-              const message =
-                error instanceof Error ? error.message : 'No se pudo eliminar la foto de perfil.';
-              notifyError('No se pudo eliminar la foto', message);
-              throw error;
-            }
-          }}
-        />
+      {userEmail && currentUser?.uid && isAvatarModalOpen && (
+        <React.Suspense fallback={null}>
+          <UserAvatarModal
+            isOpen={isAvatarModalOpen}
+            userEmail={userEmail}
+            avatarUrl={avatarUrl}
+            isSaving={userAvatar.isSaving}
+            onClose={() => setIsAvatarModalOpen(false)}
+            onUpload={async file => {
+              try {
+                await userAvatar.uploadAvatar(file);
+                const feedback = buildUserAvatarFeedback('saved');
+                success(feedback.title, feedback.message);
+              } catch (error) {
+                const message =
+                  error instanceof Error ? error.message : 'No se pudo guardar la foto de perfil.';
+                notifyError('No se pudo guardar la foto', message);
+                throw error;
+              }
+            }}
+            onRemove={async () => {
+              try {
+                await userAvatar.removeAvatar();
+                const feedback = buildUserAvatarFeedback('removed');
+                success(feedback.title, feedback.message);
+              } catch (error) {
+                const message =
+                  error instanceof Error ? error.message : 'No se pudo eliminar la foto de perfil.';
+                notifyError('No se pudo eliminar la foto', message);
+                throw error;
+              }
+            }}
+          />
+        </React.Suspense>
       )}
     </nav>
   );

@@ -6,6 +6,21 @@ import { chunkForModule } from '../../../scripts/config/chunkingPolicy';
 const readSource = (relativePath: string): string =>
   fs.readFileSync(path.resolve(process.cwd(), relativePath), 'utf8');
 
+const assertDynamicBoundary = ({
+  sourcePath,
+  forbiddenStaticImport,
+  requiredDynamicImport,
+}: {
+  sourcePath: string;
+  forbiddenStaticImport: RegExp;
+  requiredDynamicImport: string;
+}) => {
+  const source = readSource(sourcePath);
+
+  expect(source, sourcePath).not.toMatch(forbiddenStaticImport);
+  expect(source, sourcePath).toContain(requiredDynamicImport);
+};
+
 const directAuditWriterImportPattern =
   /import\s+\{[\s\S]*executeWriteAuditEvent[\s\S]*\}\s+from ['"][^'"]*application\/audit\/writeAuditEventUseCase(?:\.ts)?['"]/;
 
@@ -116,6 +131,92 @@ describe('chunkingPolicy', () => {
       /import\s+\{[^}]*ReminderBadge[^}]*\}\s+from ['"]@\/components\/reminders\/ReminderBadge['"]/
     );
     expect(navbarSource).toContain("import('@/components/reminders/ReminderBadge')");
+  });
+
+  it('keeps user avatar editing modal out of the static authenticated shell import graph', () => {
+    const navbarSource = readSource('src/components/layout/Navbar.tsx');
+
+    expect(navbarSource).not.toMatch(
+      /import\s+\{[^}]*UserAvatarModal[^}]*\}\s+from ['"]\.\/UserAvatarModal['"]/
+    );
+    expect(navbarSource).toContain("import('./UserAvatarModal')");
+    expect(navbarSource).toContain("from '@/utils/lazyWithRetry'");
+  });
+
+  it('keeps user avatar image processing helpers out of the static authenticated shell import graph', () => {
+    const navbarSource = readSource('src/components/layout/Navbar.tsx');
+
+    expect(navbarSource).not.toContain('@/components/layout/userAvatarImageController');
+    expect(navbarSource).toContain('@/components/layout/userAvatarPresentationController');
+  });
+
+  it.each([
+    {
+      label: 'user avatar remote profile service',
+      sourcePath: 'src/hooks/useUserAvatarProfile.ts',
+      forbiddenStaticImport: /from ['"]@\/services\/user-profile\/userAvatarProfileService['"]/,
+      requiredDynamicImport: "import('@/services/user-profile/userAvatarProfileService')",
+    },
+    {
+      label: 'census email delivery use cases',
+      sourcePath: 'src/hooks/useCensusEmailDeliveryActions.ts',
+      forbiddenStaticImport: /from ['"]@\/application\/census-email\/sendCensusEmailUseCases['"]/,
+      requiredDynamicImport: "import('@/application/census-email/sendCensusEmailUseCases')",
+    },
+    {
+      label: 'DateStrip SaveDropdown',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport: /from ['"]\.\/date-strip\/actions\/SaveDropdown['"]/,
+      requiredDynamicImport: "import('./date-strip/actions/SaveDropdown')",
+    },
+    {
+      label: 'DateStrip HandoffSaveDropdown',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport: /from ['"]\.\/date-strip\/actions\/HandoffSaveDropdown['"]/,
+      requiredDynamicImport: "import('./date-strip/actions/HandoffSaveDropdown')",
+    },
+    {
+      label: 'DateStrip EmailDropdown',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport: /from ['"]\.\/date-strip\/actions\/EmailDropdown['"]/,
+      requiredDynamicImport: "import('./date-strip/actions/EmailDropdown')",
+    },
+    {
+      label: 'DateStrip PdfButtons',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport: /from ['"]\.\/date-strip\/actions\/PdfButtons['"]/,
+      requiredDynamicImport: "import('./date-strip/actions/PdfButtons')",
+    },
+    {
+      label: 'DateStrip quick actions',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport:
+        /from ['"]@\/components\/layout\/date-strip\/DateStripQuickActions['"]/,
+      requiredDynamicImport: "import('@/components/layout/date-strip/DateStripQuickActions')",
+    },
+    {
+      label: 'DateStrip bookmark toggle',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport:
+        /from ['"]@\/components\/layout\/date-strip\/DateStripBookmarkToggle['"]/,
+      requiredDynamicImport: "import('@/components/layout/date-strip/DateStripBookmarkToggle')",
+    },
+    {
+      label: 'DateStrip year navigator',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport:
+        /from ['"]@\/components\/layout\/date-strip\/DateStripYearNavigator['"]/,
+      requiredDynamicImport: "import('@/components/layout/date-strip/DateStripYearNavigator')",
+    },
+    {
+      label: 'DateStrip month navigator',
+      sourcePath: 'src/components/layout/DateStrip.tsx',
+      forbiddenStaticImport:
+        /from ['"]@\/components\/layout\/date-strip\/DateStripMonthNavigator['"]/,
+      requiredDynamicImport: "import('@/components/layout/date-strip/DateStripMonthNavigator')",
+    },
+  ])('keeps $label out of the static shell import graph', boundary => {
+    assertDynamicBoundary(boundary);
   });
 
   it('keeps authenticated shell runtime off the hooks barrel to avoid pulling feature hooks into startup', () => {

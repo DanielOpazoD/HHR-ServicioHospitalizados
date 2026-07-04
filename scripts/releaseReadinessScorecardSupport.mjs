@@ -65,6 +65,11 @@ const statusFrom = (condition, okSummary, degradedSummary) => ({
 
 const toKb = bytes => `${(bytes / 1024).toFixed(1)} KB`;
 
+const advisoryBuildAssetStatuses = new Set(['ok', 'near-limit']);
+
+const isProblematicBuildAsset = asset =>
+  !advisoryBuildAssetStatuses.has(String(asset?.status || 'unknown'));
+
 const formatBuildAssetHotspot = asset => {
   if (!asset) return null;
 
@@ -86,7 +91,7 @@ const buildReleaseHotspots = operationalHealth => {
     ? operationalHealth.buildAssets.largestAssets
     : [];
   const topAssets = buildAssets.slice(0, 5);
-  const hasProblematicAsset = topAssets.some(asset => asset?.status && asset.status !== 'ok');
+  const hasProblematicAsset = topAssets.some(isProblematicBuildAsset);
 
   return {
     status: hasProblematicAsset ? 'degraded' : 'ok',
@@ -162,7 +167,7 @@ export const buildReleaseReadinessScorecard = root => {
         : [];
   let releaseHotspots = null;
   if (operationalHealth) {
-    const bundleOk = currentBuildAssets.every(asset => asset?.status === 'ok');
+    const bundleOk = currentBuildAssets.every(asset => !isProblematicBuildAsset(asset));
     const flowOk = operationalHealth.flowPerformance?.status === 'passing';
     const frontendStartupOk = operationalHealth.frontendStartup?.status === 'ok';
     indicators.push({

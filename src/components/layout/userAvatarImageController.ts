@@ -9,8 +9,6 @@ export interface AvatarCropRect {
   sourceSize: number;
 }
 
-export type UserAvatarFeedbackKind = 'saved' | 'removed';
-
 const AVATAR_OUTPUT_SIZE = 512;
 
 export const calculateCenteredAvatarCrop = ({
@@ -24,22 +22,6 @@ export const calculateCenteredAvatarCrop = ({
     sourceSize,
   };
 };
-
-export const buildUserAvatarFeedback = (kind: UserAvatarFeedbackKind) =>
-  kind === 'saved'
-    ? {
-        title: 'Foto de perfil actualizada',
-        message: 'Tu foto quedó sincronizada para este usuario.',
-      }
-    : {
-        title: 'Foto de perfil eliminada',
-        message: 'Se restauró la visualización por defecto.',
-      };
-
-export const resolveVisibleUserAvatarUrl = (
-  inAppAvatarUrl?: string | null,
-  _providerAvatarUrl?: string | null
-): string | null => inAppAvatarUrl || null;
 
 const loadImage = async (objectUrl: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
