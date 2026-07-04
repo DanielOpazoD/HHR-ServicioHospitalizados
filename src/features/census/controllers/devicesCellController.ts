@@ -2,6 +2,7 @@ import type { DeviceDetails, DeviceInstance } from '@/types/domain/devices';
 import { VVP_DEVICE_KEYS } from '@/constants/clinicalDeviceConstants';
 import {
   buildDeviceHistoryTimestamp,
+  matchesDeviceHistoryOwner,
   type DeviceHistoryOwner,
   resolveActiveDeviceTypesFromHistory,
   syncDeviceHistoryForDetails,
@@ -161,9 +162,11 @@ const resolveCanonicalHistory = ({
 
 const applyDeviceRenameToHistory = ({
   history,
+  owner,
   renamedDevice,
 }: {
   history: DeviceInstance[];
+  owner?: DeviceHistoryOwner;
   renamedDevice?: { from: string; to: string } | null;
 }): DeviceInstance[] => {
   if (!renamedDevice || !renamedDevice.from || !renamedDevice.to) {
@@ -171,7 +174,9 @@ const applyDeviceRenameToHistory = ({
   }
 
   return history.map(item =>
-    item.type === renamedDevice.from ? { ...item, type: renamedDevice.to } : item
+    item.type === renamedDevice.from && matchesDeviceHistoryOwner(item, owner)
+      ? { ...item, type: renamedDevice.to }
+      : item
   );
 };
 
@@ -235,6 +240,7 @@ export const buildDeviceBundleChangeResult = ({
 }: BuildDeviceBundleChangeResultParams): Required<DevicesCellChangeResult> => {
   const renamedHistory = applyDeviceRenameToHistory({
     history: previousHistory,
+    owner,
     renamedDevice,
   });
   const previousDevicesForSelection = renamedDevice

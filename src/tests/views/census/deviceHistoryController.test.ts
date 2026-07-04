@@ -107,10 +107,9 @@ describe('deviceHistoryController', () => {
     });
   });
 
-  it('resolves stable device history owner from episode identity before bed identity', () => {
+  it('resolves stable device history owner from episode and patient identity', () => {
     expect(
       resolveDeviceHistoryOwner({
-        bedId: 'R1',
         clinicalEpisodeId: 'episode-current',
         rut: '22.222.222-2',
         patientName: 'Paciente Actual',

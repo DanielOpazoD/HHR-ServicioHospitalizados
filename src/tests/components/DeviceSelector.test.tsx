@@ -357,5 +357,46 @@ describe('DeviceSelector', () => {
         }
       );
     });
+
+    it('blocks renaming a custom device to another active device name', () => {
+      render(
+        <DeviceSelector
+          devices={['CVC', 'drenaje pleural izquierdo']}
+          deviceDetails={{
+            CVC: {
+              installationDate: '2026-02-15',
+              note: 'central',
+            },
+            'drenaje pleural izquierdo': {
+              installationDate: '2026-02-16',
+            },
+          }}
+          onChange={mockOnChange}
+          onDetailsChange={mockOnDetailsChange}
+          onConfigChange={mockOnConfigChange}
+          disabled={false}
+          currentDate="2026-02-17"
+        />
+      );
+
+      const clickableContainer = document.querySelector('.cursor-pointer');
+      expect(clickableContainer).toBeTruthy();
+      if (!clickableContainer) {
+        throw new Error('Clickable container not found');
+      }
+      fireEvent.click(clickableContainer);
+
+      const configureButtons = screen.getAllByTitle('Configurar');
+      fireEvent.click(configureButtons[configureButtons.length - 1]);
+      const nameInput = screen.getByLabelText('Nombre del dispositivo');
+      fireEvent.change(nameInput, { target: { value: 'CVC' } });
+
+      expect(screen.getByText('Ya existe un dispositivo activo con ese nombre.')).toBeVisible();
+      const saveButton = screen.getByText('Confirmar e Instalar');
+      expect(saveButton).toBeDisabled();
+      fireEvent.click(saveButton);
+
+      expect(mockOnConfigChange).not.toHaveBeenCalled();
+    });
   });
 });

@@ -229,4 +229,66 @@ describe('devicesCellController', () => {
     ]);
     expect(result.nextHistory.some(item => item.id === 'should-not-create')).toBe(false);
   });
+
+  it('renames custom device history only for the current clinical owner', () => {
+    const result = buildDeviceBundleChangeResult({
+      previousDevices: ['drenaje pleural izquierdo'],
+      nextDevices: ['drenaje pleural'],
+      nextDetails: {
+        'drenaje pleural': {
+          installationDate: '2026-02-14',
+          note: 'con oscilación',
+        },
+      },
+      previousHistory: [
+        {
+          id: 'current-history',
+          type: 'drenaje pleural izquierdo',
+          status: 'Active',
+          installationDate: '2026-02-14',
+          clinicalEpisodeId: 'episode-current',
+          patientRut: '12.345.678-9',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+        {
+          id: 'other-episode-history',
+          type: 'drenaje pleural izquierdo',
+          status: 'Active',
+          installationDate: '2026-02-10',
+          clinicalEpisodeId: 'episode-other',
+          patientRut: '98.765.432-1',
+          createdAt: 2,
+          updatedAt: 2,
+        },
+        {
+          id: 'legacy-unowned-history',
+          type: 'drenaje pleural izquierdo',
+          status: 'Active',
+          installationDate: '2026-02-11',
+          createdAt: 3,
+          updatedAt: 3,
+        },
+      ],
+      owner: { clinicalEpisodeId: 'episode-current', patientRut: '12.345.678-9' },
+      renamedDevice: {
+        from: 'drenaje pleural izquierdo',
+        to: 'drenaje pleural',
+      },
+      dateProvider: () => new Date('2026-02-15T06:00:00'),
+      createId: vi.fn(() => 'should-not-create'),
+    });
+
+    expect(result.nextHistory).toEqual([
+      expect.objectContaining({
+        id: 'current-history',
+        type: 'drenaje pleural',
+        clinicalEpisodeId: 'episode-current',
+        patientRut: '12.345.678-9',
+      }),
+    ]);
+    expect(result.nextHistory.map(item => item.id)).not.toContain('other-episode-history');
+    expect(result.nextHistory.map(item => item.id)).not.toContain('legacy-unowned-history');
+    expect(result.nextHistory.some(item => item.id === 'should-not-create')).toBe(false);
+  });
 });

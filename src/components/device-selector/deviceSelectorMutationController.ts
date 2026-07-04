@@ -86,8 +86,23 @@ export const buildDeviceConfigMutation = ({
   const sanitizedInfo = { ...info };
   delete sanitizedInfo.removalDate;
   const resolvedDeviceName = (nextDeviceName || operatedDevice).trim();
+  const collidesWithAnotherDevice = normalizedDevices.some(
+    device => device !== operatedDevice && device === resolvedDeviceName
+  );
+  if (pendingAddition && (!resolvedDeviceName || collidesWithAnotherDevice)) {
+    return {
+      operatedDevice,
+      renamedDevice: null,
+      nextDevices: null,
+      nextDetails: null,
+    };
+  }
+
   const isRename = Boolean(
-    editingDevice && resolvedDeviceName && resolvedDeviceName !== operatedDevice
+    editingDevice &&
+    resolvedDeviceName &&
+    resolvedDeviceName !== operatedDevice &&
+    !collidesWithAnotherDevice
   );
   const nextDetails = { ...deviceDetails };
 
@@ -118,7 +133,10 @@ export const renameCustomDeviceBundle = ({
   history,
 }: RenameCustomDeviceBundleParams): RenameCustomDeviceBundleResult => {
   const trimmedNextDevice = nextDevice.trim();
-  if (!trimmedNextDevice || trimmedNextDevice === previousDevice) {
+  const collidesWithAnotherDevice = normalizedDevices.some(
+    device => device !== previousDevice && device === trimmedNextDevice
+  );
+  if (!trimmedNextDevice || trimmedNextDevice === previousDevice || collidesWithAnotherDevice) {
     return {
       nextDevices: normalizedDevices,
       nextDetails: deviceDetails,

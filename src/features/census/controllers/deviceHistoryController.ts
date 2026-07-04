@@ -77,7 +77,10 @@ export const resolveDeviceHistoryOwner = ({
 const hasDeviceHistoryOwner = (owner?: DeviceHistoryOwner): boolean =>
   Boolean(owner?.clinicalEpisodeId || owner?.patientRut);
 
-const matchesDeviceHistoryOwner = (item: DeviceInstance, owner?: DeviceHistoryOwner): boolean => {
+export const matchesDeviceHistoryOwner = (
+  item: DeviceInstance,
+  owner?: DeviceHistoryOwner
+): boolean => {
   if (!hasDeviceHistoryOwner(owner)) {
     return true;
   }

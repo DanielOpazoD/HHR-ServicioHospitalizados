@@ -349,6 +349,7 @@ export const DeviceSelector: React.FC<DeviceSelectorProps> = ({
           device={editingDevice || pendingAddition || ''}
           deviceInfo={pendingAddition ? {} : draftDetails[editingDevice || ''] || {}}
           currentDate={currentDate}
+          reservedDeviceNames={normalizedDevices.filter(device => device !== editingDevice)}
           onSave={handleDeviceConfigSave}
           onClose={() => {
             setEditingDevice(null);
