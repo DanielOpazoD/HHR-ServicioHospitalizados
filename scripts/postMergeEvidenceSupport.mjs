@@ -4,6 +4,7 @@ export const POST_MERGE_EVIDENCE_COMMANDS = [
   { name: 'operational-health', command: 'npm run report:operational-health' },
   { name: 'clinical-release-validation', command: 'npm run report:clinical-release-validation' },
   { name: 'clinical-release-signoff', command: 'npm run report:clinical-release-signoff' },
+  { name: 'release-confidence-matrix', command: 'npm run report:release-confidence-matrix' },
   { name: 'release-readiness-scorecard', command: 'npm run report:release-readiness-scorecard' },
   { name: 'maintenance-debt-scorecard', command: 'npm run report:maintenance-debt-scorecard' },
   { name: 'report-freshness-strict', command: 'npm run check:report-freshness:strict' },
