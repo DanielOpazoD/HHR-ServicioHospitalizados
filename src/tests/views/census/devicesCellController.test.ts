@@ -370,4 +370,68 @@ describe('devicesCellController', () => {
       expect(result.nextHistory.map(item => item.patientRut)).not.toContain('11.111.111-1');
     }
   );
+
+  it('preserves DMI history when the same clinical episode returns to a previous bed', () => {
+    const result = buildDeviceBundleChangeResult({
+      previousDevices: ['CVC'],
+      nextDevices: ['CVC', 'VVP#1'],
+      nextDetails: {
+        CVC: { installationDate: '2026-07-01', note: 'instalado antes del traslado interno' },
+        'VVP#1': { installationDate: '2026-07-03' },
+      },
+      previousHistory: [
+        {
+          id: 'returning-cvc',
+          type: 'CVC',
+          installationDate: '2026-07-01',
+          note: 'instalado antes del traslado interno',
+          status: 'Active',
+          clinicalEpisodeId: 'episode-paciente-x',
+          patientRut: '11.111.111-1',
+          patientName: 'Paciente X',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+        {
+          id: 'other-patient-cup',
+          type: 'CUP',
+          installationDate: '2026-07-02',
+          status: 'Active',
+          clinicalEpisodeId: 'episode-paciente-y',
+          patientRut: '22.222.222-2',
+          patientName: 'Paciente Y',
+          createdAt: 2,
+          updatedAt: 2,
+        },
+      ],
+      owner: {
+        clinicalEpisodeId: 'episode-paciente-x',
+        patientRut: '11.111.111-1',
+        patientName: 'Paciente X',
+      },
+      dateProvider: () => new Date('2026-07-03T10:00:00'),
+      createId: vi.fn(() => 'returning-vvp'),
+    });
+
+    expect(result.nextDevices).toEqual(['CVC', 'VVP#1']);
+    expect(result.nextHistory).toEqual([
+      expect.objectContaining({
+        id: 'returning-cvc',
+        type: 'CVC',
+        status: 'Active',
+        clinicalEpisodeId: 'episode-paciente-x',
+        patientRut: '11.111.111-1',
+        patientName: 'Paciente X',
+      }),
+      expect.objectContaining({
+        id: 'returning-vvp',
+        type: 'VVP#1',
+        status: 'Active',
+        clinicalEpisodeId: 'episode-paciente-x',
+        patientRut: '11.111.111-1',
+        patientName: 'Paciente X',
+      }),
+    ]);
+    expect(result.nextHistory.map(item => item.id)).not.toContain('other-patient-cup');
+  });
 });
