@@ -8,6 +8,38 @@ import {
 import type { DeviceInstance } from '@/types/domain/devices';
 
 describe('devicesCellController', () => {
+  const previousPatientResidueHistory: DeviceInstance[] = [
+    {
+      id: 'old-active-cvc',
+      type: 'CVC',
+      installationDate: '2026-07-01',
+      status: 'Active',
+      clinicalEpisodeId: 'episode-paciente-x',
+      patientRut: '11.111.111-1',
+      patientName: 'Paciente X',
+      createdAt: 1,
+      updatedAt: 1,
+    },
+    {
+      id: 'old-removed-cup',
+      type: 'CUP',
+      installationDate: '2026-07-01',
+      removalDate: '2026-07-02',
+      status: 'Removed',
+      clinicalEpisodeId: 'episode-paciente-x',
+      patientRut: '11.111.111-1',
+      patientName: 'Paciente X',
+      createdAt: 2,
+      updatedAt: 2,
+    },
+  ];
+
+  const currentPatientOwner = {
+    clinicalEpisodeId: 'episode-paciente-y',
+    patientRut: '22.222.222-2',
+    patientName: 'Paciente Y',
+  };
+
   it('builds selection result and produces history when a device is removed', () => {
     const previousHistory: DeviceInstance[] = [
       {
@@ -291,4 +323,51 @@ describe('devicesCellController', () => {
     expect(result.nextHistory.map(item => item.id)).not.toContain('legacy-unowned-history');
     expect(result.nextHistory.some(item => item.id === 'should-not-create')).toBe(false);
   });
+
+  it.each([['movimiento interno'], ['alta'], ['traslado']])(
+    'starts a clean DMI history for a reused bed after %s of the previous patient',
+    () => {
+      const result = buildDeviceBundleChangeResult({
+        previousDevices: [],
+        nextDevices: ['CVC', 'VVP#1'],
+        nextDetails: {
+          CVC: { installationDate: '2026-07-03' },
+          'VVP#1': { installationDate: '2026-07-03' },
+        },
+        previousHistory: previousPatientResidueHistory,
+        owner: currentPatientOwner,
+        dateProvider: () => new Date('2026-07-03T10:00:00'),
+        createId: vi.fn().mockReturnValueOnce('new-cvc').mockReturnValueOnce('new-vvp'),
+      });
+
+      expect(result.nextDevices).toEqual(['CVC', 'VVP#1']);
+      expect(result.nextDetails).toEqual({
+        CVC: { installationDate: '2026-07-03' },
+        'VVP#1': { installationDate: '2026-07-03' },
+      });
+      expect(result.nextHistory.map(item => item.id)).toEqual(['new-cvc', 'new-vvp']);
+      expect(result.nextHistory).toEqual([
+        expect.objectContaining({
+          id: 'new-cvc',
+          type: 'CVC',
+          status: 'Active',
+          clinicalEpisodeId: 'episode-paciente-y',
+          patientRut: '22.222.222-2',
+          patientName: 'Paciente Y',
+        }),
+        expect.objectContaining({
+          id: 'new-vvp',
+          type: 'VVP#1',
+          status: 'Active',
+          clinicalEpisodeId: 'episode-paciente-y',
+          patientRut: '22.222.222-2',
+          patientName: 'Paciente Y',
+        }),
+      ]);
+      expect(result.nextHistory.map(item => item.clinicalEpisodeId)).not.toContain(
+        'episode-paciente-x'
+      );
+      expect(result.nextHistory.map(item => item.patientRut)).not.toContain('11.111.111-1');
+    }
+  );
 });
