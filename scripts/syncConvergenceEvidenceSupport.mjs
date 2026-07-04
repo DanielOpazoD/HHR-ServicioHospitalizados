@@ -22,7 +22,15 @@ const buildSection = (id, title, checks) => ({
 
 export const evaluateSyncConvergenceEvidence = root => {
   const packageJson = JSON.parse(readText(root, 'package.json'));
+  const diagnosticTypes = readText(
+    root,
+    'src/services/observability/syncConvergenceDiagnosticTypes.ts'
+  );
   const diagnostics = readText(root, 'src/services/observability/syncConvergenceDiagnostics.ts');
+  const handoffDiagnostics = readText(
+    root,
+    'src/services/observability/syncConvergenceHandoffDiagnostics.ts'
+  );
   const recoveryPlanner = readText(root, 'src/services/observability/syncRecoveryPlanner.ts');
   const telemetry = readText(root, 'src/services/storage/sync/syncQueueTelemetryController.ts');
   const taskFactory = readText(root, 'src/services/storage/sync/syncQueueTaskFactory.ts');
@@ -63,24 +71,44 @@ export const evaluateSyncConvergenceEvidence = root => {
     'queueDailyRecordSyncTask',
     'saveRecordToFirestore',
   ].some(token => recoveryPlanner.includes(token));
+  const diagnosticContract = [diagnosticTypes, diagnostics, handoffDiagnostics].join('\n');
 
   const sections = [
     buildSection('sync-convergence', 'Post-merge convergence', [
       buildCheck(
         'diagnostic-status-contract',
         ['healthy', 'recoverable', 'needs_review', 'unsafe'].every(status =>
-          diagnostics.includes(`'${status}'`)
-        ) && diagnostics.includes('export const evaluateSyncConvergence'),
+          diagnosticContract.includes(`'${status}'`)
+        ) && diagnosticContract.includes('export const evaluateSyncConvergence'),
         'The convergence diagnostic exposes the four operational states used by support.',
-        ['src/services/observability/syncConvergenceDiagnostics.ts']
+        [
+          'src/services/observability/syncConvergenceDiagnosticTypes.ts',
+          'src/services/observability/syncConvergenceDiagnostics.ts',
+        ]
       ),
       buildCheck(
         'clinical-divergence-findings',
         ['duplicate_active_patient', 'movement_not_reflected', 'handoff_divergent'].every(finding =>
-          diagnostics.includes(`'${finding}'`)
+          diagnosticContract.includes(`'${finding}'`)
         ),
         'The diagnostic detects duplicate active patients, missing movements and divergent handoff.',
-        ['src/services/observability/syncConvergenceDiagnostics.ts']
+        [
+          'src/services/observability/syncConvergenceDiagnosticTypes.ts',
+          'src/services/observability/syncConvergenceHandoffDiagnostics.ts',
+        ]
+      ),
+      buildCheck(
+        'handoff-module-classification',
+        ['nursing_handoff', 'medical_handoff'].every(moduleName =>
+          diagnosticContract.includes(`'${moduleName}'`)
+        ) &&
+          handoffDiagnostics.includes('collectNursingHandoffFindings') &&
+          handoffDiagnostics.includes('collectMedicalHandoffFindings'),
+        'Nursing and medical handoff divergences are classified with clinical module semantics.',
+        [
+          'src/services/observability/syncConvergenceDiagnosticTypes.ts',
+          'src/services/observability/syncConvergenceHandoffDiagnostics.ts',
+        ]
       ),
       buildCheck(
         'diagnostic-tests',

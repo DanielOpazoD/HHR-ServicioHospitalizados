@@ -45,6 +45,7 @@ describe('syncRecoveryPlanner', () => {
     });
 
     expect(plan.status).toBe('recoverable');
+    expect(plan.summary).toContain('recuperación');
     expect(plan.actions[0]).toMatchObject({
       action: 'retry_outbox',
       safety: 'safe',
@@ -76,6 +77,7 @@ describe('syncRecoveryPlanner', () => {
       action: 'block_for_review',
       safety: 'manual_only',
       target: 'beds.R2',
+      reason: expect.stringContaining('corrección automática'),
     });
   });
 
@@ -108,6 +110,7 @@ describe('syncRecoveryPlanner', () => {
     expect(plan.actions.find(action => action.action === 'restore_snapshot')).toMatchObject({
       safety: 'requires_confirmation',
       target: 'discharges.D1',
+      reason: expect.stringContaining('confirmación humana'),
     });
   });
 

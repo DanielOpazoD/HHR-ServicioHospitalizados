@@ -93,7 +93,7 @@ describe('systemHealthSyncConvergencePanel', () => {
 
     expect(model).toMatchObject({
       status: 'recoverable',
-      statusLabel: 'Con recuperacion pendiente',
+      statusLabel: 'Con recuperación pendiente',
       pendingOperations: 3,
       recoverableDivergences: 1,
       affectedUsers: 1,
@@ -103,7 +103,7 @@ describe('systemHealthSyncConvergencePanel', () => {
     expect(model.technicalDetails).toEqual(
       expect.arrayContaining([
         'User Example: 2 pendientes, 1 reintentando',
-        'Operacion recuperable: sync_queue_replay_stale en Censo diario',
+        'Operación recuperable: sync_queue_replay_stale en Censo diario',
       ])
     );
   });
@@ -134,11 +134,129 @@ describe('systemHealthSyncConvergencePanel', () => {
 
     expect(model).toMatchObject({
       status: 'needs_review',
-      statusLabel: 'Requiere revision',
+      statusLabel: 'Requiere revisión',
       pendingOperations: 1,
       blockedOperations: 2,
       affectedUsers: 1,
     });
     expect(model.summary).toContain('2 operaciones fallidas/en conflicto');
+  });
+
+  it('surfaces clinical signal groups and operator next steps without exposing raw logs first', () => {
+    const model = buildSystemHealthSyncConvergencePanelModel([
+      buildUser({
+        displayName: 'Hospitalizados HHR',
+        pendingSyncTasks: 1,
+        conflictSyncTasks: 1,
+        recentEvents: [
+          {
+            id: 'medical-divergence',
+            source: 'operational',
+            category: 'sync',
+            severity: 'critical',
+            status: 'open',
+            timestamp: '2026-07-02T11:05:00.000Z',
+            message: 'Entrega médica divergente en medicalHandoffBySpecialty.cirugia.note.',
+            operation: 'medical_handoff_divergent',
+            module: 'Entrega médica',
+            runtimeState: 'blocked',
+            telemetryStatus: 'failed',
+            contextSummary: ['Paciente: Ana Perez', 'RUT: 12.345.678-5', 'Cama: R1'],
+          },
+          {
+            id: 'nursing-recovered',
+            source: 'operational',
+            category: 'sync',
+            severity: 'warning',
+            status: 'recovered',
+            timestamp: '2026-07-02T11:00:00.000Z',
+            message: 'Entrega de enfermería recuperada por replay.',
+            operation: 'handoff_divergent',
+            module: 'Entrega enfermería',
+            runtimeState: 'recoverable',
+            telemetryStatus: 'success',
+            contextSummary: ['Paciente: Pedro Silva', 'Cama: R2'],
+          },
+        ],
+      }),
+    ]);
+
+    expect(model.operatorActions).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('reintentar cola local'),
+        expect.stringContaining('abrir centro de conflictos'),
+      ])
+    );
+    expect(model.clinicalSignals).toEqual([
+      expect.objectContaining({
+        label: 'Entrega médica',
+        count: 1,
+        examples: expect.arrayContaining([
+          expect.stringContaining('Ana Perez'),
+          expect.stringContaining('medicalHandoffBySpecialty.cirugia.note'),
+        ]),
+      }),
+      expect.objectContaining({
+        label: 'Entrega enfermería',
+        count: 1,
+        examples: expect.arrayContaining([expect.stringContaining('Pedro Silva')]),
+      }),
+    ]);
+  });
+
+  it('keeps clinical signal ownership when different users emit repeated event ids', () => {
+    const model = buildSystemHealthSyncConvergencePanelModel([
+      buildUser({
+        uid: 'nurse-1',
+        displayName: 'Hospitalizados HHR',
+        recentEvents: [
+          {
+            id: 'shared-event-id',
+            source: 'operational',
+            category: 'sync',
+            severity: 'warning',
+            status: 'recovered',
+            timestamp: '2026-07-02T11:00:00.000Z',
+            message: 'Censo recuperado por replay.',
+            operation: 'daily_record_replay',
+            module: 'Censo diario',
+            runtimeState: 'recoverable',
+            telemetryStatus: 'success',
+            contextSummary: ['Paciente: Ana Perez'],
+          },
+        ],
+      }),
+      buildUser({
+        uid: 'doctor-1',
+        displayName: 'Médico Turno',
+        recentEvents: [
+          {
+            id: 'shared-event-id',
+            source: 'operational',
+            category: 'sync',
+            severity: 'warning',
+            status: 'recovered',
+            timestamp: '2026-07-02T11:01:00.000Z',
+            message: 'Censo recuperado por replay médico.',
+            operation: 'daily_record_replay',
+            module: 'Censo diario',
+            runtimeState: 'recoverable',
+            telemetryStatus: 'success',
+            contextSummary: ['Paciente: Pedro Silva'],
+          },
+        ],
+      }),
+    ]);
+
+    expect(model.clinicalSignals).toEqual([
+      expect.objectContaining({
+        label: 'Censo diario',
+        count: 2,
+        examples: [
+          expect.stringContaining('Hospitalizados HHR · Censo recuperado por replay.'),
+          expect.stringContaining('Médico Turno · Censo recuperado por replay médico.'),
+        ],
+      }),
+    ]);
   });
 });
