@@ -165,6 +165,24 @@ describe('dailyRecordPatchPersistenceController', () => {
     );
   });
 
+  it('passes touched paths to admission-date policy so unrelated beds do not block patches', () => {
+    const patch: DailyRecordPatch = {
+      'beds.R3.pathology': 'Diagnostico actualizado',
+      handoffNoteDayShift: 'Entrega actualizada',
+    };
+
+    preparePatchedRecordPersistence(current, '2026-04-19', patch);
+
+    expect(assertAdmissionDatePersistencePolicyMock).toHaveBeenCalledWith(
+      '2026-04-19',
+      expect.any(Object),
+      current,
+      {
+        changedPaths: ['beds.R3.pathology', 'handoffNoteDayShift'],
+      }
+    );
+  });
+
   it('skips structural invariant repairs for specialist-scoped patches', () => {
     isSpecialistScopedDailyRecordPatchMock.mockReturnValue(true);
     const patch: DailyRecordPatch = { 'beds.R1.medicalHandoffNote': 'Nota especialista' };

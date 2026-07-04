@@ -26,6 +26,7 @@ interface ClinicalConflictCenterControlProps {
   currentRecord?: DailyRecord | null;
   buttonTestId?: string;
   className?: string;
+  hideButtonLabel?: boolean;
 }
 
 const MODULE_TONE_CLASS: Record<ClinicalConflictModuleDescriptor['tone'], string> = {
@@ -82,9 +83,7 @@ const buildRestoreReviewContext = ({
   changedFieldsTruncated: conflict.totalChangeCount > 12,
 });
 
-const PatientContextList: React.FC<{ conflict: ClinicalConflictReviewPackage }> = ({
-  conflict,
-}) => {
+function PatientContextList({ conflict }: { conflict: ClinicalConflictReviewPackage }) {
   if (conflict.patientContexts.length === 0) {
     return <p className="text-xs text-slate-500">Sin paciente específico identificado.</p>;
   }
@@ -108,7 +107,7 @@ const PatientContextList: React.FC<{ conflict: ClinicalConflictReviewPackage }> 
       )}
     </div>
   );
-};
+}
 
 const ChangeList: React.FC<{ conflict: ClinicalConflictReviewPackage }> = ({ conflict }) => {
   if (conflict.changes.length === 0) {
@@ -162,9 +161,7 @@ const IMPACT_TITLE: Record<DailyRecordRestoreImpactAnalysis['status'], string> =
   blocked: 'Bloqueado por seguridad clínica',
 };
 
-const RestoreImpactNotice: React.FC<{ impact?: DailyRecordRestoreImpactAnalysis }> = ({
-  impact,
-}) => {
+function RestoreImpactNotice({ impact }: { impact?: DailyRecordRestoreImpactAnalysis }) {
   if (!impact || impact.status === 'safe') return null;
   const [firstImpact] = impact.impacts;
   return (
@@ -181,7 +178,7 @@ const RestoreImpactNotice: React.FC<{ impact?: DailyRecordRestoreImpactAnalysis 
       )}
     </div>
   );
-};
+}
 
 const ConflictPackageCard: React.FC<{
   conflict: ClinicalConflictReviewPackage;
@@ -275,6 +272,7 @@ export const ClinicalConflictCenterControl: React.FC<ClinicalConflictCenterContr
   currentRecord,
   buttonTestId = 'clinical-conflict-center-button',
   className,
+  hideButtonLabel = false,
 }) => {
   const recovery = useConflictVersionRecovery({ date, port });
   const centerModel = React.useMemo(
@@ -343,7 +341,7 @@ export const ClinicalConflictCenterControl: React.FC<ClinicalConflictCenterContr
         )}
       >
         <History size={14} />
-        <span className="hidden sm:inline">Conflictos</span>
+        {!hideButtonLabel && <span className="hidden sm:inline">Conflictos</span>}
         {recovery.snapshots.length > 0 && (
           <span className="ml-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">
             {recovery.snapshots.length}

@@ -142,6 +142,24 @@ describe('ClinicalConflictCenterControl', () => {
     expect(screen.getByText(/Entrega médica · 2026-07-01/)).toBeInTheDocument();
   });
 
+  it('keeps the center operable when snapshot lookup fails because Firestore needs an index', () => {
+    mockRecovery.mockReturnValue(
+      defaultRecovery({
+        snapshots: [],
+        snapshotRecovery: {
+          status: 'failed',
+          unavailableReason: 'query_index_missing',
+        },
+      })
+    );
+
+    render(<ClinicalConflictCenterControl date="2026-07-03" scope="census" />);
+
+    expect(screen.getByTestId('clinical-conflict-center-modal')).toBeInTheDocument();
+    expect(screen.getByText('Consulta de snapshots no disponible')).toBeInTheDocument();
+    expect(screen.getByText(/falta un índice\/consulta de Firestore/i)).toBeInTheDocument();
+  });
+
   it('shows truncation hints and audits total counts when the conflict summary is capped', () => {
     const restore = vi.fn();
     mockRecovery.mockReturnValue(
@@ -214,6 +232,24 @@ describe('ClinicalConflictCenterControl', () => {
         }),
       })
     );
+  });
+
+  it('can hide the visible census button label without losing the actionable accessible name', () => {
+    mockRecovery.mockReturnValue(defaultRecovery({ isOpen: false }));
+
+    render(
+      <ClinicalConflictCenterControl
+        date="2026-07-01"
+        scope="census"
+        buttonTestId="conflict-versions-button"
+        hideButtonLabel
+      />
+    );
+
+    const button = screen.getByTestId('conflict-versions-button');
+    expect(button).toHaveAccessibleName('Centro de conflictos clínicos de Censo diario');
+    expect(button).not.toHaveTextContent('Conflictos');
+    expect(button).toHaveTextContent('2');
   });
 
   it('shows anti-rollback impact and disables preserving a version that would remove a later movement', () => {

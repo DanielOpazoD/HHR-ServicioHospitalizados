@@ -43,6 +43,13 @@ describe('useBedManagement patient updates', () => {
   const mockSaveAndUpdate = vi.fn().mockResolvedValue(undefined) as PersistDailyRecord;
   const mockPatchRecord = vi.fn().mockResolvedValue(undefined);
 
+  const runBedAction = async (action: () => void) => {
+    await act(async () => {
+      action();
+      await Promise.resolve();
+    });
+  };
+
   const createMockPatient = (bedId: string, overrides: Partial<PatientData> = {}): PatientData => ({
     bedId,
     patientName: 'Test Patient',
@@ -96,7 +103,7 @@ describe('useBedManagement patient updates', () => {
       });
     });
 
-    it('logs patient admission when patientName is set for the first time', () => {
+    it('logs patient admission when patientName is set for the first time', async () => {
       const emptyPatient = createEmptyPatient('R1');
       const record = createMockRecord({ R1: emptyPatient });
 
@@ -104,14 +111,12 @@ describe('useBedManagement patient updates', () => {
         useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
       );
 
-      act(() => {
-        result.current.updatePatient('R1', 'patientName', 'New Name');
-      });
+      await runBedAction(() => result.current.updatePatient('R1', 'patientName', 'New Name'));
 
       expect(mockAuditContextValue.logPatientAdmission).toHaveBeenCalled();
     });
 
-    it('logs PATIENT_MODIFIED when patientName changes', () => {
+    it('logs PATIENT_MODIFIED when patientName changes', async () => {
       const patient = createMockPatient('R1', { patientName: 'Old Name' });
       const record = createMockRecord({ R1: patient });
 
@@ -119,9 +124,7 @@ describe('useBedManagement patient updates', () => {
         useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
       );
 
-      act(() => {
-        result.current.updatePatient('R1', 'patientName', 'New Name');
-      });
+      await runBedAction(() => result.current.updatePatient('R1', 'patientName', 'New Name'));
 
       expect(mockAuditContextValue.logDebouncedEvent).toHaveBeenCalledWith(
         'PATIENT_MODIFIED',
@@ -135,7 +138,7 @@ describe('useBedManagement patient updates', () => {
       );
     });
 
-    it('logs PATIENT_MODIFIED for critical fields', () => {
+    it('logs PATIENT_MODIFIED for critical fields', async () => {
       const patient = createMockPatient('R1');
       const record = createMockRecord({ R1: patient });
 
@@ -143,9 +146,7 @@ describe('useBedManagement patient updates', () => {
         useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
       );
 
-      act(() => {
-        result.current.updatePatient('R1', 'status', PatientStatus.GRAVE);
-      });
+      await runBedAction(() => result.current.updatePatient('R1', 'status', PatientStatus.GRAVE));
 
       expect(mockAuditContextValue.logDebouncedEvent).toHaveBeenCalledWith(
         'PATIENT_MODIFIED',
@@ -166,7 +167,7 @@ describe('useBedManagement patient updates', () => {
       );
     });
 
-    it('logs PATIENT_MODIFIED when devices change', () => {
+    it('logs PATIENT_MODIFIED when devices change', async () => {
       const patient = createMockPatient('R1', {
         deviceDetails: { VMI: { installationDate: '2025-01-01' } },
       });
@@ -176,12 +177,12 @@ describe('useBedManagement patient updates', () => {
         useBedManagement(record, mockSaveAndUpdate, mockPatchRecord)
       );
 
-      act(() => {
+      await runBedAction(() =>
         result.current.updatePatient('R1', 'deviceDetails', {
           VMI: { installationDate: '2025-01-01' },
           CVC: { installationDate: '2025-01-02' },
-        });
-      });
+        })
+      );
 
       expect(mockAuditContextValue.logDebouncedEvent).toHaveBeenCalled();
     });

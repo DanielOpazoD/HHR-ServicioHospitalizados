@@ -4,7 +4,7 @@ import { CensusTableBody } from '@/features/census/components/CensusTableBody';
 import { useCensusTableBindingsModel } from '@/features/census/hooks/useCensusTableBindingsModel';
 import { DragDropConfirmation } from '@/features/census/drag-drop/DragDropConfirmation';
 import { useCensusTableDragDrop } from '@/features/census/drag-drop/useCensusTableDragDrop';
-import { useDailyRecordBeds } from '@/context/DailyRecordContext';
+import { useDailyRecordBeds, useDailyRecordData } from '@/context/DailyRecordContext';
 import { useDailyRecordBedActions } from '@/context/useDailyRecordScopedActions';
 import { ViewLoader } from '@/components/ui/ViewLoader';
 import type { CensusAccessProfile } from '@/features/census/types/censusAccessProfile';
@@ -50,6 +50,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
   });
 
   const { moveOrCopyPatient, updatePatientMultiple } = useDailyRecordBedActions();
+  const { record } = useDailyRecordData();
   const beds = useDailyRecordBeds();
   const admitPatient = useAdmitPatient();
   const { error: notifyError } = useNotification();
@@ -119,6 +120,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
             admissionDate: action.input.admissionDate,
             pathology: action.input.pathology,
             recordDate: currentDateString,
+            baseRecord: record,
           });
           if (outcome.status.status === 'ready' || outcome.status.status === 'degraded') {
             closeEmptyBedDemographics();
@@ -154,6 +156,7 @@ export const CensusTable: React.FC<CensusTableProps> = ({
       closeEmptyBedDemographics,
       currentDateString,
       notifyError,
+      record,
       updatePatientMultiple,
     ]
   );

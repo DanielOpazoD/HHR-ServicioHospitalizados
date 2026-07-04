@@ -7,6 +7,7 @@ import { DataFactory } from '@/tests/factories/DataFactory';
 import { createQueryClientTestWrapper } from '@/tests/utils/queryClientTestUtils';
 import { applyPatches } from '@/utils/patchUtils';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
+import type { DailyRecordPatch } from '@/types/domain/dailyRecordPatch';
 import type { PatientData } from '@/types/domain/patient';
 import type { CMAData } from '@/types/domain/movements';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
@@ -83,6 +84,7 @@ interface CensusActionMatrixCase {
   failureClass: CensusActionFailureClass;
   run: (actions: DailyRecordActions, record: DailyRecord) => void | Promise<void>;
   expectWrite?: () => void;
+  expectPatch?: (patch: DailyRecordPatch) => void;
 }
 
 const date = '2026-05-17';
@@ -107,6 +109,10 @@ const buildMatrixRecord = (): DailyRecord => {
   const cmaOriginal = buildActivePatient('R3', { patientName: 'Paciente CMA' });
   const dischargeOriginal = buildActivePatient('R4', { patientName: 'Paciente Alta' });
   const transferOriginal = buildActivePatient('NEO1', { patientName: 'Paciente Traslado' });
+  const movementSource = buildActivePatient('R5', {
+    patientName: 'Paciente R5',
+    rut: '33.333.333-3',
+  });
   const emptyR3 = buildActivePatient('R3', { patientName: '', rut: '', pathology: '' });
   const emptyR4 = buildActivePatient('R4', { patientName: '', rut: '', pathology: '' });
   const emptyNeo1 = buildActivePatient('NEO1', { patientName: '', rut: '', pathology: '' });
@@ -125,6 +131,7 @@ const buildMatrixRecord = (): DailyRecord => {
       R2: r2,
       R3: emptyR3,
       R4: emptyR4,
+      R5: movementSource,
       NEO1: emptyNeo1,
     },
     discharges: [
@@ -226,6 +233,26 @@ const expectPatchWrite = () => {
   expect(defaultDailyRecordRepositoryPort.updatePartialDetailed).toHaveBeenCalled();
 };
 
+const expectPatchKeepsAvailableBed = (patch: DailyRecordPatch, bedId: string): void => {
+  expect(patch).toEqual(
+    expect.objectContaining({
+      [`beds.${bedId}`]: expect.objectContaining({
+        patientName: '',
+        rut: '',
+        pathology: '',
+        specialty: Specialty.EMPTY,
+        status: PatientStatus.EMPTY,
+        devices: [],
+        handoffNoteDayShift: '',
+        handoffNoteNightShift: '',
+        medicalHandoffEntries: [],
+        clinicalEvents: [],
+        clinicalCrib: undefined,
+      }),
+    })
+  );
+};
+
 const matrixCases: CensusActionMatrixCase[] = [
   {
     name: 'crear paciente nuevo',
@@ -254,6 +281,18 @@ const matrixCases: CensusActionMatrixCase[] = [
     name: 'mover cama',
     failureClass: 'patch_mal_clasificado',
     run: actions => actions.moveOrCopyPatient('move', 'R1', 'R2'),
+    expectPatch: patch => {
+      expect(patch).toEqual(
+        expect.objectContaining({
+          'beds.R2': expect.objectContaining({
+            bedId: 'R2',
+            patientName: 'Paciente R1',
+            pathology: 'Diagnostico base',
+          }),
+        })
+      );
+      expectPatchKeepsAvailableBed(patch, 'R1');
+    },
   },
   {
     name: 'diagnostico',
@@ -299,7 +338,21 @@ const matrixCases: CensusActionMatrixCase[] = [
     name: 'egresar domicilio',
     failureClass: 'persistencia_local_sin_firebase',
     run: actions =>
-      actions.addDischarge('R1', 'Vivo', undefined, 'Domicilio (Habitual)', '', '12:00', 'mother'),
+      actions.addDischarge('R5', 'Vivo', undefined, 'Domicilio (Habitual)', '', '12:00', 'mother'),
+    expectPatch: patch => {
+      expect(patch).toEqual(
+        expect.objectContaining({
+          discharges: expect.arrayContaining([
+            expect.objectContaining({
+              bedId: 'R5',
+              patientName: 'Paciente R5',
+              diagnosis: 'Diagnostico base',
+            }),
+          ]),
+        })
+      );
+      expectPatchKeepsAvailableBed(patch, 'R5');
+    },
   },
   {
     name: 'eliminar egreso',
@@ -314,7 +367,21 @@ const matrixCases: CensusActionMatrixCase[] = [
   {
     name: 'trasladar',
     failureClass: 'persistencia_local_sin_firebase',
-    run: actions => actions.addTransfer('R1', 'Ambulancia', 'Hospital Regional', '', 'Médico'),
+    run: actions => actions.addTransfer('R5', 'Ambulancia', 'Hospital Regional', '', 'Médico'),
+    expectPatch: patch => {
+      expect(patch).toEqual(
+        expect.objectContaining({
+          transfers: expect.arrayContaining([
+            expect.objectContaining({
+              bedId: 'R5',
+              patientName: 'Paciente R5',
+              diagnosis: 'Diagnostico base',
+            }),
+          ]),
+        })
+      );
+      expectPatchKeepsAvailableBed(patch, 'R5');
+    },
   },
   {
     name: 'eliminar traslado',
@@ -338,8 +405,22 @@ const matrixCases: CensusActionMatrixCase[] = [
         diagnosis: 'Procedimiento',
         specialty: Specialty.CIRUGIA,
         interventionType: 'Cirugía Mayor Ambulatoria',
-        originalBedId: 'R1',
+        originalBedId: 'R5',
       }),
+    expectPatch: patch => {
+      expect(patch).toEqual(
+        expect.objectContaining({
+          cma: expect.arrayContaining([
+            expect.objectContaining({
+              originalBedId: 'R5',
+              patientName: 'Paciente Cma Nuevo',
+              diagnosis: 'Procedimiento',
+            }),
+          ]),
+        })
+      );
+      expectPatchKeepsAvailableBed(patch, 'R5');
+    },
   },
   {
     name: 'eliminar CMA',
@@ -401,5 +482,16 @@ describe('useDailyRecord census action matrix', () => {
     await waitFor(() => {
       (testCase.expectWrite ?? expectPatchWrite)();
     });
+
+    const writeCall = mockDailyRecordPorts.updatePartialDetailed.mock.calls[0];
+    if (writeCall) {
+      const [, patch, options] = writeCall;
+      expect(options).toEqual(
+        expect.objectContaining({
+          baseRecord: expect.objectContaining({ date }),
+        })
+      );
+      testCase.expectPatch?.(patch as DailyRecordPatch);
+    }
   });
 });

@@ -217,6 +217,21 @@ describe('dailyRecordRepositoryWriteService outbox fallback', () => {
     }
   });
 
+  it('throws from legacy updatePartial when the detailed partial outcome is blocked', async () => {
+    const consoleSpies = suppressConsole(['warn']);
+    vi.mocked(getRecordFromIndexedDB).mockResolvedValueOnce(null);
+
+    try {
+      await expect(
+        updatePartial('2026-02-18', {
+          'beds.R1.patientName': 'Paciente Nuevo',
+        })
+      ).rejects.toThrow('No se encontró un registro local válido para aplicar el cambio.');
+    } finally {
+      restoreConsole(consoleSpies);
+    }
+  });
+
   it('hydrates a remote base record before partial update when local cache is missing', async () => {
     const remote = buildRecord('2026-02-18');
     remote.lastUpdated = '2026-02-18T09:00:00.000Z';

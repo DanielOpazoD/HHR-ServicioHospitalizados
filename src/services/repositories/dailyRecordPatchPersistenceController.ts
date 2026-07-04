@@ -21,7 +21,9 @@ export const preparePatchedRecordPersistence = (
   patch: DailyRecordPatch
 ): { record: DailyRecord; mergedPatches: DailyRecordPatch } => {
   const updatedForInvariants = applyPatches(current, patch);
-  assertAdmissionDatePersistencePolicy(date, updatedForInvariants, current);
+  assertAdmissionDatePersistencePolicy(date, updatedForInvariants, current, {
+    changedPaths: Object.keys(patch),
+  });
   const mergedPatches: DailyRecordPatch = { ...patch };
   ensureDailyRecordDateTimestamp(updatedForInvariants);
 

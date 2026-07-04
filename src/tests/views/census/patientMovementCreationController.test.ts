@@ -2,11 +2,37 @@ import { describe, expect, it } from 'vitest';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import { BEDS } from '@/constants/beds';
 import { createEmptyPatient } from '@/services/factories/patientFactory';
-import { PatientStatus } from '@/types/domain/patientClassification';
+import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+import type { PatientData } from '@/types/domain/patient';
 import {
   resolveAddDischargeMovement,
   resolveAddTransferMovement,
 } from '@/features/census/controllers/patientMovementCreationController';
+
+const expectAvailableCensusBed = (patient: PatientData): void => {
+  expect(patient).toEqual(
+    expect.objectContaining({
+      patientName: '',
+      rut: '',
+      pathology: '',
+      specialty: Specialty.EMPTY,
+      status: PatientStatus.EMPTY,
+      admissionDate: '',
+      admissionTime: '',
+      firstSeenDate: undefined,
+      devices: [],
+      handoffNote: '',
+      handoffNoteDayShift: '',
+      handoffNoteNightShift: '',
+      medicalHandoffNote: '',
+      medicalHandoffEntries: [],
+      medicalHandoffAudit: undefined,
+      clinicalCrib: undefined,
+      clinicalEvents: [],
+      hasCompanionCrib: false,
+    })
+  );
+};
 
 describe('patientMovementCreationController', () => {
   it('fails discharge creation when source bed is empty', () => {
@@ -96,6 +122,7 @@ describe('patientMovementCreationController', () => {
       expect(result.value.updatedRecord.beds.R1.clinicalCrib).toBeUndefined();
       expect(result.value.updatedRecord.beds.R1.clinicalEvents).toEqual([]);
       expect(result.value.updatedRecord.beds.R1.hasCompanionCrib).toBe(false);
+      expectAvailableCensusBed(result.value.updatedRecord.beds.R1);
       expect(result.value.auditEntries).toHaveLength(2);
     }
   });
@@ -262,6 +289,7 @@ describe('patientMovementCreationController', () => {
       expect(result.value.updatedRecord.beds.R1.clinicalCrib).toBeUndefined();
       expect(result.value.updatedRecord.beds.R1.clinicalEvents).toEqual([]);
       expect(result.value.updatedRecord.beds.R1.hasCompanionCrib).toBe(false);
+      expectAvailableCensusBed(result.value.updatedRecord.beds.R1);
       expect(result.value.auditEntry.patientName).toBe('Madre A');
     }
   });

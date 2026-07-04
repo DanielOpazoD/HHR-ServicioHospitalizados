@@ -4,6 +4,7 @@ import { useCMA } from '@/hooks/useCMA';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { CMAData } from '@/types/domain/movements';
+import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 
 describe('useCMA', () => {
   let mockRecord: DailyRecord;
@@ -87,6 +88,21 @@ describe('useCMA', () => {
           patientName: '',
           rut: '',
           pathology: '',
+          specialty: Specialty.EMPTY,
+          status: PatientStatus.EMPTY,
+          admissionDate: '',
+          admissionTime: '',
+          firstSeenDate: undefined,
+          devices: [],
+          handoffNote: '',
+          handoffNoteDayShift: '',
+          handoffNoteNightShift: '',
+          medicalHandoffNote: '',
+          medicalHandoffEntries: [],
+          medicalHandoffAudit: undefined,
+          clinicalCrib: undefined,
+          clinicalEvents: [],
+          hasCompanionCrib: false,
           location: 'Sector A',
         }),
       })
