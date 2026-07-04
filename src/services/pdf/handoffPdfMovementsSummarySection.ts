@@ -9,6 +9,12 @@ import {
 
 import type { AutoTableFunction, JsPDFWithAutoTable } from './handoffPdfTypes';
 import type { HandoffPdfMovementSummaryTable } from './handoffPdfSectionTypes';
+import {
+  HANDOFF_PDF_PAGE_LAYOUT,
+  getHandoffPdfContentBottomY,
+  getHandoffPdfTableMargin,
+  type HandoffPdfPageMargin,
+} from './handoffPdfPageLayout';
 
 export const buildMovementsSummaryTables = (
   record: HandoffPdfMovementsRecord
@@ -63,15 +69,16 @@ export const addMovementsSummary = (
   record: HandoffPdfMovementsRecord,
   margin: number,
   startY: number,
-  autoTable: AutoTableFunction
+  autoTable: AutoTableFunction,
+  pageMargin: HandoffPdfPageMargin = HANDOFF_PDF_PAGE_LAYOUT.margin
 ) => {
   let currentY = startY;
-  const pageHeight = doc.internal.pageSize.height;
+  const contentBottomY = getHandoffPdfContentBottomY(doc, pageMargin);
   const movementTables = buildMovementsSummaryTables(record);
 
-  if (currentY + 40 > pageHeight) {
+  if (currentY + 40 > contentBottomY) {
     doc.addPage();
-    currentY = margin;
+    currentY = pageMargin.top;
   } else {
     currentY += 4;
   }
@@ -82,6 +89,11 @@ export const addMovementsSummary = (
   currentY += 6;
 
   movementTables.forEach((summaryTable, index) => {
+    if (currentY + 12 > getHandoffPdfContentBottomY(doc, pageMargin)) {
+      doc.addPage();
+      currentY = pageMargin.top;
+    }
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.text(summaryTable.title, margin, currentY);
@@ -95,6 +107,7 @@ export const addMovementsSummary = (
         theme: 'plain',
         styles: { fontSize: 8, cellPadding: 1, lineColor: [200, 200, 200], lineWidth: 0.1 },
         headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold' },
+        margin: getHandoffPdfTableMargin(pageMargin),
       });
       currentY = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 4;
     } else {

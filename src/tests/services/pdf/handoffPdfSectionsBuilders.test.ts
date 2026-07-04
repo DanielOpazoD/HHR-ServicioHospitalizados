@@ -1,8 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { buildPatientTableBody } from '@/services/pdf/handoffPdfPatientTableSection';
+import {
+  addPatientTable,
+  buildPatientTableBody,
+} from '@/services/pdf/handoffPdfPatientTableSection';
 import { buildMovementsSummaryTables } from '@/services/pdf/handoffPdfMovementsSummarySection';
 import { resolveStatusTextStyles } from '@/services/pdf/handoffPdfTableFormattingController';
+import { HANDOFF_PDF_PAGE_LAYOUT } from '@/services/pdf/handoffPdfPageLayout';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 const baseRecord: DailyRecord = {
@@ -97,6 +101,26 @@ describe('handoffPdf section builders', () => {
     expect(rows[0][4]).toBe('VVP (3d)');
     expect(rows[0][5]).toBe('Observacion dia');
     expect(rows[0]._daysStr).toBe('5d');
+  });
+
+  it('renderiza la tabla de pacientes dentro del margen seguro A4', () => {
+    const doc = {
+      setFontSize: vi.fn(),
+      setFont: vi.fn(),
+      setTextColor: vi.fn(),
+      text: vi.fn(),
+      lastAutoTable: { finalY: 72 },
+    };
+    const autoTable = vi.fn();
+
+    addPatientTable(doc as never, baseRecord, false, 'day', 42, autoTable as never);
+
+    expect(autoTable).toHaveBeenCalledWith(
+      doc,
+      expect.objectContaining({
+        margin: HANDOFF_PDF_PAGE_LAYOUT.margin,
+      })
+    );
   });
 
   it('mantiene 0d en pacientes ingresados el mismo dia para coincidir con censo', () => {

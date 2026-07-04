@@ -9,6 +9,11 @@ import { calculateOperationalHospitalizedDays } from '@/utils/clinicalDayUtils';
 import type { CellHookData, AutoTableFunction, JsPDFWithAutoTable } from './handoffPdfTypes';
 import type { HandoffPdfTableRow } from './handoffPdfSectionTypes';
 import {
+  HANDOFF_PDF_PAGE_LAYOUT,
+  getHandoffPdfTableMargin,
+  type HandoffPdfPageMargin,
+} from './handoffPdfPageLayout';
+import {
   formatPatientDevicesForPdf,
   resolvePatientObservationForPdf,
   resolveStatusTextStyles,
@@ -109,7 +114,8 @@ export const addPatientTable = (
   isMedical: boolean,
   selectedShift: ShiftType,
   currentY: number,
-  autoTable: AutoTableFunction
+  autoTable: AutoTableFunction,
+  pageMargin: HandoffPdfPageMargin = HANDOFF_PDF_PAGE_LAYOUT.margin
 ) => {
   const tableBody = buildPatientTableBody(record, isMedical, selectedShift);
 
@@ -140,6 +146,7 @@ export const addPatientTable = (
       4: { cellWidth: 25 },
       5: { cellWidth: 'auto' },
     },
+    margin: getHandoffPdfTableMargin(pageMargin),
     didParseCell: createPatientTableDidParseCell(),
     didDrawCell: createPatientTableDidDrawCell(doc, tableBody),
   });

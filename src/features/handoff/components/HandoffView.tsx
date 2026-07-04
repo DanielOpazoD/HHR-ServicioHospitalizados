@@ -149,6 +149,7 @@ const HandoffViewContent: React.FC<HandoffViewContentProps> = ({
       date={record.date}
       scope={isMedical ? 'medical_handoff' : 'nursing_handoff'}
       currentRecord={record}
+      hideButtonLabel={!isMedical}
     />
   );
   const nursingHeaderAction =

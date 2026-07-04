@@ -188,6 +188,10 @@ export const buildDateStripProps = ({
     daysInMonth: runtime.dateNav.daysInMonth,
     existingDaysInMonth: runtime.dateNav.existingDaysInMonth,
     onExportPDF: ui.showPrintButton ? runtime.exportManager.handleExportPDF : undefined,
+    onPrintWithBrowserOptions:
+      ui.currentModule === 'NURSING_HANDOFF'
+        ? runtime.exportManager.handlePrintWithBrowserOptions
+        : undefined,
     onOpenBedManager: ui.currentModule === 'CENSUS' ? ui.bedManagerModal.open : undefined,
     onExportExcel: dateStripCensusActions.onExportExcel,
     onConfigureEmail: dateStripCensusActions.onConfigureEmail,

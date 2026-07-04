@@ -41,6 +41,7 @@ export interface UseExportManagerReturn {
   isArchived: boolean;
   isBackingUp: boolean;
   handleExportPDF: () => Promise<void>;
+  handlePrintWithBrowserOptions: () => Promise<void>;
   handleBackupExcel: () => Promise<void>;
   handleBackupHandoff: (skipConfirmation?: boolean) => Promise<void>;
 }
@@ -125,6 +126,14 @@ export const useExportManager = ({
     success,
     warning,
   ]);
+
+  const handlePrintWithBrowserOptions = useCallback(async () => {
+    await flushBeforeExport?.();
+
+    window.setTimeout(() => {
+      window.print();
+    }, 100);
+  }, [flushBeforeExport]);
 
   const handleBackupExcel = useCallback(async () => {
     setIsBackingUp(true);
@@ -237,6 +246,7 @@ export const useExportManager = ({
     isArchived,
     isBackingUp,
     handleExportPDF,
+    handlePrintWithBrowserOptions,
     handleBackupExcel,
     handleBackupHandoff,
   };
