@@ -63,6 +63,7 @@ Referencia técnica:
 - [dailyRecordBootstrapController.ts](../src/hooks/controllers/dailyRecordBootstrapController.ts)
 - [useDailyRecordSyncQuery.ts](../src/hooks/useDailyRecordSyncQuery.ts)
 - [useDailyRecordQuery.ts](../src/hooks/useDailyRecordQuery.ts)
+- [Clinical sync simulator contract](CLINICAL_SYNC_SIMULATOR_CONTRACT.md)
 
 ## Procedimiento 1: IndexedDB bloqueado
 

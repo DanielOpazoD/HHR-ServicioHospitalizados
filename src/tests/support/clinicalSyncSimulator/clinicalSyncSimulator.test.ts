@@ -170,6 +170,63 @@ describe('clinicalSyncSimulator', () => {
       clientId: 'doctor-b',
       module: 'censo',
       changedPaths: ['beds.R1.pathology'],
+      reason: expect.stringContaining('conflicto'),
+    });
+  });
+
+  it('keeps episode context in the reason when a stale edit is blocked', () => {
+    const baseRecord = makeRecord();
+    const remoteRecord = makeRecord();
+    remoteRecord.beds.R1 = {
+      ...remoteRecord.beds.R1,
+      patientName: 'Paciente Nuevo',
+      rut: '22.222.222-2',
+      pathology: 'Diagnostico remoto',
+      clinicalEpisodeId: 'episode-r1-new',
+    };
+    const localRecord = makeRecord();
+    localRecord.beds.R1.pathology = 'Diagnostico stale episodio previo';
+
+    const simulator = createClinicalSyncSimulator({
+      initialRecord: remoteRecord,
+      clients: ['stale-pc'],
+    });
+
+    const mutation: Parameters<typeof simulator.enqueueRetry>[1] = {
+      mutationId: 'stale-pc-mutation-cross-episode-blocked',
+      label: 'diagnostico stale episodio previo',
+      module: 'censo',
+      baseRecord,
+      localRecord,
+      syncContract: {
+        mutationId: 'stale-pc-mutation-cross-episode-blocked',
+        clientId: 'stale-pc',
+        tabId: 'stale-pc-tab-previous',
+        expectedVersion: 'rev-0',
+        changedPaths: ['beds.R1.pathology'],
+      },
+    };
+
+    simulator.enqueueRetry('stale-pc', mutation);
+
+    const replay = simulator.replayNext('stale-pc');
+
+    expect(replay.status).toBe('blocked');
+    expect(replay.invariantViolations).toEqual([]);
+    expect(simulator.getRemote().beds.R1).toMatchObject({
+      patientName: 'Paciente Nuevo',
+      rut: '22.222.222-2',
+      pathology: 'Diagnostico remoto',
+      clinicalEpisodeId: 'episode-r1-new',
+    });
+    expect(simulator.getAuditEvents().at(-1)).toMatchObject({
+      action: 'blocked',
+      affected: {
+        bedId: 'R1',
+        patientName: 'Paciente Nuevo',
+        rut: '22.222.222-2',
+      },
+      reason: expect.stringContaining('episodio'),
     });
   });
 
@@ -206,6 +263,7 @@ describe('clinicalSyncSimulator', () => {
       mutationId: mutation.mutationId,
       clientId: 'client-a',
       tabId: expect.stringMatching(/^client-a-tab-/),
+      reason: expect.stringContaining('idempotente'),
     });
   });
 });

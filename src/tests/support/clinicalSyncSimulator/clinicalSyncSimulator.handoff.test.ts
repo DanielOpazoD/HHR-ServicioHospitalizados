@@ -237,4 +237,67 @@ describe('clinicalSyncSimulator handoff scenarios', () => {
       simulator.getRemote().beds.R1.medicalHandoffEntries?.some(entry => entry.id === 'entry-old')
     ).toBe(false);
   });
+
+  it('blocks incompatible stale edits to the same medical specialty note', () => {
+    const simulator = createClinicalSyncSimulator({
+      initialRecord: makeRecord(),
+      clients: ['cirugia-a', 'cirugia-b'],
+    });
+
+    simulator.mutate(
+      'cirugia-a',
+      {
+        changedPaths: ['medicalHandoffBySpecialty.cirugia'],
+        module: 'entrega_medica',
+        label: 'nota cirugia A',
+      },
+      record => {
+        record.medicalHandoffBySpecialty = {
+          ...record.medicalHandoffBySpecialty,
+          cirugia: {
+            note: 'Plan quirurgico A',
+            createdAt: '2026-07-03T09:00:00.000Z',
+            updatedAt: '2026-07-03T09:00:00.000Z',
+            author: actor,
+            version: 1,
+          },
+        };
+      }
+    );
+    expect(simulator.replayNext('cirugia-a').status).toBe('accepted');
+
+    simulator.mutate(
+      'cirugia-b',
+      {
+        changedPaths: ['medicalHandoffBySpecialty.cirugia'],
+        module: 'entrega_medica',
+        label: 'nota cirugia B stale',
+      },
+      record => {
+        record.medicalHandoffBySpecialty = {
+          ...record.medicalHandoffBySpecialty,
+          cirugia: {
+            note: 'Plan quirurgico B incompatible',
+            createdAt: '2026-07-03T09:05:00.000Z',
+            updatedAt: '2026-07-03T09:05:00.000Z',
+            author: actor,
+            version: 1,
+          },
+        };
+      }
+    );
+
+    const replay = simulator.replayNext('cirugia-b');
+
+    expect(['blocked', 'needs_review']).toContain(replay.status);
+    expect(simulator.getRemote().medicalHandoffBySpecialty?.cirugia?.note).toBe(
+      'Plan quirurgico A'
+    );
+    expect(simulator.getClient('cirugia-b').outbox).toHaveLength(1);
+    expect(simulator.getAuditEvents().at(-1)).toMatchObject({
+      action: 'blocked',
+      module: 'entrega_medica',
+      reason: expect.stringContaining('conflicto'),
+    });
+  });
 });

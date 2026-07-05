@@ -274,4 +274,110 @@ describe('clinicalSyncSimulator census scenarios', () => {
       },
     });
   });
+
+  it('replays a stale clinical field bundle without losing a remotely admitted empty-bed patient', () => {
+    const simulator = createClinicalSyncSimulator({
+      initialRecord: makeRecord(),
+      clients: ['admission-pc', 'clinical-pc'],
+    });
+
+    simulator.mutate(
+      'admission-pc',
+      { changedPaths: ['beds.NEO1'], module: 'censo', label: 'admitir NEO1 remoto' },
+      record => {
+        record.beds.NEO1 = patient('NEO1', {
+          patientName: 'Paciente Neo',
+          rut: '22.222.222-2',
+          pathology: 'Sindrome febril',
+          specialty: 'Pediatria',
+          clinicalEpisodeId: 'episode-neo-2',
+        });
+      }
+    );
+    expect(simulator.replayNext('admission-pc').status).toBe('accepted');
+
+    simulator.mutate(
+      'clinical-pc',
+      {
+        changedPaths: ['beds.R1.pathology', 'beds.R1.specialty', 'beds.R1.status'],
+        module: 'censo',
+        label: 'actualizacion clinica stale',
+      },
+      record => {
+        record.beds.R1.pathology = 'Neumonia basal derecha';
+        record.beds.R1.specialty = 'Medicina Interna';
+        record.beds.R1.status = 'De cuidado' as DailyRecord['beds'][string]['status'];
+      }
+    );
+
+    const replay = simulator.replayNext('clinical-pc');
+
+    expect(replay.status).toBe('auto_merged');
+    expect(simulator.getRemote().beds.NEO1).toMatchObject({
+      patientName: 'Paciente Neo',
+      rut: '22.222.222-2',
+      clinicalEpisodeId: 'episode-neo-2',
+    });
+    expect(simulator.getRemote().beds.R1).toMatchObject({
+      pathology: 'Neumonia basal derecha',
+      specialty: 'Medicina Interna',
+      status: 'De cuidado',
+    });
+    expect(simulator.getAuditEvents().at(-1)).toMatchObject({
+      action: 'auto_merged',
+      reason: expect.stringContaining('intencion clinica compatible'),
+    });
+  });
+
+  it('removes an invasive device from a stale client without reverting a remote clinical edit', () => {
+    const simulator = createClinicalSyncSimulator({
+      initialRecord: {
+        ...makeRecord(),
+        beds: {
+          ...makeRecord().beds,
+          R1: patient('R1', {
+            devices: ['VVP#1', 'CVC'],
+            deviceDetails: {
+              'VVP#1': { installationDate: '2026-07-01' },
+              CVC: { installationDate: '2026-07-02' },
+            },
+          }),
+        },
+      },
+      clients: ['remote-pc', 'dmi-pc'],
+    });
+
+    simulator.mutate(
+      'remote-pc',
+      { changedPaths: ['beds.R1.pathology'], module: 'censo', label: 'diagnostico remoto' },
+      record => {
+        record.beds.R1.pathology = 'Diagnostico remoto protegido';
+      }
+    );
+    expect(simulator.replayNext('remote-pc').status).toBe('accepted');
+
+    simulator.mutate(
+      'dmi-pc',
+      {
+        changedPaths: ['beds.R1.devices', 'beds.R1.deviceDetails'],
+        module: 'censo',
+        label: 'quitar VVP stale',
+      },
+      record => {
+        record.beds.R1.devices = ['CVC'];
+        record.beds.R1.deviceDetails = {
+          CVC: { installationDate: '2026-07-02' },
+        };
+      }
+    );
+
+    const replay = simulator.replayNext('dmi-pc');
+
+    expect(replay.status).toBe('auto_merged');
+    expect(simulator.getRemote().beds.R1.pathology).toBe('Diagnostico remoto protegido');
+    expect(simulator.getRemote().beds.R1.devices).toEqual(['CVC']);
+    expect(simulator.getRemote().beds.R1.deviceDetails).toEqual({
+      CVC: { installationDate: '2026-07-02' },
+    });
+  });
 });
