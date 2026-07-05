@@ -91,6 +91,55 @@ describe('clinical movement-bed consistency policy', () => {
     expect(resolved.beds.R1.rut).toBe('44.444.444-4');
   });
 
+  it('clears residual devices from an already available bed when a confirmed movement exists', () => {
+    const remote = makeRecord('2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: '',
+        rut: '',
+        pathology: '',
+        admissionDate: '',
+        devices: [],
+      } as unknown as DailyRecord['beds'][string],
+    };
+    remote.discharges = [
+      {
+        id: 'discharge-1',
+        bedId: 'R1',
+        patientName: 'Paciente Egresado',
+        rut: '33.333.333-3',
+        admissionDate: '2026-02-10',
+        status: 'Vivo',
+        movementDate: '2026-02-18',
+      },
+    ] as unknown as DailyRecord['discharges'];
+
+    const local = makeRecord('2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: '',
+        rut: '',
+        pathology: '',
+        admissionDate: '',
+        devices: ['VVP#1'],
+        deviceDetails: {
+          'VVP#1': { installationDate: '2026-02-18' },
+        },
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['beds.R1.devices', 'beds.R1.deviceDetails'],
+    });
+
+    expect(resolved.discharges).toHaveLength(1);
+    expect(resolved.beds.R1.patientName).toBe('');
+    expect(resolved.beds.R1.devices).toEqual([]);
+    expect(resolved.beds.R1.deviceDetails).toBeUndefined();
+  });
+
   it('keeps a same-day readmission for the same RUT when the prior discharge belongs to an older admission', () => {
     const remote = makeRecord('2026-02-18T10:00:00.000Z');
     remote.discharges = [
