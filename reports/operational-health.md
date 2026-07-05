@@ -1,7 +1,7 @@
 # Operational Health Snapshot
 
-- Generated: 2026-07-05T05:27:55.620Z
-- Git SHA: 33a30ec0
+- Generated: 2026-07-05T06:00:07.240Z
+- Git SHA: 7afdc4dc
 - Schema current: v1
 - Schema legacy: v0
 
@@ -71,7 +71,7 @@
 
 - Login general roles: admin, nurse_hospital, doctor_urgency, doctor_specialist, viewer, editor
 - Roles asignables: admin, nurse_hospital, doctor_urgency, doctor_specialist, viewer, unauthorized
-- Puentes de rol legacy: unknown
+- Puentes de rol legacy: none
 - Modelo canónico: `docs/AUTH_ACCESS_MODEL.md`
 - Runbook auth: `docs/RUNBOOK_AUTH_ACCESS_INCIDENTS.md`
 
@@ -99,8 +99,8 @@
 
 | Critical startup asset | Size (bytes) | Max (bytes) | Utilization | Budget | Status |
 | --- | ---: | ---: | ---: | --- | --- |
-| `dist/assets/index-BvPZkEBS.js` | 19469 | 700000 | - | - | ok |
-| `dist/assets/app-authenticated-shell-DVV8EvWg.js` | 537718 | 600000 | 89.6% | app-authenticated-shell | near-limit |
+| `dist/assets/index-zjqg-fR6.js` | 19469 | 700000 | - | - | ok |
+| `dist/assets/app-authenticated-shell-BM1LNf9O.js` | 537942 | 600000 | 89.7% | app-authenticated-shell | near-limit |
 
 ## Incident Signals To Watch
 
@@ -157,13 +157,13 @@
 | Asset | Size (bytes) | Max (bytes) | Utilization | Budget | Status |
 | --- | ---: | ---: | ---: | --- | --- |
 | `dist/assets/vendor-heic2any-ClJ2fQYX.js` | 1352091 | 1450000 | 93.2% | vendor-heic2any | near-limit |
-| `dist/assets/app-authenticated-shell-DVV8EvWg.js` | 537718 | 600000 | 89.6% | app-authenticated-shell | near-limit |
+| `dist/assets/app-authenticated-shell-BM1LNf9O.js` | 537942 | 600000 | 89.7% | app-authenticated-shell | near-limit |
 | `dist/assets/vendor-pdfjs-C4G2Lk1-.js` | 465976 | 520000 | 89.6% | vendor-pdfjs | near-limit |
 | `dist/assets/vendor-firebase-firestore-CSGvoZjH.js` | 393147 | 500000 | 78.6% | vendor-firebase-firestore | ok |
 | `dist/assets/vendor-pdf-lib-BrVFzLGn.js` | 390824 | 430000 | 90.9% | vendor-pdf | near-limit |
 | `dist/assets/vendor-pdf-core-U3n4h3fn.js` | 364662 | 430000 | 84.8% | vendor-pdf | ok |
-| `dist/assets/documentFallbacks-DXiyD4Xb.js` | 344643 | 1250000 | 27.6% | chunkMaxBytes | ok |
-| `dist/assets/LineChart-DAbyGLWX.js` | 331288 | 1250000 | 26.5% | chunkMaxBytes | ok |
+| `dist/assets/documentFallbacks-BpNioYEc.js` | 344643 | 1250000 | 27.6% | chunkMaxBytes | ok |
+| `dist/assets/LineChart-tAm3U9fu.js` | 331288 | 1250000 | 26.5% | chunkMaxBytes | ok |
 
 ## Repository Performance Thresholds
 

@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-07-05T05:27:55.620Z",
-  "gitSha": "33a30ec0",
+  "generatedAt": "2026-07-05T06:00:07.240Z",
+  "gitSha": "7afdc4dc",
   "gitDirty": false,
   "generatedFor": {
-    "gitSha": "33a30ec0",
+    "gitSha": "7afdc4dc",
     "gitDirty": false,
-    "treeHash": "5af18466a49909348c42fcbd188a791d33c8fd63",
+    "treeHash": "69a572bfe0529dc42789149f004531e3bae9b6b8",
     "reportId": "operational-health",
     "dependencyFingerprint": {
       "algorithm": "sha256:dependency-files-v1",
-      "value": "22756d005d993d23f9122dccbeb1758e4396eaca64edef5710297b3f84d8633c",
+      "value": "e40c74b08894271d33370f50a174827c416117af93cbc271d37798096dd265c9",
       "files": [
         "reports/critical-coverage.json",
         "reports/critical-coverage.md",
@@ -365,7 +365,7 @@
     "chunkMaxBytes": 1250000,
     "entryAssets": [
       {
-        "file": "dist/assets/index-BvPZkEBS.js",
+        "file": "dist/assets/index-zjqg-fR6.js",
         "sizeBytes": 19469,
         "maxBytes": 700000,
         "status": "ok"
@@ -383,13 +383,13 @@
         "status": "near-limit"
       },
       {
-        "file": "dist/assets/app-authenticated-shell-DVV8EvWg.js",
-        "sizeBytes": 537718,
+        "file": "dist/assets/app-authenticated-shell-BM1LNf9O.js",
+        "sizeBytes": 537942,
         "maxBytes": 600000,
         "budgetLabel": "app-authenticated-shell",
         "budgetSource": "startupChunkBudget",
         "severity": "error",
-        "budgetUtilizationPct": 89.6,
+        "budgetUtilizationPct": 89.7,
         "status": "near-limit"
       },
       {
@@ -433,7 +433,7 @@
         "status": "ok"
       },
       {
-        "file": "dist/assets/documentFallbacks-DXiyD4Xb.js",
+        "file": "dist/assets/documentFallbacks-BpNioYEc.js",
         "sizeBytes": 344643,
         "maxBytes": 1250000,
         "budgetLabel": "chunkMaxBytes",
@@ -443,7 +443,7 @@
         "status": "ok"
       },
       {
-        "file": "dist/assets/LineChart-DAbyGLWX.js",
+        "file": "dist/assets/LineChart-tAm3U9fu.js",
         "sizeBytes": 331288,
         "maxBytes": 1250000,
         "budgetLabel": "chunkMaxBytes",
@@ -469,19 +469,19 @@
     },
     "criticalAssets": [
       {
-        "file": "dist/assets/index-BvPZkEBS.js",
+        "file": "dist/assets/index-zjqg-fR6.js",
         "sizeBytes": 19469,
         "maxBytes": 700000,
         "status": "ok"
       },
       {
-        "file": "dist/assets/app-authenticated-shell-DVV8EvWg.js",
-        "sizeBytes": 537718,
+        "file": "dist/assets/app-authenticated-shell-BM1LNf9O.js",
+        "sizeBytes": 537942,
         "maxBytes": 600000,
         "budgetLabel": "app-authenticated-shell",
         "budgetSource": "startupChunkBudget",
         "severity": "error",
-        "budgetUtilizationPct": 89.6,
+        "budgetUtilizationPct": 89.7,
         "status": "near-limit"
       }
     ],

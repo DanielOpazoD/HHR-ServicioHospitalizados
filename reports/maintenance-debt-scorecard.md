@@ -1,7 +1,7 @@
 # Maintenance Debt Scorecard
 
-Generated at: 2026-07-05T05:27:56.894Z
-Commit: 33a30ec0
+Generated at: 2026-07-05T06:00:07.776Z
+Commit: 7afdc4dc
 Worktree: clean
 
 ## Pending Hotspots
