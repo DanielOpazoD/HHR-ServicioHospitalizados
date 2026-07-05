@@ -169,6 +169,54 @@ describe('AuditTable patient-centered packages', () => {
     expect(onPatientPackageFilterChange).toHaveBeenCalledWith('DISCHARGE');
   });
 
+  it('surfaces clinical sync state and mutation evidence with fewer clicks', () => {
+    const blockedLog: AuditLogEntry = {
+      ...statusLog,
+      id: 'blocked-sync-1',
+      action: 'CONFLICT_AUTO_MERGED',
+      entityType: 'dailyRecord',
+      entityId: '2026-07-01',
+      details: {
+        patientName: 'Paciente Bloqueado',
+        rut: '33.333.333-3',
+        bedId: 'H5C1',
+        mutationId: 'mut-blocked-ui',
+        clientId: 'pc-a',
+        tabId: 'tab-a',
+        resolution: 'blocked',
+        changedPaths: ['beds.H5C1.pathology'],
+        changes: { diagnosis: { old: 'EPOC', new: 'ICC' } },
+      },
+    };
+    const syncPackages = buildClinicalAuditPatientPackages([blockedLog]);
+    const toggleRow = vi.fn();
+
+    render(
+      <AuditTable
+        {...baseProps}
+        filteredLogs={[blockedLog]}
+        paginatedLogs={[blockedLog]}
+        patientPackages={syncPackages}
+        paginatedPatientPackages={syncPackages}
+        patientPackageFilterOptions={[
+          { id: 'ALL', label: 'Todos', count: 1 },
+          { id: 'SYNC_BLOCKED', label: 'Bloqueadas', count: 1 },
+        ]}
+        expandedRows={new Set([syncPackages[0].id])}
+        toggleRow={toggleRow}
+      />
+    );
+
+    expect(screen.getByText('Paciente Bloqueado')).toBeInTheDocument();
+    expect(screen.getAllByText('Bloqueada').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /bloqueadas 1/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /ver eventos incluidos/i }));
+
+    expect(screen.getByText(/mut-blocked-ui · pc-a · tab-a/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/beds\.H5C1\.pathology/i).length).toBeGreaterThan(0);
+  });
+
   it('renders intention tabs so view-only events do not contaminate clinical edits', () => {
     const onPatientPackageIntentChange = vi.fn();
     render(

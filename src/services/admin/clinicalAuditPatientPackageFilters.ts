@@ -6,6 +6,10 @@ import {
   MEDICATION_AUDIT_ACTIONS,
   VIEW_AUDIT_ACTIONS,
 } from '@/services/admin/clinicalAuditPatientPackageActionGroups';
+import {
+  getClinicalAuditTimelineV2StatesForPackage,
+  getClinicalAuditTimelineV2SummaryForPackage,
+} from '@/services/admin/clinicalAuditTimelineV2';
 
 export type ClinicalAuditPatientPackageFilterId =
   | 'ALL'
@@ -22,7 +26,13 @@ export type ClinicalAuditPatientPackageFilterId =
   | 'DOCUMENTS'
   | 'DIAGNOSIS'
   | 'STATUS'
-  | 'MEDICATIONS';
+  | 'MEDICATIONS'
+  | 'SYNC_ACCEPTED'
+  | 'SYNC_MERGED'
+  | 'SYNC_BLOCKED'
+  | 'SYNC_ALREADY_APPLIED'
+  | 'SYNC_QUEUED'
+  | 'SYNC_REPLAYED';
 
 export type ClinicalAuditPatientPackageIntentId =
   | 'CLINICAL_OPERATIONS'
@@ -71,6 +81,12 @@ const FILTER_LABELS: Record<ClinicalAuditPatientPackageFilterId, string> = {
   DIAGNOSIS: 'Diagnóstico',
   STATUS: 'Estado',
   MEDICATIONS: 'Indicaciones',
+  SYNC_ACCEPTED: 'Aceptadas',
+  SYNC_MERGED: 'Merge automático',
+  SYNC_BLOCKED: 'Bloqueadas',
+  SYNC_ALREADY_APPLIED: 'Ya aplicadas',
+  SYNC_QUEUED: 'En cola',
+  SYNC_REPLAYED: 'Replay',
 };
 
 const INTENT_LABELS: Record<ClinicalAuditPatientPackageIntentId, string> = {
@@ -92,6 +108,12 @@ const FILTER_ORDER: ClinicalAuditPatientPackageFilterId[] = [
   'DIAGNOSIS',
   'STATUS',
   'CONFLICT',
+  'SYNC_BLOCKED',
+  'SYNC_MERGED',
+  'SYNC_ALREADY_APPLIED',
+  'SYNC_QUEUED',
+  'SYNC_REPLAYED',
+  'SYNC_ACCEPTED',
   'VIEW_ACTIVITY',
   'SYSTEM',
   'MEDICATIONS',
@@ -190,6 +212,13 @@ export const getClinicalAuditPatientPackageCategories = (
   if (auditPackage.flags.status) push('STATUS');
   if (auditPackage.flags.conflict) push('CONFLICT');
   if (packageHasAnyAction(auditPackage, VIEW_AUDIT_ACTIONS)) push('VIEW_ACTIVITY');
+  const syncStates = getClinicalAuditTimelineV2StatesForPackage(auditPackage);
+  if (syncStates.includes('accepted')) push('SYNC_ACCEPTED');
+  if (syncStates.includes('merged')) push('SYNC_MERGED');
+  if (syncStates.includes('blocked')) push('SYNC_BLOCKED');
+  if (syncStates.includes('already_applied')) push('SYNC_ALREADY_APPLIED');
+  if (syncStates.includes('queued')) push('SYNC_QUEUED');
+  if (syncStates.includes('replayed')) push('SYNC_REPLAYED');
   if (
     resolveClinicalAuditPatientPackageIntent(auditPackage) === 'SYSTEM_SYNC' ||
     packageHasAnyAction(auditPackage, SYSTEM_SYNC_ACTIONS)
@@ -231,6 +260,7 @@ export const buildClinicalAuditPatientPackageSearchIndex = (
     auditPackage.primaryBedLabel,
     auditPackage.recordDate,
     auditPackage.summary,
+    getClinicalAuditTimelineV2SummaryForPackage(auditPackage),
     ...auditPackage.modules,
     ...actionLabels,
     ...actorText,
@@ -240,6 +270,15 @@ export const buildClinicalAuditPatientPackageSearchIndex = (
       String(change.oldValue ?? ''),
       String(change.newValue ?? ''),
     ]),
+    ...auditPackage.rawLogs.flatMap(log => {
+      const details = log.details || {};
+      return [
+        String(details.mutationId ?? ''),
+        String(details.clientId ?? ''),
+        String(details.tabId ?? ''),
+        ...(Array.isArray(details.changedPaths) ? details.changedPaths.map(String) : []),
+      ];
+    }),
   ]
     .filter((value): value is string => typeof value === 'string' && value.length > 0)
     .map(normalizeClinicalAuditPatientPackageSearch)

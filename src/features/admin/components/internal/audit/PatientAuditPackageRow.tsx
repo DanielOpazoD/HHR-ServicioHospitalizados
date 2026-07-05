@@ -14,7 +14,7 @@ import {
 import clsx from 'clsx';
 
 import type { ClinicalAuditPatientPackage } from '@/services/admin/clinicalAuditPatientPackages';
-import { buildClinicalAuditPresentation } from '@/services/admin/clinicalAuditPresentation';
+import { buildClinicalAuditTimelineV2GroupFromPackage } from '@/services/admin/clinicalAuditTimelineV2';
 import { AUDIT_ACTION_LABELS } from '@/services/admin/auditConstants';
 import { writeClipboardText } from '@/shared/runtime/browserClipboardRuntime';
 import {
@@ -30,6 +30,10 @@ import {
   AuditPackageExpandedChanges,
   AuditPackageVisibleChanges,
 } from './AuditPackageChangeSummary';
+import {
+  auditPackageSyncBadgeClassName,
+  PatientAuditPackageEventList,
+} from './PatientAuditPackageEventList';
 
 interface PatientAuditPackageRowProps {
   auditPackage: ClinicalAuditPatientPackage;
@@ -54,6 +58,10 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
   const hiddenChangeCount = Math.max(0, displayChanges.length - visibleChanges.length);
   const integratedChangeCount = Math.max(0, auditPackage.changes.length - displayChanges.length);
   const rawEventsJson = getRawAuditPackageEventsJson(auditPackage);
+  const timelineGroup = React.useMemo(
+    () => buildClinicalAuditTimelineV2GroupFromPackage(auditPackage),
+    [auditPackage]
+  );
   const detailsId = `patient-audit-package-${auditPackage.id}`;
   const includedEventsId = `${detailsId}-included-events`;
   const technicalJsonId = `${detailsId}-technical-json`;
@@ -70,22 +78,6 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
   const handleCopySummary = () => {
     void writeClipboardText(buildAuditPackageCopySummary(auditPackage)).catch(() => undefined);
   };
-
-  const renderEventList = (logs: typeof auditPackage.rawLogs) => (
-    <div className="divide-y divide-slate-100">
-      {logs.map(log => {
-        const presentation = buildClinicalAuditPresentation(log);
-        const time = displayTimestampParts(log.timestamp).time;
-        return (
-          <div key={log.id} className="grid gap-2 px-3 py-2 md:grid-cols-[90px_1fr_1.2fr]">
-            <span className="font-mono text-[10px] text-slate-400">{time}</span>
-            <span className="text-xs font-bold text-slate-700">{presentation.title}</span>
-            <span className="text-xs text-slate-600">{presentation.narrative}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
 
   return (
     <>
@@ -221,6 +213,20 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                 <ShieldCheck size={12} />
                 {auditPackage.eventCount} eventos
               </span>
+              {timelineGroup.syncStates.slice(0, 2).map(state => (
+                <span
+                  key={state}
+                  className={clsx(
+                    'inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold',
+                    auditPackageSyncBadgeClassName(state)
+                  )}
+                >
+                  {timelineGroup.syncStateSummary.includes('+')
+                    ? timelineGroup.events.find(event => event.mutationState === state)
+                        ?.mutationStateLabel
+                    : timelineGroup.syncStateSummary}
+                </span>
+              ))}
               <span className="text-[10px] text-slate-400">
                 {auditPackage.actions
                   .map(action => AUDIT_ACTION_LABELS[action] || action)
@@ -307,7 +313,10 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                           </h5>
                         </div>
                         {clinicalEvents.length > 0 ? (
-                          renderEventList(clinicalEvents)
+                          <PatientAuditPackageEventList
+                            logs={clinicalEvents}
+                            timelineGroup={timelineGroup}
+                          />
                         ) : (
                           <p className="px-3 py-2 text-xs text-slate-500">
                             No hay eventos de edición en este paquete.
@@ -322,7 +331,10 @@ export const PatientAuditPackageRow: React.FC<PatientAuditPackageRowProps> = ({
                               Visualizaciones registradas
                             </h5>
                           </div>
-                          {renderEventList(viewEvents)}
+                          <PatientAuditPackageEventList
+                            logs={viewEvents}
+                            timelineGroup={timelineGroup}
+                          />
                         </div>
                       )}
                     </>

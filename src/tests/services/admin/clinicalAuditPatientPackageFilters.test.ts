@@ -126,6 +126,12 @@ describe('clinicalAuditPatientPackageFilters', () => {
       ['DIAGNOSIS', 0],
       ['STATUS', 0],
       ['CONFLICT', 1],
+      ['SYNC_BLOCKED', 0],
+      ['SYNC_MERGED', 1],
+      ['SYNC_ALREADY_APPLIED', 0],
+      ['SYNC_QUEUED', 0],
+      ['SYNC_REPLAYED', 0],
+      ['SYNC_ACCEPTED', 5],
       ['VIEW_ACTIVITY', 1],
       ['SYSTEM', 1],
       ['MEDICATIONS', 1],
@@ -181,6 +187,58 @@ describe('clinicalAuditPatientPackageFilters', () => {
     });
 
     expect(result.patientName).toBe('Paciente Indicacion');
+  });
+
+  it('filters and searches by clinical sync mutation context', () => {
+    const syncPackages = buildClinicalAuditPatientPackages([
+      baseLog({
+        id: 'blocked',
+        action: 'CONFLICT_AUTO_MERGED',
+        entityType: 'dailyRecord',
+        entityId: '2026-07-01',
+        details: {
+          patientName: 'Paciente Bloqueado',
+          rut: '11.111.111-1',
+          bedId: 'H3C1',
+          mutationId: 'mut-blocked-123',
+          clientId: 'pc-a',
+          tabId: 'tab-a',
+          resolution: 'blocked',
+          changedPaths: ['beds.H3C1.pathology'],
+        },
+      }),
+      baseLog({
+        id: 'already-applied',
+        action: 'CONFLICT_AUTO_MERGED',
+        timestamp: '2026-07-01T19:50:29.000Z',
+        entityType: 'dailyRecord',
+        entityId: '2026-07-01',
+        details: {
+          patientName: 'Paciente Idempotente',
+          rut: '22.222.222-2',
+          bedId: 'H3C2',
+          mutationId: 'mut-idempotent-456',
+          syncStatus: 'already_applied',
+          changedPaths: ['beds.H3C2.status'],
+        },
+      }),
+    ]);
+
+    expect(
+      filterClinicalAuditPatientPackages(syncPackages, {
+        activeFilter: 'SYNC_BLOCKED',
+      }).map(auditPackage => auditPackage.patientName)
+    ).toEqual(['Paciente Bloqueado']);
+    expect(
+      filterClinicalAuditPatientPackages(syncPackages, {
+        activeFilter: 'SYNC_ALREADY_APPLIED',
+      }).map(auditPackage => auditPackage.patientName)
+    ).toEqual(['Paciente Idempotente']);
+    expect(
+      filterClinicalAuditPatientPackages(syncPackages, {
+        searchTerm: 'mut-blocked-123',
+      }).map(auditPackage => auditPackage.patientName)
+    ).toEqual(['Paciente Bloqueado']);
   });
 
   it('keeps mixed conflict document and medication packages in clinical operations', () => {
