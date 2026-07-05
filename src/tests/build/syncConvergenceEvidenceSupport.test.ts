@@ -14,6 +14,7 @@ describe('sync convergence evidence support', () => {
       'sync-convergence',
       'authority-replay',
       'recovery-readiness',
+      'clinical-sync-simulator',
     ]);
     expect(
       result.sections.flatMap(section => section.checks.map((check: { id: string }) => check.id))
@@ -23,6 +24,7 @@ describe('sync convergence evidence support', () => {
         'truth-selection-telemetry',
         'planner-no-aggressive-writes',
         'three-client-replay-coverage',
+        'multi-client-simulator-coverage',
       ])
     );
   });
@@ -37,5 +39,6 @@ describe('sync convergence evidence support', () => {
     expect(markdown).toContain('Post-merge convergence');
     expect(markdown).toContain('Authority replay traceability');
     expect(markdown).toContain('Conservative recovery readiness');
+    expect(markdown).toContain('Clinical sync simulator');
   });
 });

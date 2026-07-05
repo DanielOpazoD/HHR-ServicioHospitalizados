@@ -59,6 +59,22 @@ export const evaluateSyncConvergenceEvidence = root => {
     root,
     'src/tests/features/admin/systemHealthSyncConvergencePanel.test.ts'
   );
+  const simulatorHarness = readText(
+    root,
+    'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts'
+  );
+  const simulatorHarnessTests = readText(
+    root,
+    'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.test.ts'
+  );
+  const simulatorCensusTests = readText(
+    root,
+    'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.census.test.ts'
+  );
+  const simulatorHandoffTests = readText(
+    root,
+    'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.handoff.test.ts'
+  );
 
   const autoMergeInvariantIndex = autoMerge.indexOf(
     'evaluateDailyRecordConflictPostMergeInvariants'
@@ -210,9 +226,51 @@ export const evaluateSyncConvergenceEvidence = root => {
         ['src/tests/services/observability/syncRecoveryPlanner.test.ts']
       ),
     ]),
+    buildSection('clinical-sync-simulator', 'Clinical sync simulator', [
+      buildCheck(
+        'multi-client-simulator-coverage',
+        ['restartClient', 'replayNext', 'outbox', 'expectedVersion', 'changedPaths'].every(token =>
+          simulatorHarness.includes(token)
+        ) &&
+          simulatorHarnessTests.includes('stale outbox pending') &&
+          simulatorHarnessTests.includes('post-merge invariants reject'),
+        'The simulator models logical clients, stale outbox, restart/replay and invariant-blocked writes.',
+        [
+          'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts',
+          'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.test.ts',
+        ]
+      ),
+      buildCheck(
+        'census-replay-scenarios',
+        [
+          'new patient created remotely',
+          'bed move',
+          'discharges',
+          'transfers',
+          'cma',
+          'invasive-device edits',
+        ].every(token => simulatorCensusTests.includes(token)),
+        'Census scenarios cover admission, bed moves, discharge/transfer/CMA and DMI replay after stale clients.',
+        ['src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.census.test.ts']
+      ),
+      buildCheck(
+        'handoff-replay-scenarios',
+        [
+          'handoffNoteDayShift',
+          'handoffNoteNightShift',
+          'handoffNovedadesDayShift',
+          'handoffNovedadesNightShift',
+          'medicalHandoffBySpecialty',
+          'medicalHandoffEntries',
+        ].every(token => simulatorHandoffTests.includes(token)),
+        'Nursing and medical handoff scenarios cover stale replay, parallel specialties and entry-level merge semantics.',
+        ['src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.handoff.test.ts']
+      ),
+    ]),
   ];
 
   const validationCommands = [
+    'npx vitest run src/tests/support/clinicalSyncSimulator',
     'npx vitest run src/tests/services/observability/syncConvergenceDiagnostics.test.ts src/tests/services/observability/syncRecoveryPlanner.test.ts',
     'npx vitest run src/tests/services/storage/syncQueueTelemetryController.test.ts src/tests/services/storage/syncQueueMutationConflict.test.ts',
     'npx vitest run src/tests/features/admin/systemHealthSyncConvergencePanel.test.ts src/tests/hooks/controllers/systemHealthReporterController.test.ts',

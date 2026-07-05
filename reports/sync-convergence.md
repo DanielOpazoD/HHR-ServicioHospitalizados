@@ -1,25 +1,28 @@
 # Sync Convergence Evidence
 
-- Generated: 2026-07-03T04:31:28.285Z
-- Git SHA: `6ad3da47`
-- Worktree: `clean`
+- Generated: 2026-07-05T01:46:33.503Z
+- Git SHA: `8c775bdc`
+- Worktree: `dirty`
 - Status: `ready`
-- Checks: `13/13` passing
+- Checks: `17/17` passing
 
 ## Sections
 
 | Section | Status | Checks |
 | --- | --- | ---: |
-| Post-merge convergence | OK | 4/4 |
+| Post-merge convergence | OK | 5/5 |
 | Authority replay traceability | OK | 4/4 |
 | Conservative recovery readiness | OK | 5/5 |
+| Clinical sync simulator | OK | 3/3 |
 
 ## Post-merge convergence
 
 - OK `diagnostic-status-contract`: The convergence diagnostic exposes the four operational states used by support.
-  - Evidence: `src/services/observability/syncConvergenceDiagnostics.ts`
+  - Evidence: `src/services/observability/syncConvergenceDiagnosticTypes.ts`, `src/services/observability/syncConvergenceDiagnostics.ts`
 - OK `clinical-divergence-findings`: The diagnostic detects duplicate active patients, missing movements and divergent handoff.
-  - Evidence: `src/services/observability/syncConvergenceDiagnostics.ts`
+  - Evidence: `src/services/observability/syncConvergenceDiagnosticTypes.ts`, `src/services/observability/syncConvergenceHandoffDiagnostics.ts`
+- OK `handoff-module-classification`: Nursing and medical handoff divergences are classified with clinical module semantics.
+  - Evidence: `src/services/observability/syncConvergenceDiagnosticTypes.ts`, `src/services/observability/syncConvergenceHandoffDiagnostics.ts`
 - OK `diagnostic-tests`: The diagnostic has focused tests for unsafe and recoverable divergence scenarios.
   - Evidence: `src/tests/services/observability/syncConvergenceDiagnostics.test.ts`
 - OK `operational-panel`: System Health summarizes convergence state without requiring raw log expansion.
@@ -49,8 +52,18 @@
 - OK `planner-tests`: Recovery planner tests cover retry, manual block and already-applied acknowledgement decisions.
   - Evidence: `src/tests/services/observability/syncRecoveryPlanner.test.ts`
 
+## Clinical sync simulator
+
+- OK `multi-client-simulator-coverage`: The simulator models logical clients, stale outbox, restart/replay and invariant-blocked writes.
+  - Evidence: `src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts`, `src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.test.ts`
+- OK `census-replay-scenarios`: Census scenarios cover admission, bed moves, discharge/transfer/CMA and DMI replay after stale clients.
+  - Evidence: `src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.census.test.ts`
+- OK `handoff-replay-scenarios`: Nursing and medical handoff scenarios cover stale replay, parallel specialties and entry-level merge semantics.
+  - Evidence: `src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.handoff.test.ts`
+
 ## Validation Commands
 
+- `npx vitest run src/tests/support/clinicalSyncSimulator`
 - `npx vitest run src/tests/services/observability/syncConvergenceDiagnostics.test.ts src/tests/services/observability/syncRecoveryPlanner.test.ts`
 - `npx vitest run src/tests/services/storage/syncQueueTelemetryController.test.ts src/tests/services/storage/syncQueueMutationConflict.test.ts`
 - `npx vitest run src/tests/features/admin/systemHealthSyncConvergencePanel.test.ts src/tests/hooks/controllers/systemHealthReporterController.test.ts`
