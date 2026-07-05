@@ -54,14 +54,7 @@ export const resolveClinicalAuditTimelineV2SyncState = (
   log: AuditLogEntry
 ): ClinicalAuditTimelineV2SyncState => {
   const details = getAuditLogDetails(log);
-  const candidates = [
-    details.syncStatus,
-    details.resolution,
-    details.status,
-    details.result,
-    details.outcome,
-    details.queueStatus,
-  ];
+  const candidates = [details.syncStatus, details.resolution, details.queueStatus];
 
   for (const candidate of candidates) {
     const token = normalizeClinicalAuditTimelineV2Token(candidate);
@@ -252,15 +245,9 @@ const buildTimelineGroupFromPackage = (
 
   const visibleChanges = dedupeChanges(events.flatMap(event => event.changes));
   const chronologicalVisibleChanges = dedupeChanges(
-    auditPackage.changes.map((change, index) => ({
-      fieldLabel: normalizeClinicalAuditTimelineV2FieldLabel(change.fieldLabel),
-      oldValue: change.oldValue,
-      newValue: change.newValue,
-      oldValuePreview: formatClinicalAuditTimelineV2ValuePreview(change.oldValue),
-      newValuePreview: formatClinicalAuditTimelineV2ValuePreview(change.newValue),
-      sourceLogId: change.sourceLogId,
-      changedPath: events.find(event => event.id === change.sourceLogId)?.changedPaths[index],
-    }))
+    [...events]
+      .sort((a, b) => parseAuditTimestampMs(a.timestamp) - parseAuditTimestampMs(b.timestamp))
+      .flatMap(event => event.changes)
   );
   const viewEventCount = events.filter(event => event.isViewEvent).length;
 

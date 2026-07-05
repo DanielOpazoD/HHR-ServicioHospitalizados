@@ -232,4 +232,111 @@ describe('clinicalAuditTimelineV2', () => {
       filterClinicalAuditTimelineV2Groups(timeline.groups, { syncState: 'already_applied' })
     ).toEqual([expect.objectContaining({ patientName: 'Paciente Idempotente' })]);
   });
+
+  it('classifies queued, replayed and unknown states without reading clinical status as sync', () => {
+    const timeline = buildClinicalAuditTimelineV2([
+      baseLog({
+        id: 'queued-1',
+        patientIdentifier: '66.666.666-6',
+        details: {
+          patientName: 'Paciente En Cola',
+          rut: '66.666.666-6',
+          bedId: 'H6C1',
+          syncStatus: 'queued',
+          changedPaths: ['beds.H6C1.pathology'],
+        },
+      }),
+      baseLog({
+        id: 'replayed-1',
+        patientIdentifier: '77.777.777-7',
+        timestamp: '2026-07-01T19:40:29.000Z',
+        details: {
+          patientName: 'Paciente Replay',
+          rut: '77.777.777-7',
+          bedId: 'H6C2',
+          queueStatus: 'outbox_replayed',
+          changedPaths: ['beds.H6C2.status'],
+        },
+      }),
+      baseLog({
+        id: 'unknown-view-1',
+        action: 'VIEW_PATIENT',
+        patientIdentifier: '88.888.888-8',
+        timestamp: '2026-07-01T19:50:29.000Z',
+        details: {
+          patientName: 'Paciente Visualizado',
+          rut: '88.888.888-8',
+          bedId: 'H6C3',
+        },
+      }),
+      baseLog({
+        id: 'clinical-status-1',
+        patientIdentifier: '99.999.999-9',
+        timestamp: '2026-07-01T20:00:29.000Z',
+        details: {
+          patientName: 'Paciente Estado Clinico',
+          rut: '99.999.999-9',
+          bedId: 'H6C4',
+          status: 'blocked',
+          changes: { diagnosis: { old: 'Asma', new: 'EPOC' } },
+        },
+      }),
+    ]);
+
+    const eventsById = new Map(
+      timeline.groups.flatMap(group => group.events).map(event => [event.id, event.mutationState])
+    );
+
+    expect(eventsById.get('queued-1')).toBe('queued');
+    expect(eventsById.get('replayed-1')).toBe('replayed');
+    expect(eventsById.get('unknown-view-1')).toBe('unknown');
+    expect(eventsById.get('clinical-status-1')).toBe('accepted');
+    expect(timeline.syncStateOptions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'queued', label: 'En cola', count: 1 }),
+        expect.objectContaining({ id: 'replayed', label: 'Replay', count: 1 }),
+        expect.objectContaining({ id: 'unknown', label: 'Sin estado sync', count: 1 }),
+      ])
+    );
+  });
+
+  it('keeps changed paths scoped to each event in multi-log packages', () => {
+    const timeline = buildClinicalAuditTimelineV2([
+      baseLog({
+        id: 'multi-status-1',
+        details: {
+          patientName: 'Paciente Multipath',
+          rut: '10.101.010-1',
+          bedId: 'H7C1',
+          clinicalEpisodeId: 'episode-multipath',
+          changes: { status: { old: '', new: 'Estable' } },
+          changedPaths: ['beds.H7C1.status'],
+        },
+      }),
+      baseLog({
+        id: 'multi-diagnosis-1',
+        timestamp: '2026-07-01T19:37:29.000Z',
+        action: 'PATIENT_DIAGNOSIS_CHANGED',
+        details: {
+          patientName: 'Paciente Multipath',
+          rut: '10.101.010-1',
+          bedId: 'H7C1',
+          clinicalEpisodeId: 'episode-multipath',
+          changes: {
+            diagnosis: { old: 'Asma', new: 'EPOC' },
+            specialty: { old: 'Medicina', new: 'Cirugía' },
+          },
+          changedPaths: ['beds.H7C1.pathology', 'beds.H7C1.specialty'],
+        },
+      }),
+    ]);
+
+    expect(
+      timeline.groups[0].visibleChanges.map(change => [change.fieldLabel, change.changedPath])
+    ).toEqual([
+      ['Estado', 'beds.H7C1.status'],
+      ['Diagnóstico', 'beds.H7C1.pathology'],
+      ['Especialidad', 'beds.H7C1.specialty'],
+    ]);
+  });
 });
