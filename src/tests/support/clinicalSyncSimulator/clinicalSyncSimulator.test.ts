@@ -170,6 +170,7 @@ describe('clinicalSyncSimulator', () => {
       clientId: 'doctor-b',
       module: 'censo',
       changedPaths: ['beds.R1.pathology'],
+      reason: expect.stringContaining('conflicto'),
     });
   });
 
@@ -206,6 +207,7 @@ describe('clinicalSyncSimulator', () => {
       mutationId: mutation.mutationId,
       clientId: 'client-a',
       tabId: expect.stringMatching(/^client-a-tab-/),
+      reason: expect.stringContaining('idempotente'),
     });
   });
 });

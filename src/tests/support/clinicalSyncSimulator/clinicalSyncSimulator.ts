@@ -60,6 +60,7 @@ export interface ClinicalSyncAuditEvent {
   expectedVersion?: string;
   acceptedVersion?: string;
   affected?: ClinicalSyncAffectedSummary;
+  reason: string;
   invariantViolations: DailyRecordConflictPostMergeInvariantViolation[];
 }
 
@@ -302,6 +303,7 @@ export class ClinicalSyncSimulator {
       expectedVersion: mutation.syncContract.expectedVersion,
       acceptedVersion,
       affected: this.buildAffectedSummary(mutation),
+      reason: this.buildReason(action, mutation, invariantViolations),
       invariantViolations,
     };
   }
@@ -311,6 +313,14 @@ export class ClinicalSyncSimulator {
       const baseValue = this.readPath(mutation.baseRecord, path);
       const localValue = this.readPath(mutation.localRecord, path);
       const remoteValue = this.readPath(this.remote, path);
+
+      if (path.startsWith('medicalHandoffBySpecialty.')) {
+        return (
+          !this.areEqual(baseValue, localValue) &&
+          !this.areEqual(baseValue, remoteValue) &&
+          !this.areEqual(localValue, remoteValue)
+        );
+      }
 
       if (
         !this.isComparableFieldValue(baseValue) ||
@@ -339,6 +349,17 @@ export class ClinicalSyncSimulator {
     if (bedIds.length === 0) return undefined;
 
     for (const bedId of bedIds) {
+      if (this.hasEpisodeMismatchForBed(mutation, bedId)) {
+        const remoteBed = this.remote.beds?.[bedId];
+        if (remoteBed?.patientName || remoteBed?.rut) {
+          return {
+            bedId,
+            patientName: remoteBed.patientName || undefined,
+            rut: remoteBed.rut || undefined,
+          };
+        }
+      }
+
       const candidates = [
         mutation.localRecord.beds?.[bedId],
         this.remote.beds?.[bedId],
@@ -355,6 +376,41 @@ export class ClinicalSyncSimulator {
     }
 
     return { bedId: bedIds[0] };
+  }
+
+  private buildReason(
+    action: ClinicalSyncAuditEvent['action'],
+    mutation: ClinicalSyncQueuedMutation,
+    invariantViolations: DailyRecordConflictPostMergeInvariantViolation[]
+  ): string {
+    if (action === 'queued') return 'mutacion clinica encolada para replay';
+    if (action === 'already_applied') return 'replay idempotente: mutationId ya aplicado';
+    if (action === 'accepted') return 'mutacion aceptada por version vigente';
+    if (action === 'blocked' && invariantViolations.length > 0) {
+      return 'bloqueado por invariantes post-merge de seguridad clinica';
+    }
+    if (action === 'blocked') return 'conflicto clinico incompatible requiere revision';
+    if (this.hasAnyEpisodeMismatch(mutation)) {
+      return 'intencion clinica compatible con proteccion por episodio clinico distinto';
+    }
+    if (action === 'auto_merged') {
+      return 'auto-merge por intencion clinica compatible e invariantes visibles';
+    }
+    return 'resultado de sincronizacion clinica registrado';
+  }
+
+  private hasAnyEpisodeMismatch(mutation: ClinicalSyncQueuedMutation): boolean {
+    return (mutation.syncContract.changedPaths || [])
+      .filter(path => path.startsWith('beds.'))
+      .map(path => path.split('.')[1])
+      .filter((bedId): bedId is string => Boolean(bedId))
+      .some(bedId => this.hasEpisodeMismatchForBed(mutation, bedId));
+  }
+
+  private hasEpisodeMismatchForBed(mutation: ClinicalSyncQueuedMutation, bedId: string): boolean {
+    const localEpisode = mutation.localRecord.beds?.[bedId]?.clinicalEpisodeId;
+    const remoteEpisode = this.remote.beds?.[bedId]?.clinicalEpisodeId;
+    return Boolean(localEpisode && remoteEpisode && localEpisode !== remoteEpisode);
   }
 
   private readPath(record: DailyRecord, path: string): unknown {
