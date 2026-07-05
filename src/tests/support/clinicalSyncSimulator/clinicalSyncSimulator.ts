@@ -386,13 +386,19 @@ export class ClinicalSyncSimulator {
     if (action === 'queued') return 'mutacion clinica encolada para replay';
     if (action === 'already_applied') return 'replay idempotente: mutationId ya aplicado';
     if (action === 'accepted') return 'mutacion aceptada por version vigente';
+    if (this.hasAnyEpisodeMismatch(mutation)) {
+      if (action === 'blocked' && invariantViolations.length > 0) {
+        return 'bloqueado por invariantes post-merge y proteccion por episodio clinico distinto';
+      }
+      if (action === 'blocked') {
+        return 'conflicto clinico incompatible por episodio clinico distinto requiere revision';
+      }
+      return 'intencion clinica compatible con proteccion por episodio clinico distinto';
+    }
     if (action === 'blocked' && invariantViolations.length > 0) {
       return 'bloqueado por invariantes post-merge de seguridad clinica';
     }
     if (action === 'blocked') return 'conflicto clinico incompatible requiere revision';
-    if (this.hasAnyEpisodeMismatch(mutation)) {
-      return 'intencion clinica compatible con proteccion por episodio clinico distinto';
-    }
     if (action === 'auto_merged') {
       return 'auto-merge por intencion clinica compatible e invariantes visibles';
     }
