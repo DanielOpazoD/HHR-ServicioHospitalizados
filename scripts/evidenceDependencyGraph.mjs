@@ -101,7 +101,7 @@ export const EVIDENCE_DEPENDENCY_GRAPH = {
   'maintenance-debt-scorecard': reportNode({
     command: 'report:maintenance-debt-scorecard',
     artifacts: ['reports/maintenance-debt-scorecard.json', 'reports/maintenance-debt-scorecard.md'],
-    dependencies: ['quality-metrics'],
+    dependencies: ['quality-metrics', 'legacy-retirement-debt'],
   }),
   'release-readiness-scorecard': reportNode({
     command: 'report:release-readiness-scorecard',
