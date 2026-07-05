@@ -1,0 +1,143 @@
+{
+  "generatedAt": "2026-07-05T05:03:19.076Z",
+  "gitSha": "05efeb95",
+  "gitDirty": false,
+  "generatedFor": {
+    "gitSha": "05efeb95",
+    "gitDirty": false,
+    "treeHash": "bcab8c0db2e4eb1bf6c95c49306785a1d34bd975",
+    "reportId": "maintenance-debt-scorecard",
+    "dependencyFingerprint": {
+      "algorithm": "sha256:dependency-files-v1",
+      "value": "128e58aa69d69468c7047633e57ff3e6dd3395db80e0f2e964e4832a8c0732cc",
+      "files": [
+        "reports/quality-metrics.json",
+        "reports/quality-metrics.md"
+      ],
+      "missingFiles": []
+    }
+  },
+  "pendingHotspots": [],
+  "watchlist": [
+    {
+      "file": "firestore.rules",
+      "lines": 891,
+      "limit": 1050,
+      "limitSource": "rules-governance",
+      "remainingLines": 159
+    },
+    {
+      "file": "src/hooks/useCensusEmailRecipientLists.ts",
+      "lines": 132,
+      "limit": 180,
+      "limitSource": "hook-hotspot",
+      "remainingLines": 48
+    },
+    {
+      "file": "src/features/laboratory/controllers/labAnalyticsController.ts",
+      "lines": 35,
+      "limit": null,
+      "limitSource": null,
+      "remainingLines": null
+    },
+    {
+      "file": "src/hooks/useBedManagementReducer.ts",
+      "lines": 17,
+      "limit": null,
+      "limitSource": null,
+      "remainingLines": null
+    },
+    {
+      "file": "src/features/handoff/components/HandoffRowCells.tsx",
+      "lines": 5,
+      "limit": null,
+      "limitSource": null,
+      "remainingLines": null
+    },
+    {
+      "file": "src/services/repositories/dailyRecordWriteSupport.ts",
+      "lines": 2,
+      "limit": null,
+      "limitSource": null,
+      "remainingLines": null
+    }
+  ],
+  "tests": {
+    "flakeRiskFiles": 0,
+    "knownFailureEntries": 0,
+    "openKnownFailureEntries": 0
+  },
+  "legacyRetirementDebt": {
+    "status": "ok",
+    "openSurfaceCount": 4,
+    "maxOpenSurfaces": 4,
+    "rows": [
+      {
+        "id": "legacy-read-bridge",
+        "label": "Legacy read bridge",
+        "owner": "storage/repositories",
+        "phase": "restrict",
+        "status": "ok",
+        "signal": "entrypoints=2/2, importers=1/1",
+        "nextAction": "Keep the bridge import surface flat, then remove legacyRecordBridgeService from the daily-record read path after a clean disabled-mode release."
+      },
+      {
+        "id": "role-aliases",
+        "label": "Role aliases",
+        "owner": "auth/security",
+        "phase": "observe",
+        "status": "ok",
+        "signal": "governedEntries=4/4, missing=0",
+        "nextAction": "Audit production role sources before deleting legacy viewer role compatibility from helpers, Firestore rules and Storage rules."
+      },
+      {
+        "id": "legacy-clinical-document-hydration",
+        "label": "Legacy clinical document hydration",
+        "owner": "clinical-documents",
+        "phase": "restrict",
+        "status": "ok",
+        "signal": "consumers=3/3, unapproved=0",
+        "nextAction": "Keep all read/import/workspace hydration behind ClinicalDocumentCompatibilityPort, then retire schema v1 defaults after a clean current-schema release window."
+      },
+      {
+        "id": "legacy-episode-hydration",
+        "label": "Legacy episode hydration",
+        "owner": "census/clinical-documents",
+        "phase": "restrict",
+        "status": "ok",
+        "signal": "consumers=1/1, unapproved=0",
+        "nextAction": "Keep legacy episode-key parsing confined to patient-flow; migrate callers to lookup-key helpers and block UI-level ad hoc parsing."
+      }
+    ]
+  },
+  "firestoreRules": {
+    "lines": 891,
+    "maxLines": 1050,
+    "remainingLines": 159,
+    "ownerAreaId": "sync",
+    "ownedFragments": 11,
+    "governanceIssues": []
+  },
+  "recentChurn": [
+    {
+      "prefix": "src/services/repositories/",
+      "touches": 60
+    },
+    {
+      "prefix": "src/features/census/",
+      "touches": 54
+    },
+    {
+      "prefix": "src/hooks/",
+      "touches": 52
+    },
+    {
+      "prefix": "src/features/laboratory/",
+      "touches": 6
+    },
+    {
+      "prefix": "src/features/handoff/",
+      "touches": 5
+    }
+  ]
+}
