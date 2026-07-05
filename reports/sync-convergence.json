@@ -1,13 +1,13 @@
 {
   "reportId": "sync-convergence",
-  "generatedAt": "2026-07-03T04:31:28.285Z",
-  "gitSha": "6ad3da47",
+  "generatedAt": "2026-07-05T03:04:44.134Z",
+  "gitSha": "93c7429f",
   "gitDirty": false,
   "worktree": "clean",
   "summary": {
     "ok": true,
-    "sectionCount": 3,
-    "passingChecks": 13,
+    "sectionCount": 4,
+    "passingChecks": 18,
     "failingChecks": 0
   },
   "sections": [
@@ -21,6 +21,7 @@
           "ok": true,
           "description": "The convergence diagnostic exposes the four operational states used by support.",
           "evidence": [
+            "src/services/observability/syncConvergenceDiagnosticTypes.ts",
             "src/services/observability/syncConvergenceDiagnostics.ts"
           ]
         },
@@ -29,7 +30,17 @@
           "ok": true,
           "description": "The diagnostic detects duplicate active patients, missing movements and divergent handoff.",
           "evidence": [
-            "src/services/observability/syncConvergenceDiagnostics.ts"
+            "src/services/observability/syncConvergenceDiagnosticTypes.ts",
+            "src/services/observability/syncConvergenceHandoffDiagnostics.ts"
+          ]
+        },
+        {
+          "id": "handoff-module-classification",
+          "ok": true,
+          "description": "Nursing and medical handoff divergences are classified with clinical module semantics.",
+          "evidence": [
+            "src/services/observability/syncConvergenceDiagnosticTypes.ts",
+            "src/services/observability/syncConvergenceHandoffDiagnostics.ts"
           ]
         },
         {
@@ -135,9 +146,51 @@
           ]
         }
       ]
+    },
+    {
+      "id": "clinical-sync-simulator",
+      "title": "Clinical sync simulator",
+      "ok": true,
+      "checks": [
+        {
+          "id": "multi-client-simulator-coverage",
+          "ok": true,
+          "description": "The simulator models logical clients, stale outbox, restart/replay, invariant-blocked writes, incompatible field edits and idempotent retry.",
+          "evidence": [
+            "src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts",
+            "src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.test.ts"
+          ]
+        },
+        {
+          "id": "auditable-clinical-context",
+          "ok": true,
+          "description": "Simulator events preserve clinical context for observability: record date, mutation, client/tab, changed paths, bed, patient and RUT when available.",
+          "evidence": [
+            "src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts",
+            "src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.census.test.ts"
+          ]
+        },
+        {
+          "id": "census-replay-scenarios",
+          "ok": true,
+          "description": "Census scenarios cover admission, bed moves, discharge/transfer/CMA and DMI replay after stale clients.",
+          "evidence": [
+            "src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.census.test.ts"
+          ]
+        },
+        {
+          "id": "handoff-replay-scenarios",
+          "ok": true,
+          "description": "Nursing and medical handoff scenarios cover stale replay, parallel specialties and entry-level merge semantics.",
+          "evidence": [
+            "src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.handoff.test.ts"
+          ]
+        }
+      ]
     }
   ],
   "validationCommands": [
+    "npx vitest run src/tests/support/clinicalSyncSimulator",
     "npx vitest run src/tests/services/observability/syncConvergenceDiagnostics.test.ts src/tests/services/observability/syncRecoveryPlanner.test.ts",
     "npx vitest run src/tests/services/storage/syncQueueTelemetryController.test.ts src/tests/services/storage/syncQueueMutationConflict.test.ts",
     "npx vitest run src/tests/features/admin/systemHealthSyncConvergencePanel.test.ts src/tests/hooks/controllers/systemHealthReporterController.test.ts",

@@ -30,6 +30,27 @@ const normalizeIdentity = (value: unknown): string =>
 const hasActivePatientIdentity = (patient: PatientData | undefined): boolean =>
   Boolean(normalizeIdentity(patient?.patientName) || normalizeIdentity(patient?.rut));
 
+const hasResidualClinicalState = (patient: PatientData | undefined): boolean =>
+  Boolean(
+    normalizeIdentity(patient?.pathology) ||
+    normalizeIdentity(patient?.admissionDate) ||
+    normalizeIdentity(patient?.clinicalEpisodeId) ||
+    normalizeIdentity(patient?.handoffNoteDayShift) ||
+    normalizeIdentity(patient?.handoffNoteNightShift) ||
+    normalizeIdentity(patient?.medicalHandoffNote) ||
+    normalizeIdentity(patient?.deliveryRoute) ||
+    normalizeIdentity(patient?.deliveryDate) ||
+    normalizeIdentity(patient?.surgicalComplication) ||
+    Boolean(patient?.upcChecklist) ||
+    Boolean(patient?.cudyr) ||
+    Boolean(patient?.medicalHandoffAudit) ||
+    (patient?.devices || []).length > 0 ||
+    Object.keys(patient?.deviceDetails || {}).length > 0 ||
+    (patient?.deviceInstanceHistory || []).length > 0 ||
+    (patient?.clinicalEvents || []).length > 0 ||
+    (patient?.medicalHandoffEntries || []).length > 0
+  );
+
 const isCmaMovement = (movement: ConfirmedMovementRecord): movement is CmaMovementRecord =>
   !('bedId' in movement);
 
@@ -153,6 +174,17 @@ export const normalizeMovementBedConsistency = (
   movementsByBed.forEach((movements, bedId) => {
     const currentBed = beds[bedId];
     if (!currentBed) {
+      return;
+    }
+
+    if (!hasActivePatientIdentity(currentBed) && hasResidualClinicalState(currentBed)) {
+      const cleared = buildClearedBed(bedId, currentBed);
+      if (hasActivePatientIdentity(currentBed.clinicalCrib)) {
+        cleared.clinicalCrib = currentBed.clinicalCrib;
+        cleared.hasCompanionCrib = true;
+      }
+      beds[bedId] = cleared;
+      patches[`beds.${bedId}`] = cleared;
       return;
     }
 
