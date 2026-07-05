@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-07-05T06:00:07.776Z",
-  "gitSha": "7afdc4dc",
+  "generatedAt": "2026-07-05T06:18:15.066Z",
+  "gitSha": "ec9b5880",
   "gitDirty": false,
   "generatedFor": {
-    "gitSha": "7afdc4dc",
+    "gitSha": "ec9b5880",
     "gitDirty": false,
-    "treeHash": "69a572bfe0529dc42789149f004531e3bae9b6b8",
+    "treeHash": "17553500e42517506dd30565b6b6a33d0242756b",
     "reportId": "maintenance-debt-scorecard",
     "dependencyFingerprint": {
       "algorithm": "sha256:dependency-files-v1",
-      "value": "d13ef78f4aaf6684e0e2356f88b9d0b3ec550dc5e320b2233b92f3b7882f5ab1",
+      "value": "f65cde32e7aec9914628dc51b6f4f399c73904cc68c953275edaa8e362f489dd",
       "files": [
         "reports/legacy-retirement-debt.json",
         "reports/legacy-retirement-debt.md",

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-07-05T05:20:10.539Z",
-  "gitSha": "33a30ec0",
+  "generatedAt": "2026-07-05T06:02:28.400Z",
+  "gitSha": "ec9b5880",
   "gitDirty": false,
   "generatedFor": {
-    "gitSha": "33a30ec0",
+    "gitSha": "ec9b5880",
     "gitDirty": false,
-    "treeHash": "5af18466a49909348c42fcbd188a791d33c8fd63",
+    "treeHash": "17553500e42517506dd30565b6b6a33d0242756b",
     "reportId": "quality-metrics",
     "dependencyFingerprint": {
       "algorithm": "sha256:dependency-files-v1",

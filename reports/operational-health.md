@@ -1,7 +1,7 @@
 # Operational Health Snapshot
 
-- Generated: 2026-07-05T06:00:07.240Z
-- Git SHA: 7afdc4dc
+- Generated: 2026-07-05T06:17:54.991Z
+- Git SHA: ec9b5880
 - Schema current: v1
 - Schema legacy: v0
 
@@ -135,7 +135,7 @@
 | Zone | Lines | Functions | Branches | Status |
 | --- | ---: | ---: | ---: | --- |
 | `src/features/census/controllers` | 96.1 | 99.1 | 87.9 | PASS |
-| `src/features/clinical-documents` | 85.6 | 84.4 | 74.1 | PASS |
+| `src/features/clinical-documents` | 85.8 | 84.8 | 74.5 | PASS |
 | `src/services/transfers` | 85.5 | 84 | 74.9 | PASS |
 | `src/services/storage/firestore` | 89.7 | 94.5 | 81.8 | PASS |
 | `src/services/auth` | 84.9 | 86.3 | 71.1 | PASS |

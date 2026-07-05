@@ -1,6 +1,6 @@
 # Critical Coverage Report
 
-- Generated: 2026-07-05T05:03:16.933Z
+- Generated: 2026-07-05T06:17:54.609Z
 - Mode: dual-gated
 - Coverage artifact: `coverage/critical/coverage-final.json`
 - Coverage artifact present: yes
@@ -11,7 +11,7 @@
 | Zone | Source files | Test files | Structural | Lines | Functions | Branches | Baseline | Status |
 | --- | ---: | ---: | --- | ---: | ---: | ---: | --- | --- |
 | `src/features/census/controllers` | 143 | 236 | PASS (165.0%) | 96.1% | 99.1% | 87.9% | 93.6% / 97.5% / 83.3% | PASS |
-| `src/features/clinical-documents` | 141 | 103 | PASS (73.0%) | 85.6% | 84.4% | 74.1% | 83.0% / 80.0% / 72.0% | PASS |
+| `src/features/clinical-documents` | 141 | 103 | PASS (73.0%) | 85.8% | 84.8% | 74.5% | 83.0% / 80.0% / 72.0% | PASS |
 | `src/services/transfers` | 24 | 13 | PASS (54.2%) | 85.5% | 84.0% | 74.9% | 81.5% / 79.5% / 70.2% | PASS |
 | `src/services/storage/firestore` | 16 | 51 | PASS (318.8%) | 89.7% | 94.5% | 81.8% | 82.5% / 89.0% / 78.0% | PASS |
 | `src/services/auth` | 37 | 22 | PASS (59.5%) | 84.9% | 86.3% | 71.1% | 72.0% / 73.0% / 57.0% | PASS |

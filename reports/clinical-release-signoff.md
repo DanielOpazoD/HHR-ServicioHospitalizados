@@ -1,7 +1,7 @@
 # Clinical Release Signoff
 
-Generated at: 2026-07-05T05:20:10.153Z
-Commit: 33a30ec0
+Generated at: 2026-07-05T06:02:26.485Z
+Commit: ec9b5880
 Worktree: clean
 Release candidate: codex/release-readiness-blocks
 Overall: ok

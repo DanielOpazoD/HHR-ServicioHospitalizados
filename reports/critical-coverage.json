@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-05T05:03:16.933Z",
-  "gitSha": "05efeb95",
+  "generatedAt": "2026-07-05T06:17:54.609Z",
+  "gitSha": "ec9b5880",
   "gitDirty": false,
   "mode": "dual-gated",
   "coverageArtifact": "coverage/critical/coverage-final.json",
@@ -364,21 +364,21 @@
       "coverage": {
         "lines": {
           "total": 4409,
-          "covered": 3773,
+          "covered": 3785,
           "skipped": 0,
-          "pct": 85.6
+          "pct": 85.8
         },
         "functions": {
           "total": 1160,
-          "covered": 979,
+          "covered": 984,
           "skipped": 0,
-          "pct": 84.4
+          "pct": 84.8
         },
         "branches": {
           "total": 3049,
-          "covered": 2260,
+          "covered": 2270,
           "skipped": 0,
-          "pct": 74.1
+          "pct": 74.5
         },
         "filesInCoverage": 141,
         "missingFiles": []

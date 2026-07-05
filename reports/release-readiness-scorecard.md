@@ -1,7 +1,7 @@
 # Release Readiness Scorecard
 
-Generated at: 2026-07-05T05:27:56.329Z
-Commit: 33a30ec0
+Generated at: 2026-07-05T06:17:56.001Z
+Commit: ec9b5880
 Worktree: clean
 Overall: ok
 
@@ -12,7 +12,7 @@ Overall: ok
 - `system_confidence`: ok (overall=ok, openKnownFailures=0)
 - `operational_readiness`: ok (flow=passing, bundle=ok)
 - `frontend_startup`: ok (status=ok, preview=ok, issues=0)
-- `release_hotspots`: ok (vendor-heic2any-ClJ2fQYX.js: 1320.4 KB / 1416.0 KB (near-limit) | app-authenticated-shell-DVV8EvWg.js: 525.1 KB / 585.9 KB (near-limit) | vendor-pdfjs-C4G2Lk1-.js: 455.1 KB / 507.8 KB (near-limit) | vendor-firebase-firestore-CSGvoZjH.js: 383.9 KB / 488.3 KB (ok) | vendor-pdf-lib-BrVFzLGn.js: 381.7 KB / 419.9 KB (near-limit))
+- `release_hotspots`: ok (vendor-heic2any-ClJ2fQYX.js: 1320.4 KB / 1416.0 KB (near-limit) | app-authenticated-shell-BM1LNf9O.js: 525.3 KB / 585.9 KB (near-limit) | vendor-pdfjs-C4G2Lk1-.js: 455.1 KB / 507.8 KB (near-limit) | vendor-firebase-firestore-CSGvoZjH.js: 383.9 KB / 488.3 KB (ok) | vendor-pdf-lib-BrVFzLGn.js: 381.7 KB / 419.9 KB (near-limit))
 - `bundle_risk_ledger`: ok (surfaces=5, issues=0)
 - `release_confidence`: ok (areas=11, blockingMapped=7/7)
 - `ownership_governance`: ok (areas=11)
@@ -22,20 +22,20 @@ Overall: ok
 
 ## Sources
 
-- `qualityMetrics`: reports/quality-metrics.json (2026-07-05T05:20:10.539Z)
+- `qualityMetrics`: reports/quality-metrics.json (2026-07-05T06:02:28.400Z)
 - `bundleRiskLedger`: reports/bundle-risk-ledger.json (stable:bundle-risk-ledger)
-- `systemConfidence`: reports/system-confidence.json (2026-07-05T05:27:55.832Z)
-- `operationalHealth`: reports/operational-health.json (2026-07-05T05:27:55.620Z)
-- `releaseConfidenceMatrix`: reports/release-confidence-matrix.json (2026-07-05T05:27:56.034Z)
-- `technicalOwnershipMap`: reports/technical-ownership-map.json (2026-07-05T05:27:56.161Z)
-- `guardrailGovernance`: reports/guardrail-governance.json (2026-07-05T05:27:56.288Z)
-- `compatibilityImportGovernance`: reports/compatibility-import-governance.json (2026-07-05T05:20:11.808Z)
+- `systemConfidence`: reports/system-confidence.json (2026-07-05T06:17:55.282Z)
+- `operationalHealth`: reports/operational-health.json (2026-07-05T06:17:54.991Z)
+- `releaseConfidenceMatrix`: reports/release-confidence-matrix.json (2026-07-05T06:17:55.563Z)
+- `technicalOwnershipMap`: reports/technical-ownership-map.json (2026-07-05T06:17:55.749Z)
+- `guardrailGovernance`: reports/guardrail-governance.json (2026-07-05T06:17:55.938Z)
+- `compatibilityImportGovernance`: reports/compatibility-import-governance.json (2026-07-05T06:02:31.571Z)
 - `legacyRetirementDebt`: reports/legacy-retirement-debt.json (stable:legacy-retirement-debt)
 
 ## Release Hotspots
 
 - vendor-heic2any-ClJ2fQYX.js: 1320.4 KB / 1416.0 KB (near-limit)
-- app-authenticated-shell-DVV8EvWg.js: 525.1 KB / 585.9 KB (near-limit)
+- app-authenticated-shell-BM1LNf9O.js: 525.3 KB / 585.9 KB (near-limit)
 - vendor-pdfjs-C4G2Lk1-.js: 455.1 KB / 507.8 KB (near-limit)
 - vendor-firebase-firestore-CSGvoZjH.js: 383.9 KB / 488.3 KB (ok)
 - vendor-pdf-lib-BrVFzLGn.js: 381.7 KB / 419.9 KB (near-limit)

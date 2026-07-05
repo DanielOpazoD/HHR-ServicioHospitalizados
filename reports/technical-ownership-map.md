@@ -1,6 +1,6 @@
 # Technical Ownership Map
 
-Generated at: 2026-07-05T05:03:18.084Z
+Generated at: 2026-07-05T06:17:55.749Z
 Areas: 11
 
 | Area | Owner | Primary metric | Gates | Runbooks |
