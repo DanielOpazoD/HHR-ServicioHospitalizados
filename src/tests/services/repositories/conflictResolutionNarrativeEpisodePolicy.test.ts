@@ -232,6 +232,7 @@ describe('conflict resolution narrative episode policy', () => {
         patientName: 'Paciente con hidratacion',
         rut: '11.111.111-1',
         admissionDate: '2026-02-18',
+        clinicalEpisodeId: 'legacy_ep_local',
         handoffNoteDayShift: 'Evolucion local del mismo episodio',
         clinicalEvents: [{ id: 'event-local', name: 'Evento local del mismo episodio' }],
       } as unknown as DailyRecord['beds'][string],

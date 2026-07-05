@@ -1,5 +1,6 @@
 import type { PatientData } from '@/services/contracts/patientServiceContracts';
 import { buildClinicalEpisodeKey } from '@/application/patient-flow/clinicalEpisode';
+import { LEGACY_EPISODE_ID_PREFIX } from '@/application/patient-flow/clinicalEpisodeIdPolicy';
 
 const EPISODE_SCOPED_PATIENT_STRUCTURED_FIELDS = new Set([
   'clinicalEvents',
@@ -23,7 +24,8 @@ const resolveEpisodeTime = (patient: PatientData | undefined): string =>
 const resolvePersistedClinicalEpisodeId = (patient: PatientData | undefined): string =>
   normalizeEpisodeValue(patient?.clinicalEpisodeId);
 
-const isLegacyGeneratedEpisodeId = (value: string): boolean => value.startsWith('legacy_ep_');
+const isLegacyGeneratedEpisodeId = (value: string): boolean =>
+  value.startsWith(LEGACY_EPISODE_ID_PREFIX);
 
 const resolveEpisodeTuple = (patient: PatientData | undefined): string => {
   if (!patient) return '';
