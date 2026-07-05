@@ -12,6 +12,7 @@ const tempRoots: string[] = [];
 
 const trackedReports = [
   { id: 'quality-metrics', file: 'reports/quality-metrics.json' },
+  { id: 'sync-convergence', file: 'reports/sync-convergence.json' },
   { id: 'system-confidence', file: 'reports/system-confidence.json' },
   { id: 'operational-health', file: 'reports/operational-health.json' },
   { id: 'clinical-release-validation', file: 'reports/clinical-release-validation.json' },
@@ -194,6 +195,27 @@ describe('report freshness guardrail', () => {
 
     expect(() => run(root, 'node', [scriptPath, '--strict'])).toThrow(
       /reports\/quality-metrics\.json is stale by commit ancestry/
+    );
+  });
+
+  it('can enforce freshness for only the sync convergence report', () => {
+    const { root } = makeGitRepoWithMergeCommit();
+    const staleSha = run(root, 'git', ['rev-parse', '--short', 'HEAD^1^']);
+    const currentSha = run(root, 'git', ['rev-parse', '--short', 'HEAD']);
+
+    write(
+      root,
+      'reports/sync-convergence.json',
+      `${JSON.stringify({ gitSha: staleSha, gitDirty: false }, null, 2)}\n`
+    );
+    write(
+      root,
+      'reports/quality-metrics.json',
+      `${JSON.stringify({ gitSha: currentSha, gitDirty: false }, null, 2)}\n`
+    );
+
+    expect(() => run(root, 'node', [scriptPath, '--strict', '--only', 'sync-convergence'])).toThrow(
+      /reports\/sync-convergence\.json is stale by commit ancestry/
     );
   });
 

@@ -93,6 +93,7 @@
     "check:daily-record-truth-contract": "node scripts/check-daily-record-truth-contract.mjs",
     "check:sync-invariants": "node scripts/check-sync-invariants.mjs",
     "check:sync-convergence-evidence": "node scripts/check-sync-convergence-evidence.mjs",
+    "check:sync-convergence-freshness:strict": "node scripts/check-report-freshness.mjs --strict --only sync-convergence",
     "check:serverless-runtime-governance": "node scripts/check-serverless-runtime-governance.mjs",
     "check:serverless-sensitive-coverage": "node scripts/check-serverless-sensitive-coverage.mjs",
     "check:netlify-functions-bundle": "node scripts/check-netlify-functions-bundle.mjs",

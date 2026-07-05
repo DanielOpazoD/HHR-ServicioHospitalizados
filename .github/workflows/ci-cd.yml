@@ -201,6 +201,45 @@ jobs:
           echo "quality-static-governance-snapshots: passed"
           echo "quality-static groups: passed"
 
+  clinical-sync-release-gate:
+    name: clinical-sync-release-gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run clinical sync simulator
+        run: npm run test:clinical-sync-simulator
+        env:
+          CI: true
+
+      - name: Generate sync convergence evidence
+        run: npm run report:sync-convergence
+
+      - name: Validate sync convergence evidence contract
+        run: npm run check:sync-convergence-evidence
+
+      - name: Enforce sync convergence evidence freshness
+        run: npm run check:sync-convergence-freshness:strict
+
+      - name: Upload sync convergence evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sync-convergence
+          path: reports/sync-convergence.*
+          retention-days: 30
+
   unit-risk-shards:
     name: unit-risk-shard-${{ matrix.shard }}
     runs-on: ubuntu-latest
@@ -353,7 +392,7 @@ jobs:
   build:
     name: build-budget
     runs-on: ubuntu-latest
-    needs: [quality-static, unit-risk, rules-emulator, e2e-critical-emulator]
+    needs: [quality-static, unit-risk, clinical-sync-release-gate, rules-emulator, e2e-critical-emulator]
 
     steps:
       - name: Checkout code
@@ -451,12 +490,13 @@ jobs:
   ci-strict-summary:
     name: ci-summary
     runs-on: ubuntu-latest
-    needs: [quality-static, unit-risk, rules-emulator, e2e-critical-emulator, build]
+    needs: [quality-static, unit-risk, clinical-sync-release-gate, rules-emulator, e2e-critical-emulator, build]
     steps:
       - name: CI strict gates passed
         run: |
           echo "quality-static: passed"
           echo "unit-risk: passed"
+          echo "clinical-sync-release-gate: passed"
           echo "rules-emulator: passed"
           echo "e2e-critical: passed"
           echo "build-budget: passed"

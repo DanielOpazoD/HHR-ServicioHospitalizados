@@ -32,7 +32,13 @@ El simulador tambien queda registrado en la evidencia formal de convergencia:
 ```bash
 npm run check:sync-convergence-evidence
 npm run report:sync-convergence
+npm run check:sync-convergence-freshness:strict
 ```
+
+En CI se ejecuta como job dedicado `clinical-sync-release-gate` y sube el artifact
+`sync-convergence` con `reports/sync-convergence.*`. Ese job hace visible la garantia de
+sincronizacion clinica distribuida aunque los mismos tests tambien puedan entrar por shards
+unitarios generales.
 
 ## Que cubre
 

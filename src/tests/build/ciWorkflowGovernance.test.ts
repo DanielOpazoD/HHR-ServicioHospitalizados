@@ -80,6 +80,47 @@ describe('CI workflow governance', () => {
     expect(workflow).toContain('reports/ci-governance-snapshot-profile.*');
   });
 
+  it('promotes the clinical sync simulator to a visible release gate with evidence artifacts', () => {
+    const workflow = readText('.github/workflows/ci-cd.yml');
+    const scripts = readPackageScripts();
+    const syncGateJob = workflow.slice(
+      workflow.indexOf('clinical-sync-release-gate:'),
+      workflow.indexOf('unit-risk-shards:')
+    );
+    const simulatorStep = syncGateJob.indexOf('npm run test:clinical-sync-simulator');
+    const reportStep = syncGateJob.indexOf('npm run report:sync-convergence');
+    const contractStep = syncGateJob.indexOf('npm run check:sync-convergence-evidence');
+    const freshnessStep = syncGateJob.indexOf('npm run check:sync-convergence-freshness:strict');
+    const uploadStep = syncGateJob.indexOf('name: sync-convergence');
+    const buildJob = workflow.slice(workflow.indexOf('build:'), workflow.indexOf('lighthouse-ci:'));
+    const summaryJob = workflow.slice(
+      workflow.indexOf('ci-strict-summary:'),
+      workflow.indexOf('postmerge-evidence:')
+    );
+
+    expect(scripts['test:clinical-sync-simulator']).toBe(
+      'vitest run src/tests/support/clinicalSyncSimulator'
+    );
+    expect(scripts['check:sync-convergence-freshness:strict']).toBe(
+      'node scripts/check-report-freshness.mjs --strict --only sync-convergence'
+    );
+    expect(syncGateJob).toContain('clinical-sync-release-gate:');
+    expect(syncGateJob).toContain('name: clinical-sync-release-gate');
+    expect(simulatorStep).toBeGreaterThanOrEqual(0);
+    expect(reportStep).toBeGreaterThan(simulatorStep);
+    expect(contractStep).toBeGreaterThan(reportStep);
+    expect(freshnessStep).toBeGreaterThan(contractStep);
+    expect(uploadStep).toBeGreaterThan(freshnessStep);
+    expect(syncGateJob).toContain('path: reports/sync-convergence.*');
+    expect(buildJob).toContain(
+      'needs: [quality-static, unit-risk, clinical-sync-release-gate, rules-emulator, e2e-critical-emulator]'
+    );
+    expect(summaryJob).toContain(
+      'needs: [quality-static, unit-risk, clinical-sync-release-gate, rules-emulator, e2e-critical-emulator, build]'
+    );
+    expect(summaryJob).toContain('clinical-sync-release-gate: passed');
+  });
+
   it('self-checks post-merge evidence before uploading the main artifact', () => {
     const workflow = readText('.github/workflows/ci-cd.yml');
     const scripts = readPackageScripts();
