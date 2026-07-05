@@ -45,6 +45,26 @@ El paquete expone sin abrir detalle:
 
 La expansion conserva los eventos originales y el JSON tecnico para auditoria forense.
 
+## Timeline clinico V2
+
+La segunda iteracion agrega una proyeccion pura sobre los paquetes paciente-centricos:
+
+`ClinicalAuditPatientPackage[] -> ClinicalAuditTimelineV2Group[]`
+
+El objetivo no es reemplazar el log ni crear otra fuente de verdad, sino explicar con menos clics:
+
+- que paciente/episodio/cama/fecha concentra la actividad;
+- que cambio visible ocurrio, con antes/despues legible;
+- que modulo clinico fue afectado: censo, dispositivos, entrega de enfermeria, entrega medica,
+  documentos o sincronizacion;
+- que estado tuvo la mutacion: aceptada, merge automatico, bloqueada, ya aplicada, en cola o replay;
+- que `mutationId`, `clientId`, `tabId` y `changedPaths` sustentan la trazabilidad tecnica.
+
+Los estados de sincronizacion son semanticos y derivados de los detalles auditados (`resolution`,
+`syncStatus`, `status`, `outcome` o accion de conflicto). Si un evento no trae estado explicito,
+la UI lo presenta como actividad registrada/aceptada y mantiene el payload crudo disponible tras el
+boton tecnico.
+
 ## Contrato de verdad clinica visible
 
 La verdad visible no es "el ultimo navegador que escribio". La vista paciente-centrica representa
@@ -71,6 +91,8 @@ costo inicial sin ocultar que el usuario esta viendo una ventana acotada.
 - Reescribir Firestore o crear una base de auditoria separada.
 - Eliminar la vista de eventos crudos.
 - Firmas criptograficas o cadena legal inmutable adicional.
+- Exportacion pesada paciente-centrica del timeline V2.
+- Indexacion server-side dedicada para el timeline V2.
 
 ## Siguiente deuda razonable
 
