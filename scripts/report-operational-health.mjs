@@ -476,7 +476,7 @@ ${Object.entries(summary.conflictContexts)
     ? summary.authAccess.roleNormalizationBridges
         .map(bridge => `${bridge.from} -> ${bridge.to}`)
         .join(', ')
-    : 'unknown'
+    : 'none'
 }
 - Modelo canónico: \`${summary.authAccess.canonicalModelDoc}\`
 - Runbook auth: \`${summary.authAccess.authIncidentRunbook}\`
