@@ -1,7 +1,7 @@
 # Release Readiness Scorecard
 
-Generated at: 2026-07-05T06:17:56.001Z
-Commit: ec9b5880
+Generated at: 2026-07-05T06:20:05.971Z
+Commit: 126d4b82
 Worktree: clean
 Overall: ok
 
@@ -22,11 +22,11 @@ Overall: ok
 
 ## Sources
 
-- `qualityMetrics`: reports/quality-metrics.json (2026-07-05T06:02:28.400Z)
+- `qualityMetrics`: reports/quality-metrics.json (2026-07-05T06:20:03.273Z)
 - `bundleRiskLedger`: reports/bundle-risk-ledger.json (stable:bundle-risk-ledger)
-- `systemConfidence`: reports/system-confidence.json (2026-07-05T06:17:55.282Z)
-- `operationalHealth`: reports/operational-health.json (2026-07-05T06:17:54.991Z)
-- `releaseConfidenceMatrix`: reports/release-confidence-matrix.json (2026-07-05T06:17:55.563Z)
+- `systemConfidence`: reports/system-confidence.json (2026-07-05T06:20:05.363Z)
+- `operationalHealth`: reports/operational-health.json (2026-07-05T06:20:04.606Z)
+- `releaseConfidenceMatrix`: reports/release-confidence-matrix.json (2026-07-05T06:20:05.119Z)
 - `technicalOwnershipMap`: reports/technical-ownership-map.json (2026-07-05T06:17:55.749Z)
 - `guardrailGovernance`: reports/guardrail-governance.json (2026-07-05T06:17:55.938Z)
 - `compatibilityImportGovernance`: reports/compatibility-import-governance.json (2026-07-05T06:02:31.571Z)

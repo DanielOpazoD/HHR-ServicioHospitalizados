@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T06:17:56.001Z",
+  "generatedAt": "2026-07-05T06:20:05.971Z",
   "overallStatus": "ok",
   "indicators": [
     {
@@ -123,7 +123,7 @@
   "sources": {
     "qualityMetrics": {
       "file": "reports/quality-metrics.json",
-      "generatedAt": "2026-07-05T06:02:28.400Z"
+      "generatedAt": "2026-07-05T06:20:03.273Z"
     },
     "bundleRiskLedger": {
       "file": "reports/bundle-risk-ledger.json",
@@ -131,15 +131,15 @@
     },
     "systemConfidence": {
       "file": "reports/system-confidence.json",
-      "generatedAt": "2026-07-05T06:17:55.282Z"
+      "generatedAt": "2026-07-05T06:20:05.363Z"
     },
     "operationalHealth": {
       "file": "reports/operational-health.json",
-      "generatedAt": "2026-07-05T06:17:54.991Z"
+      "generatedAt": "2026-07-05T06:20:04.606Z"
     },
     "releaseConfidenceMatrix": {
       "file": "reports/release-confidence-matrix.json",
-      "generatedAt": "2026-07-05T06:17:55.563Z"
+      "generatedAt": "2026-07-05T06:20:05.119Z"
     },
     "technicalOwnershipMap": {
       "file": "reports/technical-ownership-map.json",
@@ -159,16 +159,16 @@
     }
   },
   "issues": [],
-  "gitSha": "ec9b5880",
+  "gitSha": "126d4b82",
   "gitDirty": false,
   "generatedFor": {
-    "gitSha": "ec9b5880",
+    "gitSha": "126d4b82",
     "gitDirty": false,
-    "treeHash": "17553500e42517506dd30565b6b6a33d0242756b",
+    "treeHash": "3f2aefdb0f53e13237b97d0ef50fcbbe4a38e71c",
     "reportId": "release-readiness-scorecard",
     "dependencyFingerprint": {
       "algorithm": "sha256:dependency-files-v1",
-      "value": "f3de27f45ee5b14a7ef6e8b46287d86683c2f070c66f49f8432045fb25336e3c",
+      "value": "61c16903130093485690132ddfc478bf3ffc3d599dd7013974e264a4a2d25152",
       "files": [
         "reports/bundle-risk-ledger.json",
         "reports/bundle-risk-ledger.md",
