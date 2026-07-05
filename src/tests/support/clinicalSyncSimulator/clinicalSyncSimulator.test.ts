@@ -128,4 +128,84 @@ describe('clinicalSyncSimulator', () => {
     expect(simulator.getRemote().beds.R2).toBeUndefined();
     expect(simulator.getClient('client-a').outbox).toHaveLength(1);
   });
+
+  it('does not auto-merge incompatible stale edits to the same clinical field', () => {
+    const simulator = createClinicalSyncSimulator({
+      initialRecord: makeRecord(),
+      clients: ['doctor-a', 'doctor-b'],
+    });
+
+    simulator.mutate(
+      'doctor-a',
+      {
+        changedPaths: ['beds.R1.pathology'],
+        module: 'censo',
+        label: 'diagnostico A',
+      },
+      record => {
+        record.beds.R1.pathology = 'Neumonia adquirida';
+      }
+    );
+    expect(simulator.replayNext('doctor-a').status).toBe('accepted');
+
+    simulator.mutate(
+      'doctor-b',
+      {
+        changedPaths: ['beds.R1.pathology'],
+        module: 'censo',
+        label: 'diagnostico B stale',
+      },
+      record => {
+        record.beds.R1.pathology = 'Insuficiencia cardiaca';
+      }
+    );
+
+    const replay = simulator.replayNext('doctor-b');
+
+    expect(['blocked', 'needs_review']).toContain(replay.status);
+    expect(simulator.getRemote().beds.R1.pathology).toBe('Neumonia adquirida');
+    expect(simulator.getClient('doctor-b').outbox).toHaveLength(1);
+    expect(simulator.getAuditEvents().at(-1)).toMatchObject({
+      recordDate: '2026-07-03',
+      clientId: 'doctor-b',
+      module: 'censo',
+      changedPaths: ['beds.R1.pathology'],
+    });
+  });
+
+  it('treats a duplicated replay of the same mutation id as already applied', () => {
+    const simulator = createClinicalSyncSimulator({
+      initialRecord: makeRecord(),
+      clients: ['client-a'],
+    });
+
+    const mutation = simulator.mutate(
+      'client-a',
+      {
+        changedPaths: ['beds.R1.pathology'],
+        module: 'censo',
+        label: 'diagnostico idempotente',
+      },
+      record => {
+        record.beds.R1.pathology = 'Diagnostico aplicado una vez';
+      }
+    );
+
+    expect(simulator.replayNext('client-a').status).toBe('accepted');
+
+    simulator.enqueueRetry('client-a', mutation);
+    const retry = simulator.replayNext('client-a');
+
+    expect(retry.status).toBe('already_applied');
+    expect(simulator.getRemote().beds.R1.pathology).toBe('Diagnostico aplicado una vez');
+    expect(
+      simulator.getAuditEvents().filter(event => event.mutationId === mutation.mutationId)
+    ).toHaveLength(3);
+    expect(simulator.getAuditEvents().at(-1)).toMatchObject({
+      action: 'already_applied',
+      mutationId: mutation.mutationId,
+      clientId: 'client-a',
+      tabId: expect.stringMatching(/^client-a-tab-/),
+    });
+  });
 });

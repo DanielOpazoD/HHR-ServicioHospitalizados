@@ -233,11 +233,26 @@ export const evaluateSyncConvergenceEvidence = root => {
           simulatorHarness.includes(token)
         ) &&
           simulatorHarnessTests.includes('stale outbox pending') &&
-          simulatorHarnessTests.includes('post-merge invariants reject'),
-        'The simulator models logical clients, stale outbox, restart/replay and invariant-blocked writes.',
+          simulatorHarnessTests.includes('post-merge invariants reject') &&
+          simulatorHarnessTests.includes('incompatible stale edits') &&
+          simulatorHarnessTests.includes('duplicated replay of the same mutation id'),
+        'The simulator models logical clients, stale outbox, restart/replay, invariant-blocked writes, incompatible field edits and idempotent retry.',
         [
           'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts',
           'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.test.ts',
+        ]
+      ),
+      buildCheck(
+        'auditable-clinical-context',
+        simulatorHarness.includes('ClinicalSyncAffectedSummary') &&
+          simulatorHarness.includes('buildAffectedSummary') &&
+          simulatorCensusTests.includes('patientName:') &&
+          simulatorCensusTests.includes('rut:') &&
+          simulatorCensusTests.includes('mutationId: expect.stringMatching'),
+        'Simulator events preserve clinical context for observability: record date, mutation, client/tab, changed paths, bed, patient and RUT when available.',
+        [
+          'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts',
+          'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.census.test.ts',
         ]
       ),
       buildCheck(

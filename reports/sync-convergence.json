@@ -1,13 +1,13 @@
 {
   "reportId": "sync-convergence",
-  "generatedAt": "2026-07-05T01:46:33.503Z",
-  "gitSha": "8c775bdc",
+  "generatedAt": "2026-07-05T02:16:58.405Z",
+  "gitSha": "16335660",
   "gitDirty": true,
   "worktree": "dirty",
   "summary": {
     "ok": true,
     "sectionCount": 4,
-    "passingChecks": 17,
+    "passingChecks": 18,
     "failingChecks": 0
   },
   "sections": [
@@ -155,10 +155,19 @@
         {
           "id": "multi-client-simulator-coverage",
           "ok": true,
-          "description": "The simulator models logical clients, stale outbox, restart/replay and invariant-blocked writes.",
+          "description": "The simulator models logical clients, stale outbox, restart/replay, invariant-blocked writes, incompatible field edits and idempotent retry.",
           "evidence": [
             "src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts",
             "src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.test.ts"
+          ]
+        },
+        {
+          "id": "auditable-clinical-context",
+          "ok": true,
+          "description": "Simulator events preserve clinical context for observability: record date, mutation, client/tab, changed paths, bed, patient and RUT when available.",
+          "evidence": [
+            "src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts",
+            "src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.census.test.ts"
           ]
         },
         {

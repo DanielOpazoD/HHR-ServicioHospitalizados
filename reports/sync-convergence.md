@@ -1,10 +1,10 @@
 # Sync Convergence Evidence
 
-- Generated: 2026-07-05T01:46:33.503Z
-- Git SHA: `8c775bdc`
+- Generated: 2026-07-05T02:16:58.405Z
+- Git SHA: `16335660`
 - Worktree: `dirty`
 - Status: `ready`
-- Checks: `17/17` passing
+- Checks: `18/18` passing
 
 ## Sections
 
@@ -13,7 +13,7 @@
 | Post-merge convergence | OK | 5/5 |
 | Authority replay traceability | OK | 4/4 |
 | Conservative recovery readiness | OK | 5/5 |
-| Clinical sync simulator | OK | 3/3 |
+| Clinical sync simulator | OK | 4/4 |
 
 ## Post-merge convergence
 
@@ -54,8 +54,10 @@
 
 ## Clinical sync simulator
 
-- OK `multi-client-simulator-coverage`: The simulator models logical clients, stale outbox, restart/replay and invariant-blocked writes.
+- OK `multi-client-simulator-coverage`: The simulator models logical clients, stale outbox, restart/replay, invariant-blocked writes, incompatible field edits and idempotent retry.
   - Evidence: `src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts`, `src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.test.ts`
+- OK `auditable-clinical-context`: Simulator events preserve clinical context for observability: record date, mutation, client/tab, changed paths, bed, patient and RUT when available.
+  - Evidence: `src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.ts`, `src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.census.test.ts`
 - OK `census-replay-scenarios`: Census scenarios cover admission, bed moves, discharge/transfer/CMA and DMI replay after stale clients.
   - Evidence: `src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.census.test.ts`
 - OK `handoff-replay-scenarios`: Nursing and medical handoff scenarios cover stale replay, parallel specialties and entry-level merge semantics.

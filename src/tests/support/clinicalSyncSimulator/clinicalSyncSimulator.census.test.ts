@@ -246,8 +246,16 @@ describe('clinicalSyncSimulator census scenarios', () => {
     expect(simulator.getAuditEvents().at(-1)).toMatchObject({
       action: 'auto_merged',
       recordDate: '2026-07-03',
+      clientId: 'dmi-pc',
+      tabId: expect.stringMatching(/^dmi-pc-tab-/),
+      mutationId: expect.stringMatching(/^dmi-pc-mutation-/),
       module: 'censo',
       changedPaths: ['beds.R1.devices', 'beds.R1.deviceDetails'],
+      affected: {
+        bedId: 'R1',
+        patientName: 'Paciente Censo',
+        rut: '11.111.111-1',
+      },
     });
   });
 });

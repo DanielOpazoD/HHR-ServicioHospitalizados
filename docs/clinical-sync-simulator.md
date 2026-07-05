@@ -42,6 +42,10 @@ npm run report:sync-convergence
 - Replay con `resolveDailyRecordConflictWithTrace`.
 - Invariantes post-merge con `evaluateDailyRecordConflictPostMergeInvariants`.
 - Eventos auditables compactos con fecha, modulo, cliente, tab, mutacion y resultado.
+- Resumen clinico auditable por cama/paciente/RUT cuando el cambio apunta a una cama.
+- Frontera explicita entre auto-merge seguro y conflicto revisable: el mismo campo clinico
+  editado desde dos clientes stale queda bloqueado.
+- Idempotencia de replay: reintentar la misma `mutationId` termina como `already_applied`.
 - Censo diario:
   - crear paciente en cama disponible mientras otro cliente esta stale;
   - editar diagnostico/estado/especialidad en replay compatible;

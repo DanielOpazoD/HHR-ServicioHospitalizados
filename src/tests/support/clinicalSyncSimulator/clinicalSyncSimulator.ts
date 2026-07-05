@@ -38,8 +38,15 @@ interface ClinicalSyncQueuedMutation {
   mutationId: string;
   label: string;
   module: ClinicalSyncModule;
+  baseRecord: DailyRecord;
   localRecord: DailyRecord;
   syncContract: SyncTaskContract;
+}
+
+export interface ClinicalSyncAffectedSummary {
+  bedId?: string;
+  patientName?: string;
+  rut?: string;
 }
 
 export interface ClinicalSyncAuditEvent {
@@ -52,6 +59,7 @@ export interface ClinicalSyncAuditEvent {
   changedPaths: string[];
   expectedVersion?: string;
   acceptedVersion?: string;
+  affected?: ClinicalSyncAffectedSummary;
   invariantViolations: DailyRecordConflictPostMergeInvariantViolation[];
 }
 
@@ -108,6 +116,7 @@ export class ClinicalSyncSimulator {
     mutateRecord: (record: DailyRecord) => void
   ): ClinicalSyncQueuedMutation {
     const client = this.requireClient(clientId);
+    const baseRecord = clone(client.local);
     const nextLocal = clone(client.local);
     mutateRecord(nextLocal);
     client.local = nextLocal;
@@ -117,6 +126,7 @@ export class ClinicalSyncSimulator {
       mutationId,
       label: options.label || mutationId,
       module: options.module,
+      baseRecord,
       localRecord: clone(nextLocal),
       syncContract: {
         mutationId,
@@ -129,6 +139,17 @@ export class ClinicalSyncSimulator {
     client.outbox.push(mutation);
     this.auditEvents.push(this.buildAuditEvent('queued', mutation, []));
     return clone(mutation);
+  }
+
+  enqueueRetry(clientId: string, mutation: ClinicalSyncQueuedMutation): ClinicalSyncQueuedMutation {
+    const client = this.requireClient(clientId);
+    const retry = clone(mutation);
+    retry.syncContract = {
+      ...retry.syncContract,
+      tabId: client.tabId,
+    };
+    client.outbox.push(retry);
+    return clone(retry);
   }
 
   restartClient(clientId: string): ClinicalSyncClientState {
@@ -175,6 +196,19 @@ export class ClinicalSyncSimulator {
     }
 
     const currentVersion = createVersion(this.revision);
+    if (
+      mutation.syncContract.expectedVersion !== currentVersion &&
+      this.hasIncompatibleStaleFieldEdit(mutation)
+    ) {
+      this.auditEvents.push(this.buildAuditEvent('blocked', mutation, []));
+      return {
+        status: 'blocked',
+        mutationId: mutation.mutationId,
+        record: clone(this.remote),
+        invariantViolations: [],
+      };
+    }
+
     const conflictResult = resolveDailyRecordConflictWithTrace(this.remote, mutation.localRecord, {
       changedPaths: mutation.syncContract.changedPaths,
     });
@@ -267,7 +301,63 @@ export class ClinicalSyncSimulator {
       changedPaths: [...(mutation.syncContract.changedPaths || [])],
       expectedVersion: mutation.syncContract.expectedVersion,
       acceptedVersion,
+      affected: this.buildAffectedSummary(mutation),
       invariantViolations,
     };
+  }
+
+  private hasIncompatibleStaleFieldEdit(mutation: ClinicalSyncQueuedMutation): boolean {
+    return (mutation.syncContract.changedPaths || []).some(path => {
+      const baseValue = this.readPath(mutation.baseRecord, path);
+      const localValue = this.readPath(mutation.localRecord, path);
+      const remoteValue = this.readPath(this.remote, path);
+
+      if (
+        !this.isComparableFieldValue(baseValue) ||
+        !this.isComparableFieldValue(localValue) ||
+        !this.isComparableFieldValue(remoteValue)
+      ) {
+        return false;
+      }
+      if (this.areEqual(baseValue, localValue)) return false;
+      if (this.areEqual(baseValue, remoteValue)) return false;
+      return !this.areEqual(localValue, remoteValue);
+    });
+  }
+
+  private buildAffectedSummary(
+    mutation: ClinicalSyncQueuedMutation
+  ): ClinicalSyncAffectedSummary | undefined {
+    const bedPath = (mutation.syncContract.changedPaths || []).find(path =>
+      path.startsWith('beds.')
+    );
+    const bedId = bedPath?.split('.')[1];
+    if (!bedId) return undefined;
+
+    const localBed = mutation.localRecord.beds?.[bedId];
+    const remoteBed = this.remote.beds?.[bedId];
+    const bed = localBed?.patientName || localBed?.rut ? localBed : remoteBed;
+
+    return {
+      bedId,
+      patientName: bed?.patientName || undefined,
+      rut: bed?.rut || undefined,
+    };
+  }
+
+  private readPath(record: DailyRecord, path: string): unknown {
+    return path.split('.').reduce<unknown>((value, segment) => {
+      if (value === null || typeof value !== 'object') return undefined;
+      return (value as Record<string, unknown>)[segment];
+    }, record);
+  }
+
+  private areEqual(left: unknown, right: unknown): boolean {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+
+  private isComparableFieldValue(value: unknown): boolean {
+    if (value === null || value === undefined) return true;
+    return ['boolean', 'number', 'string'].includes(typeof value);
   }
 }
