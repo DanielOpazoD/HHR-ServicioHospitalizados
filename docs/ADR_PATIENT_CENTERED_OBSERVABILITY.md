@@ -14,6 +14,20 @@ pertenecian al mismo episodio operativo.
 El caso guia fue un paciente con cambios cercanos de estado y diagnostico: ambos eventos eran
 correctos como evidencia forense, pero debian verse como un solo bloque clinico legible.
 
+## Brechas operacionales diagnosticadas
+
+Antes de la proyeccion paciente-centrica y del timeline V2, la lectura clinica tenia deuda
+operacional concreta:
+
+- demasiados clics para reconstruir una historia corta de cambios;
+- eventos de un mismo paciente repetidos en filas separadas sin una lectura por episodio;
+- riesgo de interpretar como duplicado lo que era una misma mutacion clinica con logs multiples;
+- poca claridad inmediata sobre que valor habia antes y que valor quedo despues;
+- paths tecnicos (`handoffNoteDayShift`, `medicalHandoffBySpecialty`, `beds.*.devices`) visibles sin
+  traduccion clinica suficiente;
+- estados de sincronizacion o replay (`auto_merged`, `blocked`, `already_applied`) poco visibles para
+  explicar si una accion fue aceptada, fusionada, bloqueada o drenada por idempotencia.
+
 ## Decision
 
 La fuente forense sigue siendo el log crudo append-only. No se elimina, modifica ni compacta ningun
@@ -64,6 +78,21 @@ Los estados de sincronizacion son semanticos y derivados de los detalles auditad
 `syncStatus`, `status`, `outcome` o accion de conflicto). Si un evento no trae estado explicito,
 la UI lo presenta como actividad registrada/aceptada y mantiene el payload crudo disponible tras el
 boton tecnico.
+
+## Preguntas minimas que debe responder auditoria
+
+La observabilidad clinica debe permitir responder, desde la primera lectura o con una expansion
+acotada:
+
+- quien edito y desde que origen/IP;
+- cuando edito y a que fecha de censo aplica;
+- donde edito: cama, modulo y superficie clinica;
+- que paciente/RUT/episodio fue afectado, o que fallback se uso si falta identidad fuerte;
+- que campo cambio, que habia antes y que quedo despues;
+- si la mutacion fue aceptada, fusionada automaticamente, bloqueada, en cola, reproducida por replay
+  o drenada como duplicado ya aplicado;
+- que evidencia tecnica (`mutationId`, `clientId`, `tabId`, `changedPaths`) permite investigar el
+  evento sin abrir el JSON crudo como primer paso.
 
 ## Contrato de verdad clinica visible
 
