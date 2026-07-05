@@ -1,0 +1,273 @@
+import type { SyncTaskContract, SyncTaskResolution } from '@/services/storage/syncQueueTypes';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
+import {
+  resolveDailyRecordConflictWithTrace,
+  type ConflictResolutionResult,
+} from '@/services/repositories/conflictResolutionMatrix';
+import {
+  evaluateDailyRecordConflictPostMergeInvariants,
+  type DailyRecordConflictPostMergeInvariantViolation,
+} from '@/services/repositories/dailyRecordConflictPostMergeInvariantChecker';
+
+type ClinicalSyncReplayStatus =
+  | Extract<SyncTaskResolution, 'accepted' | 'blocked' | 'already_applied'>
+  | 'auto_merged';
+
+type ClinicalSyncModule = 'censo' | 'entrega_enfermeria' | 'entrega_medica' | 'sistema';
+
+interface ClinicalSyncMutationOptions {
+  changedPaths: string[];
+  module: ClinicalSyncModule;
+  label?: string;
+}
+
+interface ClinicalSyncSimulatorOptions {
+  initialRecord: DailyRecord;
+  clients: string[];
+}
+
+interface ClinicalSyncClientState {
+  clientId: string;
+  tabId: string;
+  knownVersion: string;
+  local: DailyRecord;
+  outbox: ClinicalSyncQueuedMutation[];
+}
+
+interface ClinicalSyncQueuedMutation {
+  mutationId: string;
+  label: string;
+  module: ClinicalSyncModule;
+  localRecord: DailyRecord;
+  syncContract: SyncTaskContract;
+}
+
+export interface ClinicalSyncAuditEvent {
+  action: 'queued' | ClinicalSyncReplayStatus;
+  recordDate: string;
+  clientId: string;
+  tabId: string;
+  mutationId: string;
+  module: ClinicalSyncModule;
+  changedPaths: string[];
+  expectedVersion?: string;
+  acceptedVersion?: string;
+  invariantViolations: DailyRecordConflictPostMergeInvariantViolation[];
+}
+
+export interface ClinicalSyncReplayResult {
+  status: ClinicalSyncReplayStatus;
+  record: DailyRecord;
+  mutationId?: string;
+  trace?: ConflictResolutionResult['trace'];
+  invariantViolations: DailyRecordConflictPostMergeInvariantViolation[];
+}
+
+const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+const createVersion = (revision: number): string => `rev-${revision}`;
+
+export const createClinicalSyncSimulator = ({
+  initialRecord,
+  clients,
+}: ClinicalSyncSimulatorOptions): ClinicalSyncSimulator => {
+  return new ClinicalSyncSimulator(initialRecord, clients);
+};
+
+export class ClinicalSyncSimulator {
+  private remote: DailyRecord;
+  private revision = 1;
+  private mutationCounter = 1;
+  private restartCounter = 1;
+  private readonly clients = new Map<string, ClinicalSyncClientState>();
+  private readonly auditEvents: ClinicalSyncAuditEvent[] = [];
+  private readonly appliedMutationIds = new Set<string>();
+
+  constructor(initialRecord: DailyRecord, clientIds: string[]) {
+    this.remote = clone(initialRecord);
+    clientIds.forEach(clientId => {
+      this.clients.set(clientId, this.createClientState(clientId));
+    });
+  }
+
+  getRemote(): DailyRecord {
+    return clone(this.remote);
+  }
+
+  getClient(clientId: string): ClinicalSyncClientState {
+    return clone(this.requireClient(clientId));
+  }
+
+  getAuditEvents(): ClinicalSyncAuditEvent[] {
+    return clone(this.auditEvents);
+  }
+
+  mutate(
+    clientId: string,
+    options: ClinicalSyncMutationOptions,
+    mutateRecord: (record: DailyRecord) => void
+  ): ClinicalSyncQueuedMutation {
+    const client = this.requireClient(clientId);
+    const nextLocal = clone(client.local);
+    mutateRecord(nextLocal);
+    client.local = nextLocal;
+
+    const mutationId = `${clientId}-mutation-${this.mutationCounter++}`;
+    const mutation: ClinicalSyncQueuedMutation = {
+      mutationId,
+      label: options.label || mutationId,
+      module: options.module,
+      localRecord: clone(nextLocal),
+      syncContract: {
+        mutationId,
+        clientId,
+        tabId: client.tabId,
+        expectedVersion: client.knownVersion,
+        changedPaths: [...options.changedPaths],
+      },
+    };
+    client.outbox.push(mutation);
+    this.auditEvents.push(this.buildAuditEvent('queued', mutation, []));
+    return clone(mutation);
+  }
+
+  restartClient(clientId: string): ClinicalSyncClientState {
+    const client = this.requireClient(clientId);
+    this.restartCounter += 1;
+    client.tabId = `${clientId}-tab-${this.restartCounter}`;
+    client.outbox = client.outbox.map(mutation => ({
+      ...mutation,
+      syncContract: {
+        ...mutation.syncContract,
+        tabId: client.tabId,
+      },
+    }));
+    return clone(client);
+  }
+
+  refreshClient(clientId: string): ClinicalSyncClientState {
+    const client = this.requireClient(clientId);
+    client.local = clone(this.remote);
+    client.knownVersion = createVersion(this.revision);
+    return clone(client);
+  }
+
+  replayNext(clientId: string): ClinicalSyncReplayResult {
+    const client = this.requireClient(clientId);
+    const mutation = client.outbox[0];
+    if (!mutation) {
+      return {
+        status: 'already_applied',
+        record: clone(this.remote),
+        invariantViolations: [],
+      };
+    }
+
+    if (this.appliedMutationIds.has(mutation.mutationId)) {
+      client.outbox.shift();
+      this.auditEvents.push(this.buildAuditEvent('already_applied', mutation, []));
+      return {
+        status: 'already_applied',
+        mutationId: mutation.mutationId,
+        record: clone(this.remote),
+        invariantViolations: [],
+      };
+    }
+
+    const currentVersion = createVersion(this.revision);
+    const conflictResult = resolveDailyRecordConflictWithTrace(this.remote, mutation.localRecord, {
+      changedPaths: mutation.syncContract.changedPaths,
+    });
+    const invariantResult = evaluateDailyRecordConflictPostMergeInvariants({
+      remote: this.remote,
+      local: mutation.localRecord,
+      resolved: conflictResult.record,
+      context: {
+        date: this.remote.date,
+        phase: 'sync_publish',
+      },
+    });
+
+    if (invariantResult.status === 'blocked') {
+      this.auditEvents.push(this.buildAuditEvent('blocked', mutation, invariantResult.violations));
+      return {
+        status: 'blocked',
+        mutationId: mutation.mutationId,
+        record: clone(this.remote),
+        trace: conflictResult.trace,
+        invariantViolations: invariantResult.violations,
+      };
+    }
+
+    this.revision += 1;
+    this.remote = {
+      ...invariantResult.record,
+      lastUpdated: mutation.localRecord.lastUpdated || invariantResult.record.lastUpdated,
+    };
+    const acceptedVersion = createVersion(this.revision);
+    this.appliedMutationIds.add(mutation.mutationId);
+    client.outbox.shift();
+    client.local = clone(this.remote);
+    client.knownVersion = acceptedVersion;
+
+    const status: ClinicalSyncReplayStatus =
+      mutation.syncContract.expectedVersion === currentVersion ? 'accepted' : 'auto_merged';
+    this.auditEvents.push(this.buildAuditEvent(status, mutation, [], acceptedVersion));
+
+    return {
+      status,
+      mutationId: mutation.mutationId,
+      record: clone(this.remote),
+      trace: conflictResult.trace,
+      invariantViolations: [],
+    };
+  }
+
+  replayAll(clientId: string): ClinicalSyncReplayResult[] {
+    const results: ClinicalSyncReplayResult[] = [];
+    while (this.requireClient(clientId).outbox.length > 0) {
+      const result = this.replayNext(clientId);
+      results.push(result);
+      if (result.status === 'blocked') break;
+    }
+    return results;
+  }
+
+  private createClientState(clientId: string): ClinicalSyncClientState {
+    return {
+      clientId,
+      tabId: `${clientId}-tab-1`,
+      knownVersion: createVersion(this.revision),
+      local: clone(this.remote),
+      outbox: [],
+    };
+  }
+
+  private requireClient(clientId: string): ClinicalSyncClientState {
+    const client = this.clients.get(clientId);
+    if (!client) {
+      throw new Error(`Clinical sync client ${clientId} is not registered.`);
+    }
+    return client;
+  }
+
+  private buildAuditEvent(
+    action: ClinicalSyncAuditEvent['action'],
+    mutation: ClinicalSyncQueuedMutation,
+    invariantViolations: DailyRecordConflictPostMergeInvariantViolation[],
+    acceptedVersion?: string
+  ): ClinicalSyncAuditEvent {
+    return {
+      action,
+      recordDate: this.remote.date,
+      clientId: String(mutation.syncContract.clientId || ''),
+      tabId: String(mutation.syncContract.tabId || ''),
+      mutationId: mutation.mutationId,
+      module: mutation.module,
+      changedPaths: [...(mutation.syncContract.changedPaths || [])],
+      expectedVersion: mutation.syncContract.expectedVersion,
+      acceptedVersion,
+      invariantViolations,
+    };
+  }
+}

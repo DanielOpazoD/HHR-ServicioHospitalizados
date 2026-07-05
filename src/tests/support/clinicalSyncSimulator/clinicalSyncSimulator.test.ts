@@ -1,0 +1,131 @@
+import { describe, expect, it } from 'vitest';
+
+import { createClinicalSyncSimulator } from './clinicalSyncSimulator';
+import type { DailyRecord } from '@/types/domain/dailyRecord';
+
+const makeRecord = (date = '2026-07-03'): DailyRecord => ({
+  date,
+  beds: {
+    R1: {
+      bedId: 'R1',
+      patientName: 'Paciente Inicial',
+      rut: '11.111.111-1',
+      age: '40a',
+      pathology: 'Diagnostico inicial',
+      specialty: 'Medicina',
+      status: 'Estable',
+      admissionDate: '2026-07-01',
+      clinicalEpisodeId: 'episode-r1',
+      devices: [],
+    } as unknown as DailyRecord['beds'][string],
+  },
+  discharges: [],
+  transfers: [],
+  cma: [],
+  lastUpdated: '2026-07-03T08:00:00.000Z',
+  nurses: [],
+  activeExtraBeds: [],
+});
+
+describe('clinicalSyncSimulator', () => {
+  it('creates isolated logical clients over the same remote record', () => {
+    const simulator = createClinicalSyncSimulator({
+      initialRecord: makeRecord(),
+      clients: ['client-a', 'client-b'],
+    });
+
+    simulator.mutate(
+      'client-a',
+      {
+        changedPaths: ['beds.R1.pathology'],
+        module: 'censo',
+      },
+      record => {
+        record.beds.R1.pathology = 'Diagnostico local A';
+      }
+    );
+
+    expect(simulator.getRemote().beds.R1.pathology).toBe('Diagnostico inicial');
+    expect(simulator.getClient('client-a').local.beds.R1.pathology).toBe('Diagnostico local A');
+    expect(simulator.getClient('client-b').local.beds.R1.pathology).toBe('Diagnostico inicial');
+    expect(simulator.getClient('client-a').outbox).toHaveLength(1);
+    expect(simulator.getClient('client-b').outbox).toHaveLength(0);
+  });
+
+  it('keeps stale outbox pending across logical restart and replays it through conflict merge', () => {
+    const simulator = createClinicalSyncSimulator({
+      initialRecord: makeRecord(),
+      clients: ['remote-writer', 'stale-client'],
+    });
+
+    simulator.mutate(
+      'remote-writer',
+      {
+        changedPaths: ['beds.R1.specialty'],
+        module: 'censo',
+      },
+      record => {
+        record.beds.R1.specialty = 'Cirugia';
+      }
+    );
+    expect(simulator.replayNext('remote-writer').status).toBe('accepted');
+
+    simulator.mutate(
+      'stale-client',
+      {
+        changedPaths: ['beds.R1.pathology'],
+        module: 'censo',
+      },
+      record => {
+        record.beds.R1.pathology = 'Diagnostico desde cliente stale';
+      }
+    );
+
+    const restarted = simulator.restartClient('stale-client');
+    expect(restarted.outbox).toHaveLength(1);
+    expect(restarted.tabId).not.toBe('stale-client-tab-1');
+
+    const replay = simulator.replayNext('stale-client');
+
+    expect(replay.status).toBe('auto_merged');
+    expect(simulator.getRemote().beds.R1.specialty).toBe('Cirugia');
+    expect(simulator.getRemote().beds.R1.pathology).toBe('Diagnostico desde cliente stale');
+    expect(simulator.getClient('stale-client').outbox).toHaveLength(0);
+    expect(simulator.getAuditEvents().map(event => event.action)).toEqual([
+      'queued',
+      'accepted',
+      'queued',
+      'auto_merged',
+    ]);
+  });
+
+  it('blocks replay when post-merge invariants reject the selected clinical truth', () => {
+    const simulator = createClinicalSyncSimulator({
+      initialRecord: makeRecord(),
+      clients: ['client-a'],
+    });
+
+    simulator.mutate(
+      'client-a',
+      {
+        changedPaths: ['beds'],
+        module: 'censo',
+      },
+      record => {
+        record.beds.R2 = {
+          ...record.beds.R1,
+          bedId: 'R2',
+        };
+      }
+    );
+
+    const replay = simulator.replayNext('client-a');
+
+    expect(replay.status).toBe('blocked');
+    expect(replay.invariantViolations.map(violation => violation.type)).toContain(
+      'duplicate_active_patient_after_merge'
+    );
+    expect(simulator.getRemote().beds.R2).toBeUndefined();
+    expect(simulator.getClient('client-a').outbox).toHaveLength(1);
+  });
+});
