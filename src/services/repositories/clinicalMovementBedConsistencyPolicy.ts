@@ -38,6 +38,12 @@ const hasResidualClinicalState = (patient: PatientData | undefined): boolean =>
     normalizeIdentity(patient?.handoffNoteDayShift) ||
     normalizeIdentity(patient?.handoffNoteNightShift) ||
     normalizeIdentity(patient?.medicalHandoffNote) ||
+    normalizeIdentity(patient?.deliveryRoute) ||
+    normalizeIdentity(patient?.deliveryDate) ||
+    normalizeIdentity(patient?.surgicalComplication) ||
+    Boolean(patient?.upcChecklist) ||
+    Boolean(patient?.cudyr) ||
+    Boolean(patient?.medicalHandoffAudit) ||
     (patient?.devices || []).length > 0 ||
     Object.keys(patient?.deviceDetails || {}).length > 0 ||
     (patient?.deviceInstanceHistory || []).length > 0 ||
@@ -173,6 +179,10 @@ export const normalizeMovementBedConsistency = (
 
     if (!hasActivePatientIdentity(currentBed) && hasResidualClinicalState(currentBed)) {
       const cleared = buildClearedBed(bedId, currentBed);
+      if (hasActivePatientIdentity(currentBed.clinicalCrib)) {
+        cleared.clinicalCrib = currentBed.clinicalCrib;
+        cleared.hasCompanionCrib = true;
+      }
       beds[bedId] = cleared;
       patches[`beds.${bedId}`] = cleared;
       return;

@@ -25,6 +25,9 @@ describe('sync convergence evidence support', () => {
         'planner-no-aggressive-writes',
         'three-client-replay-coverage',
         'multi-client-simulator-coverage',
+        'auditable-clinical-context',
+        'census-replay-scenarios',
+        'handoff-replay-scenarios',
       ])
     );
   });

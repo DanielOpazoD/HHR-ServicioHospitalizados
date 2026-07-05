@@ -118,6 +118,14 @@ describe('clinicalSyncSimulator census scenarios', () => {
     expect(simulator.getRemote().beds.R2.pathology).toBe('Diagnostico base');
     expect(simulator.getRemote().beds.R2.clinicalEpisodeId).toBe('episode-censo-1');
     expect(simulator.getRemote().beds.R1.patientName).toBe('');
+    expect(simulator.getAuditEvents().at(-1)).toMatchObject({
+      action: 'auto_merged',
+      affected: {
+        bedId: 'R1',
+        patientName: 'Paciente Censo',
+        rut: '11.111.111-1',
+      },
+    });
   });
 
   it.each([
@@ -207,6 +215,14 @@ describe('clinicalSyncSimulator census scenarios', () => {
     ]);
     expect(simulator.getRemote().beds.R1.patientName).toBe('');
     expect(simulator.getRemote().beds.R1.devices).toEqual([]);
+    expect(simulator.getAuditEvents().at(-1)).toMatchObject({
+      action: 'auto_merged',
+      affected: {
+        bedId: 'R1',
+        patientName: 'Paciente Censo',
+        rut: '11.111.111-1',
+      },
+    });
   });
 
   it('merges compatible invasive-device edits without overwriting a remote specialty update', () => {

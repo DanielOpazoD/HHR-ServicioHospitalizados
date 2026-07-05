@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveDailyRecordConflict } from '@/services/repositories/conflictResolutionMatrix';
+import { normalizeMovementBedConsistency } from '@/services/repositories/clinicalMovementBedConsistencyPolicy';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
 const makeRecord = (lastUpdated: string): DailyRecord =>
@@ -364,5 +365,83 @@ describe('clinical movement-bed consistency policy', () => {
     expect(resolved.cma).toHaveLength(1);
     expect(resolved.beds.R1.patientName).toBe('');
     expect(resolved.beds.R1.status).not.toBe('Vivo');
+  });
+
+  it('preserves a live clinical crib when clearing residual state from the parent bed', () => {
+    const record = makeRecord('2026-02-18T10:00:00.000Z');
+    record.discharges = [
+      {
+        id: 'discharge-parent',
+        bedId: 'R1',
+        patientName: 'Madre Egresada',
+        rut: '33.333.333-3',
+        admissionDate: '2026-02-10',
+        status: 'Vivo',
+        movementDate: '2026-02-18',
+      },
+    ] as unknown as DailyRecord['discharges'];
+
+    record.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: '',
+        rut: '',
+        pathology: 'Residuo de madre egresada',
+        admissionDate: '',
+        hasCompanionCrib: true,
+        clinicalCrib: {
+          bedId: 'R1-crib',
+          patientName: 'Recien Nacido Activo',
+          rut: '55.555.555-5',
+          pathology: 'Control neonatal',
+          admissionDate: '2026-02-18',
+          status: 'Estable',
+        },
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const { record: resolved } = normalizeMovementBedConsistency(record);
+
+    expect(resolved.beds.R1.clinicalCrib?.patientName).toBe('Recien Nacido Activo');
+    expect(resolved.beds.R1.hasCompanionCrib).toBe(true);
+    expect(resolved.beds.R1.pathology).toBe('');
+  });
+
+  it('clears residual delivery and audit fields when a confirmed movement exists', () => {
+    const remote = makeRecord('2026-02-18T10:00:00.000Z');
+    remote.transfers = [
+      {
+        id: 'transfer-parent',
+        bedId: 'R1',
+        patientName: 'Paciente Trasladado',
+        rut: '33.333.333-3',
+        admissionDate: '2026-02-10',
+        receivingCenter: 'Hospital receptor',
+        movementDate: '2026-02-18',
+      },
+    ] as unknown as DailyRecord['transfers'];
+
+    const local = makeRecord('2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: '',
+        rut: '',
+        deliveryRoute: 'Cesarea',
+        deliveryDate: '2026-02-18',
+        surgicalComplication: 'Sangrado',
+        medicalHandoffAudit: [{ id: 'audit-1' }],
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['beds.R1.deliveryRoute', 'beds.R1.medicalHandoffAudit'],
+    });
+
+    expect(resolved.beds.R1.patientName).toBe('');
+    expect(resolved.beds.R1.deliveryRoute).toBeUndefined();
+    expect(resolved.beds.R1.deliveryDate).toBeUndefined();
+    expect(resolved.beds.R1.surgicalComplication).toBe(false);
+    expect(resolved.beds.R1.medicalHandoffAudit).toBeUndefined();
   });
 });

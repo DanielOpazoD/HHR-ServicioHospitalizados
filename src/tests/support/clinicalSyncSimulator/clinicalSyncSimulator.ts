@@ -328,21 +328,33 @@ export class ClinicalSyncSimulator {
   private buildAffectedSummary(
     mutation: ClinicalSyncQueuedMutation
   ): ClinicalSyncAffectedSummary | undefined {
-    const bedPath = (mutation.syncContract.changedPaths || []).find(path =>
-      path.startsWith('beds.')
+    const bedIds = Array.from(
+      new Set(
+        (mutation.syncContract.changedPaths || [])
+          .filter(path => path.startsWith('beds.'))
+          .map(path => path.split('.')[1])
+          .filter((bedId): bedId is string => Boolean(bedId))
+      )
     );
-    const bedId = bedPath?.split('.')[1];
-    if (!bedId) return undefined;
+    if (bedIds.length === 0) return undefined;
 
-    const localBed = mutation.localRecord.beds?.[bedId];
-    const remoteBed = this.remote.beds?.[bedId];
-    const bed = localBed?.patientName || localBed?.rut ? localBed : remoteBed;
+    for (const bedId of bedIds) {
+      const candidates = [
+        mutation.localRecord.beds?.[bedId],
+        this.remote.beds?.[bedId],
+        mutation.baseRecord.beds?.[bedId],
+      ];
+      const bed = candidates.find(candidate => candidate?.patientName || candidate?.rut);
+      if (bed) {
+        return {
+          bedId,
+          patientName: bed.patientName || undefined,
+          rut: bed.rut || undefined,
+        };
+      }
+    }
 
-    return {
-      bedId,
-      patientName: bed?.patientName || undefined,
-      rut: bed?.rut || undefined,
-    };
+    return { bedId: bedIds[0] };
   }
 
   private readPath(record: DailyRecord, path: string): unknown {
