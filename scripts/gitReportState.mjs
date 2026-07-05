@@ -40,6 +40,8 @@ const GENERATED_REPORT_STATUS_SUFFIXES = new Set([
   'reports/sync-convergence.md',
   'reports/system-confidence.json',
   'reports/system-confidence.md',
+  'reports/test-runtime-governance.json',
+  'reports/test-runtime-governance.md',
   'reports/technical-ownership-map.json',
   'reports/technical-ownership-map.md',
 ]);

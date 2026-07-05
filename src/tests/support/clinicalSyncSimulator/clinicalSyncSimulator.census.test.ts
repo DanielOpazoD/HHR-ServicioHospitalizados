@@ -1,53 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { createClinicalSyncSimulator } from './clinicalSyncSimulator';
+import {
+  createClinicalSyncCensusRecord,
+  createClinicalSyncEmptyBed,
+  createClinicalSyncPatient,
+} from './clinicalSyncSimulatorFixtures';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
-const emptyBed = (bedId: string): DailyRecord['beds'][string] =>
-  ({
-    bedId,
-    patientName: '',
-    rut: '',
-    age: '',
-    pathology: '',
-    specialty: '',
-    status: 'Estable',
-    admissionDate: '',
-    devices: [],
-  }) as unknown as DailyRecord['beds'][string];
-
-const patient = (
-  bedId: string,
-  overrides: Partial<DailyRecord['beds'][string]> = {}
-): DailyRecord['beds'][string] =>
-  ({
-    bedId,
-    patientName: 'Paciente Censo',
-    rut: '11.111.111-1',
-    age: '40a',
-    pathology: 'Diagnostico base',
-    specialty: 'Medicina',
-    status: 'Estable',
-    admissionDate: '2026-07-01',
-    clinicalEpisodeId: 'episode-censo-1',
-    devices: [],
-    ...overrides,
-  }) as unknown as DailyRecord['beds'][string];
-
-const makeRecord = (): DailyRecord => ({
-  date: '2026-07-03',
-  beds: {
-    R1: patient('R1'),
-    R2: emptyBed('R2'),
-    NEO1: emptyBed('NEO1'),
-  },
-  discharges: [],
-  transfers: [],
-  cma: [],
-  lastUpdated: '2026-07-03T08:00:00.000Z',
-  nurses: [],
-  activeExtraBeds: [],
-});
+const emptyBed = createClinicalSyncEmptyBed;
+const patient = createClinicalSyncPatient;
+const makeRecord = createClinicalSyncCensusRecord;
 
 describe('clinicalSyncSimulator census scenarios', () => {
   it('preserves a new patient created remotely while a stale client replays a compatible diagnosis edit', () => {

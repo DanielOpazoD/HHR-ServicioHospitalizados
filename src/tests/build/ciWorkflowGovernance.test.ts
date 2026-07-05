@@ -121,6 +121,27 @@ describe('CI workflow governance', () => {
     expect(summaryJob).toContain('clinical-sync-release-gate: passed');
   });
 
+  it('keeps expensive clinical/runtime suites in a scheduled nightly workflow', () => {
+    const workflow = readText('.github/workflows/nightly-test-runtime.yml');
+    const scripts = readPackageScripts();
+
+    expect(workflow).toContain('name: Nightly Test Runtime Governance');
+    expect(workflow).toContain('workflow_dispatch:');
+    expect(workflow).toContain('schedule:');
+    expect(workflow).not.toContain('pull_request:');
+    expect(workflow).toContain('npm run test:sync-load');
+    expect(workflow).toContain('npm run test:release-confidence:full');
+    expect(workflow).toContain('npm run test:e2e:clinical-stability:ci');
+    expect(workflow).toContain('name: test-runtime-governance');
+    expect(workflow).toContain('reports/test-runtime-governance.*');
+    expect(scripts['check:test-runtime-governance']).toBe(
+      'node scripts/check-test-runtime-governance.mjs'
+    );
+    expect(scripts['report:test-runtime-governance']).toBe(
+      'node scripts/report-test-runtime-governance.mjs'
+    );
+  });
+
   it('self-checks post-merge evidence before uploading the main artifact', () => {
     const workflow = readText('.github/workflows/ci-cd.yml');
     const scripts = readPackageScripts();

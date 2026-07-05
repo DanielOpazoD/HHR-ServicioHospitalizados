@@ -116,6 +116,9 @@ El ownership técnico por subsistema crítico vive en `scripts/config/technical-
 El scorecard ejecutivo consolidado vive en `reports/release-readiness-scorecard.md` y se regenera con `npm run report:release-readiness-scorecard`.
 La política formal de upgrades, excepciones y tipos de cambio vive en `scripts/config/sustainable-change-policy.json` y se valida con `npm run check:sustainable-change-policy`.
 La clasificación compacta de guardrails blocking vs report-only vive en `scripts/config/guardrail-governance.json` y se valida con `npm run check:guardrail-governance`.
+La clasificación de runtime de tests vive en `scripts/config/test-runtime-governance.json` y se valida con `npm run check:test-runtime-governance`.
+El workflow `.github/workflows/nightly-test-runtime.yml` concentra suites largas en `workflow_dispatch`/`schedule`: `test:sync-load`, `test:release-confidence:full` y `test:e2e:clinical-stability:ci`.
+El artifact `reports/test-runtime-governance.md` muestra budgets, PR vs nightly y señales de fixtures duplicadas para reducir tiempo con datos sin perder cobertura clínica crítica.
 El reporte de release readiness ya regenera también `guardrail-governance`; no debe depender de un artefacto previo manual.
 CI regenera los snapshots report-only obligatorios con `npm run report:governance-snapshots` antes de ejecutar `check:quality`.
 `release-readiness-scorecard` sigue siendo ejecutivo y obligatorio para release, pero ya no duplica bloqueo dentro de `check:quality` si las fuentes primarias siguen verdes.
