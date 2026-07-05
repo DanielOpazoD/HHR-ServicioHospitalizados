@@ -2,6 +2,8 @@ import type { DeviceDetails, DeviceInstance } from '@/types/domain/devices';
 import { VVP_DEVICE_KEYS } from '@/constants/clinicalDeviceConstants';
 import {
   buildDeviceHistoryTimestamp,
+  matchesDeviceHistoryOwner,
+  type DeviceHistoryOwner,
   resolveActiveDeviceTypesFromHistory,
   syncDeviceHistoryForDetails,
   syncDeviceHistoryForSelection,
@@ -13,6 +15,7 @@ interface BuildSelectionChangeResultParams {
   nextDevices: string[];
   previousHistory: DeviceInstance[];
   deviceDetails: DeviceDetails;
+  owner?: DeviceHistoryOwner;
   dateProvider?: DateProvider;
   createId?: () => string;
 }
@@ -21,6 +24,7 @@ interface BuildDetailsChangeResultParams {
   activeDevices: string[];
   nextDetails: DeviceDetails;
   previousHistory: DeviceInstance[];
+  owner?: DeviceHistoryOwner;
   dateProvider?: DateProvider;
   createId?: () => string;
 }
@@ -30,6 +34,8 @@ interface BuildDeviceBundleChangeResultParams {
   nextDevices: string[];
   nextDetails: DeviceDetails;
   previousHistory: DeviceInstance[];
+  owner?: DeviceHistoryOwner;
+  renamedDevice?: { from: string; to: string } | null;
   dateProvider?: DateProvider;
   createId?: () => string;
 }
@@ -154,11 +160,32 @@ const resolveCanonicalHistory = ({
     };
   });
 
+const applyDeviceRenameToHistory = ({
+  history,
+  owner,
+  renamedDevice,
+}: {
+  history: DeviceInstance[];
+  owner?: DeviceHistoryOwner;
+  renamedDevice?: { from: string; to: string } | null;
+}): DeviceInstance[] => {
+  if (!renamedDevice || !renamedDevice.from || !renamedDevice.to) {
+    return history;
+  }
+
+  return history.map(item =>
+    item.type === renamedDevice.from && matchesDeviceHistoryOwner(item, owner)
+      ? { ...item, type: renamedDevice.to }
+      : item
+  );
+};
+
 export const buildSelectionChangeResult = ({
   previousDevices,
   nextDevices,
   previousHistory,
   deviceDetails,
+  owner,
   dateProvider = systemDateProvider,
   createId = defaultCreateId,
 }: BuildSelectionChangeResultParams): DevicesCellChangeResult => {
@@ -167,6 +194,7 @@ export const buildSelectionChangeResult = ({
     nextDevices,
     previousHistory,
     deviceDetails,
+    owner,
     timestamp: buildDeviceHistoryTimestamp({ now: dateProvider() }),
     createId,
   });
@@ -181,6 +209,7 @@ export const buildDetailsChangeResult = ({
   activeDevices,
   nextDetails,
   previousHistory,
+  owner,
   dateProvider = systemDateProvider,
   createId = defaultCreateId,
 }: BuildDetailsChangeResultParams): DevicesCellChangeResult => {
@@ -188,6 +217,7 @@ export const buildDetailsChangeResult = ({
     nextDetails,
     activeDevices,
     previousHistory,
+    owner,
     timestamp: buildDeviceHistoryTimestamp({ now: dateProvider() }),
     createId,
   });
@@ -203,29 +233,41 @@ export const buildDeviceBundleChangeResult = ({
   nextDevices,
   nextDetails,
   previousHistory,
+  owner,
+  renamedDevice,
   dateProvider = systemDateProvider,
   createId = defaultCreateId,
 }: BuildDeviceBundleChangeResultParams): Required<DevicesCellChangeResult> => {
+  const renamedHistory = applyDeviceRenameToHistory({
+    history: previousHistory,
+    owner,
+    renamedDevice,
+  });
+  const previousDevicesForSelection = renamedDevice
+    ? previousDevices.map(device => (device === renamedDevice.from ? renamedDevice.to : device))
+    : previousDevices;
   const selectionResult = buildSelectionChangeResult({
-    previousDevices,
+    previousDevices: previousDevicesForSelection,
     nextDevices,
-    previousHistory,
+    previousHistory: renamedHistory,
     deviceDetails: nextDetails,
+    owner,
     dateProvider,
     createId,
   });
 
   const historyAfterSelection = applyRetirementDetailsToHistory({
-    previousDevices,
+    previousDevices: previousDevicesForSelection,
     nextDevices,
     nextDetails,
-    history: selectionResult.nextHistory ?? previousHistory,
+    history: selectionResult.nextHistory ?? renamedHistory,
   });
 
   const detailsResult = buildDetailsChangeResult({
     activeDevices: nextDevices,
     nextDetails,
     previousHistory: historyAfterSelection,
+    owner,
     dateProvider,
     createId,
   });

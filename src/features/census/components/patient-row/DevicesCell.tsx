@@ -25,6 +25,7 @@ export const DevicesCell: React.FC<DevicesCellProps> = ({
     devices,
     deviceDetails,
     history,
+    owner,
     isHistoryOpen,
     openHistory,
     closeHistory,
@@ -77,6 +78,7 @@ export const DevicesCell: React.FC<DevicesCellProps> = ({
           history={history}
           currentDevices={devices}
           deviceDetails={deviceDetails}
+          owner={owner}
           onSave={handleHistoryModalSave}
           onClose={closeHistory}
         />

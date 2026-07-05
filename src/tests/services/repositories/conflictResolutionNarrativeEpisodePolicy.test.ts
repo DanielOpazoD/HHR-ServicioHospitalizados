@@ -211,6 +211,43 @@ describe('conflict resolution narrative episode policy', () => {
     expect(resolved.beds.R1.clinicalEvents).toEqual([]);
   });
 
+  it('falls back to the patient episode tuple when a hydrated legacy episode id is present', () => {
+    const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
+    remote.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente con hidratacion',
+        rut: '11.111.111-1',
+        admissionDate: '2026-02-18',
+        clinicalEpisodeId: 'legacy_ep_remote',
+        handoffNoteDayShift: '',
+        clinicalEvents: [],
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const local = makeRecord('2026-02-18', '2026-02-18T10:05:00.000Z');
+    local.beds = {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente con hidratacion',
+        rut: '11.111.111-1',
+        admissionDate: '2026-02-18',
+        clinicalEpisodeId: 'legacy_ep_local',
+        handoffNoteDayShift: 'Evolucion local del mismo episodio',
+        clinicalEvents: [{ id: 'event-local', name: 'Evento local del mismo episodio' }],
+      } as unknown as DailyRecord['beds'][string],
+    };
+
+    const resolved = resolveDailyRecordConflict(remote, local, {
+      changedPaths: ['beds.R1.handoffNoteDayShift', 'beds.R1.clinicalEvents'],
+    });
+
+    expect(resolved.beds.R1.handoffNoteDayShift).toBe('Evolucion local del mismo episodio');
+    expect(resolved.beds.R1.clinicalEvents).toEqual([
+      expect.objectContaining({ id: 'event-local' }),
+    ]);
+  });
+
   it('does not apply stale changed-path structured entries to a different remote patient episode', () => {
     const remote = makeRecord('2026-02-18', '2026-02-18T10:00:00.000Z');
     remote.beds = {

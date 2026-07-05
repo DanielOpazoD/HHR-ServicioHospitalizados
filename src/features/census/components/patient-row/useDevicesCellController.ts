@@ -11,6 +11,7 @@ import {
   buildSelectionChangeResult,
 } from '@/features/census/controllers/devicesCellController';
 import { DateProvider, systemDateProvider } from '@/features/census/controllers/dateProvider';
+import { resolveDeviceHistoryOwner } from '@/features/census/controllers/deviceHistoryController';
 
 interface UseDevicesCellControllerParams {
   data: PatientData;
@@ -33,6 +34,15 @@ export const useDevicesCellController = ({
 
   const devices = useMemo(() => data.devices || [], [data.devices]);
   const deviceDetails = useMemo(() => data.deviceDetails || {}, [data.deviceDetails]);
+  const owner = useMemo(
+    () =>
+      resolveDeviceHistoryOwner({
+        clinicalEpisodeId: data.clinicalEpisodeId,
+        patientName: data.patientName,
+        rut: data.rut,
+      }),
+    [data.clinicalEpisodeId, data.patientName, data.rut]
+  );
   const history = useMemo(
     () => (data.deviceInstanceHistory || []) as DeviceInstance[],
     [data.deviceInstanceHistory]
@@ -48,6 +58,7 @@ export const useDevicesCellController = ({
         nextDevices,
         previousHistory: history,
         deviceDetails,
+        owner,
         dateProvider,
       });
 
@@ -56,7 +67,7 @@ export const useDevicesCellController = ({
         onDeviceHistoryChange(result.nextHistory);
       }
     },
-    [dateProvider, deviceDetails, devices, history, onDeviceHistoryChange, onDevicesChange]
+    [dateProvider, deviceDetails, devices, history, onDeviceHistoryChange, onDevicesChange, owner]
   );
 
   const handleDeviceDetailsChange = useCallback(
@@ -65,6 +76,7 @@ export const useDevicesCellController = ({
         nextDetails,
         activeDevices: devices,
         previousHistory: history,
+        owner,
         dateProvider,
       });
 
@@ -73,7 +85,7 @@ export const useDevicesCellController = ({
         onDeviceHistoryChange(result.nextHistory);
       }
     },
-    [dateProvider, devices, history, onDeviceDetailsChange, onDeviceHistoryChange]
+    [dateProvider, devices, history, onDeviceDetailsChange, onDeviceHistoryChange, owner]
   );
 
   const handleDeviceRetireChange = useCallback(
@@ -83,6 +95,7 @@ export const useDevicesCellController = ({
         nextDevices,
         nextDetails,
         previousHistory: history,
+        owner,
         dateProvider,
       });
 
@@ -104,6 +117,7 @@ export const useDevicesCellController = ({
       dateProvider,
       devices,
       history,
+      owner,
       onDeviceBundleChange,
       onDeviceDetailsChange,
       onDeviceHistoryChange,
@@ -112,12 +126,18 @@ export const useDevicesCellController = ({
   );
 
   const handleDeviceConfigChange = useCallback(
-    (nextDevices: string[] | null, nextDetails: DeviceDetails) => {
+    (
+      nextDevices: string[] | null,
+      nextDetails: DeviceDetails,
+      options?: { renamedDevice?: { from: string; to: string } | null }
+    ) => {
       const bundleResult = buildDeviceBundleChangeResult({
         previousDevices: devices,
         nextDevices: nextDevices ?? devices,
         nextDetails,
         previousHistory: history,
+        owner,
+        renamedDevice: options?.renamedDevice,
         dateProvider,
       });
 
@@ -138,6 +158,7 @@ export const useDevicesCellController = ({
       dateProvider,
       devices,
       history,
+      owner,
       onDeviceBundleChange,
       onDeviceDetailsChange,
       onDeviceHistoryChange,
@@ -158,6 +179,7 @@ export const useDevicesCellController = ({
     devices,
     deviceDetails,
     history,
+    owner,
     isHistoryOpen,
     openHistory,
     closeHistory,

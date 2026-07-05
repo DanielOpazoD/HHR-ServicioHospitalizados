@@ -6,7 +6,7 @@ import {
 } from '@/application/patient-flow/clinicalEpisode';
 
 const CANONICAL_EPISODE_ID_PREFIX = 'ep_';
-const LEGACY_EPISODE_ID_PREFIX = 'legacy_ep_';
+export const LEGACY_EPISODE_ID_PREFIX = 'legacy_ep_';
 
 type EpisodePatient = PatientEpisodeContract & {
   bedId?: string;
