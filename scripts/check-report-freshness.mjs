@@ -15,12 +15,36 @@ const strictMode =
   process.argv.includes('--strict') || process.env.REPORT_FRESHNESS_STRICT === '1';
 const dependencyFilesFor = reportId => getEvidenceReportDependencyFiles(reportId);
 
+const readArgValues = flag => {
+  const values = [];
+  for (let index = 0; index < process.argv.length; index += 1) {
+    if (process.argv[index] !== flag) {
+      continue;
+    }
+    const value = process.argv[index + 1] || '';
+    values.push(
+      ...value
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean)
+    );
+  }
+  return values;
+};
+
 const trackedReports = [
   {
     id: 'quality-metrics',
     file: 'reports/quality-metrics.json',
     field: 'gitSha',
     refreshScript: 'report:quality-metrics',
+  },
+  {
+    id: 'sync-convergence',
+    file: 'reports/sync-convergence.json',
+    field: 'gitSha',
+    refreshScript: 'report:sync-convergence',
+    dependsOn: dependencyFilesFor('sync-convergence'),
   },
   {
     id: 'system-confidence',
@@ -71,7 +95,7 @@ const printIssues = (issues, { stream = console.error } = {}) => {
   for (const issue of issues) {
     stream(`- ${issue}`);
   }
-  const refreshScripts = [...new Set(trackedReports.map(report => report.refreshScript))];
+  const refreshScripts = [...new Set(selectedReports.map(report => report.refreshScript))];
   stream(
     `[report-freshness] Refresh with: ${refreshScripts.map(script => `npm run ${script}`).join(' && ')}`
   );
@@ -81,6 +105,19 @@ const fail = issues => {
   printIssues(issues);
   process.exit(1);
 };
+
+const onlyReportIds = new Set(readArgValues('--only'));
+const selectedReports =
+  onlyReportIds.size === 0
+    ? trackedReports
+    : trackedReports.filter(report => onlyReportIds.has(report.id));
+
+const unknownReportIds = [...onlyReportIds].filter(
+  reportId => !trackedReports.some(report => report.id === reportId)
+);
+if (unknownReportIds.length > 0) {
+  fail([`Unknown report id(s) for --only: ${unknownReportIds.join(', ')}.`]);
+}
 
 const warn = issues => {
   printIssues(issues, { stream: console.warn });
@@ -100,7 +137,7 @@ const runGit = args => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }
 
 const governedReportFiles = new Set(
   [
-    ...trackedReports.map(report => report.file),
+    ...selectedReports.map(report => report.file),
     'reports/clinical-release-validation.json',
   ].flatMap(file => [file, file.replace(/\.json$/, '.md')])
 );
@@ -179,7 +216,7 @@ const pushProvenanceIssues = ({ report, parsedReport, reportSha }) => {
   }
 };
 
-for (const report of trackedReports) {
+for (const report of selectedReports) {
   const reportPath = path.join(ROOT, report.file);
 
   if (!fs.existsSync(reportPath)) {
@@ -273,5 +310,5 @@ if (advisories.length > 0) {
 }
 
 console.log(
-  `[report-freshness] OK (${trackedReports.length} reports match ${currentGitSha}, a direct merge parent, or an evidence-only direct parent, worktree=${currentGitState.gitDirty ? 'dirty' : 'clean'})`
+  `[report-freshness] OK (${selectedReports.length} reports match ${currentGitSha}, a direct merge parent, or an evidence-only direct parent, worktree=${currentGitState.gitDirty ? 'dirty' : 'clean'})`
 );

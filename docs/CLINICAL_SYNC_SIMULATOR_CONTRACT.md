@@ -58,3 +58,17 @@ npm run test:clinical-sync-simulator
 El comando debe mantenerse bajo costo y apuntar solo a `src/tests/support/clinicalSyncSimulator`.
 Debe formar parte de la validacion local de PRs que toquen sincronizacion clinica, handoff,
 movimientos, DMI o conflicto/replay.
+
+## Gate de release
+
+La suite tambien queda promovida como gate visible de CI en `clinical-sync-release-gate`.
+Ese job ejecuta el simulador, regenera `reports/sync-convergence.*`, valida el contrato de
+evidencia y aplica frescura estricta focal con:
+
+```bash
+npm run check:sync-convergence-freshness:strict
+```
+
+El artifact `sync-convergence` debe quedar disponible en cada corrida de PR/main para auditar
+que la resiliencia clinica distribuida no quedo solamente cubierta de forma implicita por los
+shards unitarios.

@@ -6,6 +6,7 @@ export const GOVERNANCE_SNAPSHOT_STEP_IDS = [
   'release-readiness-scorecard',
   'clinical-release-signoff',
   'runtime-contracts',
+  'sync-convergence',
   'serverless-runtime-governance',
   'serverless-sensitive-coverage',
   'sustainable-change-policy',

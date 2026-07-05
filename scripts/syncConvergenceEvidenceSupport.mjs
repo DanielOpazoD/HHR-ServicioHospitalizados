@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildEvidenceProvenance } from './evidenceProvenanceSupport.mjs';
 import { formatWorktreeState, getGitReportState } from './gitReportState.mjs';
 
 const readText = (root, filePath) => fs.readFileSync(path.join(root, filePath), 'utf8');
@@ -315,6 +316,11 @@ export const buildSyncConvergenceEvidenceReport = root => {
     generatedAt: new Date().toISOString(),
     gitSha: gitState.gitSha,
     gitDirty: gitState.gitDirty,
+    generatedFor: buildEvidenceProvenance({
+      root,
+      reportId: 'sync-convergence',
+      gitState,
+    }),
     worktree: formatWorktreeState(gitState.gitDirty),
     summary: {
       ok: evaluation.ok,
