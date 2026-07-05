@@ -1,7 +1,7 @@
 # Operational Health Snapshot
 
-- Generated: 2026-07-05T05:03:17.237Z
-- Git SHA: 05efeb95
+- Generated: 2026-07-05T05:13:59.250Z
+- Git SHA: 57baacb9
 - Schema current: v1
 - Schema legacy: v0
 
@@ -135,14 +135,14 @@
 | Zone | Lines | Functions | Branches | Status |
 | --- | ---: | ---: | ---: | --- |
 | `src/features/census/controllers` | 96.1 | 99.1 | 87.9 | PASS |
-| `src/features/clinical-documents` | 85.6 | 84.4 | 74.1 | PASS |
+| `src/features/clinical-documents` | 85.9 | 85.3 | 74.7 | PASS |
 | `src/services/transfers` | 85.5 | 84 | 74.9 | PASS |
 | `src/services/storage/firestore` | 89.7 | 94.5 | 81.8 | PASS |
 | `src/services/auth` | 84.9 | 86.3 | 71.1 | PASS |
 | `src/services/auth/bootstrap` | 91.9 | 100 | 81.7 | PASS |
 | `src/services/backup` | 81.1 | 82 | 64.9 | PASS |
 | `src/features/reminders/admin` | 98.3 | 97.6 | 91.2 | PASS |
-| `src/app-shell` | 92.6 | 93.3 | 81.3 | PASS |
+| `src/app-shell` | 92.4 | 94.4 | 81.8 | PASS |
 | `src/services/patient-history` | 96 | 100 | 78.4 | PASS |
 | `src/services/export-manager` | 96 | 96.6 | 92.5 | PASS |
 | `src/shared/census/upc-critical` | 98.3 | 97.9 | 84.7 | PASS |

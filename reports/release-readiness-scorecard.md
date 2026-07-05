@@ -1,7 +1,7 @@
 # Release Readiness Scorecard
 
-Generated at: 2026-07-05T05:03:18.331Z
-Commit: 05efeb95
+Generated at: 2026-07-05T05:14:00.238Z
+Commit: 57baacb9
 Worktree: clean
 Overall: ok
 
@@ -22,14 +22,14 @@ Overall: ok
 
 ## Sources
 
-- `qualityMetrics`: reports/quality-metrics.json (2026-07-05T04:54:15.856Z)
+- `qualityMetrics`: reports/quality-metrics.json (2026-07-05T05:05:33.220Z)
 - `bundleRiskLedger`: reports/bundle-risk-ledger.json (stable:bundle-risk-ledger)
-- `systemConfidence`: reports/system-confidence.json (2026-07-05T05:03:17.613Z)
-- `operationalHealth`: reports/operational-health.json (2026-07-05T05:03:17.237Z)
-- `releaseConfidenceMatrix`: reports/release-confidence-matrix.json (2026-07-05T05:03:17.901Z)
-- `technicalOwnershipMap`: reports/technical-ownership-map.json (2026-07-05T05:03:18.084Z)
-- `guardrailGovernance`: reports/guardrail-governance.json (2026-07-05T05:03:18.268Z)
-- `compatibilityImportGovernance`: reports/compatibility-import-governance.json (2026-07-05T04:54:18.244Z)
+- `systemConfidence`: reports/system-confidence.json (2026-07-05T05:13:59.526Z)
+- `operationalHealth`: reports/operational-health.json (2026-07-05T05:13:59.250Z)
+- `releaseConfidenceMatrix`: reports/release-confidence-matrix.json (2026-07-05T05:13:59.811Z)
+- `technicalOwnershipMap`: reports/technical-ownership-map.json (2026-07-05T05:13:59.996Z)
+- `guardrailGovernance`: reports/guardrail-governance.json (2026-07-05T05:14:00.174Z)
+- `compatibilityImportGovernance`: reports/compatibility-import-governance.json (2026-07-05T05:05:36.199Z)
 - `legacyRetirementDebt`: reports/legacy-retirement-debt.json (stable:legacy-retirement-debt)
 
 ## Release Hotspots

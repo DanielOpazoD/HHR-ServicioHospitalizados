@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-07-05T05:03:17.237Z",
-  "gitSha": "05efeb95",
+  "generatedAt": "2026-07-05T05:13:59.250Z",
+  "gitSha": "57baacb9",
   "gitDirty": false,
   "generatedFor": {
-    "gitSha": "05efeb95",
+    "gitSha": "57baacb9",
     "gitDirty": false,
-    "treeHash": "bcab8c0db2e4eb1bf6c95c49306785a1d34bd975",
+    "treeHash": "435f2bef02baa873691372a2ed2f0079398d64ca",
     "reportId": "operational-health",
     "dependencyFingerprint": {
       "algorithm": "sha256:dependency-files-v1",
-      "value": "e40c74b08894271d33370f50a174827c416117af93cbc271d37798096dd265c9",
+      "value": "21f72b8c6a628a6f1640add7f576310abce70b73dc536fc5a478f8423b29116f",
       "files": [
         "reports/critical-coverage.json",
         "reports/critical-coverage.md",
@@ -263,9 +263,9 @@
       {
         "root": "src/features/clinical-documents",
         "status": "PASS",
-        "lines": 85.6,
-        "functions": 84.4,
-        "branches": 74.1
+        "lines": 85.9,
+        "functions": 85.3,
+        "branches": 74.7
       },
       {
         "root": "src/services/transfers",
@@ -312,9 +312,9 @@
       {
         "root": "src/app-shell",
         "status": "PASS",
-        "lines": 92.6,
-        "functions": 93.3,
-        "branches": 81.3
+        "lines": 92.4,
+        "functions": 94.4,
+        "branches": 81.8
       },
       {
         "root": "src/services/patient-history",
