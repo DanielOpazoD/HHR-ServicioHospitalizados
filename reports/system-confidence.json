@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-07-05T05:13:59.526Z",
-  "gitSha": "57baacb9",
+  "generatedAt": "2026-07-05T05:27:55.832Z",
+  "gitSha": "33a30ec0",
   "gitDirty": false,
   "generatedFor": {
-    "gitSha": "57baacb9",
+    "gitSha": "33a30ec0",
     "gitDirty": false,
-    "treeHash": "435f2bef02baa873691372a2ed2f0079398d64ca",
+    "treeHash": "5af18466a49909348c42fcbd188a791d33c8fd63",
     "reportId": "system-confidence",
     "dependencyFingerprint": {
       "algorithm": "sha256:dependency-files-v1",
-      "value": "31707cda5942fb324e8b07f3b84ee97f9bde25b9665887fbc94959ffb294c5d5",
+      "value": "577749623651dd065fd520c8234c93dbdcb4a821c0982822771a70a1e434ff68",
       "files": [
         "reports/critical-coverage.json",
         "reports/critical-coverage.md",

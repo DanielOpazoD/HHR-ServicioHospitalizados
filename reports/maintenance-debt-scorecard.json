@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-07-05T05:14:00.929Z",
-  "gitSha": "57baacb9",
+  "generatedAt": "2026-07-05T05:27:56.894Z",
+  "gitSha": "33a30ec0",
   "gitDirty": false,
   "generatedFor": {
-    "gitSha": "57baacb9",
+    "gitSha": "33a30ec0",
     "gitDirty": false,
-    "treeHash": "435f2bef02baa873691372a2ed2f0079398d64ca",
+    "treeHash": "5af18466a49909348c42fcbd188a791d33c8fd63",
     "reportId": "maintenance-debt-scorecard",
     "dependencyFingerprint": {
       "algorithm": "sha256:dependency-files-v1",
-      "value": "d00325bbc69e677dfe07654740eac61207e3492b88ccfe9b83407fadb3906b51",
+      "value": "effe01606d0ba35115d33dc8cc934f21835d9e4036e3a398c240e10988316f11",
       "files": [
         "reports/quality-metrics.json",
         "reports/quality-metrics.md"

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T05:14:00.238Z",
+  "generatedAt": "2026-07-05T05:27:56.329Z",
   "overallStatus": "ok",
   "indicators": [
     {
@@ -123,7 +123,7 @@
   "sources": {
     "qualityMetrics": {
       "file": "reports/quality-metrics.json",
-      "generatedAt": "2026-07-05T05:05:33.220Z"
+      "generatedAt": "2026-07-05T05:20:10.539Z"
     },
     "bundleRiskLedger": {
       "file": "reports/bundle-risk-ledger.json",
@@ -131,27 +131,27 @@
     },
     "systemConfidence": {
       "file": "reports/system-confidence.json",
-      "generatedAt": "2026-07-05T05:13:59.526Z"
+      "generatedAt": "2026-07-05T05:27:55.832Z"
     },
     "operationalHealth": {
       "file": "reports/operational-health.json",
-      "generatedAt": "2026-07-05T05:13:59.250Z"
+      "generatedAt": "2026-07-05T05:27:55.620Z"
     },
     "releaseConfidenceMatrix": {
       "file": "reports/release-confidence-matrix.json",
-      "generatedAt": "2026-07-05T05:13:59.811Z"
+      "generatedAt": "2026-07-05T05:27:56.034Z"
     },
     "technicalOwnershipMap": {
       "file": "reports/technical-ownership-map.json",
-      "generatedAt": "2026-07-05T05:13:59.996Z"
+      "generatedAt": "2026-07-05T05:27:56.161Z"
     },
     "guardrailGovernance": {
       "file": "reports/guardrail-governance.json",
-      "generatedAt": "2026-07-05T05:14:00.174Z"
+      "generatedAt": "2026-07-05T05:27:56.288Z"
     },
     "compatibilityImportGovernance": {
       "file": "reports/compatibility-import-governance.json",
-      "generatedAt": "2026-07-05T05:05:36.199Z"
+      "generatedAt": "2026-07-05T05:20:11.808Z"
     },
     "legacyRetirementDebt": {
       "file": "reports/legacy-retirement-debt.json",
@@ -159,16 +159,16 @@
     }
   },
   "issues": [],
-  "gitSha": "57baacb9",
+  "gitSha": "33a30ec0",
   "gitDirty": false,
   "generatedFor": {
-    "gitSha": "57baacb9",
+    "gitSha": "33a30ec0",
     "gitDirty": false,
-    "treeHash": "435f2bef02baa873691372a2ed2f0079398d64ca",
+    "treeHash": "5af18466a49909348c42fcbd188a791d33c8fd63",
     "reportId": "release-readiness-scorecard",
     "dependencyFingerprint": {
       "algorithm": "sha256:dependency-files-v1",
-      "value": "0b4c686e31af741f59211f711b8d33e2d351313ba1fefc96dbabfcc4f0d0f54f",
+      "value": "07fb9294871303be8046c6bdac3fc5b987d08633b0d2305b2b0648b0101aab8b",
       "files": [
         "reports/bundle-risk-ledger.json",
         "reports/bundle-risk-ledger.md",
