@@ -33,6 +33,13 @@ const readObservedJobsInput = input => {
   throw new Error('CI runtime observed input must be an array of jobs or an object with a jobs array.');
 };
 
+const readObservedInputSource = input => {
+  if (input && typeof input === 'object' && !Array.isArray(input) && typeof input.source === 'object') {
+    return input.source;
+  }
+  return {};
+};
+
 const inputArgIndex = process.argv.findIndex(arg => arg === '--input');
 const inputPath =
   inputArgIndex >= 0 && process.argv[inputArgIndex + 1]
@@ -42,6 +49,7 @@ const inputPath =
 try {
   const input = readJsonIfExists(inputPath);
   const jobs = readObservedJobsInput(input);
+  const inputSource = readObservedInputSource(input);
   const estimatedProfile = readJsonIfExists(ESTIMATED_PROFILE_PATH);
   const profile = {
     ...buildCiRuntimeObservedProfile({
@@ -51,6 +59,7 @@ try {
     generatedAt: new Date().toISOString(),
     ...getGitReportState(root),
     source: {
+      ...inputSource,
       inputPath,
       hasInput: Boolean(input),
     },

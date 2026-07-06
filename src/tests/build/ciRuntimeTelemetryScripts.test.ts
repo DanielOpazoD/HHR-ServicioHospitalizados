@@ -47,4 +47,59 @@ describe('CI runtime telemetry scripts', () => {
       /must be an array of jobs or an object with a jobs array/
     );
   });
+
+  it('preserves collector source metadata in the generated report', () => {
+    const inputPath = writeTempInput(
+      JSON.stringify({
+        source: {
+          provider: 'github-actions',
+          repository: 'DanielOpazoD/HHR-ServicioHospitalizados',
+          runId: '28767128242',
+          status: 'collected',
+        },
+        jobs: [
+          {
+            name: 'unit-risk-shard-1',
+            status: 'COMPLETED',
+            conclusion: 'SUCCESS',
+            startedAt: '2026-07-06T01:43:33Z',
+            completedAt: '2026-07-06T01:47:27Z',
+          },
+          {
+            name: 'unit-risk-shard-2',
+            status: 'COMPLETED',
+            conclusion: 'SUCCESS',
+            startedAt: '2026-07-06T01:43:32Z',
+            completedAt: '2026-07-06T01:46:53Z',
+          },
+          {
+            name: 'unit-risk-shard-3',
+            status: 'COMPLETED',
+            conclusion: 'SUCCESS',
+            startedAt: '2026-07-06T01:43:32Z',
+            completedAt: '2026-07-06T01:47:05Z',
+          },
+          {
+            name: 'unit-risk-shard-4',
+            status: 'COMPLETED',
+            conclusion: 'SUCCESS',
+            startedAt: '2026-07-06T01:43:31Z',
+            completedAt: '2026-07-06T01:46:54Z',
+          },
+        ],
+      })
+    );
+
+    runReportScript(inputPath);
+
+    const report = JSON.parse(fs.readFileSync('reports/ci-runtime-observed-profile.json', 'utf8'));
+    expect(report.source).toMatchObject({
+      inputPath,
+      provider: 'github-actions',
+      repository: 'DanielOpazoD/HHR-ServicioHospitalizados',
+      runId: '28767128242',
+      status: 'collected',
+    });
+    expect(report.comparison.summary.observedTotalDurationMs).toBeGreaterThan(0);
+  });
 });

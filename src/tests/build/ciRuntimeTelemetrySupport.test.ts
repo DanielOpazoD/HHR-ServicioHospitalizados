@@ -162,7 +162,7 @@ describe('ci runtime telemetry support', () => {
   it('compares estimated and observed runtime without turning one-run imbalance into a blocker', () => {
     const comparison = compareEstimatedAndObservedRuntime({
       estimatedProfile: {
-        summary: { spreadPercent: 0.2, tolerancePercent: 25 },
+        summary: { spreadPercent: 0.2, tolerancePercent: 25, totalEstimatedDurationMs: 264000 },
         shards: [
           { index: 1, estimatedDurationMs: 66000 },
           { index: 2, estimatedDurationMs: 66000 },
@@ -187,6 +187,17 @@ describe('ci runtime telemetry support', () => {
         expect.stringContaining('estimated balance is still within tolerance'),
       ])
     );
+    expect(comparison.summary).toMatchObject({
+      estimatedTotalDurationMs: 264000,
+      observedTotalDurationMs: 1217000,
+      totalRatioPercent: 461,
+    });
+    expect(comparison.shards[0]).toMatchObject({
+      index: 1,
+      estimatedDurationMs: 66000,
+      observedDurationMs: 600000,
+      ratioPercent: 909.1,
+    });
   });
 
   it('deduplicates blocking issues already present in the comparison payload', () => {
@@ -207,15 +218,52 @@ describe('ci runtime telemetry support', () => {
   });
 
   it('formats observed and missing telemetry reports for governance artifacts', () => {
-    const observedMarkdown = formatCiRuntimeObservedProfileMarkdown(
-      buildCiRuntimeObservedProfile({ jobs: completedShardJobs, tolerancePercent: 25 })
-    );
-    const missingMarkdown = formatCiRuntimeObservedProfileMarkdown(
-      buildCiRuntimeObservedProfile({ jobs: [], tolerancePercent: 25 })
-    );
+    const observedProfile = buildCiRuntimeObservedProfile({
+      jobs: completedShardJobs,
+      tolerancePercent: 25,
+    });
+    const observedMarkdown = formatCiRuntimeObservedProfileMarkdown({
+      ...observedProfile,
+      comparison: compareEstimatedAndObservedRuntime({
+        estimatedProfile: {
+          summary: { totalEstimatedDurationMs: 264000, spreadPercent: 0.2, tolerancePercent: 25 },
+          shards: [
+            { index: 1, estimatedDurationMs: 66000 },
+            { index: 2, estimatedDurationMs: 66000 },
+            { index: 3, estimatedDurationMs: 66000 },
+            { index: 4, estimatedDurationMs: 66000 },
+          ],
+        },
+        observedProfile,
+      }),
+      generatedAt: '2026-07-06T04:06:33.828Z',
+      source: {
+        inputPath: 'reports/ci-runtime-observed-input.json',
+        provider: 'github-actions',
+        repository: 'DanielOpazoD/HHR-ServicioHospitalizados',
+        runId: '28767128242',
+        status: 'collected',
+      },
+    });
+    const missingMarkdown = formatCiRuntimeObservedProfileMarkdown({
+      ...buildCiRuntimeObservedProfile({ jobs: [], tolerancePercent: 25 }),
+      source: {
+        inputPath: 'reports/ci-runtime-observed-input.json',
+        hasInput: false,
+      },
+    });
 
     expect(observedMarkdown).toContain('# CI Runtime Observed Profile');
+    expect(observedMarkdown).toContain('- Source: `github-actions`');
+    expect(observedMarkdown).toContain('- Run: `28767128242`');
+    expect(observedMarkdown).toContain('- Total observed runtime: 14.2m');
+    expect(observedMarkdown).toContain('- Slowest shard: #1 (3.9m)');
+    expect(observedMarkdown).toContain('## Estimated vs Observed');
+    expect(observedMarkdown).toContain('| 1 | 1.1m | 3.9m | 354.5% |');
     expect(observedMarkdown).toContain('| 1 | unit-risk-shard-1 | 3.9m | SUCCESS |');
     expect(missingMarkdown).toContain('No observed CI unit shard data is available yet');
+    expect(missingMarkdown).toContain(
+      'Run `npm run collect:ci-runtime-observed-input` in GitHub Actions'
+    );
   });
 });
