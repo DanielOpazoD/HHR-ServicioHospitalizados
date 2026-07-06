@@ -1,7 +1,7 @@
 # Test Runtime Governance
 
-- Generated: 2026-07-05T22:54:04.709Z
-- Git SHA: `078f3b1e`
+- Generated: 2026-07-06T01:32:04.124Z
+- Git SHA: `1bd1afc1`
 - Worktree dirty: `false`
 - PR critical path budget: 35.0m
 
@@ -26,14 +26,16 @@
 
 | Check | Group | Duration |
 | --- | --- | ---: |
-| `check:feature-public-api-boundary` | boundaries | 6.6s |
-| `check:security` | security | 3.5s |
-| `check:module-size` | size | 2.9s |
-| `check:source-any` | type-safety | 2.2s |
-| `check:native-dialogs` | boundaries | 1.5s |
-| `check:architecture` | boundaries | 1.5s |
-| `check:repo-hygiene` | hygiene | 1.2s |
-| `check:folder-dependencies` | boundaries | 1.2s |
+| `check:feature-public-api-boundary` | boundaries | 1.4s |
+| `check:security` | security | 1.1s |
+| `check:test-runtime-governance` | tests | 0.5s |
+| `check:unit-shard-balance` | tests | 0.5s |
+| `check:runtime-adapter-boundary` | boundaries | 0.4s |
+| `check:repo-hygiene` | hygiene | 0.4s |
+| `check:folder-dependencies` | boundaries | 0.4s |
+| `check:architecture` | boundaries | 0.3s |
+
+- Unit shard balance: 1397 files, 0% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
 
 ## Fixture Duplication Governance
 

@@ -1,7 +1,7 @@
 {
   "reportId": "test-runtime-governance",
-  "generatedAt": "2026-07-05T22:54:04.709Z",
-  "gitSha": "078f3b1e",
+  "generatedAt": "2026-07-06T01:32:04.124Z",
+  "gitSha": "1bd1afc1",
   "gitDirty": false,
   "budgets": {
     "prCriticalPathMinutes": 35,
@@ -33,7 +33,7 @@
       "commands": [
         {
           "script": "test:ci:unit:shard",
-          "command": "vitest run --exclude \"src/tests/security/firestore-rules.test.ts\" --exclude \"src/tests/emulator/**\" --exclude \"src/tests/emulator-ui/**\" --shard"
+          "command": "node scripts/run-unit-shard.mjs"
         }
       ]
     },
@@ -156,45 +156,74 @@
       {
         "id": "check:feature-public-api-boundary",
         "group": "boundaries",
-        "durationMs": 6617
+        "durationMs": 1365
       },
       {
         "id": "check:security",
         "group": "security",
-        "durationMs": 3517
+        "durationMs": 1067
       },
       {
-        "id": "check:module-size",
-        "group": "size",
-        "durationMs": 2885
+        "id": "check:test-runtime-governance",
+        "group": "tests",
+        "durationMs": 472
       },
       {
-        "id": "check:source-any",
-        "group": "type-safety",
-        "durationMs": 2170
+        "id": "check:unit-shard-balance",
+        "group": "tests",
+        "durationMs": 460
       },
       {
-        "id": "check:native-dialogs",
+        "id": "check:runtime-adapter-boundary",
         "group": "boundaries",
-        "durationMs": 1480
-      },
-      {
-        "id": "check:architecture",
-        "group": "boundaries",
-        "durationMs": 1479
+        "durationMs": 369
       },
       {
         "id": "check:repo-hygiene",
         "group": "hygiene",
-        "durationMs": 1205
+        "durationMs": 358
       },
       {
         "id": "check:folder-dependencies",
         "group": "boundaries",
-        "durationMs": 1159
+        "durationMs": 352
+      },
+      {
+        "id": "check:architecture",
+        "group": "boundaries",
+        "durationMs": 326
       }
     ],
-    "e2eCritical": null
+    "e2eCritical": null,
+    "unitShardBalance": {
+      "totalFiles": 1397,
+      "shardCount": 4,
+      "spreadPercent": 0,
+      "tolerancePercent": 25,
+      "perFileOverheadMs": 100,
+      "shards": [
+        {
+          "index": 1,
+          "files": 411,
+          "estimatedDurationMs": 65803
+        },
+        {
+          "index": 2,
+          "files": 326,
+          "estimatedDurationMs": 65803
+        },
+        {
+          "index": 3,
+          "files": 332,
+          "estimatedDurationMs": 65803
+        },
+        {
+          "index": 4,
+          "files": 328,
+          "estimatedDurationMs": 65803
+        }
+      ]
+    }
   },
   "fixtureGovernance": {
     "maxInlineDailyRecordFixtureLines": 80,
