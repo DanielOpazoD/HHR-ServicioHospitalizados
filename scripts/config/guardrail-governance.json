@@ -156,6 +156,11 @@
       "id": "unit_shard_runtime_profile",
       "script": "report:unit-shard-runtime-profile",
       "artifact": "reports/unit-shard-runtime-profile.md"
+    },
+    {
+      "id": "ci_runtime_observed_profile",
+      "script": "report:ci-runtime-observed-profile",
+      "artifact": "reports/ci-runtime-observed-profile.md"
     }
   ],
   "qualityAggregate": {
@@ -213,6 +218,7 @@
       { "id": "check:legacy-permissions-boundary", "group": "boundaries" },
       { "id": "check:test-governance", "group": "tests" },
       { "id": "check:unit-shard-balance", "group": "tests" },
+      { "id": "check:ci-runtime-telemetry", "group": "tests" },
       { "id": "check:test-runtime-governance", "group": "tests" },
       { "id": "check:test-failure-catalog", "group": "tests" },
       { "id": "check:flaky-quarantine", "group": "tests" },

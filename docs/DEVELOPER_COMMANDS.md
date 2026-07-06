@@ -91,6 +91,7 @@ Estos scripts siguen soportados, pero no forman parte de la superficie pública 
 - `npm run check:critical-coverage`
 - `npm run check:flow-performance-budget`
 - `npm run check:unit-shard-balance`
+- `npm run check:ci-runtime-telemetry`
 - `npm run check:test-runtime-governance`
 - `npm run check:security`
 - `npm run check:docs-drift`
@@ -111,6 +112,7 @@ Estos scripts siguen soportados, pero no forman parte de la superficie pública 
 - `npm run report:architectural-hotspots`
 - `npm run report:unit-shard-runtime-profile`
 - `npm run profile:unit-shard-runtime`
+- `npm run report:ci-runtime-observed-profile`
 - `npm run report:test-runtime-governance`
 - `npm run report:release-readiness-scorecard`
 - `npm run report:runtime-contracts`

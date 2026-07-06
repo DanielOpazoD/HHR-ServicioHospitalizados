@@ -141,6 +141,17 @@ export const EVIDENCE_DEPENDENCY_GRAPH = {
       'src/tests/build/unitShardBalanceSupport.test.ts',
     ],
   }),
+  'ci-runtime-observed-profile': reportNode({
+    command: 'report:ci-runtime-observed-profile',
+    artifacts: ['reports/ci-runtime-observed-profile.json', 'reports/ci-runtime-observed-profile.md'],
+    dependencies: [
+      'unit-shard-runtime-profile',
+      'scripts/check-ci-runtime-telemetry.mjs',
+      'scripts/ciRuntimeTelemetrySupport.mjs',
+      'scripts/report-ci-runtime-observed-profile.mjs',
+      'src/tests/build/ciRuntimeTelemetrySupport.test.ts',
+    ],
+  }),
   'serverless-runtime-governance': reportNode({
     command: 'report:serverless-runtime-governance',
     artifacts: [

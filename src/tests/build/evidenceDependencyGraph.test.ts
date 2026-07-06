@@ -124,6 +124,19 @@ describe('evidence dependency graph', () => {
     );
   });
 
+  it('links observed CI runtime telemetry to the unit shard runtime evidence node', () => {
+    expect(getEvidenceReportDependencies('ci-runtime-observed-profile')).toEqual(
+      expect.arrayContaining([
+        'unit-shard-runtime-profile',
+        'scripts/check-ci-runtime-telemetry.mjs',
+        'scripts/ciRuntimeTelemetrySupport.mjs',
+      ])
+    );
+    expect(getEvidenceReportDependencies('ci-runtime-observed-profile')).not.toContain(
+      'reports/unit-shard-runtime-profile.json'
+    );
+  });
+
   it('derives release readiness runner inputs from the evidence graph', () => {
     expect(RELEASE_READINESS_INPUTS).toEqual(
       getEvidenceReportDependencies('release-readiness-scorecard')

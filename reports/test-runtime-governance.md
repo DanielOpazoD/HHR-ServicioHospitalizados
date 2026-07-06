@@ -1,7 +1,7 @@
 # Test Runtime Governance
 
-- Generated: 2026-07-06T01:42:08.078Z
-- Git SHA: `ee8773c4`
+- Generated: 2026-07-06T04:06:34.169Z
+- Git SHA: `858b467e`
 - Worktree dirty: `false`
 - PR critical path budget: 35.0m
 
@@ -26,16 +26,19 @@
 
 | Check | Group | Duration |
 | --- | --- | ---: |
-| `check:feature-public-api-boundary` | boundaries | 1.4s |
-| `check:security` | security | 1.1s |
-| `check:test-runtime-governance` | tests | 0.5s |
-| `check:unit-shard-balance` | tests | 0.5s |
-| `check:runtime-adapter-boundary` | boundaries | 0.4s |
-| `check:repo-hygiene` | hygiene | 0.4s |
-| `check:folder-dependencies` | boundaries | 0.4s |
-| `check:architecture` | boundaries | 0.3s |
+| `check:feature-public-api-boundary` | boundaries | 6.2s |
+| `check:security` | security | 3.4s |
+| `check:test-runtime-governance` | tests | 2.5s |
+| `check:unit-shard-balance` | tests | 1.9s |
+| `check:architecture` | boundaries | 1.7s |
+| `check:module-dependencies` | boundaries | 1.4s |
+| `check:firestore-runtime-boundary` | boundaries | 1.4s |
+| `check:native-dialogs` | boundaries | 1.4s |
 
-- Unit shard balance: 1398 files, 0.2% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
+- Unit shard balance: 1400 files, 0.2% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
+
+- CI observed unit shard runtime: no_observed_ci_data, 0/4 shard(s), 0% observed spread.
+  - Advisory: No observed CI runtime data is available yet.
 
 ## Fixture Duplication Governance
 

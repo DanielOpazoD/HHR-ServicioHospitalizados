@@ -296,6 +296,12 @@ jobs:
       - name: Enforce test runtime governance contract
         run: npm run check:test-runtime-governance
 
+      - name: Generate observed CI runtime telemetry evidence
+        run: npm run report:ci-runtime-observed-profile
+
+      - name: Enforce observed CI runtime telemetry contract
+        run: npm run check:ci-runtime-telemetry
+
       - name: Generate test runtime governance evidence
         run: npm run report:test-runtime-governance
 
@@ -311,6 +317,14 @@ jobs:
         with:
           name: test-runtime-governance
           path: reports/test-runtime-governance.*
+          retention-days: 30
+
+      - name: Upload observed CI runtime telemetry artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-runtime-observed-profile
+          path: reports/ci-runtime-observed-profile.*
           retention-days: 30
 
   rules-emulator:

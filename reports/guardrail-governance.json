@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-05T06:17:55.938Z",
+  "generatedAt": "2026-07-06T04:06:34.753Z",
   "version": 1,
   "blockingTierCount": 5,
-  "reportOnlyCount": 15,
-  "qualityCheckCount": 61,
+  "reportOnlyCount": 18,
+  "qualityCheckCount": 64,
   "releaseConfidence": {
     "script": "test:release-confidence",
     "requiredScripts": [
@@ -160,6 +160,21 @@
       "id": "sustainable_change_policy",
       "script": "report:sustainable-change-policy",
       "artifact": "reports/sustainable-change-policy.md"
+    },
+    {
+      "id": "test_runtime_governance",
+      "script": "report:test-runtime-governance",
+      "artifact": "reports/test-runtime-governance.md"
+    },
+    {
+      "id": "unit_shard_runtime_profile",
+      "script": "report:unit-shard-runtime-profile",
+      "artifact": "reports/unit-shard-runtime-profile.md"
+    },
+    {
+      "id": "ci_runtime_observed_profile",
+      "script": "report:ci-runtime-observed-profile",
+      "artifact": "reports/ci-runtime-observed-profile.md"
     }
   ],
   "qualityAggregate": {
@@ -367,6 +382,18 @@
       },
       {
         "id": "check:test-governance",
+        "group": "tests"
+      },
+      {
+        "id": "check:unit-shard-balance",
+        "group": "tests"
+      },
+      {
+        "id": "check:ci-runtime-telemetry",
+        "group": "tests"
+      },
+      {
+        "id": "check:test-runtime-governance",
         "group": "tests"
       },
       {

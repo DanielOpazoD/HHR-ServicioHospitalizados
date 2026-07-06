@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseWorkflowJobs } from './ciArtifactContractSupport.mjs';
+import { buildCiRuntimeObservedProfile } from './ciRuntimeTelemetrySupport.mjs';
 import { getGitReportState } from './gitReportState.mjs';
 import { buildUnitShardBalanceReport } from './unitShardBalanceSupport.mjs';
 
@@ -79,6 +80,19 @@ const readUnitShardBalanceSignal = root => {
   } catch {
     return null;
   }
+};
+
+const readCiRuntimeObservedSignal = root => {
+  const observed = safeReadJson(root, 'reports/ci-runtime-observed-profile.json');
+  if (!observed) {
+    return buildCiRuntimeObservedProfile({ jobs: [], tolerancePercent: 25 });
+  }
+  return {
+    status: observed.status,
+    summary: observed.summary,
+    recommendation: observed.recommendation,
+    comparison: observed.comparison || null,
+  };
 };
 
 const walkTestFiles = root => {
@@ -195,6 +209,7 @@ export const buildTestRuntimeGovernanceReport = root => {
       qualityStaticSlowest: readQualityProfileSlowSignals(root),
       e2eCritical: e2eSignal,
       unitShardBalance: readUnitShardBalanceSignal(root),
+      ciRuntimeObserved: readCiRuntimeObservedSignal(root),
     },
     fixtureGovernance: {
       ...config.fixtureGovernance,
@@ -244,11 +259,26 @@ export const collectTestRuntimeGovernanceIssues = root => {
   if (!ciWorkflow.includes('npm run check:test-runtime-governance')) {
     issues.push('CI must enforce check:test-runtime-governance.');
   }
+  if (!ciWorkflow.includes('npm run report:ci-runtime-observed-profile')) {
+    issues.push('CI must generate observed CI runtime telemetry evidence in unit-risk.');
+  }
+  if (!ciWorkflow.includes('npm run check:ci-runtime-telemetry')) {
+    issues.push('CI must enforce check:ci-runtime-telemetry as an advisory structural contract.');
+  }
+  if (!ciWorkflow.includes('name: ci-runtime-observed-profile')) {
+    issues.push('CI must upload ci-runtime-observed-profile artifact.');
+  }
   if (!packageJson.scripts?.['check:unit-shard-balance']) {
     issues.push('package.json is missing script check:unit-shard-balance.');
   }
   if (!packageJson.scripts?.['report:unit-shard-runtime-profile']) {
     issues.push('package.json is missing script report:unit-shard-runtime-profile.');
+  }
+  if (!packageJson.scripts?.['check:ci-runtime-telemetry']) {
+    issues.push('package.json is missing script check:ci-runtime-telemetry.');
+  }
+  if (!packageJson.scripts?.['report:ci-runtime-observed-profile']) {
+    issues.push('package.json is missing script report:ci-runtime-observed-profile.');
   }
 
   if (nightlyWorkflow.includes('pull_request:')) {
@@ -343,6 +373,23 @@ export const formatTestRuntimeGovernanceMarkdown = report => {
       '',
       `- Unit shard balance: ${balance.totalFiles} files, ${balance.spreadPercent}% spread across ${balance.shardCount} shard(s), tolerance ${balance.tolerancePercent}%, per-file overhead ${(Number(balance.perFileOverheadMs || 0) / 1000).toFixed(1)}s.`
     );
+  }
+
+  if (report.slowRuntimeSignals.ciRuntimeObserved) {
+    const observed = report.slowRuntimeSignals.ciRuntimeObserved;
+    const summary = observed.summary || {};
+    const comparison = observed.comparison;
+    lines.push(
+      '',
+      `- CI observed unit shard runtime: ${observed.status}, ${summary.observedShardCount || 0}/${summary.expectedShardCount || 4} shard(s), ${summary.spreadPercent || 0}% observed spread.`
+    );
+    if (comparison?.advisoryFindings?.length > 0) {
+      lines.push(
+        ...comparison.advisoryFindings.map(finding => `  - Advisory: ${finding}`)
+      );
+    } else if (observed.recommendation) {
+      lines.push(`  - Advisory: ${observed.recommendation}`);
+    }
   }
 
   lines.push(
