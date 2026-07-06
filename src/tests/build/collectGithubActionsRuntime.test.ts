@@ -97,6 +97,9 @@ describe('collect GitHub Actions runtime', () => {
 
     const outputPath = path.join(root, 'reports/ci-runtime-observed-input.json');
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl.mock.calls[0][1]).toMatchObject({
+      signal: expect.any(AbortSignal),
+    });
     expect(result.jobs).toHaveLength(1);
     expect(JSON.parse(fs.readFileSync(outputPath, 'utf8'))).toMatchObject({
       source: {
@@ -148,17 +151,31 @@ describe('collect GitHub Actions runtime', () => {
     ).rejects.toThrow(/Missing GitHub Actions runtime configuration: GITHUB_TOKEN, GITHUB_RUN_ID/);
   });
 
-  it('fails with actionable API errors', async () => {
-    await expect(
-      collectGithubActionsRuntimeInput({
-        env: {
-          GITHUB_TOKEN: 'ghs_test',
-          GITHUB_REPOSITORY: 'DanielOpazoD/HHR-ServicioHospitalizados',
-          GITHUB_RUN_ID: '28767128242',
-        },
-        fetchImpl: vi.fn().mockResolvedValue(makeResponse({ message: 'bad' }, false)),
-        root: makeTempDir(),
-      })
-    ).rejects.toThrow(/GitHub Actions jobs request failed: 500 Server Error/);
+  it('writes degraded advisory input for transient API errors', async () => {
+    const root = makeTempDir();
+
+    const result = await collectGithubActionsRuntimeInput({
+      env: {
+        GITHUB_TOKEN: 'ghs_test',
+        GITHUB_REPOSITORY: 'DanielOpazoD/HHR-ServicioHospitalizados',
+        GITHUB_RUN_ID: '28767128242',
+      },
+      fetchImpl: vi.fn().mockResolvedValue(makeResponse({ message: 'bad' }, false)),
+      root,
+    });
+
+    expect(result.jobs).toEqual([]);
+    expect(result.source).toMatchObject({
+      status: 'collection_failed',
+      error: 'GitHub Actions jobs request failed: 500 Server Error',
+    });
+    expect(
+      JSON.parse(fs.readFileSync(path.join(root, 'reports/ci-runtime-observed-input.json'), 'utf8'))
+    ).toMatchObject({
+      jobs: [],
+      source: {
+        status: 'collection_failed',
+      },
+    });
   });
 });

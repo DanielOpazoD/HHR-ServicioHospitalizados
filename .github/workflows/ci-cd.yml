@@ -512,6 +512,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -545,6 +547,7 @@ jobs:
   ci-strict-summary:
     name: ci-summary
     runs-on: ubuntu-latest
+    permissions: {}
     needs:
       [
         quality-static,

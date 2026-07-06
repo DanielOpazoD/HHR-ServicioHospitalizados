@@ -144,6 +144,10 @@ const collectUnexpectedShardJobs = jobs =>
     .map(job => String(job.name))
     .sort();
 
+const resolveEstimatedTotalDurationMs = estimatedProfile =>
+  Number(estimatedProfile?.summary?.totalEstimatedDurationMs || 0) ||
+  (estimatedProfile?.shards || []).reduce((sum, shard) => sum + Number(shard.estimatedDurationMs || 0), 0);
+
 const buildEstimatedObservedRuntimeComparison = ({ estimatedProfile, observedProfile }) => {
   const observedShards = observedProfile?.shards || [];
   const estimatedShards = estimatedProfile?.shards || [];
@@ -165,9 +169,7 @@ const buildEstimatedObservedRuntimeComparison = ({ estimatedProfile, observedPro
     })
     .filter(shard => shard.estimatedDurationMs > 0 || shard.observedDurationMs > 0)
     .sort((a, b) => a.index - b.index);
-  const estimatedTotalDurationMs =
-    Number(estimatedProfile?.summary?.totalEstimatedDurationMs || 0) ||
-    estimatedShards.reduce((sum, shard) => sum + Number(shard.estimatedDurationMs || 0), 0);
+  const estimatedTotalDurationMs = resolveEstimatedTotalDurationMs(estimatedProfile);
   const observedTotalDurationMs = Number(observedProfile?.summary?.totalDurationMs || 0);
 
   return {
@@ -309,7 +311,7 @@ export const compareEstimatedAndObservedRuntime = ({ estimatedProfile, observedP
       advisoryFindings: ['No observed CI runtime data is available yet.'],
       shards: [],
       summary: {
-        estimatedTotalDurationMs: Number(estimatedProfile?.summary?.totalEstimatedDurationMs || 0),
+        estimatedTotalDurationMs: resolveEstimatedTotalDurationMs(estimatedProfile),
         observedTotalDurationMs: 0,
         totalDeltaMs: 0,
         totalRatioPercent: 0,

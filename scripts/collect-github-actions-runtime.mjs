@@ -7,6 +7,7 @@ import { pathToFileURL } from 'node:url';
 const DEFAULT_OUTPUT_PATH = 'reports/ci-runtime-observed-input.json';
 const DEFAULT_GITHUB_API_URL = 'https://api.github.com';
 const DEFAULT_PER_PAGE = 100;
+const DEFAULT_REQUEST_TIMEOUT_MS = 15000;
 const MAX_PAGES = 20;
 
 const normalizeRequiredFlag = value => ['1', 'true', 'yes', 'required'].includes(String(value || '').toLowerCase());
@@ -44,10 +45,11 @@ export const normalizeGithubActionsJob = job => ({
   status: String(job?.status || '').toUpperCase(),
 });
 
-const buildRuntimeInput = ({ config, jobs, sourceStatus }) => ({
+const buildRuntimeInput = ({ config, error, jobs, sourceStatus }) => ({
   generatedAt: new Date().toISOString(),
   jobs,
   source: {
+    ...(error ? { error: String(error) } : {}),
     provider: 'github-actions',
     repository: config.repository || null,
     runId: config.runId || null,
@@ -65,6 +67,8 @@ const writeRuntimeInput = ({ root, outputPath, payload }) => {
 const fetchGithubActionsJobs = async ({ config, fetchImpl }) => {
   const jobs = [];
   for (let page = 1; page <= MAX_PAGES; page += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), DEFAULT_REQUEST_TIMEOUT_MS);
     const response = await fetchImpl(
       buildGithubActionsJobsUrl({
         apiUrl: config.apiUrl,
@@ -78,8 +82,9 @@ const fetchGithubActionsJobs = async ({ config, fetchImpl }) => {
           Authorization: `Bearer ${config.token}`,
           'X-GitHub-Api-Version': '2022-11-28',
         },
+        signal: controller.signal,
       }
-    );
+    ).finally(() => clearTimeout(timeout));
     if (!response.ok) {
       throw new Error(`GitHub Actions jobs request failed: ${response.status} ${response.statusText}`);
     }
@@ -130,7 +135,19 @@ export const collectGithubActionsRuntimeInput = async ({
     throw new Error('GitHub Actions runtime collection requires a fetch implementation.');
   }
 
-  const jobs = await fetchGithubActionsJobs({ config, fetchImpl });
+  let jobs;
+  try {
+    jobs = await fetchGithubActionsJobs({ config, fetchImpl });
+  } catch (error) {
+    const payload = buildRuntimeInput({
+      config,
+      error: error instanceof Error ? error.message : String(error),
+      jobs: [],
+      sourceStatus: 'collection_failed',
+    });
+    writeRuntimeInput({ root, outputPath: config.outputPath, payload });
+    return payload;
+  }
   const payload = buildRuntimeInput({
     config,
     jobs,

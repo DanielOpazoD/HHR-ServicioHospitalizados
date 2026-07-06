@@ -150,6 +150,7 @@ describe('CI workflow governance', () => {
     );
     expect(telemetryJob).toContain('actions: read');
     expect(telemetryJob).toContain('contents: read');
+    expect(telemetryJob).toContain('persist-credentials: false');
     expect(telemetryJob).toContain("CI_RUNTIME_COLLECTION_REQUIRED: '1'");
     expect(telemetryJob).toContain('GITHUB_TOKEN: ${{ github.token }}');
     expect(collectStep).toBeGreaterThanOrEqual(0);
@@ -158,6 +159,7 @@ describe('CI workflow governance', () => {
     expect(uploadStep).toBeGreaterThan(checkStep);
     expect(telemetryJob).toContain('path: reports/ci-runtime-observed-*');
     expect(summaryJob).toContain('ci-runtime-telemetry');
+    expect(summaryJob).toContain('permissions: {}');
     expect(summaryJob).toContain('ci-runtime-telemetry: passed');
   });
 

@@ -85,10 +85,21 @@ describe('ci runtime telemetry support', () => {
 
   it('keeps missing observed data advisory instead of failing the contract', () => {
     const profile = buildCiRuntimeObservedProfile({ jobs: [], tolerancePercent: 25 });
+    const estimatedProfile = {
+      shards: [
+        { index: 1, estimatedDurationMs: 66000 },
+        { index: 2, estimatedDurationMs: 66000 },
+      ],
+    };
+    const comparison = compareEstimatedAndObservedRuntime({
+      estimatedProfile,
+      observedProfile: profile,
+    });
     const issues = collectCiRuntimeTelemetryIssues(profile);
 
     expect(profile.status).toBe('no_observed_ci_data');
     expect(issues).toEqual([]);
+    expect(comparison.summary.estimatedTotalDurationMs).toBe(132000);
     expect(profile.recommendation).toContain('No observed CI unit shard data');
   });
 
