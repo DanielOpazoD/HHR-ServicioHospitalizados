@@ -2,7 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { collectCiRuntimeTelemetryIssues } from './ciRuntimeTelemetrySupport.mjs';
+import { collectCiRuntimeTelemetryCheckIssues } from './ciRuntimeTelemetrySupport.mjs';
 
 const root = process.cwd();
 const reportPath = path.join(root, 'reports/ci-runtime-observed-profile.json');
@@ -27,10 +27,7 @@ try {
   fail([`reports/ci-runtime-observed-profile.json is not valid JSON: ${error.message}`]);
 }
 
-const issues = [
-  ...collectCiRuntimeTelemetryIssues(report),
-  ...((report.comparison?.blockingIssues || []).map(issue => `Comparison: ${issue}`)),
-];
+const issues = collectCiRuntimeTelemetryCheckIssues(report);
 
 if (issues.length > 0) {
   fail(issues);

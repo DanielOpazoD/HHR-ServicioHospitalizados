@@ -145,7 +145,7 @@ export const EVIDENCE_DEPENDENCY_GRAPH = {
     command: 'report:ci-runtime-observed-profile',
     artifacts: ['reports/ci-runtime-observed-profile.json', 'reports/ci-runtime-observed-profile.md'],
     dependencies: [
-      'reports/unit-shard-runtime-profile.json',
+      'unit-shard-runtime-profile',
       'scripts/check-ci-runtime-telemetry.mjs',
       'scripts/ciRuntimeTelemetrySupport.mjs',
       'scripts/report-ci-runtime-observed-profile.mjs',

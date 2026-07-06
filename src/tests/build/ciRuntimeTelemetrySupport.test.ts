@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCiRuntimeObservedProfile,
   formatCiRuntimeObservedProfileMarkdown,
+  collectCiRuntimeTelemetryCheckIssues,
   collectCiRuntimeTelemetryIssues,
   compareEstimatedAndObservedRuntime,
   normalizeCiRuntimeJobs,
@@ -98,7 +99,43 @@ describe('ci runtime telemetry support', () => {
     });
 
     expect(collectCiRuntimeTelemetryIssues(profile)).toEqual([
-      'Observed CI runtime declares data but only includes 3/4 unit shards.',
+      'Observed CI runtime is missing unit shard(s): 4.',
+    ]);
+  });
+
+  it('rejects duplicate shard indices instead of letting duplicates hide missing shards', () => {
+    const profile = buildCiRuntimeObservedProfile({
+      jobs: [
+        completedShardJobs[0],
+        { ...completedShardJobs[0], completedAt: '2026-07-06T01:48:27Z' },
+        completedShardJobs[1],
+        completedShardJobs[2],
+      ],
+      tolerancePercent: 25,
+    });
+
+    expect(profile.summary.observedShardCount).toBe(3);
+    expect(collectCiRuntimeTelemetryIssues(profile)).toEqual([
+      'Observed CI runtime includes duplicate unit shard job(s): unit-risk-shard-1.',
+      'Observed CI runtime is missing unit shard(s): 4.',
+    ]);
+  });
+
+  it('excludes jobs with invalid timestamps and reports them as structural issues', () => {
+    const profile = buildCiRuntimeObservedProfile({
+      jobs: [
+        { ...completedShardJobs[0], startedAt: 'not-a-date' },
+        completedShardJobs[1],
+        completedShardJobs[2],
+        completedShardJobs[3],
+      ],
+      tolerancePercent: 25,
+    });
+
+    expect(profile.shards.map(shard => shard.index)).toEqual([2, 3, 4]);
+    expect(collectCiRuntimeTelemetryIssues(profile)).toEqual([
+      'Observed CI runtime includes invalid timestamps for unit shard job(s): unit-risk-shard-1.',
+      'Observed CI runtime is missing unit shard(s): 1.',
     ]);
   });
 
@@ -150,6 +187,23 @@ describe('ci runtime telemetry support', () => {
         expect.stringContaining('estimated balance is still within tolerance'),
       ])
     );
+  });
+
+  it('deduplicates blocking issues already present in the comparison payload', () => {
+    const report = buildCiRuntimeObservedProfile({
+      jobs: completedShardJobs.slice(0, 3),
+      tolerancePercent: 25,
+    });
+    const issue = 'Observed CI runtime is missing unit shard(s): 4.';
+
+    expect(
+      collectCiRuntimeTelemetryCheckIssues({
+        ...report,
+        comparison: {
+          blockingIssues: [issue, 'Comparison-specific consistency issue.'],
+        },
+      })
+    ).toEqual([issue, 'Comparison: Comparison-specific consistency issue.']);
   });
 
   it('formats observed and missing telemetry reports for governance artifacts', () => {
