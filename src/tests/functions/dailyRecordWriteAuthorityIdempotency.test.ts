@@ -5,6 +5,7 @@ import {
   makeContext,
   makeRecord,
 } from '@/tests/functions/dailyRecordWriteAuthorityFunctions.test-support';
+import { createClinicalSyncPathologyContract } from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
 
 describe('dailyRecordWriteAuthorityFunctions idempotency', () => {
   it('returns idempotent success for duplicate patch mutationId before revision checks', async () => {
@@ -29,12 +30,11 @@ describe('dailyRecordWriteAuthorityFunctions idempotency', () => {
         expectedLastUpdated: '2026-05-13T10:00:00.000Z',
         mode: 'enforced',
         origin: 'direct_partial_update',
-        syncContract: {
-          expectedVersion: '2026-05-13T10:00:00.000Z',
-          baseRevision: 7,
-          changedPaths: ['beds.R1.pathology'],
+        syncContract: createClinicalSyncPathologyContract({
+          version: '2026-05-13T10:00:00.000Z',
+          revision: 7,
           mutationId: 'mutation-duplicate-patch',
-        },
+        }),
         patch: {
           'beds.R1.pathology': 'Diagnostico ya aplicado previamente',
         },
@@ -85,12 +85,11 @@ describe('dailyRecordWriteAuthorityFunctions idempotency', () => {
         expectedLastUpdated: '2026-05-13T10:00:00.000Z',
         mode: 'enforced',
         origin: 'outbox',
-        syncContract: {
-          expectedVersion: '2026-05-13T10:00:00.000Z',
-          baseRevision: 5,
-          changedPaths: ['beds.R1.pathology'],
+        syncContract: createClinicalSyncPathologyContract({
+          version: '2026-05-13T10:00:00.000Z',
+          revision: 5,
           mutationId: 'mutation-duplicate-save',
-        },
+        }),
         record: makeRecord(),
       },
       makeContext()

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { ClinicalDocumentRecord } from '@/domain/clinical-documents/entities';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
 import {
@@ -8,15 +7,15 @@ import {
 } from '@/application/ai/clinicalSummaryContextUseCase';
 import { createDailyRecordAggregate } from '@/services/repositories/dailyRecordAggregate';
 import { resolveInitialDayHandoff } from '@/services/repositories/dailyRecordHandoffDomainService';
+import {
+  createDailyRecordFixture,
+  createPatientBedFixture,
+} from '@/tests/support/dailyRecordFixtures';
 
-const record: DailyRecord = {
+const record = createDailyRecordFixture({
   date: '2026-03-25',
   beds: {
-    R1: {
-      bedId: 'R1',
-      isBlocked: false,
-      bedMode: 'Cama',
-      hasCompanionCrib: false,
+    R1: createPatientBedFixture('R1', {
       patientName: 'Paciente Demo',
       rut: '11.111.111-1',
       age: '54',
@@ -48,17 +47,13 @@ const record: DailyRecord = {
           createdAt: '2026-03-24T09:30:00.000Z',
         },
       ],
-    },
+    }),
   },
-  discharges: [],
-  transfers: [],
-  cma: [],
   lastUpdated: '2026-03-25T10:00:00.000Z',
   nursesDayShift: ['enfermera-a'],
   nursesNightShift: ['enfermera-b'],
   tensDayShift: ['tens-a'],
   tensNightShift: ['tens-b'],
-  activeExtraBeds: [],
   handoffNovedadesDayShift: 'Oxígeno a bajo flujo.',
   handoffNovedadesNightShift: 'Sin incidentes.',
   medicalHandoffNovedades: 'Pendiente reevaluación médica.',
@@ -80,7 +75,7 @@ const record: DailyRecord = {
     doctorName: 'Dr. House',
     signedAt: '2026-03-25T08:40:00.000Z',
   },
-};
+});
 
 const documents: ClinicalDocumentRecord[] = [
   {
@@ -187,11 +182,11 @@ describe('clinicalSummaryContextUseCase', () => {
   });
 
   it('keeps downstream nursing handoff consumers aligned on the effective night fallback', () => {
-    const recordWithMissingNightNovedades: DailyRecord = {
+    const recordWithMissingNightNovedades = createDailyRecordFixture({
       ...record,
       handoffNovedadesDayShift: 'Texto heredado desde turno largo',
       handoffNovedadesNightShift: '',
-    };
+    });
 
     const context = buildClinicalAISummaryContext({
       record: recordWithMissingNightNovedades,

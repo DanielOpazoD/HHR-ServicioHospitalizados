@@ -3,7 +3,7 @@ import {
   buildSendCensusConfirmationMessage,
   executeSendCensusEmail,
 } from '@/application/census-email/sendCensusEmailUseCases';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import { createDailyRecordFixture } from '@/tests/support/dailyRecordFixtures';
 
 const buildCensusMasterBinaryMock = vi.fn().mockResolvedValue(new Uint8Array());
 
@@ -12,17 +12,10 @@ vi.mock('@/services/exporters/censusMasterWorkbook', () => ({
 }));
 
 describe('sendCensusEmailUseCases', () => {
-  const record: DailyRecord = {
+  const record = createDailyRecordFixture({
     date: '2026-03-06',
-    beds: {},
-    discharges: [],
-    transfers: [],
-    cma: [],
     lastUpdated: '2026-03-06T10:00:00.000Z',
-    activeExtraBeds: [],
-    nursesDayShift: [],
-    nursesNightShift: [],
-  };
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();

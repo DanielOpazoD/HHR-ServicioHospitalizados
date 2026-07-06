@@ -1,8 +1,8 @@
 {
   "reportId": "test-runtime-governance",
-  "generatedAt": "2026-07-06T05:44:53.359Z",
-  "gitSha": "cf972b18",
-  "gitDirty": false,
+  "generatedAt": "2026-07-06T19:58:33.221Z",
+  "gitSha": "29270f50",
+  "gitDirty": true,
   "budgets": {
     "prCriticalPathMinutes": 35,
     "unitShardMaxMinutes": 13,
@@ -156,71 +156,71 @@
       {
         "id": "check:feature-public-api-boundary",
         "group": "boundaries",
-        "durationMs": 6162
+        "durationMs": 3746
       },
       {
         "id": "check:security",
         "group": "security",
-        "durationMs": 3407
+        "durationMs": 2263
       },
       {
         "id": "check:test-runtime-governance",
         "group": "tests",
-        "durationMs": 2474
+        "durationMs": 1597
+      },
+      {
+        "id": "check:folder-dependencies",
+        "group": "boundaries",
+        "durationMs": 1552
       },
       {
         "id": "check:unit-shard-balance",
         "group": "tests",
-        "durationMs": 1910
+        "durationMs": 1511
       },
       {
-        "id": "check:architecture",
-        "group": "boundaries",
-        "durationMs": 1692
+        "id": "check:repo-hygiene",
+        "group": "hygiene",
+        "durationMs": 1299
       },
       {
-        "id": "check:module-dependencies",
-        "group": "boundaries",
-        "durationMs": 1429
+        "id": "check:report-freshness",
+        "group": "reports",
+        "durationMs": 1184
       },
       {
         "id": "check:firestore-runtime-boundary",
         "group": "boundaries",
-        "durationMs": 1392
-      },
-      {
-        "id": "check:native-dialogs",
-        "group": "boundaries",
-        "durationMs": 1366
+        "durationMs": 946
       }
     ],
     "e2eCritical": null,
     "unitShardBalance": {
-      "totalFiles": 1401,
+      "totalFiles": 1403,
       "shardCount": 4,
-      "spreadPercent": 0,
+      "spreadPercent": 0.1,
       "tolerancePercent": 25,
       "perFileOverheadMs": 100,
       "shards": [
         {
           "index": 1,
-          "files": 412,
-          "estimatedDurationMs": 67003
+          "files": 413,
+          "estimatedDurationMs": 67590
         },
         {
           "index": 2,
-          "files": 329,
-          "estimatedDurationMs": 67003
+          "files": 330,
+          "estimatedDurationMs": 67591
         },
         {
           "index": 3,
           "files": 328,
-          "estimatedDurationMs": 67003
+          "estimatedDurationMs": 67591
         },
         {
           "index": 4,
           "files": 332,
-          "estimatedDurationMs": 67003
+          "estimatedDurationMs": 67490
         }
       ]
     },
@@ -248,6 +248,16 @@
           "totalRatioPercent": 0
         }
       }
+    },
+    "ciRuntimeCalibration": {
+      "status": "not_generated",
+      "summary": {
+        "calibratedTotalRatioPercent": 0,
+        "estimatorAccuracyDeltaPercent": 0,
+        "ciRuntimeCalibrationFactor": 1
+      },
+      "recommendation": "Generate ci-runtime-calibration-profile after observed CI runtime is available.",
+      "advisoryFindings": []
     }
   },
   "fixtureGovernance": {
@@ -277,13 +287,13 @@
     "signals": [
       {
         "id": "large-inline-daily-record",
-        "files": 135,
+        "files": 130,
         "examples": [
-          "src/tests/application/ai/clinicalSummaryContextUseCase.test.ts",
-          "src/tests/application/census-email/sendCensusEmailUseCases.test.ts",
-          "src/tests/application/handoff/handoffManagementUseCases.test.ts",
-          "src/tests/domain/handoff/view.test.ts",
-          "src/tests/emulator/atomic-write-guards.emulator.test.ts"
+          "src/tests/emulator/atomic-write-guards.emulator.test.ts",
+          "src/tests/emulator/cma-specialty-readback.emulator.test.ts",
+          "src/tests/emulator/conflict-version-recovery.emulator.test.ts",
+          "src/tests/emulator/daily-record-delete-failclosed.emulator.test.ts",
+          "src/tests/emulator/discharge-bed-consistency.emulator.test.ts"
         ],
         "preferred": "shared DailyRecord builders under src/tests/support or src/tests/utils"
       },
@@ -301,13 +311,13 @@
       },
       {
         "id": "sync-client-scenario",
-        "files": 24,
+        "files": 21,
         "examples": [
           "src/tests/emulator/sync-mutation-idempotency.emulator.test.ts",
-          "src/tests/functions/dailyRecordWriteAuthorityFullSaveRevision.test.ts",
           "src/tests/functions/dailyRecordWriteAuthorityFunctions.test.ts",
-          "src/tests/functions/dailyRecordWriteAuthorityIdempotency.test.ts",
-          "src/tests/integration/sync-resilience.test.ts"
+          "src/tests/services/dailyRecordRepository.test.ts",
+          "src/tests/services/repositories/DailyRecordRepository.persistence-and-copy.test.ts",
+          "src/tests/services/repositories/dailyRecordConflictAutoMergeController.test.ts"
         ],
         "preferred": "src/tests/support/clinicalSyncSimulator"
       }
