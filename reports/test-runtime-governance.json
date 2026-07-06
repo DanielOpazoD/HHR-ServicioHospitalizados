@@ -1,7 +1,7 @@
 {
   "reportId": "test-runtime-governance",
-  "generatedAt": "2026-07-06T03:13:13.671Z",
-  "gitSha": "94d93173",
+  "generatedAt": "2026-07-06T04:06:34.169Z",
+  "gitSha": "858b467e",
   "gitDirty": false,
   "budgets": {
     "prCriticalPathMinutes": 35,
@@ -156,47 +156,47 @@
       {
         "id": "check:feature-public-api-boundary",
         "group": "boundaries",
-        "durationMs": 5034
+        "durationMs": 6162
       },
       {
         "id": "check:security",
         "group": "security",
-        "durationMs": 2984
-      },
-      {
-        "id": "check:unit-shard-balance",
-        "group": "tests",
-        "durationMs": 2620
+        "durationMs": 3407
       },
       {
         "id": "check:test-runtime-governance",
         "group": "tests",
-        "durationMs": 2509
+        "durationMs": 2474
       },
       {
-        "id": "check:repo-hygiene",
-        "group": "hygiene",
-        "durationMs": 1767
-      },
-      {
-        "id": "check:folder-dependencies",
-        "group": "boundaries",
-        "durationMs": 1617
-      },
-      {
-        "id": "check:test-governance",
+        "id": "check:unit-shard-balance",
         "group": "tests",
-        "durationMs": 1608
+        "durationMs": 1910
+      },
+      {
+        "id": "check:architecture",
+        "group": "boundaries",
+        "durationMs": 1692
       },
       {
         "id": "check:module-dependencies",
         "group": "boundaries",
-        "durationMs": 1455
+        "durationMs": 1429
+      },
+      {
+        "id": "check:firestore-runtime-boundary",
+        "group": "boundaries",
+        "durationMs": 1392
+      },
+      {
+        "id": "check:native-dialogs",
+        "group": "boundaries",
+        "durationMs": 1366
       }
     ],
     "e2eCritical": null,
     "unitShardBalance": {
-      "totalFiles": 1399,
+      "totalFiles": 1400,
       "shardCount": 4,
       "spreadPercent": 0.2,
       "tolerancePercent": 25,
@@ -205,22 +205,22 @@
         {
           "index": 1,
           "files": 412,
-          "estimatedDurationMs": 66403
+          "estimatedDurationMs": 66728
         },
         {
           "index": 2,
-          "files": 326,
-          "estimatedDurationMs": 66303
+          "files": 332,
+          "estimatedDurationMs": 66728
         },
         {
           "index": 3,
-          "files": 330,
-          "estimatedDurationMs": 66303
+          "files": 327,
+          "estimatedDurationMs": 66628
         },
         {
           "index": 4,
-          "files": 331,
-          "estimatedDurationMs": 66403
+          "files": 329,
+          "estimatedDurationMs": 66728
         }
       ]
     },
