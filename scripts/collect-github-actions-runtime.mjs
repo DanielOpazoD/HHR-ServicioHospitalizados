@@ -69,29 +69,33 @@ const fetchGithubActionsJobs = async ({ config, fetchImpl }) => {
   for (let page = 1; page <= MAX_PAGES; page += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), DEFAULT_REQUEST_TIMEOUT_MS);
-    const response = await fetchImpl(
-      buildGithubActionsJobsUrl({
-        apiUrl: config.apiUrl,
-        repository: config.repository,
-        runId: config.runId,
-        page,
-      }),
-      {
-        headers: {
-          Accept: 'application/vnd.github+json',
-          Authorization: `Bearer ${config.token}`,
-          'X-GitHub-Api-Version': '2022-11-28',
-        },
-        signal: controller.signal,
+    try {
+      const response = await fetchImpl(
+        buildGithubActionsJobsUrl({
+          apiUrl: config.apiUrl,
+          repository: config.repository,
+          runId: config.runId,
+          page,
+        }),
+        {
+          headers: {
+            Accept: 'application/vnd.github+json',
+            Authorization: `Bearer ${config.token}`,
+            'X-GitHub-Api-Version': '2022-11-28',
+          },
+          signal: controller.signal,
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`GitHub Actions jobs request failed: ${response.status} ${response.statusText}`);
       }
-    ).finally(() => clearTimeout(timeout));
-    if (!response.ok) {
-      throw new Error(`GitHub Actions jobs request failed: ${response.status} ${response.statusText}`);
+      const body = await response.json();
+      const pageJobs = Array.isArray(body?.jobs) ? body.jobs : [];
+      if (pageJobs.length === 0) break;
+      jobs.push(...pageJobs);
+    } finally {
+      clearTimeout(timeout);
     }
-    const body = await response.json();
-    const pageJobs = Array.isArray(body?.jobs) ? body.jobs : [];
-    if (pageJobs.length === 0) break;
-    jobs.push(...pageJobs);
   }
   return jobs.map(normalizeGithubActionsJob).filter(job => job.name);
 };

@@ -27,6 +27,7 @@ const makeResponse = (body: unknown, ok = true) =>
   }) as unknown as Response;
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
   for (const dir of tempDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -176,6 +177,45 @@ describe('collect GitHub Actions runtime', () => {
       source: {
         status: 'collection_failed',
       },
+    });
+  });
+
+  it('keeps the request timeout active while parsing a stalled response body', async () => {
+    vi.useFakeTimers();
+    const root = makeTempDir();
+    let requestSignal: AbortSignal | undefined;
+    const fetchImpl = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
+      requestSignal = init?.signal as AbortSignal | undefined;
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: () =>
+          new Promise((_resolve, reject) => {
+            requestSignal?.addEventListener('abort', () =>
+              reject(new Error('response body timed out'))
+            );
+          }),
+      } as unknown as Response);
+    });
+
+    const collection = collectGithubActionsRuntimeInput({
+      env: {
+        GITHUB_TOKEN: 'ghs_test',
+        GITHUB_REPOSITORY: 'DanielOpazoD/HHR-ServicioHospitalizados',
+        GITHUB_RUN_ID: '28767128242',
+      },
+      fetchImpl,
+      root,
+    });
+
+    await vi.advanceTimersByTimeAsync(15000);
+    const result = await collection;
+
+    expect(result.jobs).toEqual([]);
+    expect(result.source).toMatchObject({
+      status: 'collection_failed',
+      error: 'response body timed out',
     });
   });
 });
