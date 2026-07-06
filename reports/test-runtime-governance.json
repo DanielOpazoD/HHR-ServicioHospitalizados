@@ -1,7 +1,7 @@
 {
   "reportId": "test-runtime-governance",
-  "generatedAt": "2026-07-06T01:32:04.124Z",
-  "gitSha": "1bd1afc1",
+  "generatedAt": "2026-07-06T01:42:08.078Z",
+  "gitSha": "ee8773c4",
   "gitDirty": false,
   "budgets": {
     "prCriticalPathMinutes": 35,
@@ -196,31 +196,31 @@
     ],
     "e2eCritical": null,
     "unitShardBalance": {
-      "totalFiles": 1397,
+      "totalFiles": 1398,
       "shardCount": 4,
-      "spreadPercent": 0,
+      "spreadPercent": 0.2,
       "tolerancePercent": 25,
       "perFileOverheadMs": 100,
       "shards": [
         {
           "index": 1,
-          "files": 411,
-          "estimatedDurationMs": 65803
+          "files": 414,
+          "estimatedDurationMs": 66128
         },
         {
           "index": 2,
           "files": 326,
-          "estimatedDurationMs": 65803
+          "estimatedDurationMs": 66028
         },
         {
           "index": 3,
-          "files": 332,
-          "estimatedDurationMs": 65803
+          "files": 330,
+          "estimatedDurationMs": 66028
         },
         {
           "index": 4,
           "files": 328,
-          "estimatedDurationMs": 65803
+          "estimatedDurationMs": 66028
         }
       ]
     }

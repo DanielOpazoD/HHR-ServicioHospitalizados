@@ -1,7 +1,7 @@
 # Test Runtime Governance
 
-- Generated: 2026-07-06T01:32:04.124Z
-- Git SHA: `1bd1afc1`
+- Generated: 2026-07-06T01:42:08.078Z
+- Git SHA: `ee8773c4`
 - Worktree dirty: `false`
 - PR critical path budget: 35.0m
 
@@ -35,7 +35,7 @@
 | `check:folder-dependencies` | boundaries | 0.4s |
 | `check:architecture` | boundaries | 0.3s |
 
-- Unit shard balance: 1397 files, 0% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
+- Unit shard balance: 1398 files, 0.2% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
 
 ## Fixture Duplication Governance
 
