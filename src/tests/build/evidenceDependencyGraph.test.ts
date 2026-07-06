@@ -128,8 +128,10 @@ describe('evidence dependency graph', () => {
     expect(getEvidenceReportDependencies('ci-runtime-observed-profile')).toEqual(
       expect.arrayContaining([
         'unit-shard-runtime-profile',
+        'scripts/collect-github-actions-runtime.mjs',
         'scripts/check-ci-runtime-telemetry.mjs',
         'scripts/ciRuntimeTelemetrySupport.mjs',
+        'src/tests/build/collectGithubActionsRuntime.test.ts',
       ])
     );
     expect(getEvidenceReportDependencies('ci-runtime-observed-profile')).not.toContain(

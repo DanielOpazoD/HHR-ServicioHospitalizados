@@ -146,9 +146,11 @@ export const EVIDENCE_DEPENDENCY_GRAPH = {
     artifacts: ['reports/ci-runtime-observed-profile.json', 'reports/ci-runtime-observed-profile.md'],
     dependencies: [
       'unit-shard-runtime-profile',
+      'scripts/collect-github-actions-runtime.mjs',
       'scripts/check-ci-runtime-telemetry.mjs',
       'scripts/ciRuntimeTelemetrySupport.mjs',
       'scripts/report-ci-runtime-observed-profile.mjs',
+      'src/tests/build/collectGithubActionsRuntime.test.ts',
       'src/tests/build/ciRuntimeTelemetrySupport.test.ts',
     ],
   }),

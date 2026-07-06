@@ -115,10 +115,50 @@ describe('CI workflow governance', () => {
     expect(buildJob).toContain(
       'needs: [quality-static, unit-risk, clinical-sync-release-gate, rules-emulator, e2e-critical-emulator]'
     );
-    expect(summaryJob).toContain(
+    expect(summaryJob).toContain('ci-runtime-telemetry');
+    expect(summaryJob).toContain('clinical-sync-release-gate: passed');
+  });
+
+  it('collects real GitHub Actions runtime after PR-blocking gates finish', () => {
+    const workflow = readText('.github/workflows/ci-cd.yml');
+    const scripts = readPackageScripts();
+    const unitRiskJob = workflow.slice(
+      workflow.indexOf('unit-risk:'),
+      workflow.indexOf('rules-emulator:')
+    );
+    const telemetryJob = workflow.slice(
+      workflow.indexOf('ci-runtime-telemetry:'),
+      workflow.indexOf('ci-strict-summary:')
+    );
+    const summaryJob = workflow.slice(
+      workflow.indexOf('ci-strict-summary:'),
+      workflow.indexOf('postmerge-evidence:')
+    );
+    const collectStep = telemetryJob.indexOf('npm run collect:ci-runtime-observed-input');
+    const reportStep = telemetryJob.indexOf('npm run report:ci-runtime-observed-profile');
+    const checkStep = telemetryJob.indexOf('npm run check:ci-runtime-telemetry');
+    const uploadStep = telemetryJob.indexOf('name: ci-runtime-observed-profile');
+
+    expect(scripts['collect:ci-runtime-observed-input']).toBe(
+      'node scripts/collect-github-actions-runtime.mjs'
+    );
+    expect(unitRiskJob).not.toContain('npm run report:ci-runtime-observed-profile');
+    expect(telemetryJob).toContain('ci-runtime-telemetry:');
+    expect(telemetryJob).toContain('name: ci-runtime-telemetry');
+    expect(telemetryJob).toContain(
       'needs: [quality-static, unit-risk, clinical-sync-release-gate, rules-emulator, e2e-critical-emulator, build]'
     );
-    expect(summaryJob).toContain('clinical-sync-release-gate: passed');
+    expect(telemetryJob).toContain('actions: read');
+    expect(telemetryJob).toContain('contents: read');
+    expect(telemetryJob).toContain("CI_RUNTIME_COLLECTION_REQUIRED: '1'");
+    expect(telemetryJob).toContain('GITHUB_TOKEN: ${{ github.token }}');
+    expect(collectStep).toBeGreaterThanOrEqual(0);
+    expect(reportStep).toBeGreaterThan(collectStep);
+    expect(checkStep).toBeGreaterThan(reportStep);
+    expect(uploadStep).toBeGreaterThan(checkStep);
+    expect(telemetryJob).toContain('path: reports/ci-runtime-observed-*');
+    expect(summaryJob).toContain('ci-runtime-telemetry');
+    expect(summaryJob).toContain('ci-runtime-telemetry: passed');
   });
 
   it('keeps expensive clinical/runtime suites in a scheduled nightly workflow', () => {

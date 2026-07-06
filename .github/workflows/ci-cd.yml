@@ -296,12 +296,6 @@ jobs:
       - name: Enforce test runtime governance contract
         run: npm run check:test-runtime-governance
 
-      - name: Generate observed CI runtime telemetry evidence
-        run: npm run report:ci-runtime-observed-profile
-
-      - name: Enforce observed CI runtime telemetry contract
-        run: npm run check:ci-runtime-telemetry
-
       - name: Generate test runtime governance evidence
         run: npm run report:test-runtime-governance
 
@@ -317,14 +311,6 @@ jobs:
         with:
           name: test-runtime-governance
           path: reports/test-runtime-governance.*
-          retention-days: 30
-
-      - name: Upload observed CI runtime telemetry artifact
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: ci-runtime-observed-profile
-          path: reports/ci-runtime-observed-profile.*
           retention-days: 30
 
   rules-emulator:
@@ -515,10 +501,60 @@ jobs:
           uploadArtifacts: true
           temporaryPublicStorage: true
 
+  ci-runtime-telemetry:
+    name: ci-runtime-telemetry
+    runs-on: ubuntu-latest
+    needs: [quality-static, unit-risk, clinical-sync-release-gate, rules-emulator, e2e-critical-emulator, build]
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Collect GitHub Actions runtime data
+        run: npm run collect:ci-runtime-observed-input
+        env:
+          CI_RUNTIME_COLLECTION_REQUIRED: '1'
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Generate observed CI runtime telemetry evidence
+        run: npm run report:ci-runtime-observed-profile
+
+      - name: Enforce observed CI runtime telemetry contract
+        run: npm run check:ci-runtime-telemetry
+
+      - name: Upload observed CI runtime telemetry artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-runtime-observed-profile
+          path: reports/ci-runtime-observed-*
+          retention-days: 30
+
   ci-strict-summary:
     name: ci-summary
     runs-on: ubuntu-latest
-    needs: [quality-static, unit-risk, clinical-sync-release-gate, rules-emulator, e2e-critical-emulator, build]
+    needs:
+      [
+        quality-static,
+        unit-risk,
+        clinical-sync-release-gate,
+        rules-emulator,
+        e2e-critical-emulator,
+        build,
+        ci-runtime-telemetry,
+      ]
     steps:
       - name: CI strict gates passed
         run: |
@@ -528,6 +564,7 @@ jobs:
           echo "rules-emulator: passed"
           echo "e2e-critical: passed"
           echo "build-budget: passed"
+          echo "ci-runtime-telemetry: passed"
 
   postmerge-evidence:
     name: postmerge-evidence
