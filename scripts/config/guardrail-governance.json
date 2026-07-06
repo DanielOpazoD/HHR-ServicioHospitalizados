@@ -151,6 +151,11 @@
       "id": "test_runtime_governance",
       "script": "report:test-runtime-governance",
       "artifact": "reports/test-runtime-governance.md"
+    },
+    {
+      "id": "unit_shard_runtime_profile",
+      "script": "report:unit-shard-runtime-profile",
+      "artifact": "reports/unit-shard-runtime-profile.md"
     }
   ],
   "qualityAggregate": {
@@ -207,6 +212,7 @@
       { "id": "check:domain-hotspot-boundary", "group": "boundaries" },
       { "id": "check:legacy-permissions-boundary", "group": "boundaries" },
       { "id": "check:test-governance", "group": "tests" },
+      { "id": "check:unit-shard-balance", "group": "tests" },
       { "id": "check:test-runtime-governance", "group": "tests" },
       { "id": "check:test-failure-catalog", "group": "tests" },
       { "id": "check:flaky-quarantine", "group": "tests" },

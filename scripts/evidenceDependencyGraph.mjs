@@ -128,6 +128,19 @@ export const EVIDENCE_DEPENDENCY_GRAPH = {
       'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulatorFixtures.ts',
     ],
   }),
+  'unit-shard-runtime-profile': reportNode({
+    command: 'report:unit-shard-runtime-profile',
+    artifacts: ['reports/unit-shard-runtime-profile.json', 'reports/unit-shard-runtime-profile.md'],
+    dependencies: [
+      'scripts/check-unit-shard-balance.mjs',
+      'scripts/config/unit-shard-balance.json',
+      'scripts/profile-unit-shard-runtime.mjs',
+      'scripts/report-unit-shard-runtime-profile.mjs',
+      'scripts/run-unit-shard.mjs',
+      'scripts/unitShardBalanceSupport.mjs',
+      'src/tests/build/unitShardBalanceSupport.test.ts',
+    ],
+  }),
   'serverless-runtime-governance': reportNode({
     command: 'report:serverless-runtime-governance',
     artifacts: [

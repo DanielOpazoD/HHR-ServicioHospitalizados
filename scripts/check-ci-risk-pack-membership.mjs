@@ -2,6 +2,11 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  normalizePatterns,
+  patternExcludesFile,
+  resolveUnitSuiteExcludePatterns,
+} from './ciRiskPackMembershipSupport.mjs';
 
 const ROOT = process.cwd();
 const CONFIG_PATH = path.join(ROOT, 'scripts/config/ci-test-risk-packs.json');
@@ -24,28 +29,6 @@ const configuredExcludedPatterns = Array.isArray(config.excludedFromUnitSuite)
   : [];
 const unitSuiteScript = typeof config.unitSuiteScript === 'string' ? config.unitSuiteScript : '';
 
-const extractExcludePatterns = script => {
-  const patterns = [];
-  const excludePattern = /--exclude\s+(?:"([^"]+)"|'([^']+)'|([^\s]+))/g;
-  let match;
-  while ((match = excludePattern.exec(script)) !== null) {
-    patterns.push(match[1] || match[2] || match[3]);
-  }
-  return patterns;
-};
-
-const normalizePatterns = patterns => [...new Set(patterns)].sort();
-
-const patternExcludesFile = (pattern, file) => {
-  if (pattern === file) {
-    return true;
-  }
-  if (pattern.endsWith('/**')) {
-    return file.startsWith(pattern.slice(0, -3));
-  }
-  return false;
-};
-
 if (criticalFiles.length === 0) {
   fail('criticalFiles is empty');
 }
@@ -59,7 +42,7 @@ if (typeof scriptCommand !== 'string') {
   fail(`package.json is missing scripts.${unitSuiteScript}`);
 }
 
-const actualExcludedPatterns = extractExcludePatterns(scriptCommand);
+const actualExcludedPatterns = resolveUnitSuiteExcludePatterns({ root: ROOT, scriptCommand });
 const configured = normalizePatterns(configuredExcludedPatterns);
 const actual = normalizePatterns(actualExcludedPatterns);
 
