@@ -2,8 +2,8 @@
 
 - Version: `1`
 - Blocking tiers: `5`
-- Report-only guards: `18`
-- Quality aggregate checks: `64`
+- Report-only guards: `19`
+- Quality aggregate checks: `65`
 
 ## Blocking Tiers
 
@@ -43,6 +43,7 @@
 | test_runtime_governance | `report:test-runtime-governance` | `reports/test-runtime-governance.md` |
 | unit_shard_runtime_profile | `report:unit-shard-runtime-profile` | `reports/unit-shard-runtime-profile.md` |
 | ci_runtime_observed_profile | `report:ci-runtime-observed-profile` | `reports/ci-runtime-observed-profile.md` |
+| ci_runtime_calibration_profile | `report:ci-runtime-calibration-profile` | `reports/ci-runtime-calibration-profile.md` |
 
 ## Quality Aggregate
 
@@ -51,7 +52,7 @@
 | Group | Checks |
 | --- | --- |
 | boundaries | `check:architecture, check:application-port-boundary, check:legacy-staff-boundary, check:core-test-boundary, check:census-feature-boundary, check:census-export-contract-boundary, check:clinical-documents-feature-boundary, check:handoff-pdf-contract-boundary, check:feature-public-api-boundary, check:lazy-views-feature-entrypoints, check:feature-dependencies, check:shared-layer-boundary, check:barrel-boundaries, check:handoff-context-boundaries, check:storage-context-boundaries, check:core-type-facade-boundaries, check:root-domain-barrels, check:persistence-hub-boundaries, check:legacy-localstorage-imports, check:legacy-bridge-boundary, check:legacy-read-gating, check:folder-dependencies, check:module-dependencies, check:census-runtime-boundary, check:runtime-adapter-boundary, check:native-dialogs, check:firestore-runtime-boundary, check:domain-hotspot-boundary, check:legacy-permissions-boundary` |
-| tests | `check:core-trivial-tests, check:test-governance, check:unit-shard-balance, check:ci-runtime-telemetry, check:test-runtime-governance, check:test-failure-catalog, check:flaky-quarantine` |
+| tests | `check:core-trivial-tests, check:test-governance, check:unit-shard-balance, check:ci-runtime-telemetry, check:ci-runtime-calibration, check:test-runtime-governance, check:test-failure-catalog, check:flaky-quarantine` |
 | hygiene | `check:core-console-usage, check:repo-hygiene` |
 | governance-inputs | `report:legacy-bridge, report:compatibility-governance` |
 | governance | `check:legacy-retirement-debt, check:compatibility-import-governance, check:schema-governance, check:runtime-contracts, check:sync-invariants, check:serverless-runtime-governance, check:serverless-sensitive-coverage, check:docs-drift, check:operational-runbooks, check:firestore-emulator-governance, check:ci-artifact-contracts, check:guardrail-governance` |

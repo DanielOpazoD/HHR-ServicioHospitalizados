@@ -536,12 +536,26 @@ jobs:
       - name: Enforce observed CI runtime telemetry contract
         run: npm run check:ci-runtime-telemetry
 
+      - name: Generate calibrated CI runtime evidence
+        run: npm run report:ci-runtime-calibration-profile
+
+      - name: Enforce calibrated CI runtime contract
+        run: npm run check:ci-runtime-calibration
+
       - name: Upload observed CI runtime telemetry artifact
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: ci-runtime-observed-profile
           path: reports/ci-runtime-observed-*
+          retention-days: 30
+
+      - name: Upload calibrated CI runtime artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-runtime-calibration-profile
+          path: reports/ci-runtime-calibration-profile.*
           retention-days: 30
 
   ci-strict-summary:

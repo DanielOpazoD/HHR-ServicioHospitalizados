@@ -1,7 +1,7 @@
 {
   "reportId": "test-runtime-governance",
-  "generatedAt": "2026-07-06T19:58:33.221Z",
-  "gitSha": "29270f50",
+  "generatedAt": "2026-07-06T20:05:54.735Z",
+  "gitSha": "b5a68592",
   "gitDirty": true,
   "budgets": {
     "prCriticalPathMinutes": 35,
@@ -205,22 +205,22 @@
         {
           "index": 1,
           "files": 413,
-          "estimatedDurationMs": 67590
+          "estimatedDurationMs": 67740
         },
         {
           "index": 2,
-          "files": 330,
-          "estimatedDurationMs": 67591
+          "files": 328,
+          "estimatedDurationMs": 67741
         },
         {
           "index": 3,
-          "files": 328,
-          "estimatedDurationMs": 67591
+          "files": 330,
+          "estimatedDurationMs": 67741
         },
         {
           "index": 4,
           "files": 332,
-          "estimatedDurationMs": 67490
+          "estimatedDurationMs": 67640
         }
       ]
     },
@@ -250,14 +250,22 @@
       }
     },
     "ciRuntimeCalibration": {
-      "status": "not_generated",
+      "status": "no_observed_ci_data",
       "summary": {
+        "rawEstimatedTotalDurationMs": 270262,
+        "calibratedEstimatedTotalDurationMs": 891864,
+        "observedTotalDurationMs": 0,
+        "rawTotalRatioPercent": 0,
         "calibratedTotalRatioPercent": 0,
         "estimatorAccuracyDeltaPercent": 0,
-        "ciRuntimeCalibrationFactor": 1
+        "shardBalanceSpreadPercent": 0,
+        "targetRatioTolerancePercent": 20,
+        "ciRuntimeCalibrationFactor": 3.3
       },
-      "recommendation": "Generate ci-runtime-calibration-profile after observed CI runtime is available.",
-      "advisoryFindings": []
+      "recommendation": "Collect observed CI runtime before calibrating the estimator.",
+      "advisoryFindings": [
+        "No observed CI runtime data is available yet."
+      ]
     }
   },
   "fixtureGovernance": {

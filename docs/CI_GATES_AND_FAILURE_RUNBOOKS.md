@@ -124,6 +124,7 @@ Si un shard se vuelve dominante, correr `npm run profile:unit-shard-runtime`, re
 El runtime observado de GitHub Actions se evidencia en `reports/ci-runtime-observed-profile.md` y se valida con `npm run check:ci-runtime-telemetry`. En PR lo captura `ci-runtime-telemetry`, con permisos mínimos `actions: read`/`contents: read`, después de los gates principales. El collector `npm run collect:ci-runtime-observed-input` usa `GITHUB_RUN_ID`, `GITHUB_REPOSITORY` y `GITHUB_TOKEN` para escribir `reports/ci-runtime-observed-input.json`; luego el reporte compara esos tiempos reales contra `reports/unit-shard-runtime-profile.json`.
 Este gate es advisory-first: no bloquea por falta de datos reales ni por una corrida aislada lenta; solo bloquea contratos rotos como JSON inválido, timestamps inválidos, shards duplicados/faltantes cuando el reporte declara datos observados o nombres imposibles de shard.
 Si el observado contradice repetidamente el balance estimado, ajustar primero `durationHints`, `perFileOverheadMs`, `affinityGroups` o `lockedAssignments`, y recién después considerar cambios de suite. No reducir cobertura clínica crítica para bajar minutos. Si el reporte queda en `no_observed_ci_data` dentro de GitHub Actions, revisar que el job `ci-runtime-telemetry` haya ejecutado el collector antes del reporter y que el token tenga permiso de lectura de Actions.
+La calibración absoluta vive en `reports/ci-runtime-calibration-profile.md` y se valida con `npm run check:ci-runtime-calibration`. Este reporte no reemplaza el balance entre shards: usa el mismo perfil local y el runtime observado para calcular factor, delta y ratios por shard. `ciRuntimeCalibrationFactor` en `scripts/config/unit-shard-balance.json` escala solo la evidencia y planificación CI; no cambia qué archivos ejecuta cada shard. Tratar `calibration_drift_advisory` como señal para revisar varias corridas y ajustar hints/factor, no como permiso para bajar cobertura ni mover tests PR-critical a nightly.
 El reporte de release readiness ya regenera también `guardrail-governance`; no debe depender de un artefacto previo manual.
 CI regenera los snapshots report-only obligatorios con `npm run report:governance-snapshots` antes de ejecutar `check:quality`.
 `release-readiness-scorecard` sigue siendo ejecutivo y obligatorio para release, pero ya no duplica bloqueo dentro de `check:quality` si las fuentes primarias siguen verdes.
@@ -219,6 +220,20 @@ Salida esperada:
    - los reportes report-only sigan apuntando a artefactos reales
 4. si agregaste un guardrail nuevo, decidir en la misma change si nace como blocking o report-only
 5. no duplicar un mismo riesgo en varios gates sin justificación explícita
+
+### Falla `check:ci-runtime-calibration`
+
+1. correr `npm run report:unit-shard-runtime-profile`
+2. correr `npm run report:ci-runtime-observed-profile`
+3. correr `npm run report:ci-runtime-calibration-profile`
+4. revisar `reports/ci-runtime-calibration-profile.md`
+5. distinguir si el fallo es:
+   - contrato roto: JSON inválido, reportes fuente faltantes, shard observado imposible o datos inconsistentes;
+   - advisory de performance: el total observado se aleja del estimado calibrado;
+   - ausencia de datos: no existe runtime observado para calibrar
+6. si es contrato roto, corregir el generador o el artifact fuente en la misma change
+7. si es advisory, comparar con más de una corrida antes de ajustar `ciRuntimeCalibrationFactor`, `durationHints` o `perFileOverheadMs`
+8. no resolver deriva de calibración reduciendo cobertura clínica crítica ni moviendo suites PR-blocking a nightly
 
 ### Falla `check:dependency-vulnerabilities`
 

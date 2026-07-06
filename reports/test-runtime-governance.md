@@ -1,7 +1,7 @@
 # Test Runtime Governance
 
-- Generated: 2026-07-06T19:58:33.221Z
-- Git SHA: `29270f50`
+- Generated: 2026-07-06T20:05:54.735Z
+- Git SHA: `b5a68592`
 - Worktree dirty: `true`
 - PR critical path budget: 35.0m
 
@@ -40,8 +40,8 @@
 - CI observed unit shard runtime: no_observed_ci_data, 0/4 shard(s), 0% observed spread.
   - Advisory: No observed CI runtime data is available yet.
 
-- CI runtime calibration: not_generated, factor 1.0x, calibrated ratio 0%, accuracy delta 0%.
-  - Advisory: Generate ci-runtime-calibration-profile after observed CI runtime is available.
+- CI runtime calibration: no_observed_ci_data, factor 3.3x, calibrated ratio 0%, accuracy delta 0%.
+  - Advisory: No observed CI runtime data is available yet.
 
 ## Fixture Duplication Governance
 

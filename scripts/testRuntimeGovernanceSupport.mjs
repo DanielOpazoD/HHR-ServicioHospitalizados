@@ -291,6 +291,15 @@ export const collectTestRuntimeGovernanceIssues = root => {
   if (!ciWorkflow.includes('name: ci-runtime-observed-profile')) {
     issues.push('CI must upload ci-runtime-observed-profile artifact.');
   }
+  if (!ciWorkflow.includes('npm run report:ci-runtime-calibration-profile')) {
+    issues.push('CI must generate calibrated CI runtime evidence after observed telemetry.');
+  }
+  if (!ciWorkflow.includes('npm run check:ci-runtime-calibration')) {
+    issues.push('CI must enforce check:ci-runtime-calibration as an advisory structural contract.');
+  }
+  if (!ciWorkflow.includes('name: ci-runtime-calibration-profile')) {
+    issues.push('CI must upload ci-runtime-calibration-profile artifact.');
+  }
   if (!packageJson.scripts?.['check:unit-shard-balance']) {
     issues.push('package.json is missing script check:unit-shard-balance.');
   }
@@ -302,6 +311,12 @@ export const collectTestRuntimeGovernanceIssues = root => {
   }
   if (!packageJson.scripts?.['report:ci-runtime-observed-profile']) {
     issues.push('package.json is missing script report:ci-runtime-observed-profile.');
+  }
+  if (!packageJson.scripts?.['check:ci-runtime-calibration']) {
+    issues.push('package.json is missing script check:ci-runtime-calibration.');
+  }
+  if (!packageJson.scripts?.['report:ci-runtime-calibration-profile']) {
+    issues.push('package.json is missing script report:ci-runtime-calibration-profile.');
   }
 
   if (nightlyWorkflow.includes('pull_request:')) {

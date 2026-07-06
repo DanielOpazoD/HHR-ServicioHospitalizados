@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-06T05:44:53.924Z",
+  "generatedAt": "2026-07-06T20:05:42.861Z",
   "version": 1,
   "blockingTierCount": 5,
-  "reportOnlyCount": 18,
-  "qualityCheckCount": 64,
+  "reportOnlyCount": 19,
+  "qualityCheckCount": 65,
   "releaseConfidence": {
     "script": "test:release-confidence",
     "requiredScripts": [
@@ -175,6 +175,11 @@
       "id": "ci_runtime_observed_profile",
       "script": "report:ci-runtime-observed-profile",
       "artifact": "reports/ci-runtime-observed-profile.md"
+    },
+    {
+      "id": "ci_runtime_calibration_profile",
+      "script": "report:ci-runtime-calibration-profile",
+      "artifact": "reports/ci-runtime-calibration-profile.md"
     }
   ],
   "qualityAggregate": {
@@ -390,6 +395,10 @@
       },
       {
         "id": "check:ci-runtime-telemetry",
+        "group": "tests"
+      },
+      {
+        "id": "check:ci-runtime-calibration",
         "group": "tests"
       },
       {
