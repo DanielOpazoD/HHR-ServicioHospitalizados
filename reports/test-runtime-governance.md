@@ -1,7 +1,7 @@
 # Test Runtime Governance
 
-- Generated: 2026-07-06T04:06:34.169Z
-- Git SHA: `858b467e`
+- Generated: 2026-07-06T05:44:53.359Z
+- Git SHA: `cf972b18`
 - Worktree dirty: `false`
 - PR critical path budget: 35.0m
 
@@ -35,7 +35,7 @@
 | `check:firestore-runtime-boundary` | boundaries | 1.4s |
 | `check:native-dialogs` | boundaries | 1.4s |
 
-- Unit shard balance: 1400 files, 0.2% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
+- Unit shard balance: 1401 files, 0% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
 
 - CI observed unit shard runtime: no_observed_ci_data, 0/4 shard(s), 0% observed spread.
   - Advisory: No observed CI runtime data is available yet.
