@@ -1,0 +1,28 @@
+{
+  "reportId": "ci-runtime-observed-profile",
+  "status": "no_observed_ci_data",
+  "summary": {
+    "observedShardCount": 0,
+    "expectedShardCount": 4,
+    "totalDurationMs": 0,
+    "spreadPercent": 0,
+    "tolerancePercent": 25
+  },
+  "shards": [],
+  "unexpectedShardJobs": [],
+  "recommendation": "No observed CI unit shard data is available yet; keep this signal advisory until GitHub Actions data is captured.",
+  "generatedAt": "2026-07-06T03:13:13.341Z",
+  "gitSha": "94d93173",
+  "gitDirty": false,
+  "source": {
+    "inputPath": "reports/ci-runtime-observed-input.json",
+    "hasInput": false
+  },
+  "comparison": {
+    "status": "no_observed_ci_data",
+    "blockingIssues": [],
+    "advisoryFindings": [
+      "No observed CI runtime data is available yet."
+    ]
+  }
+}

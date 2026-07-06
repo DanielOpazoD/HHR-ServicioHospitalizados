@@ -1,9 +1,9 @@
 # Unit Shard Runtime Profile
 
-- Generated: 2026-07-06T01:42:07.902Z
-- Git SHA: `ee8773c4`
+- Generated: 2026-07-06T03:13:13.084Z
+- Git SHA: `94d93173`
 - Worktree dirty: `false`
-- Files: 1398
+- Files: 1399
 - Shards: 4
 - Spread: 0.2% (tolerance 25%)
 - Per-file overhead: 0.1s
@@ -12,10 +12,10 @@
 
 | Shard | Files | Estimated Duration | Top files |
 | ---: | ---: | ---: | --- |
-| 1 | 412 | 66.1s | `src/tests/services/storage/syncQueueService.test.ts`<br>`src/tests/build/dependencyAuditSupport.test.ts`<br>`src/tests/components/PatientRow.layout-and-actions.test.tsx`<br>`src/tests/services/dailyRecordRepository.test.ts` |
-| 2 | 326 | 66.0s | `src/tests/build/reportFreshness.test.ts`<br>`src/tests/services/storage/indexedDBService.localReset.test.ts`<br>`src/tests/features/admin/SystemHealthDashboard.test.tsx`<br>`src/tests/hooks/useDailyRecord.census-action-matrix.test.tsx` |
-| 3 | 329 | 66.0s | `src/tests/services/terminology/cie10AISearch.test.ts`<br>`src/tests/hooks/usePatientAutocomplete.test.ts`<br>`src/tests/hooks/laboratory/useLabViewer.test.ts`<br>`src/tests/hooks/useDailyRecordSyncQuery.test.tsx` |
-| 4 | 331 | 66.0s | `src/tests/integration/concurrency.test.tsx`<br>`src/tests/services/laboratory/syslabService.test.ts`<br>`src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.test.tsx`<br>`src/tests/services/ai/aiRequestManager.test.ts` |
+| 1 | 415 | 66.4s | `src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.behavior.test.tsx`<br>`src/tests/build/dependencyAuditSupport.test.ts`<br>`src/tests/components/PatientRow.layout-and-actions.test.tsx`<br>`src/tests/views/census/PatientRowOrbitalQuickActions.behavior.test.tsx` |
+| 2 | 326 | 66.3s | `src/tests/build/reportFreshness.test.ts`<br>`src/tests/services/storage/indexedDBService.localReset.test.ts`<br>`src/tests/features/admin/SystemHealthDashboard.test.tsx`<br>`src/tests/hooks/useDailyRecord.census-action-matrix.test.tsx` |
+| 3 | 327 | 66.3s | `src/tests/services/terminology/cie10AISearch.test.ts`<br>`src/tests/hooks/usePatientAutocomplete.test.ts`<br>`src/tests/hooks/laboratory/useLabViewer.test.ts`<br>`src/tests/hooks/useDailyRecordSyncQuery.test.tsx` |
+| 4 | 331 | 66.4s | `src/tests/integration/concurrency.test.tsx`<br>`src/tests/services/laboratory/syslabService.test.ts`<br>`src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.test.tsx`<br>`src/tests/services/ai/aiRequestManager.test.ts` |
 
 ## Slowest Files
 
@@ -39,8 +39,8 @@
 | `src/tests/functions/prescriptionAccessFunctions.test.ts` | unit-general | 1.2s |
 | `src/tests/build/testRuntimeGovernanceSupport.test.ts` | governance | 1.2s |
 | `src/tests/services/utils/errorService.test.ts` | unit-general | 1.1s |
+| `src/tests/build/ciRiskPackMembershipSupport.test.ts` | governance | 1.1s |
 | `src/tests/integration/daily-record-sync.test.tsx` | ui-components | 1.1s |
-| `src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.behavior.test.tsx` | ui-components | 1.1s |
 
 ## Functional Groups
 
@@ -49,7 +49,7 @@
 | unit-general | 505 | 79.5s |
 | ui-components | 204 | 66.5s |
 | census | 397 | 61.7s |
-| governance | 66 | 17.4s |
+| governance | 67 | 18.5s |
 | audit-observability | 66 | 12.6s |
 | storage-sync | 55 | 11.3s |
 | handoff | 71 | 10.9s |

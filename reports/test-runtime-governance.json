@@ -1,7 +1,7 @@
 {
   "reportId": "test-runtime-governance",
-  "generatedAt": "2026-07-06T01:42:08.078Z",
-  "gitSha": "ee8773c4",
+  "generatedAt": "2026-07-06T03:13:13.671Z",
+  "gitSha": "94d93173",
   "gitDirty": false,
   "budgets": {
     "prCriticalPathMinutes": 35,
@@ -156,47 +156,47 @@
       {
         "id": "check:feature-public-api-boundary",
         "group": "boundaries",
-        "durationMs": 1365
+        "durationMs": 5034
       },
       {
         "id": "check:security",
         "group": "security",
-        "durationMs": 1067
-      },
-      {
-        "id": "check:test-runtime-governance",
-        "group": "tests",
-        "durationMs": 472
+        "durationMs": 2984
       },
       {
         "id": "check:unit-shard-balance",
         "group": "tests",
-        "durationMs": 460
+        "durationMs": 2620
       },
       {
-        "id": "check:runtime-adapter-boundary",
-        "group": "boundaries",
-        "durationMs": 369
+        "id": "check:test-runtime-governance",
+        "group": "tests",
+        "durationMs": 2509
       },
       {
         "id": "check:repo-hygiene",
         "group": "hygiene",
-        "durationMs": 358
+        "durationMs": 1767
       },
       {
         "id": "check:folder-dependencies",
         "group": "boundaries",
-        "durationMs": 352
+        "durationMs": 1617
       },
       {
-        "id": "check:architecture",
+        "id": "check:test-governance",
+        "group": "tests",
+        "durationMs": 1608
+      },
+      {
+        "id": "check:module-dependencies",
         "group": "boundaries",
-        "durationMs": 326
+        "durationMs": 1455
       }
     ],
     "e2eCritical": null,
     "unitShardBalance": {
-      "totalFiles": 1398,
+      "totalFiles": 1399,
       "shardCount": 4,
       "spreadPercent": 0.2,
       "tolerancePercent": 25,
@@ -204,25 +204,43 @@
       "shards": [
         {
           "index": 1,
-          "files": 414,
-          "estimatedDurationMs": 66128
+          "files": 412,
+          "estimatedDurationMs": 66403
         },
         {
           "index": 2,
           "files": 326,
-          "estimatedDurationMs": 66028
+          "estimatedDurationMs": 66303
         },
         {
           "index": 3,
           "files": 330,
-          "estimatedDurationMs": 66028
+          "estimatedDurationMs": 66303
         },
         {
           "index": 4,
-          "files": 328,
-          "estimatedDurationMs": 66028
+          "files": 331,
+          "estimatedDurationMs": 66403
         }
       ]
+    },
+    "ciRuntimeObserved": {
+      "status": "no_observed_ci_data",
+      "summary": {
+        "observedShardCount": 0,
+        "expectedShardCount": 4,
+        "totalDurationMs": 0,
+        "spreadPercent": 0,
+        "tolerancePercent": 25
+      },
+      "recommendation": "No observed CI unit shard data is available yet; keep this signal advisory until GitHub Actions data is captured.",
+      "comparison": {
+        "status": "no_observed_ci_data",
+        "blockingIssues": [],
+        "advisoryFindings": [
+          "No observed CI runtime data is available yet."
+        ]
+      }
     }
   },
   "fixtureGovernance": {
