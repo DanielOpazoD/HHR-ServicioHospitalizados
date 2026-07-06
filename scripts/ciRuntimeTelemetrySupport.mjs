@@ -144,6 +144,48 @@ const collectUnexpectedShardJobs = jobs =>
     .map(job => String(job.name))
     .sort();
 
+const resolveEstimatedTotalDurationMs = estimatedProfile =>
+  Number(estimatedProfile?.summary?.totalEstimatedDurationMs || 0) ||
+  (estimatedProfile?.shards || []).reduce((sum, shard) => sum + Number(shard.estimatedDurationMs || 0), 0);
+
+const buildEstimatedObservedRuntimeComparison = ({ estimatedProfile, observedProfile }) => {
+  const observedShards = observedProfile?.shards || [];
+  const estimatedShards = estimatedProfile?.shards || [];
+  const shards = observedShards
+    .map(observedShard => {
+      const estimatedShard = estimatedShards.find(shard => Number(shard.index) === Number(observedShard.index));
+      const estimatedDurationMs = Number(estimatedShard?.estimatedDurationMs || 0);
+      const observedDurationMs = Number(observedShard.durationMs || 0);
+      return {
+        deltaMs: observedDurationMs - estimatedDurationMs,
+        estimatedDurationMs,
+        index: Number(observedShard.index),
+        observedDurationMs,
+        ratioPercent:
+          estimatedDurationMs > 0 && observedDurationMs > 0
+            ? roundOneDecimal((observedDurationMs / estimatedDurationMs) * 100)
+            : 0,
+      };
+    })
+    .filter(shard => shard.estimatedDurationMs > 0 || shard.observedDurationMs > 0)
+    .sort((a, b) => a.index - b.index);
+  const estimatedTotalDurationMs = resolveEstimatedTotalDurationMs(estimatedProfile);
+  const observedTotalDurationMs = Number(observedProfile?.summary?.totalDurationMs || 0);
+
+  return {
+    shards,
+    summary: {
+      estimatedTotalDurationMs,
+      observedTotalDurationMs,
+      totalDeltaMs: observedTotalDurationMs - estimatedTotalDurationMs,
+      totalRatioPercent:
+        estimatedTotalDurationMs > 0 && observedTotalDurationMs > 0
+          ? roundOneDecimal((observedTotalDurationMs / estimatedTotalDurationMs) * 100)
+          : 0,
+    },
+  };
+};
+
 /**
  * @param {{ jobs?: CiRuntimeInputJob[], tolerancePercent?: number }} [options]
  */
@@ -267,11 +309,22 @@ export const compareEstimatedAndObservedRuntime = ({ estimatedProfile, observedP
       status: 'no_observed_ci_data',
       blockingIssues: [],
       advisoryFindings: ['No observed CI runtime data is available yet.'],
+      shards: [],
+      summary: {
+        estimatedTotalDurationMs: resolveEstimatedTotalDurationMs(estimatedProfile),
+        observedTotalDurationMs: 0,
+        totalDeltaMs: 0,
+        totalRatioPercent: 0,
+      },
     };
   }
 
   const blockingIssues = collectCiRuntimeTelemetryIssues(observedProfile);
   const advisoryFindings = [];
+  const estimatedObservedComparison = buildEstimatedObservedRuntimeComparison({
+    estimatedProfile,
+    observedProfile,
+  });
   const observedSpread = Number(observedProfile.summary?.spreadPercent || 0);
   const observedTolerance = Number(observedProfile.summary?.tolerancePercent || 0);
   const estimatedSpread = Number(estimatedProfile?.summary?.spreadPercent || 0);
@@ -288,20 +341,11 @@ export const compareEstimatedAndObservedRuntime = ({ estimatedProfile, observedP
     );
   }
 
-  for (const observedShard of observedProfile.shards || []) {
-    const estimatedShard = (estimatedProfile?.shards || []).find(
-      shard => Number(shard.index) === Number(observedShard.index)
-    );
-    if (!estimatedShard) continue;
-    const estimatedDurationMs = Number(estimatedShard.estimatedDurationMs || 0);
-    const observedDurationMs = Number(observedShard.durationMs || 0);
-    if (estimatedDurationMs > 0 && observedDurationMs > 0) {
-      const ratio = roundOneDecimal((observedDurationMs / estimatedDurationMs) * 100);
-      if (ratio >= 250) {
-        advisoryFindings.push(
-          `Observed shard ${observedShard.index} runtime is ${ratio}% of the estimated duration.`
-        );
-      }
+  for (const shard of estimatedObservedComparison.shards) {
+    if (shard.ratioPercent >= 250) {
+      advisoryFindings.push(
+        `Observed shard ${shard.index} runtime is ${shard.ratioPercent}% of the estimated duration.`
+      );
     }
   }
 
@@ -309,6 +353,8 @@ export const compareEstimatedAndObservedRuntime = ({ estimatedProfile, observedP
     status: observedSpread > observedTolerance ? 'observed_outside_tolerance' : 'observed_within_tolerance',
     blockingIssues,
     advisoryFindings,
+    shards: estimatedObservedComparison.shards,
+    summary: estimatedObservedComparison.summary,
   };
 };
 
@@ -327,6 +373,18 @@ export const formatCiRuntimeObservedProfileMarkdown = profile => {
   if (typeof profile.gitDirty === 'boolean') {
     lines.push(`- Worktree dirty: \`${profile.gitDirty}\``);
   }
+  if (profile.source?.provider) {
+    lines.push(`- Source: \`${profile.source.provider}\``);
+  }
+  if (profile.source?.repository) {
+    lines.push(`- Repository: \`${profile.source.repository}\``);
+  }
+  if (profile.source?.runId) {
+    lines.push(`- Run: \`${profile.source.runId}\``);
+  }
+  if (profile.source?.inputPath) {
+    lines.push(`- Input: \`${profile.source.inputPath}\``);
+  }
 
   lines.push(
     `- Status: \`${profile.status}\``,
@@ -336,9 +394,25 @@ export const formatCiRuntimeObservedProfileMarkdown = profile => {
   );
 
   if (profile.status === 'no_observed_ci_data') {
-    lines.push(profile.recommendation, '');
+    lines.push(
+      profile.recommendation,
+      '',
+      'Run `npm run collect:ci-runtime-observed-input` in GitHub Actions before `npm run report:ci-runtime-observed-profile` to capture real job timings.',
+      ''
+    );
     return `${lines.join('\n')}\n`;
   }
+
+  const slowestShard = profile.summary?.slowestShard;
+  const fastestShard = profile.summary?.fastestShard;
+  lines.push(`- Total observed runtime: ${formatMinutes(profile.summary?.totalDurationMs)}`);
+  if (slowestShard?.index) {
+    lines.push(`- Slowest shard: #${slowestShard.index} (${formatMinutes(slowestShard.durationMs)})`);
+  }
+  if (fastestShard?.index) {
+    lines.push(`- Fastest shard: #${fastestShard.index} (${formatMinutes(fastestShard.durationMs)})`);
+  }
+  lines.push('');
 
   lines.push(
     '## Observed Unit Shards',
@@ -355,8 +429,47 @@ export const formatCiRuntimeObservedProfileMarkdown = profile => {
     ''
   );
 
-  if ((profile.unexpectedShardJobs || []).length > 0) {
-    lines.push('## Structural Warnings', '', ...profile.unexpectedShardJobs.map(name => `- ${name}`), '');
+  if ((profile.comparison?.shards || []).length > 0) {
+    lines.push(
+      '## Estimated vs Observed',
+      '',
+      '| Shard | Estimated | Observed | Ratio |',
+      '| ---: | ---: | ---: | ---: |',
+      ...profile.comparison.shards.map(
+        shard =>
+          `| ${shard.index} | ${formatMinutes(shard.estimatedDurationMs)} | ${formatMinutes(
+            shard.observedDurationMs
+          )} | ${shard.ratioPercent}% |`
+      ),
+      ''
+    );
+    if (profile.comparison.summary?.estimatedTotalDurationMs > 0) {
+      lines.push(
+        `- Estimated total: ${formatMinutes(profile.comparison.summary.estimatedTotalDurationMs)}`,
+        `- Observed total: ${formatMinutes(profile.comparison.summary.observedTotalDurationMs)}`,
+        `- Total ratio: ${profile.comparison.summary.totalRatioPercent}%`,
+        ''
+      );
+    }
+  }
+
+  const structuralWarnings = [
+    ...(profile.invalidTimestampShardJobs || []).map(name => `Invalid timestamp: ${name}`),
+    ...(profile.unexpectedShardJobs || []).map(name => `Unexpected shard: ${name}`),
+    ...(profile.duplicateShardJobs || []).map(name => `Duplicate shard: ${name}`),
+    ...(profile.missingShardIndices || []).map(index => `Missing shard: ${index}`),
+  ];
+  if (structuralWarnings.length > 0) {
+    lines.push('## Structural Warnings', '', ...structuralWarnings.map(warning => `- ${warning}`), '');
+  }
+
+  if ((profile.comparison?.advisoryFindings || []).length > 0) {
+    lines.push(
+      '## Advisory Findings',
+      '',
+      ...profile.comparison.advisoryFindings.map(finding => `- ${finding}`),
+      ''
+    );
   }
 
   return `${lines.join('\n')}\n`;

@@ -208,6 +208,7 @@
     "check:unit-shard-balance": "node scripts/check-unit-shard-balance.mjs",
     "profile:unit-shard-runtime": "node scripts/profile-unit-shard-runtime.mjs",
     "report:unit-shard-runtime-profile": "node scripts/report-unit-shard-runtime-profile.mjs",
+    "collect:ci-runtime-observed-input": "node scripts/collect-github-actions-runtime.mjs",
     "check:ci-runtime-telemetry": "node scripts/check-ci-runtime-telemetry.mjs",
     "report:ci-runtime-observed-profile": "node scripts/report-ci-runtime-observed-profile.mjs"
   },
