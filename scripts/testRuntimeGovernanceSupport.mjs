@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseWorkflowJobs } from './ciArtifactContractSupport.mjs';
 import { getGitReportState } from './gitReportState.mjs';
+import { buildUnitShardBalanceReport } from './unitShardBalanceSupport.mjs';
 
 const CONFIG_PATH = 'scripts/config/test-runtime-governance.json';
 const PACKAGE_JSON_PATH = 'package.json';
@@ -58,6 +59,26 @@ const readE2eOperationalSignal = root => {
     totalTests: Number(metrics.totalTests || 0),
     flaky: Number(metrics.flaky || 0),
   };
+};
+
+const readUnitShardBalanceSignal = root => {
+  try {
+    const report = buildUnitShardBalanceReport(root);
+    return {
+      totalFiles: report.summary.totalFiles,
+      shardCount: report.summary.shardCount,
+      spreadPercent: report.summary.spreadPercent,
+      tolerancePercent: report.summary.tolerancePercent,
+      perFileOverheadMs: report.summary.perFileOverheadMs,
+      shards: report.shards.map(shard => ({
+        index: shard.index,
+        files: shard.files.length,
+        estimatedDurationMs: shard.estimatedDurationMs,
+      })),
+    };
+  } catch {
+    return null;
+  }
 };
 
 const walkTestFiles = root => {
@@ -173,6 +194,7 @@ export const buildTestRuntimeGovernanceReport = root => {
     slowRuntimeSignals: {
       qualityStaticSlowest: readQualityProfileSlowSignals(root),
       e2eCritical: e2eSignal,
+      unitShardBalance: readUnitShardBalanceSignal(root),
     },
     fixtureGovernance: {
       ...config.fixtureGovernance,
@@ -221,6 +243,12 @@ export const collectTestRuntimeGovernanceIssues = root => {
   }
   if (!ciWorkflow.includes('npm run check:test-runtime-governance')) {
     issues.push('CI must enforce check:test-runtime-governance.');
+  }
+  if (!packageJson.scripts?.['check:unit-shard-balance']) {
+    issues.push('package.json is missing script check:unit-shard-balance.');
+  }
+  if (!packageJson.scripts?.['report:unit-shard-runtime-profile']) {
+    issues.push('package.json is missing script report:unit-shard-runtime-profile.');
   }
 
   if (nightlyWorkflow.includes('pull_request:')) {
@@ -306,6 +334,14 @@ export const formatTestRuntimeGovernanceMarkdown = report => {
     lines.push(
       '',
       `- E2E critical: ${e2e.totalTests} tests, ${e2e.flaky} flaky, ${formatMs(e2e.durationMs)}.`
+    );
+  }
+
+  if (report.slowRuntimeSignals.unitShardBalance) {
+    const balance = report.slowRuntimeSignals.unitShardBalance;
+    lines.push(
+      '',
+      `- Unit shard balance: ${balance.totalFiles} files, ${balance.spreadPercent}% spread across ${balance.shardCount} shard(s), tolerance ${balance.tolerancePercent}%, per-file overhead ${(Number(balance.perFileOverheadMs || 0) / 1000).toFixed(1)}s.`
     );
   }
 

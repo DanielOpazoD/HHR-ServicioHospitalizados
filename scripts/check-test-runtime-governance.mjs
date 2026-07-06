@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 
 import { collectTestRuntimeGovernanceIssues } from './testRuntimeGovernanceSupport.mjs';
+import { collectCurrentUnitShardBalanceIssues } from './unitShardBalanceSupport.mjs';
 
-const issues = collectTestRuntimeGovernanceIssues(process.cwd());
+const root = process.cwd();
+const issues = [
+  ...collectTestRuntimeGovernanceIssues(root),
+  ...collectCurrentUnitShardBalanceIssues(root),
+];
 
 if (issues.length > 0) {
   console.error('[test-runtime-governance] Contract failed:');
