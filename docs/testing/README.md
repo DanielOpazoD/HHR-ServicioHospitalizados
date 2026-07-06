@@ -136,9 +136,14 @@ sigue bajo la tolerancia. La suite clínica crítica sigue cubierta por `unit-ri
 `clinical-sync-release-gate`, `rules-emulator` y `e2e-critical`.
 
 El runtime observado de GitHub Actions complementa ese balance local con `reports/ci-runtime-observed-profile.*`.
+En CI lo genera el job `ci-runtime-telemetry`, que corre después de los gates PR-critical, llama a
+`npm run collect:ci-runtime-observed-input`, consulta los jobs del `GITHUB_RUN_ID` actual y después ejecuta
+`npm run report:ci-runtime-observed-profile` + `npm run check:ci-runtime-telemetry`.
+
 Esta señal es advisory-first: `npm run check:ci-runtime-telemetry` no bloquea por ausencia de datos reales ni
 por un desbalance aislado de una corrida, pero sí falla si el contrato queda roto, por ejemplo JSON inválido,
-shards declarados incompletos o nombres imposibles como `unit-risk-shard-5`. Para simular una corrida sin API:
+shards declarados incompletos, timestamps imposibles, duplicados o nombres imposibles como `unit-risk-shard-5`.
+Para simular una corrida sin API:
 
 1. Guardar un fixture con jobs en `reports/ci-runtime-observed-input.json` o pasar `--input path/al/fixture.json`.
 2. Ejecutar `npm run report:ci-runtime-observed-profile`.
@@ -146,6 +151,11 @@ shards declarados incompletos o nombres imposibles como `unit-risk-shard-5`. Par
 4. Si el desbalance observado se repite en más de una corrida, ajustar `perFileOverheadMs`,
    `durationHints`, `affinityGroups` o `lockedAssignments`. No mover tests clínicos críticos a nightly para
    mejorar tiempos aparentes.
+
+El markdown observado debe responder rápido: fuente/run, total observado, shard lento/rápido, tabla de shards,
+diferencia contra estimación y hallazgos advisory. Si aparece `no_observed_ci_data` en CI, revisar primero que
+`ci-runtime-telemetry` tenga `actions: read`, `GITHUB_TOKEN` y `GITHUB_RUN_ID`, y que el collector se haya ejecutado
+antes del reporte.
 
 ## 5.2 Smoke Pack Crítico
 
