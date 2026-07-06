@@ -44,6 +44,8 @@ const GENERATED_REPORT_STATUS_SUFFIXES = new Set([
   'reports/test-runtime-governance.md',
   'reports/technical-ownership-map.json',
   'reports/technical-ownership-map.md',
+  'reports/ci-runtime-observed-profile.json',
+  'reports/ci-runtime-observed-profile.md',
   'reports/unit-shard-runtime-profile.json',
   'reports/unit-shard-runtime-profile.md',
 ]);

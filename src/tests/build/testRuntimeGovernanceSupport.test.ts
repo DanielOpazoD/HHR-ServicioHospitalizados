@@ -42,6 +42,7 @@ describe('test runtime governance support', () => {
     expect(markdown).toContain('## PR Blocking Suites');
     expect(markdown).toContain('## Nightly Suites');
     expect(markdown).toContain('## Slow Runtime Signals');
+    expect(markdown).toContain('CI observed unit shard runtime');
     expect(markdown).toContain('## Fixture Duplication Governance');
     expect(markdown).toContain('## Fixture Duplication Signals');
   });
