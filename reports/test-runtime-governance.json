@@ -1,8 +1,8 @@
 {
   "reportId": "test-runtime-governance",
-  "generatedAt": "2026-07-06T20:05:54.735Z",
-  "gitSha": "b5a68592",
-  "gitDirty": true,
+  "generatedAt": "2026-07-06T20:14:49.663Z",
+  "gitSha": "93051e36",
+  "gitDirty": false,
   "budgets": {
     "prCriticalPathMinutes": 35,
     "unitShardMaxMinutes": 13,
@@ -156,71 +156,71 @@
       {
         "id": "check:feature-public-api-boundary",
         "group": "boundaries",
-        "durationMs": 3746
+        "durationMs": 2468
       },
       {
         "id": "check:security",
         "group": "security",
-        "durationMs": 2263
-      },
-      {
-        "id": "check:test-runtime-governance",
-        "group": "tests",
-        "durationMs": 1597
-      },
-      {
-        "id": "check:folder-dependencies",
-        "group": "boundaries",
-        "durationMs": 1552
-      },
-      {
-        "id": "check:unit-shard-balance",
-        "group": "tests",
-        "durationMs": 1511
+        "durationMs": 1434
       },
       {
         "id": "check:repo-hygiene",
         "group": "hygiene",
-        "durationMs": 1299
+        "durationMs": 740
+      },
+      {
+        "id": "check:architecture",
+        "group": "boundaries",
+        "durationMs": 612
+      },
+      {
+        "id": "check:test-runtime-governance",
+        "group": "tests",
+        "durationMs": 500
       },
       {
         "id": "check:report-freshness",
         "group": "reports",
-        "durationMs": 1184
+        "durationMs": 485
       },
       {
-        "id": "check:firestore-runtime-boundary",
+        "id": "check:legacy-bridge-boundary",
         "group": "boundaries",
-        "durationMs": 946
+        "durationMs": 480
+      },
+      {
+        "id": "check:legacy-localstorage-imports",
+        "group": "boundaries",
+        "durationMs": 472
       }
     ],
     "e2eCritical": null,
     "unitShardBalance": {
       "totalFiles": 1403,
       "shardCount": 4,
-      "spreadPercent": 0.1,
+      "spreadPercent": 0.2,
       "tolerancePercent": 25,
       "perFileOverheadMs": 100,
       "shards": [
         {
           "index": 1,
-          "files": 413,
-          "estimatedDurationMs": 67740
+          "files": 414,
+          "estimatedDurationMs": 63141
         },
         {
           "index": 2,
-          "files": 328,
-          "estimatedDurationMs": 67741
+          "files": 327,
+          "estimatedDurationMs": 63041
         },
         {
           "index": 3,
-          "files": 330,
-          "estimatedDurationMs": 67741
+          "files": 329,
+          "estimatedDurationMs": 63141
         },
         {
           "index": 4,
-          "files": 332,
-          "estimatedDurationMs": 67640
+          "files": 333,
+          "estimatedDurationMs": 63141
         }
       ]
     },
@@ -242,7 +242,7 @@
         ],
         "shards": [],
         "summary": {
-          "estimatedTotalDurationMs": 267612,
+          "estimatedTotalDurationMs": 252464,
           "observedTotalDurationMs": 0,
           "totalDeltaMs": 0,
           "totalRatioPercent": 0
@@ -252,8 +252,8 @@
     "ciRuntimeCalibration": {
       "status": "no_observed_ci_data",
       "summary": {
-        "rawEstimatedTotalDurationMs": 270262,
-        "calibratedEstimatedTotalDurationMs": 891864,
+        "rawEstimatedTotalDurationMs": 252464,
+        "calibratedEstimatedTotalDurationMs": 833130,
         "observedTotalDurationMs": 0,
         "rawTotalRatioPercent": 0,
         "calibratedTotalRatioPercent": 0,

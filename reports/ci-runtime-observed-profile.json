@@ -14,8 +14,8 @@
   "missingShardIndices": [],
   "unexpectedShardJobs": [],
   "recommendation": "No observed CI unit shard data is available yet; keep this signal advisory until GitHub Actions data is captured.",
-  "generatedAt": "2026-07-06T05:49:01.976Z",
-  "gitSha": "c6bbc765",
+  "generatedAt": "2026-07-06T20:14:49.346Z",
+  "gitSha": "93051e36",
   "gitDirty": false,
   "source": {
     "inputPath": "reports/ci-runtime-observed-input.json",
@@ -29,7 +29,7 @@
     ],
     "shards": [],
     "summary": {
-      "estimatedTotalDurationMs": 267612,
+      "estimatedTotalDurationMs": 252464,
       "observedTotalDurationMs": 0,
       "totalDeltaMs": 0,
       "totalRatioPercent": 0

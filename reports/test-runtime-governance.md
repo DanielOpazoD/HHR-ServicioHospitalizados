@@ -1,8 +1,8 @@
 # Test Runtime Governance
 
-- Generated: 2026-07-06T20:05:54.735Z
-- Git SHA: `b5a68592`
-- Worktree dirty: `true`
+- Generated: 2026-07-06T20:14:49.663Z
+- Git SHA: `93051e36`
+- Worktree dirty: `false`
 - PR critical path budget: 35.0m
 
 ## PR Blocking Suites
@@ -26,16 +26,16 @@
 
 | Check | Group | Duration |
 | --- | --- | ---: |
-| `check:feature-public-api-boundary` | boundaries | 3.7s |
-| `check:security` | security | 2.3s |
-| `check:test-runtime-governance` | tests | 1.6s |
-| `check:folder-dependencies` | boundaries | 1.6s |
-| `check:unit-shard-balance` | tests | 1.5s |
-| `check:repo-hygiene` | hygiene | 1.3s |
-| `check:report-freshness` | reports | 1.2s |
-| `check:firestore-runtime-boundary` | boundaries | 0.9s |
+| `check:feature-public-api-boundary` | boundaries | 2.5s |
+| `check:security` | security | 1.4s |
+| `check:repo-hygiene` | hygiene | 0.7s |
+| `check:architecture` | boundaries | 0.6s |
+| `check:test-runtime-governance` | tests | 0.5s |
+| `check:report-freshness` | reports | 0.5s |
+| `check:legacy-bridge-boundary` | boundaries | 0.5s |
+| `check:legacy-localstorage-imports` | boundaries | 0.5s |
 
-- Unit shard balance: 1403 files, 0.1% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
+- Unit shard balance: 1403 files, 0.2% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
 
 - CI observed unit shard runtime: no_observed_ci_data, 0/4 shard(s), 0% observed spread.
   - Advisory: No observed CI runtime data is available yet.
