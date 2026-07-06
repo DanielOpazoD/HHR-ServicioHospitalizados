@@ -161,6 +161,11 @@
       "id": "ci_runtime_observed_profile",
       "script": "report:ci-runtime-observed-profile",
       "artifact": "reports/ci-runtime-observed-profile.md"
+    },
+    {
+      "id": "ci_runtime_calibration_profile",
+      "script": "report:ci-runtime-calibration-profile",
+      "artifact": "reports/ci-runtime-calibration-profile.md"
     }
   ],
   "qualityAggregate": {

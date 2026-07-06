@@ -95,6 +95,28 @@ const readCiRuntimeObservedSignal = root => {
   };
 };
 
+const readCiRuntimeCalibrationSignal = root => {
+  const calibration = safeReadJson(root, 'reports/ci-runtime-calibration-profile.json');
+  if (!calibration) {
+    return {
+      status: 'not_generated',
+      summary: {
+        calibratedTotalRatioPercent: 0,
+        estimatorAccuracyDeltaPercent: 0,
+        ciRuntimeCalibrationFactor: 1,
+      },
+      recommendation: 'Generate ci-runtime-calibration-profile after observed CI runtime is available.',
+      advisoryFindings: [],
+    };
+  }
+  return {
+    status: calibration.status,
+    summary: calibration.summary,
+    recommendation: calibration.recommendation,
+    advisoryFindings: calibration.advisoryFindings || [],
+  };
+};
+
 const walkTestFiles = root => {
   const testRoot = path.join(root, 'src/tests');
   const files = [];
@@ -210,6 +232,7 @@ export const buildTestRuntimeGovernanceReport = root => {
       e2eCritical: e2eSignal,
       unitShardBalance: readUnitShardBalanceSignal(root),
       ciRuntimeObserved: readCiRuntimeObservedSignal(root),
+      ciRuntimeCalibration: readCiRuntimeCalibrationSignal(root),
     },
     fixtureGovernance: {
       ...config.fixtureGovernance,
@@ -389,6 +412,22 @@ export const formatTestRuntimeGovernanceMarkdown = report => {
       );
     } else if (observed.recommendation) {
       lines.push(`  - Advisory: ${observed.recommendation}`);
+    }
+  }
+
+  if (report.slowRuntimeSignals.ciRuntimeCalibration) {
+    const calibration = report.slowRuntimeSignals.ciRuntimeCalibration;
+    const summary = calibration.summary || {};
+    lines.push(
+      '',
+      `- CI runtime calibration: ${calibration.status}, factor ${Number(
+        summary.ciRuntimeCalibrationFactor || 1
+      ).toFixed(1)}x, calibrated ratio ${summary.calibratedTotalRatioPercent || 0}%, accuracy delta ${summary.estimatorAccuracyDeltaPercent || 0}%.`
+    );
+    if ((calibration.advisoryFindings || []).length > 0) {
+      lines.push(...calibration.advisoryFindings.map(finding => `  - Advisory: ${finding}`));
+    } else if (calibration.recommendation) {
+      lines.push(`  - Advisory: ${calibration.recommendation}`);
     }
   }
 
