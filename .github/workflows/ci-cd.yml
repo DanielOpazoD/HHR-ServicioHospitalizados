@@ -293,11 +293,25 @@ jobs:
       - name: Prove critical risk packs are included in the unit suite
         run: npm run check:ci-risk-pack-membership
 
+      - name: Enforce test runtime governance contract
+        run: npm run check:test-runtime-governance
+
+      - name: Generate test runtime governance evidence
+        run: npm run report:test-runtime-governance
+
       - name: Enforce test run contract
         run: |
           echo "Unit/integration test suite completed through unit-risk-shards (without emulator-only suites)."
           echo "Critical risk packs remain covered by check:ci-risk-pack-membership."
           echo "Firestore rules + emulator sync/UI suites are enforced in dedicated firestore-rules job."
+
+      - name: Upload test runtime governance artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-runtime-governance
+          path: reports/test-runtime-governance.*
+          retention-days: 30
 
   rules-emulator:
     name: rules-emulator

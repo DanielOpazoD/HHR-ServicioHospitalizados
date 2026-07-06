@@ -35,6 +35,8 @@ Superficie pública mínima recomendada para trabajo diario: [docs/DEVELOPER_COM
 | `npm run check:critical-smoke-pack`       | Verifica que el smoke pack crítico siga cubriendo todos los escenarios obligatorios                                       |
 | `npm run check:release-confidence-pack`   | Verifica perfiles, tiers, solapes permitidos y scripts válidos del release confidence pack                                |
 | `npm run check:release-confidence-matrix` | Verifica que cada área crítica tenga trazabilidad explícita hacia coverage, smoke, budgets y pasos blocking de release    |
+| `npm run check:test-runtime-governance`   | Verifica el contrato PR vs nightly, shards, budgets y watchlist de fixtures duplicadas                                    |
+| `npm run report:test-runtime-governance`  | Genera `reports/test-runtime-governance.*` con señales de runtime lento y duplicación de fixtures                         |
 | `npm run ci:inner-loop`                   | Ruta rápida para desarrollo diario                                                                                        |
 | `npm run ci:pre-merge`                    | Verificación compacta obligatoria antes de merge                                                                          |
 | `npm run ci:preview-gate`                 | Gate productivo del bundle real: budgets, grafo de chunks y smoke preview local                                           |
@@ -91,7 +93,29 @@ El budget diferencia entre:
 
 Los demás scripts de este documento deben tratarse como validaciones especializadas, no como superficie pública mínima.
 
-## 5.1 Smoke Pack Crítico
+## 5.1 Gobernanza de runtime de tests
+
+El contrato PR vs nightly vive en `scripts/config/test-runtime-governance.json`.
+
+En PR deben seguir bloqueando:
+
+- `unit-risk-shards`
+- `clinical-sync-release-gate`
+- `rules-emulator`
+- `e2e-critical`
+
+Las suites más caras quedan en `.github/workflows/nightly-test-runtime.yml` con `workflow_dispatch`
+y `schedule`, no en `pull_request`:
+
+- `test:sync-load`
+- `test:release-confidence:full`
+- `test:e2e:clinical-stability:ci`
+
+El reporte `reports/test-runtime-governance.md` lista los checks lentos disponibles desde perfiles
+locales/CI y expone señales de duplicación de fixtures. Su objetivo es bajar runtime con datos,
+sin sacar cobertura clínica crítica del PR.
+
+## 5.2 Smoke Pack Crítico
 
 El smoke pack curado vive en `scripts/config/critical-smoke-pack.json`.
 
@@ -106,7 +130,7 @@ Escenarios obligatorios:
 
 Objetivo: asegurar una ruta rápida y estable de validación operativa sin depender de toda la suite.
 
-## 5.2 Perfil especialista
+## 5.3 Perfil especialista
 
 El perfil `doctor_specialist` ya no tiene un flujo de login o shell paralelo.
 

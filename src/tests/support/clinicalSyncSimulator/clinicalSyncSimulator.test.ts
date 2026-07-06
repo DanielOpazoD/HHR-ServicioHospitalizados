@@ -1,31 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
 import { createClinicalSyncSimulator } from './clinicalSyncSimulator';
+import { createClinicalSyncCensusRecord } from './clinicalSyncSimulatorFixtures';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 
-const makeRecord = (date = '2026-07-03'): DailyRecord => ({
-  date,
-  beds: {
-    R1: {
-      bedId: 'R1',
-      patientName: 'Paciente Inicial',
-      rut: '11.111.111-1',
-      age: '40a',
-      pathology: 'Diagnostico inicial',
-      specialty: 'Medicina',
-      status: 'Estable',
-      admissionDate: '2026-07-01',
-      clinicalEpisodeId: 'episode-r1',
-      devices: [],
-    } as unknown as DailyRecord['beds'][string],
-  },
-  discharges: [],
-  transfers: [],
-  cma: [],
-  lastUpdated: '2026-07-03T08:00:00.000Z',
-  nurses: [],
-  activeExtraBeds: [],
-});
+const makeRecord = (date = '2026-07-03'): DailyRecord =>
+  createClinicalSyncCensusRecord({
+    date,
+    beds: {
+      R1: {
+        bedId: 'R1',
+        patientName: 'Paciente Inicial',
+        rut: '11.111.111-1',
+        age: '40a',
+        pathology: 'Diagnostico inicial',
+        specialty: 'Medicina',
+        status: 'Estable',
+        admissionDate: '2026-07-01',
+        clinicalEpisodeId: 'episode-r1',
+        devices: [],
+      } as unknown as DailyRecord['beds'][string],
+    },
+  });
 
 describe('clinicalSyncSimulator', () => {
   it('creates isolated logical clients over the same remote record', () => {

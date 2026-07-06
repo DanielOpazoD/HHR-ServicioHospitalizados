@@ -110,6 +110,24 @@ export const EVIDENCE_DEPENDENCY_GRAPH = {
       'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.test.ts',
     ],
   }),
+  'test-runtime-governance': reportNode({
+    command: 'report:test-runtime-governance',
+    artifacts: ['reports/test-runtime-governance.json', 'reports/test-runtime-governance.md'],
+    dependencies: [
+      '.github/workflows/ci-cd.yml',
+      '.github/workflows/nightly-test-runtime.yml',
+      'scripts/check-test-runtime-governance.mjs',
+      'scripts/config/test-runtime-governance.json',
+      'scripts/report-test-runtime-governance.mjs',
+      'scripts/testRuntimeGovernanceSupport.mjs',
+      'src/tests/build/testRuntimeGovernanceSupport.test.ts',
+      'src/tests/build/ciWorkflowGovernance.test.ts',
+      'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.census.test.ts',
+      'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.dmi-episode.test.ts',
+      'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulator.test.ts',
+      'src/tests/support/clinicalSyncSimulator/clinicalSyncSimulatorFixtures.ts',
+    ],
+  }),
   'serverless-runtime-governance': reportNode({
     command: 'report:serverless-runtime-governance',
     artifacts: [

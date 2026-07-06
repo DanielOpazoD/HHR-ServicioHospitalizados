@@ -146,6 +146,11 @@
       "id": "sustainable_change_policy",
       "script": "report:sustainable-change-policy",
       "artifact": "reports/sustainable-change-policy.md"
+    },
+    {
+      "id": "test_runtime_governance",
+      "script": "report:test-runtime-governance",
+      "artifact": "reports/test-runtime-governance.md"
     }
   ],
   "qualityAggregate": {
@@ -202,6 +207,7 @@
       { "id": "check:domain-hotspot-boundary", "group": "boundaries" },
       { "id": "check:legacy-permissions-boundary", "group": "boundaries" },
       { "id": "check:test-governance", "group": "tests" },
+      { "id": "check:test-runtime-governance", "group": "tests" },
       { "id": "check:test-failure-catalog", "group": "tests" },
       { "id": "check:flaky-quarantine", "group": "tests" },
       { "id": "check:guardrail-governance", "group": "governance" },
