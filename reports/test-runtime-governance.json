@@ -1,8 +1,8 @@
 {
   "reportId": "test-runtime-governance",
-  "generatedAt": "2026-07-07T00:32:05.759Z",
-  "gitSha": "066d34c8",
-  "gitDirty": true,
+  "generatedAt": "2026-07-07T00:38:21.127Z",
+  "gitSha": "e99a9a2e",
+  "gitDirty": false,
   "budgets": {
     "prCriticalPathMinutes": 35,
     "unitShardMaxMinutes": 13,
@@ -204,23 +204,23 @@
       "shards": [
         {
           "index": 1,
-          "files": 415,
-          "estimatedDurationMs": 128536
+          "files": 326,
+          "estimatedDurationMs": 101571
         },
         {
           "index": 2,
-          "files": 327,
-          "estimatedDurationMs": 128537
+          "files": 416,
+          "estimatedDurationMs": 101671
         },
         {
           "index": 3,
           "files": 327,
-          "estimatedDurationMs": 128436
+          "estimatedDurationMs": 101571
         },
         {
           "index": 4,
           "files": 334,
-          "estimatedDurationMs": 128536
+          "estimatedDurationMs": 101571
         }
       ]
     },
@@ -242,7 +242,7 @@
         ],
         "shards": [],
         "summary": {
-          "estimatedTotalDurationMs": 514045,
+          "estimatedTotalDurationMs": 406384,
           "observedTotalDurationMs": 0,
           "totalDeltaMs": 0,
           "totalRatioPercent": 0
@@ -252,8 +252,8 @@
     "ciRuntimeCalibration": {
       "status": "no_observed_ci_data",
       "summary": {
-        "rawEstimatedTotalDurationMs": 514045,
-        "calibratedEstimatedTotalDurationMs": 1696349,
+        "rawEstimatedTotalDurationMs": 406384,
+        "calibratedEstimatedTotalDurationMs": 1341066,
         "observedTotalDurationMs": 0,
         "rawTotalRatioPercent": 0,
         "calibratedTotalRatioPercent": 0,

@@ -1,8 +1,8 @@
 # CI Runtime Calibration Profile
 
-- Generated: 2026-07-07T00:32:05.318Z
-- Git SHA: `066d34c8`
-- Worktree dirty: `true`
+- Generated: 2026-07-07T00:38:20.909Z
+- Git SHA: `e99a9a2e`
+- Worktree dirty: `false`
 - Status: `no_observed_ci_data`
 - Calibration factor: `3.3x`
 - Target accuracy tolerance: 20%
@@ -13,8 +13,8 @@
 
 | Metric | Duration | Ratio |
 | --- | ---: | ---: |
-| Raw estimated | 8.6m | 0% |
-| CI calibrated estimated | 28.3m | 0% |
+| Raw estimated | 6.8m | 0% |
+| CI calibrated estimated | 22.4m | 0% |
 | Observed CI | 0.0m | 100% |
 
 ## Per-Shard Calibration

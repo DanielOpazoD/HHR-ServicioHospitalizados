@@ -1,8 +1,8 @@
 # Test Runtime Governance
 
-- Generated: 2026-07-07T00:32:05.759Z
-- Git SHA: `066d34c8`
-- Worktree dirty: `true`
+- Generated: 2026-07-07T00:38:21.127Z
+- Git SHA: `e99a9a2e`
+- Worktree dirty: `false`
 - PR critical path budget: 35.0m
 
 ## PR Blocking Suites
