@@ -5,7 +5,10 @@ import {
   makeContext,
   makeRecord,
 } from '@/tests/functions/dailyRecordWriteAuthorityFunctions.test-support';
-import { createClinicalSyncPathologyContract } from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
+import {
+  createClinicalSyncFullSaveContract,
+  createClinicalSyncPathologyContract,
+} from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
 
 describe('dailyRecordWriteAuthorityFunctions idempotency', () => {
   it('returns idempotent success for duplicate patch mutationId before revision checks', async () => {
@@ -85,7 +88,7 @@ describe('dailyRecordWriteAuthorityFunctions idempotency', () => {
         expectedLastUpdated: '2026-05-13T10:00:00.000Z',
         mode: 'enforced',
         origin: 'outbox',
-        syncContract: createClinicalSyncPathologyContract({
+        syncContract: createClinicalSyncFullSaveContract({
           version: '2026-05-13T10:00:00.000Z',
           revision: 5,
           mutationId: 'mutation-duplicate-save',

@@ -2,8 +2,8 @@
   "reportId": "ci-runtime-calibration-profile",
   "status": "no_observed_ci_data",
   "summary": {
-    "rawEstimatedTotalDurationMs": 252464,
-    "calibratedEstimatedTotalDurationMs": 833130,
+    "rawEstimatedTotalDurationMs": 514045,
+    "calibratedEstimatedTotalDurationMs": 1696349,
     "observedTotalDurationMs": 0,
     "rawTotalRatioPercent": 0,
     "calibratedTotalRatioPercent": 0,
@@ -22,9 +22,9 @@
   ],
   "blockingIssues": [],
   "recommendation": "Collect observed CI runtime before calibrating the estimator.",
-  "generatedAt": "2026-07-06T20:14:49.482Z",
-  "gitSha": "93051e36",
-  "gitDirty": false,
+  "generatedAt": "2026-07-07T00:32:05.318Z",
+  "gitSha": "066d34c8",
+  "gitDirty": true,
   "source": {
     "estimatedProfilePath": "reports/unit-shard-runtime-profile.json",
     "observedProfilePath": "reports/ci-runtime-observed-profile.json"

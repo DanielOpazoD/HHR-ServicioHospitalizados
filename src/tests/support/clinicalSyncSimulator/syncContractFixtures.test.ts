@@ -21,6 +21,20 @@ describe('syncContractFixtures', () => {
     });
   });
 
+  it('can target a non-default bed without duplicating sync contract shape', () => {
+    expect(
+      createClinicalSyncPathologyContract({
+        version: '2026-05-13T10:00:00.000Z',
+        revision: 7,
+        mutationId: 'mutation-r3',
+        bedId: 'R3',
+      })
+    ).toMatchObject({
+      changedPaths: ['beds.R3.pathology'],
+      mutationId: 'mutation-r3',
+    });
+  });
+
   it('builds a reusable full-save contract without duplicating sync metadata shape', () => {
     expect(
       createClinicalSyncFullSaveContract({
@@ -45,6 +59,17 @@ describe('syncContractFixtures', () => {
       },
       version: '2026-05-13T10:00:00.000Z',
       recordRevision: '2026-05-13T10:30:00.000Z',
+    });
+  });
+
+  it('asserts pathology replay contracts for explicit beds', () => {
+    expectClinicalSyncPathologyContract({
+      value: {
+        expectedVersion: '2026-05-13T10:00:00.000Z',
+        changedPaths: ['beds.R3.pathology'],
+      },
+      version: '2026-05-13T10:00:00.000Z',
+      bedId: 'R3',
     });
   });
 });

@@ -32,7 +32,6 @@ export const createDailyRecordFixture = (overrides: Partial<DailyRecord> = {}): 
   discharges: [],
   transfers: [],
   cma: [],
-  nurses: [],
   nursesDayShift: [],
   nursesNightShift: [],
   tensDayShift: [],

@@ -20,6 +20,7 @@ describe('dailyRecordFixtures', () => {
       lastUpdated: '2026-07-06T10:00:00.000Z',
     });
     expect(record.beds).toEqual({});
+    expect(record).not.toHaveProperty('nurses');
   });
 
   it('creates patient beds with stable clinical defaults and explicit overrides', () => {

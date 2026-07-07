@@ -182,11 +182,11 @@ describe('clinicalSummaryContextUseCase', () => {
   });
 
   it('keeps downstream nursing handoff consumers aligned on the effective night fallback', () => {
-    const recordWithMissingNightNovedades = createDailyRecordFixture({
+    const recordWithMissingNightNovedades = {
       ...record,
       handoffNovedadesDayShift: 'Texto heredado desde turno largo',
       handoffNovedadesNightShift: '',
-    });
+    };
 
     const context = buildClinicalAISummaryContext({
       record: recordWithMissingNightNovedades,

@@ -259,6 +259,73 @@ describe('ci runtime telemetry support', () => {
     expect(calibration.blockingIssues).toEqual([]);
   });
 
+  it('keeps structurally invalid zero-duration observed data blocking instead of treating it as absent', () => {
+    const calibration = buildCiRuntimeCalibrationProfile({
+      estimatedProfile: {
+        summary: {
+          totalEstimatedDurationMs: 264000,
+          totalCiEstimatedDurationMs: 871200,
+          ciRuntimeCalibrationFactor: 3.3,
+        },
+      },
+      observedProfile: {
+        status: 'observed_ci_data',
+        summary: {
+          totalDurationMs: 0,
+          observedShardCount: 4,
+          expectedShardCount: 4,
+          spreadPercent: 0,
+          tolerancePercent: 25,
+        },
+        shards: [],
+      },
+    });
+
+    expect(calibration.status).not.toBe('no_observed_ci_data');
+    expect(calibration.blockingIssues).toEqual([
+      'Observed CI runtime reports no positive duration despite observed data status.',
+    ]);
+    expect(calibration.advisoryFindings).toEqual(
+      expect.arrayContaining([
+        'Calibrated CI estimate is 0% of observed runtime, outside 20% tolerance.',
+      ])
+    );
+  });
+
+  it('surfaces missing estimator denominators as n/a instead of a normal zero ratio', () => {
+    const calibration = buildCiRuntimeCalibrationProfile({
+      estimatedProfile: {
+        summary: {
+          totalEstimatedDurationMs: 0,
+          totalCiEstimatedDurationMs: 0,
+          ciRuntimeCalibrationFactor: 1,
+        },
+        shards: [],
+      },
+      observedProfile: buildCiRuntimeObservedProfile({
+        jobs: completedShardJobs,
+        tolerancePercent: 25,
+      }),
+    });
+    const markdown = formatCiRuntimeCalibrationProfileMarkdown(calibration);
+
+    expect(calibration.summary.rawTotalRatioPercent).toBeNull();
+    expect(calibration.summary.calibratedTotalRatioPercent).toBeNull();
+    expect(calibration.shards[0]).toMatchObject({
+      rawEstimatedDurationMs: 0,
+      calibratedEstimatedDurationMs: 0,
+      observedDurationMs: 234000,
+      rawRatioPercent: null,
+      calibratedRatioPercent: null,
+    });
+    expect(calibration.advisoryFindings).toEqual([
+      'Raw local estimate is unavailable while observed CI runtime is present.',
+      'Calibrated CI estimate is unavailable while observed CI runtime is present.',
+    ]);
+    expect(markdown).toContain('| Raw estimated | 0.0m | n/a |');
+    expect(markdown).toContain('| 1 | 0.0m | 0.0m | 3.9m | n/a |');
+  });
+
   it('formats the calibration profile as a PR-readable governance artifact', () => {
     const markdown = formatCiRuntimeCalibrationProfileMarkdown({
       reportId: 'ci-runtime-calibration-profile',

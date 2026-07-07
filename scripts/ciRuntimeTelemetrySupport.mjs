@@ -24,6 +24,7 @@ const UNIT_SHARD_JOB_PATTERN = /^unit-risk-shard-(\d+)$/;
 const roundOneDecimal = value => Math.round(Number(value || 0) * 10) / 10;
 
 const formatMinutes = ms => `${(Number(ms || 0) / 60000).toFixed(1)}m`;
+const formatRatioPercent = value => (value === null || value === undefined ? 'n/a' : `${value}%`);
 
 const parseTimeMs = value => {
   const timestamp = Date.parse(String(value || ''));
@@ -168,10 +169,10 @@ const buildEstimatedObservedRuntimeComparison = ({ estimatedProfile, observedPro
         estimatedDurationMs,
         index: Number(observedShard.index),
         observedDurationMs,
-        ratioPercent:
-          estimatedDurationMs > 0 && observedDurationMs > 0
-            ? roundOneDecimal((observedDurationMs / estimatedDurationMs) * 100)
-            : 0,
+        ratioPercent: ratioPercent({
+          numerator: observedDurationMs,
+          denominator: estimatedDurationMs,
+        }),
       };
     })
     .filter(shard => shard.estimatedDurationMs > 0 || shard.observedDurationMs > 0)
@@ -290,6 +291,9 @@ export const collectCiRuntimeTelemetryIssues = profile => {
   }
   const observed = Number(profile.summary?.observedShardCount || 0);
   const expected = Number(profile.summary?.expectedShardCount || EXPECTED_UNIT_SHARD_COUNT);
+  if (profile.status === 'observed_ci_data' && Number(profile.summary?.totalDurationMs || 0) <= 0) {
+    issues.push('Observed CI runtime reports no positive duration despite observed data status.');
+  }
   if (profile.status === 'observed_ci_data' && observed !== expected) {
     const missingShardIndices =
       profile.missingShardIndices ||
@@ -349,7 +353,7 @@ export const compareEstimatedAndObservedRuntime = ({ estimatedProfile, observedP
   }
 
   for (const shard of estimatedObservedComparison.shards) {
-    if (shard.ratioPercent >= 250) {
+    if (typeof shard.ratioPercent === 'number' && shard.ratioPercent >= 250) {
       advisoryFindings.push(
         `Observed shard ${shard.index} runtime is ${shard.ratioPercent}% of the estimated duration.`
       );
@@ -365,10 +369,14 @@ export const compareEstimatedAndObservedRuntime = ({ estimatedProfile, observedP
   };
 };
 
-const ratioPercent = ({ numerator, denominator }) =>
-  denominator > 0 && numerator > 0 ? roundOneDecimal((numerator / denominator) * 100) : 0;
+const ratioPercent = ({ numerator, denominator }) => {
+  if (denominator > 0 && numerator > 0) return roundOneDecimal((numerator / denominator) * 100);
+  if (numerator > 0 && denominator <= 0) return null;
+  return 0;
+};
 
-const accuracyDeltaPercent = ratio => roundOneDecimal(Math.abs(100 - Number(ratio || 0)));
+const accuracyDeltaPercent = ratio =>
+  ratio === null ? null : roundOneDecimal(Math.abs(100 - Number(ratio || 0)));
 
 /**
  * @param {{
@@ -387,7 +395,7 @@ export const buildCiRuntimeCalibrationProfile = ({
   const observedTotalDurationMs = Number(observedProfile?.summary?.totalDurationMs || 0);
   const ciRuntimeCalibrationFactor = Number(estimatedProfile?.summary?.ciRuntimeCalibrationFactor || 1);
 
-  if (!observedProfile || observedProfile.status === 'no_observed_ci_data' || observedTotalDurationMs <= 0) {
+  if (!observedProfile || observedProfile.status === 'no_observed_ci_data') {
     return {
       reportId: 'ci-runtime-calibration-profile',
       status: 'no_observed_ci_data',
@@ -424,16 +432,22 @@ export const buildCiRuntimeCalibrationProfile = ({
   });
   const estimatorAccuracyDeltaPercent = accuracyDeltaPercent(calibratedTotalRatioPercent);
   const shardBalanceSpreadPercent = Number(observedProfile.summary?.spreadPercent || 0);
-  const outsideAccuracyTolerance = estimatorAccuracyDeltaPercent > Number(targetRatioTolerancePercent || 0);
+  const outsideAccuracyTolerance =
+    estimatorAccuracyDeltaPercent === null ||
+    estimatorAccuracyDeltaPercent > Number(targetRatioTolerancePercent || 0);
   const rawAccuracyDeltaPercent = accuracyDeltaPercent(rawTotalRatioPercent);
   const advisoryFindings = [];
 
-  if (rawAccuracyDeltaPercent > Number(targetRatioTolerancePercent || 0)) {
+  if (rawTotalRatioPercent === null) {
+    advisoryFindings.push('Raw local estimate is unavailable while observed CI runtime is present.');
+  } else if (rawAccuracyDeltaPercent > Number(targetRatioTolerancePercent || 0)) {
     advisoryFindings.push(
       `Raw local estimate is ${rawTotalRatioPercent}% of observed CI runtime; use calibrated CI estimate for planning.`
     );
   }
-  if (outsideAccuracyTolerance) {
+  if (calibratedTotalRatioPercent === null) {
+    advisoryFindings.push('Calibrated CI estimate is unavailable while observed CI runtime is present.');
+  } else if (outsideAccuracyTolerance) {
     advisoryFindings.push(
       `Calibrated CI estimate is ${calibratedTotalRatioPercent}% of observed runtime, outside ${targetRatioTolerancePercent}% tolerance.`
     );
@@ -516,14 +530,14 @@ export const formatCiRuntimeCalibrationProfileMarkdown = profile => {
     `- Calibration factor: \`${Number(profile.summary?.ciRuntimeCalibrationFactor || 1).toFixed(1)}x\``,
     `- Target accuracy tolerance: ${profile.summary?.targetRatioTolerancePercent || 0}%`,
     `- Observed shard spread: ${profile.summary?.shardBalanceSpreadPercent || 0}%`,
-    `- Estimator accuracy delta: ${profile.summary?.estimatorAccuracyDeltaPercent || 0}%`,
+    `- Estimator accuracy delta: ${formatRatioPercent(profile.summary?.estimatorAccuracyDeltaPercent)}`,
     '',
     '## Totals',
     '',
     '| Metric | Duration | Ratio |',
     '| --- | ---: | ---: |',
-    `| Raw estimated | ${formatMinutes(profile.summary?.rawEstimatedTotalDurationMs)} | ${profile.summary?.rawTotalRatioPercent || 0}% |`,
-    `| CI calibrated estimated | ${formatMinutes(profile.summary?.calibratedEstimatedTotalDurationMs)} | ${profile.summary?.calibratedTotalRatioPercent || 0}% |`,
+    `| Raw estimated | ${formatMinutes(profile.summary?.rawEstimatedTotalDurationMs)} | ${formatRatioPercent(profile.summary?.rawTotalRatioPercent)} |`,
+    `| CI calibrated estimated | ${formatMinutes(profile.summary?.calibratedEstimatedTotalDurationMs)} | ${formatRatioPercent(profile.summary?.calibratedTotalRatioPercent)} |`,
     `| Observed CI | ${formatMinutes(profile.summary?.observedTotalDurationMs)} | 100% |`,
     '',
     '## Per-Shard Calibration',
@@ -535,7 +549,7 @@ export const formatCiRuntimeCalibrationProfileMarkdown = profile => {
           shard =>
             `| ${shard.index} | ${formatMinutes(shard.rawEstimatedDurationMs)} | ${formatMinutes(
               shard.calibratedEstimatedDurationMs
-            )} | ${formatMinutes(shard.observedDurationMs)} | ${shard.calibratedRatioPercent}% |`
+            )} | ${formatMinutes(shard.observedDurationMs)} | ${formatRatioPercent(shard.calibratedRatioPercent)} |`
         )
       : ['| none | 0.0m | 0.0m | 0.0m | 0% |']),
     '',
@@ -641,7 +655,7 @@ export const formatCiRuntimeObservedProfileMarkdown = profile => {
         shard =>
           `| ${shard.index} | ${formatMinutes(shard.estimatedDurationMs)} | ${formatMinutes(
             shard.observedDurationMs
-          )} | ${shard.ratioPercent}% |`
+          )} | ${formatRatioPercent(shard.ratioPercent)} |`
       ),
       ''
     );
@@ -649,7 +663,7 @@ export const formatCiRuntimeObservedProfileMarkdown = profile => {
       lines.push(
         `- Estimated total: ${formatMinutes(profile.comparison.summary.estimatedTotalDurationMs)}`,
         `- Observed total: ${formatMinutes(profile.comparison.summary.observedTotalDurationMs)}`,
-        `- Total ratio: ${profile.comparison.summary.totalRatioPercent}%`,
+        `- Total ratio: ${formatRatioPercent(profile.comparison.summary.totalRatioPercent)}`,
         ''
       );
     }

@@ -1,8 +1,8 @@
 # CI Runtime Observed Profile
 
-- Generated: 2026-07-06T20:14:49.346Z
-- Git SHA: `93051e36`
-- Worktree dirty: `false`
+- Generated: 2026-07-07T00:32:05.043Z
+- Git SHA: `066d34c8`
+- Worktree dirty: `true`
 - Input: `reports/ci-runtime-observed-input.json`
 - Status: `no_observed_ci_data`
 - Observed shards: 0/4
