@@ -22,6 +22,11 @@ describe('test runtime remediation support', () => {
       ])
     );
     expect(report.runtimeProfile.current.slowestFiles.length).toBeGreaterThan(0);
+    expect(report.runtimeProfile.slowestFileRows[0]).toEqual(
+      expect.objectContaining({
+        cause: expect.any(String),
+      })
+    );
     expect(report.summary.requiredFixtureReductions).toEqual(
       expect.objectContaining({
         'large-inline-daily-record': expect.any(Number),
@@ -40,6 +45,7 @@ describe('test runtime remediation support', () => {
     expect(markdown).toContain('# Test Runtime Remediation');
     expect(markdown).toContain('## Fixture Signal Delta');
     expect(markdown).toContain('## Slowest Files');
+    expect(markdown).toContain('Cause');
     expect(markdown).toContain('## Shard Balance');
     expect(markdown).toContain('## Regression Budget');
   });

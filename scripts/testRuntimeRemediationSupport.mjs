@@ -20,6 +20,34 @@ const formatDelta = value => {
 
 const roundPercent = value => Math.round(Number(value || 0) * 10) / 10;
 
+const classifySlowFileCause = entry => {
+  const file = String(entry.file || '');
+  const group = String(entry.group || '');
+
+  if (file.includes('reportFreshness') || file.includes('Governance')) {
+    return 'governance_scan';
+  }
+  if (file.includes('ClinicalDocumentsWorkspace')) {
+    return 'ui_workspace_render';
+  }
+  if (file.includes('HandoffView') || file.includes('CudyrView')) {
+    return 'clinical_view_render';
+  }
+  if (file.includes('syncQueue') || group === 'storage-sync') {
+    return 'sync_integration';
+  }
+  if (file.includes('Repository') || group === 'repositories') {
+    return 'repository_integration';
+  }
+  if (file.includes('Modal') || file.endsWith('.test.tsx') || group === 'ui-components') {
+    return 'ui_component_render';
+  }
+  if (group === 'census' || group === 'handoff') {
+    return 'clinical_fixture_or_controller';
+  }
+  return 'pure_unit_or_service';
+};
+
 const fixtureMap = signals =>
   Object.fromEntries((signals || []).map(signal => [signal.id, Number(signal.files || 0)]));
 
@@ -45,6 +73,7 @@ const buildSlowestFileRows = ({ baselineFiles, currentFiles }) => {
     rank: index + 1,
     file: entry.file,
     group: entry.group,
+    cause: classifySlowFileCause(entry),
     estimatedDurationMs: entry.estimatedDurationMs,
     wasInBaselineTop10: baselineSet.has(entry.file),
   }));
@@ -182,11 +211,11 @@ export const formatTestRuntimeRemediationMarkdown = report => {
     '',
     '## Slowest Files',
     '',
-    '| Rank | File | Group | Estimated duration | In baseline top 10 |',
-    '| ---: | --- | --- | ---: | --- |',
+    '| Rank | File | Group | Cause | Estimated duration | In baseline top 10 |',
+    '| ---: | --- | --- | --- | ---: | --- |',
     ...report.runtimeProfile.slowestFileRows.map(
       row =>
-        `| ${row.rank} | \`${row.file}\` | ${row.group} | ${formatMs(row.estimatedDurationMs)} | ${row.wasInBaselineTop10 ? 'yes' : 'no'} |`
+        `| ${row.rank} | \`${row.file}\` | ${row.group} | ${row.cause} | ${formatMs(row.estimatedDurationMs)} | ${row.wasInBaselineTop10 ? 'yes' : 'no'} |`
     ),
     '',
     '## Shard Balance',
