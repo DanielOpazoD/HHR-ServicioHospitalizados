@@ -12,11 +12,22 @@ type ContractInput = {
   bedId?: string;
 };
 
+type PathsContractInput = Omit<ContractInput, 'bedId'> & {
+  paths: string[];
+};
+
 type PathologyExpectationInput = {
   value: unknown;
   version: string;
   recordRevision?: string;
   bedId?: string;
+};
+
+type PathsExpectationInput = {
+  value: unknown;
+  version: string;
+  recordRevision?: string;
+  paths: string[];
 };
 
 export const createClinicalSyncPathologyContract = ({
@@ -42,6 +53,18 @@ export const createClinicalSyncFullSaveContract = ({
   mutationId,
 });
 
+export const createClinicalSyncPathsContract = ({
+  version,
+  revision,
+  mutationId,
+  paths,
+}: PathsContractInput): ClinicalSyncContractFixture => ({
+  expectedVersion: version,
+  baseRevision: revision,
+  changedPaths: paths,
+  mutationId,
+});
+
 export const expectClinicalSyncPathologyContract = ({
   value,
   version,
@@ -53,6 +76,21 @@ export const expectClinicalSyncPathologyContract = ({
       expectedVersion: version,
       ...(recordRevision ? { recordRevision } : {}),
       changedPaths: expect.arrayContaining([`beds.${bedId}.pathology`]),
+    })
+  );
+};
+
+export const expectClinicalSyncPathsContract = ({
+  value,
+  version,
+  recordRevision,
+  paths,
+}: PathsExpectationInput): void => {
+  expect(value).toEqual(
+    expect.objectContaining({
+      expectedVersion: version,
+      ...(recordRevision ? { recordRevision } : {}),
+      changedPaths: paths,
     })
   );
 };

@@ -34,6 +34,7 @@ import { processSyncQueue, queueSyncTask } from '@/services/storage/sync';
 import { resetSyncMutationIdentityForTests } from '@/services/storage/sync/syncMutationIdentity';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { PatientStatus } from '@/types/domain/patientClassification';
+import { createClinicalSyncPathologyContract } from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
 
 describe('storage/sync authority contract', () => {
   const makeRecord = (date: string, marker: string): DailyRecord => ({
@@ -117,10 +118,11 @@ describe('storage/sync authority contract', () => {
     await queueSyncTask('UPDATE_DAILY_RECORD', local, {
       contexts: ['clinical'],
       origin: 'partial_update_retry',
-      syncContract: {
-        expectedVersion: '2025-01-16T10:00:00.000Z',
-        changedPaths: ['beds.R1.pathology'],
-      },
+      syncContract: createClinicalSyncPathologyContract({
+        version: '2025-01-16T10:00:00.000Z',
+        revision: 0,
+        mutationId: 'mutation-authority-drift',
+      }),
     });
 
     Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });

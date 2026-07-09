@@ -29,6 +29,10 @@ import {
 } from '@/services/storage/sync';
 import { resetSyncMutationIdentityForTests } from '@/services/storage/sync/syncMutationIdentity';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
+import {
+  createClinicalSyncPathologyContract,
+  expectClinicalSyncPathologyContract,
+} from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
 
 describe('syncQueueRecentOperationsClinicalContext', () => {
   const makeRecord = (date: string): DailyRecord => ({
@@ -72,16 +76,18 @@ describe('syncQueueRecentOperationsClinicalContext', () => {
     await queueSyncTask('UPDATE_DAILY_RECORD', record, {
       contexts: ['clinical'],
       origin: 'partial_update_retry',
-      syncContract: {
-        expectedVersion: '2025-01-16T10:00:00.000Z',
-        changedPaths: ['beds.R1.pathology'],
-      },
+      syncContract: createClinicalSyncPathologyContract({
+        version: '2025-01-16T10:00:00.000Z',
+        revision: 0,
+        mutationId: 'mutation-recent-clinical-context',
+      }),
     });
     await processSyncQueue();
 
     const [operation] = await listRecentSyncQueueOperations(1);
-    expect(operation.syncContract).toMatchObject({
-      changedPaths: ['beds.R1.pathology'],
+    expectClinicalSyncPathologyContract({
+      value: operation.syncContract,
+      version: '2025-01-16T10:00:00.000Z',
     });
     expect(JSON.stringify(operation)).not.toContain('Diagnostico sensible');
     expect(JSON.stringify(operation)).not.toContain('Paciente no debe aparecer');

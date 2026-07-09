@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   createClinicalSyncFullSaveContract,
+  createClinicalSyncPathsContract,
   createClinicalSyncPathologyContract,
+  expectClinicalSyncPathsContract,
   expectClinicalSyncPathologyContract,
 } from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
 
@@ -50,6 +52,22 @@ describe('syncContractFixtures', () => {
     });
   });
 
+  it('builds a reusable multi-path contract without duplicating sync metadata shape', () => {
+    expect(
+      createClinicalSyncPathsContract({
+        version: '2026-05-13T10:00:00.000Z',
+        revision: 9,
+        mutationId: 'mutation-handoff',
+        paths: ['beds.R1.medicalHandoffNote', 'beds.R1.medicalHandoffEntries'],
+      })
+    ).toEqual({
+      expectedVersion: '2026-05-13T10:00:00.000Z',
+      baseRevision: 9,
+      changedPaths: ['beds.R1.medicalHandoffNote', 'beds.R1.medicalHandoffEntries'],
+      mutationId: 'mutation-handoff',
+    });
+  });
+
   it('asserts pathology replay contracts with the same clinical intent', () => {
     expectClinicalSyncPathologyContract({
       value: {
@@ -70,6 +88,17 @@ describe('syncContractFixtures', () => {
       },
       version: '2026-05-13T10:00:00.000Z',
       bedId: 'R3',
+    });
+  });
+
+  it('asserts reusable multi-path replay contracts', () => {
+    expectClinicalSyncPathsContract({
+      value: {
+        expectedVersion: '2026-05-13T10:00:00.000Z',
+        changedPaths: ['beds.R1.medicalHandoffNote', 'beds.R1.medicalHandoffEntries'],
+      },
+      version: '2026-05-13T10:00:00.000Z',
+      paths: ['beds.R1.medicalHandoffNote', 'beds.R1.medicalHandoffEntries'],
     });
   });
 });
