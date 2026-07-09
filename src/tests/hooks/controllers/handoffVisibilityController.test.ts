@@ -5,23 +5,26 @@ import {
   hasVisibleHandoffPatients,
   shouldShowHandoffPatient,
 } from '@/hooks/controllers/handoffVisibilityController';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { PatientData } from '@/types/domain/patient';
+import {
+  createDailyRecordFixture,
+  createPatientBedFixture,
+} from '@/tests/support/dailyRecordFixtures';
 
 describe('handoffVisibilityController', () => {
-  const record = {
+  const record = createDailyRecordFixture({
     date: '2024-12-28',
     beds: {
-      R1: { bedId: 'R1', patientName: 'Paciente', admissionDate: '2024-12-27' } as PatientData,
-      R2: { bedId: 'R2', patientName: '', isBlocked: true } as PatientData,
-      E1: { bedId: 'E1', patientName: '' } as PatientData,
+      R1: createPatientBedFixture('R1', {
+        patientName: 'Paciente',
+        admissionDate: '2024-12-27',
+        admissionTime: undefined,
+      }),
+      R2: createPatientBedFixture('R2', { patientName: '', isBlocked: true }),
+      E1: createPatientBedFixture('E1', { patientName: '' }),
     },
-    discharges: [],
-    transfers: [],
-    cma: [],
     lastUpdated: '2024-12-28T08:00:00.000Z',
     activeExtraBeds: ['E1'],
-  } as DailyRecord;
+  });
 
   it('filters extra beds based on active extras', () => {
     expect(

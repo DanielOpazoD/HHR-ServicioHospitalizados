@@ -37,6 +37,9 @@ describe('RutPassportInput', () => {
     fireEvent.click(screen.getByRole('textbox'));
 
     await waitFor(() => expect(writeClipboardTextSpy).toHaveBeenCalledWith('12.345.678-5'));
+    await act(async () => {
+      await Promise.resolve();
+    });
     expect(screen.getByTitle('RUT copiado')).toBeInTheDocument();
   });
 

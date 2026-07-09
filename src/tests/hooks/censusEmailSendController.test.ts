@@ -1,22 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import {
   buildMonthIntegrityDates,
   resolveMonthRecordsForDelivery,
 } from '@/hooks/controllers/censusEmailSendController';
+import { createDailyRecordFixture } from '@/tests/support/dailyRecordFixtures';
 
-const createRecord = (date: string): DailyRecord =>
-  ({
-    date,
-    beds: {},
-    discharges: [],
-    transfers: [],
-    cma: [],
-    lastUpdated: '',
-    nurses: [],
-    activeExtraBeds: [],
-  }) as unknown as DailyRecord;
+const createRecord = (date: string) => createDailyRecordFixture({ date, lastUpdated: '' });
 
 describe('censusEmailSendController', () => {
   it('builds month integrity date sequence', () => {

@@ -1,8 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useHandoffVisibility } from '@/hooks/useHandoffVisibility';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { PatientData } from '@/types/domain/patient';
+import {
+  createDailyRecordFixture,
+  createPatientBedFixture,
+} from '@/tests/support/dailyRecordFixtures';
 
 // Mock constants
 vi.mock('@/constants/beds', () => ({
@@ -19,15 +21,18 @@ vi.mock('@/utils/dateUtils', () => ({
 }));
 
 describe('useHandoffVisibility', () => {
-  const mockRecord: Partial<DailyRecord> = {
+  const mockRecord = createDailyRecordFixture({
     date: '2024-12-28',
     beds: {
-      R1: { bedId: 'R1', patientName: 'Patient A', admissionDate: '2024-12-27' } as PatientData,
-      R2: { bedId: 'R2', patientName: '', isBlocked: true } as PatientData,
-      E1: { bedId: 'E1', patientName: '' } as PatientData,
+      R1: createPatientBedFixture('R1', {
+        patientName: 'Patient A',
+        admissionDate: '2024-12-27',
+      }),
+      R2: createPatientBedFixture('R2', { patientName: '', isBlocked: true }),
+      E1: createPatientBedFixture('E1', { patientName: '' }),
     },
     activeExtraBeds: [],
-  };
+  });
 
   it('should return empty arrays when record is null', () => {
     const { result } = renderHook(() => useHandoffVisibility(null, 'day'));
@@ -37,7 +42,7 @@ describe('useHandoffVisibility', () => {
   });
 
   it('should filter out extra beds when not active', () => {
-    const { result } = renderHook(() => useHandoffVisibility(mockRecord as DailyRecord, 'day'));
+    const { result } = renderHook(() => useHandoffVisibility(mockRecord, 'day'));
 
     const bedIds = result.current.visibleBeds.map(b => b.id);
     expect(bedIds).toContain('R1');
@@ -49,7 +54,7 @@ describe('useHandoffVisibility', () => {
     const recordWithExtraBed = {
       ...mockRecord,
       activeExtraBeds: ['E1'],
-    } as DailyRecord;
+    };
 
     const { result } = renderHook(() => useHandoffVisibility(recordWithExtraBed, 'day'));
 
@@ -58,25 +63,25 @@ describe('useHandoffVisibility', () => {
   });
 
   it('should show blocked beds', () => {
-    const { result } = renderHook(() => useHandoffVisibility(mockRecord as DailyRecord, 'day'));
+    const { result } = renderHook(() => useHandoffVisibility(mockRecord, 'day'));
 
     expect(result.current.shouldShowPatient('R2')).toBe(true);
   });
 
   it('should detect if there are any patients', () => {
-    const { result } = renderHook(() => useHandoffVisibility(mockRecord as DailyRecord, 'day'));
+    const { result } = renderHook(() => useHandoffVisibility(mockRecord, 'day'));
 
     expect(result.current.hasAnyPatients).toBe(true);
   });
 
   it('should return false for empty bed', () => {
-    const recordWithEmptyBed = {
+    const recordWithEmptyBed = createDailyRecordFixture({
       date: '2024-12-28',
       beds: {
-        R1: { bedId: 'R1', patientName: '' } as PatientData,
+        R1: createPatientBedFixture('R1', { patientName: '' }),
       },
       activeExtraBeds: [],
-    } as unknown as DailyRecord;
+    });
 
     const { result } = renderHook(() => useHandoffVisibility(recordWithEmptyBed, 'day'));
 
