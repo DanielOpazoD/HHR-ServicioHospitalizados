@@ -1,7 +1,7 @@
 {
   "reportId": "test-runtime-remediation",
-  "generatedAt": "2026-07-09T05:53:10.677Z",
-  "gitSha": "9e02a373",
+  "generatedAt": "2026-07-09T05:57:16.735Z",
+  "gitSha": "35ade8bc",
   "gitDirty": false,
   "baseline": {
     "label": "PR171 post-merge baseline",
@@ -187,6 +187,7 @@
         "rank": 1,
         "file": "src/tests/build/reportFreshness.test.ts",
         "group": "governance",
+        "cause": "governance_scan",
         "estimatedDurationMs": 13372,
         "wasInBaselineTop10": true
       },
@@ -194,6 +195,7 @@
         "rank": 2,
         "file": "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.test.tsx",
         "group": "ui-components",
+        "cause": "ui_workspace_render",
         "estimatedDurationMs": 6865,
         "wasInBaselineTop10": true
       },
@@ -201,6 +203,7 @@
         "rank": 3,
         "file": "src/tests/features/admin/SystemHealthDashboard.test.tsx",
         "group": "ui-components",
+        "cause": "ui_component_render",
         "estimatedDurationMs": 5337,
         "wasInBaselineTop10": true
       },
@@ -208,6 +211,7 @@
         "rank": 4,
         "file": "src/tests/services/terminology/cie10AISearch.test.ts",
         "group": "unit-general",
+        "cause": "pure_unit_or_service",
         "estimatedDurationMs": 4622,
         "wasInBaselineTop10": true
       },
@@ -215,6 +219,7 @@
         "rank": 5,
         "file": "src/tests/components/DemographicsModal.test.tsx",
         "group": "ui-components",
+        "cause": "ui_component_render",
         "estimatedDurationMs": 4120,
         "wasInBaselineTop10": false
       },
@@ -222,6 +227,7 @@
         "rank": 6,
         "file": "src/tests/components/MoveCopyModal.test.tsx",
         "group": "ui-components",
+        "cause": "ui_component_render",
         "estimatedDurationMs": 3993,
         "wasInBaselineTop10": false
       },
@@ -229,6 +235,7 @@
         "rank": 7,
         "file": "src/tests/features/clinical-documents/ClinicalDocumentSheet.indications.test.tsx",
         "group": "ui-components",
+        "cause": "ui_component_render",
         "estimatedDurationMs": 3885,
         "wasInBaselineTop10": false
       },
@@ -236,6 +243,7 @@
         "rank": 8,
         "file": "src/tests/views/handoff/HandoffView.medical.test.tsx",
         "group": "handoff",
+        "cause": "clinical_view_render",
         "estimatedDurationMs": 3598,
         "wasInBaselineTop10": true
       },
@@ -243,6 +251,7 @@
         "rank": 9,
         "file": "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.behavior.test.tsx",
         "group": "ui-components",
+        "cause": "ui_workspace_render",
         "estimatedDurationMs": 3547,
         "wasInBaselineTop10": true
       },
@@ -250,6 +259,7 @@
         "rank": 10,
         "file": "src/tests/features/prescriptions/PrescriptionBedGridView.test.tsx",
         "group": "ui-components",
+        "cause": "ui_component_render",
         "estimatedDurationMs": 3096,
         "wasInBaselineTop10": true
       },
@@ -257,6 +267,7 @@
         "rank": 11,
         "file": "src/tests/build/testRuntimeGovernanceSupport.test.ts",
         "group": "governance",
+        "cause": "governance_scan",
         "estimatedDurationMs": 2927,
         "wasInBaselineTop10": false
       },
@@ -264,6 +275,7 @@
         "rank": 12,
         "file": "src/tests/functions/prescriptionAccessFunctions.test.ts",
         "group": "unit-general",
+        "cause": "pure_unit_or_service",
         "estimatedDurationMs": 2790,
         "wasInBaselineTop10": true
       },
@@ -271,6 +283,7 @@
         "rank": 13,
         "file": "src/tests/services/storage/syncQueueLoad.test.ts",
         "group": "storage-sync",
+        "cause": "sync_integration",
         "estimatedDurationMs": 2749,
         "wasInBaselineTop10": false
       },
@@ -278,6 +291,7 @@
         "rank": 14,
         "file": "src/tests/services/storage/syncQueueService.test.ts",
         "group": "storage-sync",
+        "cause": "sync_integration",
         "estimatedDurationMs": 2558,
         "wasInBaselineTop10": false
       },
@@ -285,6 +299,7 @@
         "rank": 15,
         "file": "src/tests/components/layout/date-strip/MedicalIndicationsQuickAction.test.tsx",
         "group": "ui-components",
+        "cause": "ui_component_render",
         "estimatedDurationMs": 2490,
         "wasInBaselineTop10": false
       },
@@ -292,6 +307,7 @@
         "rank": 16,
         "file": "src/tests/security/clinicalDocumentsImportGovernanceStatic.test.ts",
         "group": "governance",
+        "cause": "governance_scan",
         "estimatedDurationMs": 2442,
         "wasInBaselineTop10": false
       },
@@ -299,6 +315,7 @@
         "rank": 17,
         "file": "src/tests/features/clinical-documents/ClinicalDocumentSheet.test.tsx",
         "group": "ui-components",
+        "cause": "ui_component_render",
         "estimatedDurationMs": 2397,
         "wasInBaselineTop10": false
       },
@@ -306,6 +323,7 @@
         "rank": 18,
         "file": "src/tests/features/clinical-documents/ClinicalDocumentFormattingToolbar.test.tsx",
         "group": "ui-components",
+        "cause": "ui_component_render",
         "estimatedDurationMs": 2330,
         "wasInBaselineTop10": false
       },
@@ -313,6 +331,7 @@
         "rank": 19,
         "file": "src/tests/features/census/components/patient-row/UpcChecklistPanel.test.tsx",
         "group": "census",
+        "cause": "ui_component_render",
         "estimatedDurationMs": 2232,
         "wasInBaselineTop10": false
       },
@@ -320,6 +339,7 @@
         "rank": 20,
         "file": "src/tests/integration/concurrency.test.tsx",
         "group": "ui-components",
+        "cause": "ui_component_render",
         "estimatedDurationMs": 2224,
         "wasInBaselineTop10": false
       }
