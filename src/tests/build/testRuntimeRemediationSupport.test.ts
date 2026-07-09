@@ -1,15 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   buildTestRuntimeRemediationReport,
-  collectTestRuntimeRemediationIssues,
+  collectTestRuntimeRemediationIssuesFromReport,
   formatTestRuntimeRemediationMarkdown,
 } from '../../../scripts/testRuntimeRemediationSupport.mjs';
 
 describe('test runtime remediation support', () => {
-  it('builds a pre/post report from governance and unit-shard signals', () => {
-    const report = buildTestRuntimeRemediationReport(process.cwd());
+  let report: ReturnType<typeof buildTestRuntimeRemediationReport>;
 
+  beforeAll(() => {
+    report = buildTestRuntimeRemediationReport(process.cwd());
+  });
+
+  it('builds a pre/post report from governance and unit-shard signals', () => {
     expect(report.reportId).toBe('test-runtime-remediation');
     expect(report.fixtureSignals).toEqual(
       expect.arrayContaining([
@@ -27,11 +31,10 @@ describe('test runtime remediation support', () => {
   });
 
   it('keeps the remediation budget within explicit thresholds', () => {
-    expect(collectTestRuntimeRemediationIssues(process.cwd())).toEqual([]);
+    expect(collectTestRuntimeRemediationIssuesFromReport(report)).toEqual([]);
   });
 
   it('renders a compact markdown report with regression-budget evidence', () => {
-    const report = buildTestRuntimeRemediationReport(process.cwd());
     const markdown = formatTestRuntimeRemediationMarkdown(report);
 
     expect(markdown).toContain('# Test Runtime Remediation');

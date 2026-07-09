@@ -132,8 +132,7 @@ export const buildTestRuntimeRemediationReport = root => {
   };
 };
 
-export const collectTestRuntimeRemediationIssues = root => {
-  const report = buildTestRuntimeRemediationReport(root);
+export const collectTestRuntimeRemediationIssuesFromReport = report => {
   const issues = [];
 
   for (const signal of report.fixtureSignals) {
@@ -159,6 +158,9 @@ export const collectTestRuntimeRemediationIssues = root => {
 
   return issues;
 };
+
+export const collectTestRuntimeRemediationIssues = root =>
+  collectTestRuntimeRemediationIssuesFromReport(buildTestRuntimeRemediationReport(root));
 
 export const formatTestRuntimeRemediationMarkdown = report => {
   const lines = [
