@@ -1,0 +1,369 @@
+{
+  "reportId": "test-runtime-remediation",
+  "generatedAt": "2026-07-09T05:23:15.447Z",
+  "gitSha": "95b28181",
+  "gitDirty": true,
+  "baseline": {
+    "label": "PR171 post-merge baseline",
+    "gitSha": "78adc3b5",
+    "generatedAt": "2026-07-09T05:02:41.371Z",
+    "fixtureSignals": {
+      "large-inline-daily-record": 130,
+      "sync-client-scenario": 21
+    },
+    "unitShardRuntime": {
+      "totalFiles": 1403,
+      "spreadPercent": 0.1,
+      "totalCiEstimatedDurationMs": 1602853,
+      "slowestFiles": [
+        "src/tests/build/reportFreshness.test.ts",
+        "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.test.tsx",
+        "src/tests/features/admin/SystemHealthDashboard.test.tsx",
+        "src/tests/components/PatientRow.layout-and-actions.test.tsx",
+        "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.behavior.test.tsx",
+        "src/tests/services/terminology/cie10AISearch.test.ts",
+        "src/tests/features/prescriptions/PrescriptionBedGridView.test.tsx",
+        "src/tests/functions/prescriptionAccessFunctions.test.ts",
+        "src/tests/views/handoff/HandoffView.medical.test.tsx",
+        "src/tests/features/analytics/SpecialtyBreakdownTable.test.tsx"
+      ]
+    }
+  },
+  "summary": {
+    "requiredFixtureReductions": {
+      "large-inline-daily-record": 10,
+      "sync-client-scenario": 4
+    },
+    "maxCalibratedRuntimeRegressionPercent": 25,
+    "maxShardSpreadPercent": 25
+  },
+  "fixtureSignals": [
+    {
+      "id": "large-inline-daily-record",
+      "baselineFiles": 130,
+      "currentFiles": 115,
+      "delta": -15,
+      "reduction": 15,
+      "requiredReduction": 10,
+      "status": "within_budget"
+    },
+    {
+      "id": "sync-client-scenario",
+      "baselineFiles": 21,
+      "currentFiles": 15,
+      "delta": -6,
+      "reduction": 6,
+      "requiredReduction": 4,
+      "status": "within_budget"
+    }
+  ],
+  "runtimeProfile": {
+    "baseline": {
+      "totalFiles": 1403,
+      "spreadPercent": 0.1,
+      "totalCiEstimatedDurationMs": 1602853,
+      "slowestFiles": [
+        "src/tests/build/reportFreshness.test.ts",
+        "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.test.tsx",
+        "src/tests/features/admin/SystemHealthDashboard.test.tsx",
+        "src/tests/components/PatientRow.layout-and-actions.test.tsx",
+        "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.behavior.test.tsx",
+        "src/tests/services/terminology/cie10AISearch.test.ts",
+        "src/tests/features/prescriptions/PrescriptionBedGridView.test.tsx",
+        "src/tests/functions/prescriptionAccessFunctions.test.ts",
+        "src/tests/views/handoff/HandoffView.medical.test.tsx",
+        "src/tests/features/analytics/SpecialtyBreakdownTable.test.tsx"
+      ]
+    },
+    "current": {
+      "totalFiles": 1404,
+      "spreadPercent": 0.1,
+      "totalCiEstimatedDurationMs": 1605492,
+      "slowestFiles": [
+        {
+          "file": "src/tests/build/reportFreshness.test.ts",
+          "estimatedDurationMs": 16069,
+          "group": "governance"
+        },
+        {
+          "file": "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.test.tsx",
+          "estimatedDurationMs": 10931,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/features/admin/SystemHealthDashboard.test.tsx",
+          "estimatedDurationMs": 5442,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/components/PatientRow.layout-and-actions.test.tsx",
+          "estimatedDurationMs": 5245,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.behavior.test.tsx",
+          "estimatedDurationMs": 5091,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/services/terminology/cie10AISearch.test.ts",
+          "estimatedDurationMs": 4619,
+          "group": "unit-general"
+        },
+        {
+          "file": "src/tests/features/prescriptions/PrescriptionBedGridView.test.tsx",
+          "estimatedDurationMs": 4465,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/functions/prescriptionAccessFunctions.test.ts",
+          "estimatedDurationMs": 4416,
+          "group": "unit-general"
+        },
+        {
+          "file": "src/tests/views/handoff/HandoffView.medical.test.tsx",
+          "estimatedDurationMs": 4295,
+          "group": "handoff"
+        },
+        {
+          "file": "src/tests/features/analytics/SpecialtyBreakdownTable.test.tsx",
+          "estimatedDurationMs": 4241,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/build/testRuntimeGovernanceSupport.test.ts",
+          "estimatedDurationMs": 3984,
+          "group": "governance"
+        },
+        {
+          "file": "src/tests/features/clinical-documents/ClinicalDocumentSheet.indications.test.tsx",
+          "estimatedDurationMs": 3799,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/components/DemographicsModal.test.tsx",
+          "estimatedDurationMs": 3650,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/components/TransferDocumentPackageModal.test.tsx",
+          "estimatedDurationMs": 3261,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/services/dailyRecordRepository.test.ts",
+          "estimatedDurationMs": 3258,
+          "group": "census"
+        },
+        {
+          "file": "src/tests/services/storage/syncQueueLoad.test.ts",
+          "estimatedDurationMs": 3180,
+          "group": "storage-sync"
+        },
+        {
+          "file": "src/tests/components/MoveCopyModal.test.tsx",
+          "estimatedDurationMs": 2999,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/views/cudyr/CudyrView.test.tsx",
+          "estimatedDurationMs": 2921,
+          "group": "ui-components"
+        },
+        {
+          "file": "src/tests/features/census/FugaNotificationModal.test.tsx",
+          "estimatedDurationMs": 2867,
+          "group": "census"
+        },
+        {
+          "file": "src/tests/components/layout/date-strip/MedicalIndicationsQuickAction.test.tsx",
+          "estimatedDurationMs": 2730,
+          "group": "ui-components"
+        }
+      ]
+    },
+    "slowestFileRows": [
+      {
+        "rank": 1,
+        "file": "src/tests/build/reportFreshness.test.ts",
+        "group": "governance",
+        "estimatedDurationMs": 16069,
+        "wasInBaselineTop10": true
+      },
+      {
+        "rank": 2,
+        "file": "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 10931,
+        "wasInBaselineTop10": true
+      },
+      {
+        "rank": 3,
+        "file": "src/tests/features/admin/SystemHealthDashboard.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 5442,
+        "wasInBaselineTop10": true
+      },
+      {
+        "rank": 4,
+        "file": "src/tests/components/PatientRow.layout-and-actions.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 5245,
+        "wasInBaselineTop10": true
+      },
+      {
+        "rank": 5,
+        "file": "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.behavior.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 5091,
+        "wasInBaselineTop10": true
+      },
+      {
+        "rank": 6,
+        "file": "src/tests/services/terminology/cie10AISearch.test.ts",
+        "group": "unit-general",
+        "estimatedDurationMs": 4619,
+        "wasInBaselineTop10": true
+      },
+      {
+        "rank": 7,
+        "file": "src/tests/features/prescriptions/PrescriptionBedGridView.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 4465,
+        "wasInBaselineTop10": true
+      },
+      {
+        "rank": 8,
+        "file": "src/tests/functions/prescriptionAccessFunctions.test.ts",
+        "group": "unit-general",
+        "estimatedDurationMs": 4416,
+        "wasInBaselineTop10": true
+      },
+      {
+        "rank": 9,
+        "file": "src/tests/views/handoff/HandoffView.medical.test.tsx",
+        "group": "handoff",
+        "estimatedDurationMs": 4295,
+        "wasInBaselineTop10": true
+      },
+      {
+        "rank": 10,
+        "file": "src/tests/features/analytics/SpecialtyBreakdownTable.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 4241,
+        "wasInBaselineTop10": true
+      },
+      {
+        "rank": 11,
+        "file": "src/tests/build/testRuntimeGovernanceSupport.test.ts",
+        "group": "governance",
+        "estimatedDurationMs": 3984,
+        "wasInBaselineTop10": false
+      },
+      {
+        "rank": 12,
+        "file": "src/tests/features/clinical-documents/ClinicalDocumentSheet.indications.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 3799,
+        "wasInBaselineTop10": false
+      },
+      {
+        "rank": 13,
+        "file": "src/tests/components/DemographicsModal.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 3650,
+        "wasInBaselineTop10": false
+      },
+      {
+        "rank": 14,
+        "file": "src/tests/components/TransferDocumentPackageModal.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 3261,
+        "wasInBaselineTop10": false
+      },
+      {
+        "rank": 15,
+        "file": "src/tests/services/dailyRecordRepository.test.ts",
+        "group": "census",
+        "estimatedDurationMs": 3258,
+        "wasInBaselineTop10": false
+      },
+      {
+        "rank": 16,
+        "file": "src/tests/services/storage/syncQueueLoad.test.ts",
+        "group": "storage-sync",
+        "estimatedDurationMs": 3180,
+        "wasInBaselineTop10": false
+      },
+      {
+        "rank": 17,
+        "file": "src/tests/components/MoveCopyModal.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 2999,
+        "wasInBaselineTop10": false
+      },
+      {
+        "rank": 18,
+        "file": "src/tests/views/cudyr/CudyrView.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 2921,
+        "wasInBaselineTop10": false
+      },
+      {
+        "rank": 19,
+        "file": "src/tests/features/census/FugaNotificationModal.test.tsx",
+        "group": "census",
+        "estimatedDurationMs": 2867,
+        "wasInBaselineTop10": false
+      },
+      {
+        "rank": 20,
+        "file": "src/tests/components/layout/date-strip/MedicalIndicationsQuickAction.test.tsx",
+        "group": "ui-components",
+        "estimatedDurationMs": 2730,
+        "wasInBaselineTop10": false
+      }
+    ],
+    "runtimeBudget": {
+      "baselineTotalCiEstimatedDurationMs": 1602853,
+      "currentTotalCiEstimatedDurationMs": 1605492,
+      "deltaCiEstimatedDurationMs": 2639,
+      "regressionPercent": 0.2,
+      "maxRegressionPercent": 25,
+      "status": "within_budget"
+    }
+  },
+  "shardBalance": {
+    "shardCount": 4,
+    "spreadPercent": 0.1,
+    "tolerancePercent": 25,
+    "maxShardSpreadPercent": 25,
+    "status": "within_budget",
+    "shards": [
+      {
+        "index": 1,
+        "files": 416,
+        "estimatedDurationMs": 121678,
+        "ciEstimatedDurationMs": 401537
+      },
+      {
+        "index": 2,
+        "files": 330,
+        "estimatedDurationMs": 121578,
+        "ciEstimatedDurationMs": 401207
+      },
+      {
+        "index": 3,
+        "files": 328,
+        "estimatedDurationMs": 121679,
+        "ciEstimatedDurationMs": 401541
+      },
+      {
+        "index": 4,
+        "files": 330,
+        "estimatedDurationMs": 121578,
+        "ciEstimatedDurationMs": 401207
+      }
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "baseline": {
+    "label": "PR171 post-merge baseline",
+    "gitSha": "78adc3b5",
+    "generatedAt": "2026-07-09T05:02:41.371Z",
+    "fixtureSignals": {
+      "large-inline-daily-record": 130,
+      "sync-client-scenario": 21
+    },
+    "unitShardRuntime": {
+      "totalFiles": 1403,
+      "spreadPercent": 0.1,
+      "totalCiEstimatedDurationMs": 1602853,
+      "slowestFiles": [
+        "src/tests/build/reportFreshness.test.ts",
+        "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.test.tsx",
+        "src/tests/features/admin/SystemHealthDashboard.test.tsx",
+        "src/tests/components/PatientRow.layout-and-actions.test.tsx",
+        "src/tests/features/clinical-documents/ClinicalDocumentsWorkspace.behavior.test.tsx",
+        "src/tests/services/terminology/cie10AISearch.test.ts",
+        "src/tests/features/prescriptions/PrescriptionBedGridView.test.tsx",
+        "src/tests/functions/prescriptionAccessFunctions.test.ts",
+        "src/tests/views/handoff/HandoffView.medical.test.tsx",
+        "src/tests/features/analytics/SpecialtyBreakdownTable.test.tsx"
+      ]
+    }
+  },
+  "budgets": {
+    "fixtureReductionMinimums": {
+      "large-inline-daily-record": 10,
+      "sync-client-scenario": 4
+    },
+    "maxCalibratedRuntimeRegressionPercent": 25,
+    "maxShardSpreadPercent": 25
+  }
+}
