@@ -99,6 +99,18 @@ const fileSizeEstimate = (root, file) => {
   }
 };
 
+export const readPersistedMeasuredDurations = (root, config, relativePath = REPORT_PATH) => {
+  const durationByFile = safeReadJson(root, relativePath)?.durationByFile || {};
+  const perFileOverheadMs = Number(config?.perFileOverheadMs || 0);
+
+  return Object.fromEntries(
+    Object.entries(durationByFile).map(([file, duration]) => [
+      normalizePath(file),
+      Math.max(1, Number(duration || 0) - perFileOverheadMs),
+    ])
+  );
+};
+
 export const classifyUnitTestFunctionalGroup = file => {
   if (file.includes('/clinicalSyncSimulator/') || file.includes('/sync') || file.includes('Sync')) {
     return 'storage-sync';
@@ -417,7 +429,7 @@ export const buildUnitShardBalanceReport = root => {
   const config = loadUnitShardBalanceConfig(root);
   const files = discoverUnitTestFiles(root, config);
   const measuredDurations = {
-    ...(safeReadJson(root, REPORT_PATH)?.durationByFile || {}),
+    ...readPersistedMeasuredDurations(root, config, REPORT_PATH),
     ...readVitestJsonDurations(root, RAW_VITEST_PROFILE_PATH),
   };
   const profile = buildUnitShardRuntimeProfile({

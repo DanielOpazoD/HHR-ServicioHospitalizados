@@ -1,3 +1,7 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -5,6 +9,7 @@ import {
   buildUnitShardRuntimeProfile,
   collectUnitShardBalanceIssues,
   parseUnitShardRunArguments,
+  readPersistedMeasuredDurations,
 } from '../../../scripts/unitShardBalanceSupport.mjs';
 
 type ShardSummary = {
@@ -164,6 +169,25 @@ describe('unit shard balance support', () => {
     expect(
       profile.shards.map((shard: { ciEstimatedDurationMs: number }) => shard.ciEstimatedDurationMs)
     ).toEqual([3300, 3300]);
+  });
+
+  it('does not add per-file overhead twice when reusing the persisted runtime profile', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'unit-shard-balance-'));
+    fs.mkdirSync(path.join(root, 'reports'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'reports/unit-shard-runtime-profile.json'),
+      JSON.stringify({
+        durationByFile: {
+          'src/tests/sample/example.test.ts': 1100,
+        },
+      })
+    );
+
+    const persistedDurations = readPersistedMeasuredDurations(root, {
+      perFileOverheadMs: 100,
+    });
+
+    expect(persistedDurations['src/tests/sample/example.test.ts']).toBe(1000);
   });
 
   it('parses the shard argument while preserving passthrough Vitest flags', () => {
