@@ -139,6 +139,33 @@ describe('unit shard balance support', () => {
     });
   });
 
+  it('exposes a calibrated CI duration without changing shard assignment balance', () => {
+    const profile = buildUnitShardRuntimeProfile({
+      files: ['src/tests/a/slow.test.ts', 'src/tests/b/fast.test.ts'],
+      durationByFile: {
+        'src/tests/a/slow.test.ts': 1000,
+        'src/tests/b/fast.test.ts': 1000,
+      },
+      config: {
+        shardCount: 2,
+        tolerancePercent: 25,
+        ciRuntimeCalibrationFactor: 3.3,
+        criticalTestGlobs: [],
+        lockedAssignments: {},
+      },
+    });
+
+    expect(profile.summary.totalEstimatedDurationMs).toBe(2000);
+    expect(profile.summary.totalCiEstimatedDurationMs).toBe(6600);
+    expect(profile.summary.ciRuntimeCalibrationFactor).toBe(3.3);
+    expect(
+      profile.shards.map((shard: { estimatedDurationMs: number }) => shard.estimatedDurationMs)
+    ).toEqual([1000, 1000]);
+    expect(
+      profile.shards.map((shard: { ciEstimatedDurationMs: number }) => shard.ciEstimatedDurationMs)
+    ).toEqual([3300, 3300]);
+  });
+
   it('parses the shard argument while preserving passthrough Vitest flags', () => {
     expect(parseUnitShardRunArguments(['2/4', '--reporter=dot', '--runInBand'])).toEqual({
       requestedShard: { index: 2, count: 4 },

@@ -1,15 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import {
   executeConfirmMedicalSpecialtyNoChanges,
   executeEnsureMedicalHandoffSignatureLink,
   executeMarkMedicalHandoffAsSent,
 } from '@/application/handoff';
+import { createDailyRecordFixture } from '@/tests/support/dailyRecordFixtures';
 
-const createRecord = (): DailyRecord =>
-  ({
+const createRecord = () =>
+  createDailyRecordFixture({
     date: '2026-03-15',
-    beds: {},
     handoffDayChecklist: {},
     handoffNightChecklist: {},
     handoffNovedadesDayShift: '',
@@ -30,7 +29,7 @@ const createRecord = (): DailyRecord =>
       },
     },
     lastUpdated: '2026-03-15T08:00:00.000Z',
-  }) as unknown as DailyRecord;
+  });
 
 describe('handoffManagementUseCases', () => {
   it('returns a validation outcome when continuity confirmation has no base note', async () => {

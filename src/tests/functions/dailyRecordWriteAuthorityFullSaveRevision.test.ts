@@ -5,6 +5,7 @@ import {
   makeContext,
   makeRecord,
 } from '@/tests/functions/dailyRecordWriteAuthorityFunctions.test-support';
+import { createClinicalSyncFullSaveContract } from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
 
 describe('dailyRecordWriteAuthorityFunctions full save revisions', () => {
   beforeEach(() => {
@@ -31,12 +32,11 @@ describe('dailyRecordWriteAuthorityFunctions full save revisions', () => {
           expectedLastUpdated: '2026-05-13T10:00:00.000Z',
           mode: 'enforced',
           origin: 'direct_save',
-          syncContract: {
-            expectedVersion: '2026-05-13T10:00:00.000Z',
-            baseRevision: 8,
-            changedPaths: ['*'],
+          syncContract: createClinicalSyncFullSaveContract({
+            version: '2026-05-13T10:00:00.000Z',
+            revision: 8,
             mutationId: 'stale-full-save-mutation',
-          },
+          }),
           record: makeRecord(),
         },
         makeContext()

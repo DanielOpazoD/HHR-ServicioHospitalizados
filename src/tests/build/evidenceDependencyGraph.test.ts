@@ -139,6 +139,25 @@ describe('evidence dependency graph', () => {
     );
   });
 
+  it('links CI runtime calibration to observed and unit shard evidence nodes', () => {
+    expect(EVIDENCE_DEPENDENCY_GRAPH['ci-runtime-calibration-profile']).toMatchObject({
+      command: 'report:ci-runtime-calibration-profile',
+      artifacts: [
+        'reports/ci-runtime-calibration-profile.json',
+        'reports/ci-runtime-calibration-profile.md',
+      ],
+    });
+    expect(getEvidenceReportDependencies('ci-runtime-calibration-profile')).toEqual(
+      expect.arrayContaining([
+        'unit-shard-runtime-profile',
+        'ci-runtime-observed-profile',
+        'scripts/check-ci-runtime-calibration.mjs',
+        'scripts/report-ci-runtime-calibration-profile.mjs',
+        'src/tests/build/ciRuntimeTelemetrySupport.test.ts',
+      ])
+    );
+  });
+
   it('derives release readiness runner inputs from the evidence graph', () => {
     expect(RELEASE_READINESS_INPUTS).toEqual(
       getEvidenceReportDependencies('release-readiness-scorecard')

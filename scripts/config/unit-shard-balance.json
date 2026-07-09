@@ -4,6 +4,7 @@
   "tolerancePercent": 25,
   "maxShardMinutes": 13,
   "perFileOverheadMs": 100,
+  "ciRuntimeCalibrationFactor": 3.3,
   "slowestFileCount": 20,
   "excludedFromUnitSuite": [
     "src/tests/security/firestore-rules.test.ts",

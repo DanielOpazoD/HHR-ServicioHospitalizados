@@ -95,6 +95,28 @@ const readCiRuntimeObservedSignal = root => {
   };
 };
 
+const readCiRuntimeCalibrationSignal = root => {
+  const calibration = safeReadJson(root, 'reports/ci-runtime-calibration-profile.json');
+  if (!calibration) {
+    return {
+      status: 'not_generated',
+      summary: {
+        calibratedTotalRatioPercent: 0,
+        estimatorAccuracyDeltaPercent: 0,
+        ciRuntimeCalibrationFactor: 1,
+      },
+      recommendation: 'Generate ci-runtime-calibration-profile after observed CI runtime is available.',
+      advisoryFindings: [],
+    };
+  }
+  return {
+    status: calibration.status,
+    summary: calibration.summary,
+    recommendation: calibration.recommendation,
+    advisoryFindings: calibration.advisoryFindings || [],
+  };
+};
+
 const walkTestFiles = root => {
   const testRoot = path.join(root, 'src/tests');
   const files = [];
@@ -210,6 +232,7 @@ export const buildTestRuntimeGovernanceReport = root => {
       e2eCritical: e2eSignal,
       unitShardBalance: readUnitShardBalanceSignal(root),
       ciRuntimeObserved: readCiRuntimeObservedSignal(root),
+      ciRuntimeCalibration: readCiRuntimeCalibrationSignal(root),
     },
     fixtureGovernance: {
       ...config.fixtureGovernance,
@@ -268,6 +291,15 @@ export const collectTestRuntimeGovernanceIssues = root => {
   if (!ciWorkflow.includes('name: ci-runtime-observed-profile')) {
     issues.push('CI must upload ci-runtime-observed-profile artifact.');
   }
+  if (!ciWorkflow.includes('npm run report:ci-runtime-calibration-profile')) {
+    issues.push('CI must generate calibrated CI runtime evidence after observed telemetry.');
+  }
+  if (!ciWorkflow.includes('npm run check:ci-runtime-calibration')) {
+    issues.push('CI must enforce check:ci-runtime-calibration as an advisory structural contract.');
+  }
+  if (!ciWorkflow.includes('name: ci-runtime-calibration-profile')) {
+    issues.push('CI must upload ci-runtime-calibration-profile artifact.');
+  }
   if (!packageJson.scripts?.['check:unit-shard-balance']) {
     issues.push('package.json is missing script check:unit-shard-balance.');
   }
@@ -279,6 +311,12 @@ export const collectTestRuntimeGovernanceIssues = root => {
   }
   if (!packageJson.scripts?.['report:ci-runtime-observed-profile']) {
     issues.push('package.json is missing script report:ci-runtime-observed-profile.');
+  }
+  if (!packageJson.scripts?.['check:ci-runtime-calibration']) {
+    issues.push('package.json is missing script check:ci-runtime-calibration.');
+  }
+  if (!packageJson.scripts?.['report:ci-runtime-calibration-profile']) {
+    issues.push('package.json is missing script report:ci-runtime-calibration-profile.');
   }
 
   if (nightlyWorkflow.includes('pull_request:')) {
@@ -389,6 +427,22 @@ export const formatTestRuntimeGovernanceMarkdown = report => {
       );
     } else if (observed.recommendation) {
       lines.push(`  - Advisory: ${observed.recommendation}`);
+    }
+  }
+
+  if (report.slowRuntimeSignals.ciRuntimeCalibration) {
+    const calibration = report.slowRuntimeSignals.ciRuntimeCalibration;
+    const summary = calibration.summary || {};
+    lines.push(
+      '',
+      `- CI runtime calibration: ${calibration.status}, factor ${Number(
+        summary.ciRuntimeCalibrationFactor || 1
+      ).toFixed(1)}x, calibrated ratio ${summary.calibratedTotalRatioPercent || 0}%, accuracy delta ${summary.estimatorAccuracyDeltaPercent || 0}%.`
+    );
+    if ((calibration.advisoryFindings || []).length > 0) {
+      lines.push(...calibration.advisoryFindings.map(finding => `  - Advisory: ${finding}`));
+    } else if (calibration.recommendation) {
+      lines.push(`  - Advisory: ${calibration.recommendation}`);
     }
   }
 

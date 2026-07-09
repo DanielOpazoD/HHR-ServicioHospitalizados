@@ -1,0 +1,32 @@
+{
+  "reportId": "ci-runtime-calibration-profile",
+  "status": "no_observed_ci_data",
+  "summary": {
+    "rawEstimatedTotalDurationMs": 406384,
+    "calibratedEstimatedTotalDurationMs": 1341066,
+    "observedTotalDurationMs": 0,
+    "rawTotalRatioPercent": 0,
+    "calibratedTotalRatioPercent": 0,
+    "estimatorAccuracyDeltaPercent": 0,
+    "shardBalanceSpreadPercent": 0,
+    "targetRatioTolerancePercent": 20,
+    "ciRuntimeCalibrationFactor": 3.3
+  },
+  "shards": [],
+  "concepts": {
+    "shardBalance": "Shard balance tracks relative spread across unit shards.",
+    "estimatorAccuracy": "Estimator accuracy compares estimated wall-clock runtime against observed CI."
+  },
+  "advisoryFindings": [
+    "No observed CI runtime data is available yet."
+  ],
+  "blockingIssues": [],
+  "recommendation": "Collect observed CI runtime before calibrating the estimator.",
+  "generatedAt": "2026-07-07T00:38:20.909Z",
+  "gitSha": "e99a9a2e",
+  "gitDirty": false,
+  "source": {
+    "estimatedProfilePath": "reports/unit-shard-runtime-profile.json",
+    "observedProfilePath": "reports/ci-runtime-observed-profile.json"
+  }
+}

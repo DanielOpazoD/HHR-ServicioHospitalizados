@@ -154,6 +154,21 @@ export const EVIDENCE_DEPENDENCY_GRAPH = {
       'src/tests/build/ciRuntimeTelemetrySupport.test.ts',
     ],
   }),
+  'ci-runtime-calibration-profile': reportNode({
+    command: 'report:ci-runtime-calibration-profile',
+    artifacts: [
+      'reports/ci-runtime-calibration-profile.json',
+      'reports/ci-runtime-calibration-profile.md',
+    ],
+    dependencies: [
+      'unit-shard-runtime-profile',
+      'ci-runtime-observed-profile',
+      'scripts/check-ci-runtime-calibration.mjs',
+      'scripts/ciRuntimeTelemetrySupport.mjs',
+      'scripts/report-ci-runtime-calibration-profile.mjs',
+      'src/tests/build/ciRuntimeTelemetrySupport.test.ts',
+    ],
+  }),
   'serverless-runtime-governance': reportNode({
     command: 'report:serverless-runtime-governance',
     artifacts: [

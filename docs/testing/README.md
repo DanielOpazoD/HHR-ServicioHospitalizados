@@ -20,33 +20,35 @@ Playwright cubre auth, startup, módulos críticos y regresiones de UX prioritar
 
 Superficie pública mínima recomendada para trabajo diario: [docs/DEVELOPER_COMMANDS.md](../DEVELOPER_COMMANDS.md)
 
-| Comando                                      | Descripción                                                                                                               |
-| :------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
-| `npm run test:ci:unit`                       | Suite unitaria/integración de CI sin reglas ni emulador                                                                   |
-| `npm run test:coverage:critical`             | Cobertura crítica instrumentada por zona                                                                                  |
-| `npm run test:smoke:critical-runtime`        | Smoke pack curado para `cold boot`, `login`, `offline -> online`, `sync conflict`, `export` y `clinical-documents`        |
-| `npm run test:release-confidence`            | Pack compacto blocking de release confidence: smoke runtime, rules, emulador, coverage, performance y E2E críticos        |
-| `npm run test:release-confidence:full`       | Pack extendido de release confidence: agrega `unit_critical` para corridas de validación más profundas                    |
-| `npm run test:e2e:critical`                  | E2E críticos sobre emulador                                                                                               |
-| `npm run test:e2e:flow-performance`          | Budgets de performance por flujo (`login`, `auth`, `censo visible`, `censo record-ready`, `clinical-documents`, `backup`) |
-| `npm run test:rules`                         | Reglas Firestore                                                                                                          |
-| `npm run test:emulator:sync`                 | Suite de emulador sync                                                                                                    |
-| `npm run test:emulator:ui`                   | Suite de emulador UI                                                                                                      |
-| `npm run check:critical-smoke-pack`          | Verifica que el smoke pack crítico siga cubriendo todos los escenarios obligatorios                                       |
-| `npm run check:release-confidence-pack`      | Verifica perfiles, tiers, solapes permitidos y scripts válidos del release confidence pack                                |
-| `npm run check:release-confidence-matrix`    | Verifica que cada área crítica tenga trazabilidad explícita hacia coverage, smoke, budgets y pasos blocking de release    |
-| `npm run check:unit-shard-balance`           | Verifica que los 4 unit-risk shards cubran la suite completa sin duplicados y con spread dentro de tolerancia             |
-| `npm run profile:unit-shard-runtime`         | Ejecuta la suite unitaria con reporter JSON y regenera el perfil real por archivo/shard                                   |
-| `npm run report:unit-shard-runtime-profile`  | Regenera `reports/unit-shard-runtime-profile.*` desde el último perfil real o estimaciones deterministas                  |
-| `npm run report:ci-runtime-observed-profile` | Regenera `reports/ci-runtime-observed-profile.*` con runtime observado de GitHub Actions o fixture local opcional         |
-| `npm run check:ci-runtime-telemetry`         | Valida el contrato estructural del runtime observado; los desbalances aislados son advisory-first                         |
-| `npm run check:test-runtime-governance`      | Verifica el contrato PR vs nightly, shards, budgets y watchlist de fixtures duplicadas                                    |
-| `npm run report:test-runtime-governance`     | Genera `reports/test-runtime-governance.*` con señales de runtime lento y duplicación de fixtures                         |
-| `npm run ci:inner-loop`                      | Ruta rápida para desarrollo diario                                                                                        |
-| `npm run ci:pre-merge`                       | Verificación compacta obligatoria antes de merge                                                                          |
-| `npm run ci:preview-gate`                    | Gate productivo del bundle real: budgets, grafo de chunks y smoke preview local                                           |
-| `npm run ci:merge-gate`                      | Ruta blocking ampliada previa a merge                                                                                     |
-| `npm run ci:release-gate`                    | Ruta completa con Firestore + E2E                                                                                         |
+| Comando                                         | Descripción                                                                                                               |
+| :---------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| `npm run test:ci:unit`                          | Suite unitaria/integración de CI sin reglas ni emulador                                                                   |
+| `npm run test:coverage:critical`                | Cobertura crítica instrumentada por zona                                                                                  |
+| `npm run test:smoke:critical-runtime`           | Smoke pack curado para `cold boot`, `login`, `offline -> online`, `sync conflict`, `export` y `clinical-documents`        |
+| `npm run test:release-confidence`               | Pack compacto blocking de release confidence: smoke runtime, rules, emulador, coverage, performance y E2E críticos        |
+| `npm run test:release-confidence:full`          | Pack extendido de release confidence: agrega `unit_critical` para corridas de validación más profundas                    |
+| `npm run test:e2e:critical`                     | E2E críticos sobre emulador                                                                                               |
+| `npm run test:e2e:flow-performance`             | Budgets de performance por flujo (`login`, `auth`, `censo visible`, `censo record-ready`, `clinical-documents`, `backup`) |
+| `npm run test:rules`                            | Reglas Firestore                                                                                                          |
+| `npm run test:emulator:sync`                    | Suite de emulador sync                                                                                                    |
+| `npm run test:emulator:ui`                      | Suite de emulador UI                                                                                                      |
+| `npm run check:critical-smoke-pack`             | Verifica que el smoke pack crítico siga cubriendo todos los escenarios obligatorios                                       |
+| `npm run check:release-confidence-pack`         | Verifica perfiles, tiers, solapes permitidos y scripts válidos del release confidence pack                                |
+| `npm run check:release-confidence-matrix`       | Verifica que cada área crítica tenga trazabilidad explícita hacia coverage, smoke, budgets y pasos blocking de release    |
+| `npm run check:unit-shard-balance`              | Verifica que los 4 unit-risk shards cubran la suite completa sin duplicados y con spread dentro de tolerancia             |
+| `npm run profile:unit-shard-runtime`            | Ejecuta la suite unitaria con reporter JSON y regenera el perfil real por archivo/shard                                   |
+| `npm run report:unit-shard-runtime-profile`     | Regenera `reports/unit-shard-runtime-profile.*` desde el último perfil real o estimaciones deterministas                  |
+| `npm run report:ci-runtime-observed-profile`    | Regenera `reports/ci-runtime-observed-profile.*` con runtime observado de GitHub Actions o fixture local opcional         |
+| `npm run check:ci-runtime-telemetry`            | Valida el contrato estructural del runtime observado; los desbalances aislados son advisory-first                         |
+| `npm run report:ci-runtime-calibration-profile` | Regenera `reports/ci-runtime-calibration-profile.*` comparando estimación local, estimación calibrada y CI observado      |
+| `npm run check:ci-runtime-calibration`          | Valida la calibración de runtime CI; deriva de performance queda advisory salvo contrato roto                             |
+| `npm run check:test-runtime-governance`         | Verifica el contrato PR vs nightly, shards, budgets y watchlist de fixtures duplicadas                                    |
+| `npm run report:test-runtime-governance`        | Genera `reports/test-runtime-governance.*` con señales de runtime lento y duplicación de fixtures                         |
+| `npm run ci:inner-loop`                         | Ruta rápida para desarrollo diario                                                                                        |
+| `npm run ci:pre-merge`                          | Verificación compacta obligatoria antes de merge                                                                          |
+| `npm run ci:preview-gate`                       | Gate productivo del bundle real: budgets, grafo de chunks y smoke preview local                                           |
+| `npm run ci:merge-gate`                         | Ruta blocking ampliada previa a merge                                                                                     |
+| `npm run ci:release-gate`                       | Ruta completa con Firestore + E2E                                                                                         |
 
 ## 3. Cobertura crítica
 
@@ -156,6 +158,23 @@ El markdown observado debe responder rápido: fuente/run, total observado, shard
 diferencia contra estimación y hallazgos advisory. Si aparece `no_observed_ci_data` en CI, revisar primero que
 `ci-runtime-telemetry` tenga `actions: read`, `GITHUB_TOKEN` y `GITHUB_RUN_ID`, y que el collector se haya ejecutado
 antes del reporte.
+
+El reporte de calibración CI vive en `reports/ci-runtime-calibration-profile.*` y separa dos preguntas distintas:
+
+- balance: si los shards quedan parejos entre sí;
+- calibración: si el estimador local representa de forma honesta el tiempo real observado en GitHub Actions.
+
+La calibración usa `ciRuntimeCalibrationFactor` desde `scripts/config/unit-shard-balance.json`. Ese factor escala la
+duración estimada para planificación y evidencia, pero no cambia la asignación de archivos a shards. Si el reporte queda
+en `calibration_drift_advisory`, revisar al menos dos corridas antes de ajustar `durationHints`, `perFileOverheadMs` o el
+factor CI; una corrida aislada lenta no debe mover cobertura clínica crítica ni disparar rebalance automático. Si el estado
+es `no_observed_ci_data`, regenerar primero `reports/ci-runtime-observed-profile.*`.
+
+La deuda de fixtures se controla en `reports/test-runtime-governance.md`. La señal `large-inline-daily-record` debe bajar
+migrando tests hacia builders en `src/tests/support` o `src/tests/utils`. La señal `sync-client-scenario` debe bajar usando
+helpers o el simulador bajo `src/tests/support/clinicalSyncSimulator` para que `expectedVersion`, `changedPaths`,
+`mutationId`, replay y outbox no queden reimplementados en cada suite. No se espera resolver todos los casos en un PR:
+cada cambio debe preservar intención clínica y pasar tests focales.
 
 ## 5.2 Smoke Pack Crítico
 

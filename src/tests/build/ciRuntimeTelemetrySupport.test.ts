@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildCiRuntimeObservedProfile,
+  buildCiRuntimeCalibrationProfile,
   formatCiRuntimeObservedProfileMarkdown,
+  formatCiRuntimeCalibrationProfileMarkdown,
   collectCiRuntimeTelemetryCheckIssues,
   collectCiRuntimeTelemetryIssues,
   compareEstimatedAndObservedRuntime,
@@ -209,6 +211,164 @@ describe('ci runtime telemetry support', () => {
       observedDurationMs: 600000,
       ratioPercent: 909.1,
     });
+  });
+
+  it('builds a calibration profile that separates shard balance from absolute estimator accuracy', () => {
+    const observedProfile = buildCiRuntimeObservedProfile({
+      jobs: completedShardJobs,
+      tolerancePercent: 25,
+    });
+    const calibration = buildCiRuntimeCalibrationProfile({
+      estimatedProfile: {
+        summary: {
+          totalEstimatedDurationMs: 264000,
+          totalCiEstimatedDurationMs: 871200,
+          ciRuntimeCalibrationFactor: 3.3,
+          spreadPercent: 0.2,
+          tolerancePercent: 25,
+        },
+        shards: [
+          { index: 1, estimatedDurationMs: 66000, ciEstimatedDurationMs: 217800 },
+          { index: 2, estimatedDurationMs: 66000, ciEstimatedDurationMs: 217800 },
+          { index: 3, estimatedDurationMs: 66000, ciEstimatedDurationMs: 217800 },
+          { index: 4, estimatedDurationMs: 66000, ciEstimatedDurationMs: 217800 },
+        ],
+      },
+      observedProfile,
+      targetRatioTolerancePercent: 20,
+    });
+
+    expect(calibration.status).toBe('calibrated_within_tolerance');
+    expect(calibration.summary).toMatchObject({
+      rawEstimatedTotalDurationMs: 264000,
+      calibratedEstimatedTotalDurationMs: 871200,
+      observedTotalDurationMs: 851000,
+      rawTotalRatioPercent: 322.3,
+      calibratedTotalRatioPercent: 97.7,
+      shardBalanceSpreadPercent: 16.4,
+      estimatorAccuracyDeltaPercent: 2.3,
+      ciRuntimeCalibrationFactor: 3.3,
+    });
+    expect(calibration.concepts).toMatchObject({
+      shardBalance: expect.stringContaining('relative spread'),
+      estimatorAccuracy: expect.stringContaining('absolute wall-clock'),
+    });
+    expect(calibration.advisoryFindings).toEqual([
+      'Raw local estimate is 322.3% of observed CI runtime; use calibrated CI estimate for planning.',
+    ]);
+    expect(calibration.blockingIssues).toEqual([]);
+  });
+
+  it('keeps structurally invalid zero-duration observed data blocking instead of treating it as absent', () => {
+    const calibration = buildCiRuntimeCalibrationProfile({
+      estimatedProfile: {
+        summary: {
+          totalEstimatedDurationMs: 264000,
+          totalCiEstimatedDurationMs: 871200,
+          ciRuntimeCalibrationFactor: 3.3,
+        },
+      },
+      observedProfile: {
+        status: 'observed_ci_data',
+        summary: {
+          totalDurationMs: 0,
+          observedShardCount: 4,
+          expectedShardCount: 4,
+          spreadPercent: 0,
+          tolerancePercent: 25,
+        },
+        shards: [],
+      },
+    });
+
+    expect(calibration.status).not.toBe('no_observed_ci_data');
+    expect(calibration.blockingIssues).toEqual([
+      'Observed CI runtime reports no positive duration despite observed data status.',
+    ]);
+    expect(calibration.advisoryFindings).toEqual(
+      expect.arrayContaining([
+        'Calibrated CI estimate is 0% of observed runtime, outside 20% tolerance.',
+      ])
+    );
+  });
+
+  it('surfaces missing estimator denominators as n/a instead of a normal zero ratio', () => {
+    const calibration = buildCiRuntimeCalibrationProfile({
+      estimatedProfile: {
+        summary: {
+          totalEstimatedDurationMs: 0,
+          totalCiEstimatedDurationMs: 0,
+          ciRuntimeCalibrationFactor: 1,
+        },
+        shards: [],
+      },
+      observedProfile: buildCiRuntimeObservedProfile({
+        jobs: completedShardJobs,
+        tolerancePercent: 25,
+      }),
+    });
+    const markdown = formatCiRuntimeCalibrationProfileMarkdown(calibration);
+
+    expect(calibration.summary.rawTotalRatioPercent).toBeNull();
+    expect(calibration.summary.calibratedTotalRatioPercent).toBeNull();
+    expect(calibration.shards[0]).toMatchObject({
+      rawEstimatedDurationMs: 0,
+      calibratedEstimatedDurationMs: 0,
+      observedDurationMs: 234000,
+      rawRatioPercent: null,
+      calibratedRatioPercent: null,
+    });
+    expect(calibration.advisoryFindings).toEqual([
+      'Raw local estimate is unavailable while observed CI runtime is present.',
+      'Calibrated CI estimate is unavailable while observed CI runtime is present.',
+    ]);
+    expect(markdown).toContain('| Raw estimated | 0.0m | n/a |');
+    expect(markdown).toContain('| 1 | 0.0m | 0.0m | 3.9m | n/a |');
+  });
+
+  it('formats the calibration profile as a PR-readable governance artifact', () => {
+    const markdown = formatCiRuntimeCalibrationProfileMarkdown({
+      reportId: 'ci-runtime-calibration-profile',
+      status: 'calibrated_within_tolerance',
+      generatedAt: '2026-07-06T18:30:00.000Z',
+      gitSha: 'abc1234',
+      gitDirty: false,
+      summary: {
+        rawEstimatedTotalDurationMs: 264000,
+        calibratedEstimatedTotalDurationMs: 871200,
+        observedTotalDurationMs: 851000,
+        rawTotalRatioPercent: 322.3,
+        calibratedTotalRatioPercent: 97.7,
+        shardBalanceSpreadPercent: 16.4,
+        estimatorAccuracyDeltaPercent: 2.3,
+        targetRatioTolerancePercent: 20,
+        ciRuntimeCalibrationFactor: 3.3,
+      },
+      shards: [
+        {
+          index: 1,
+          rawEstimatedDurationMs: 66000,
+          calibratedEstimatedDurationMs: 217800,
+          observedDurationMs: 234000,
+          calibratedRatioPercent: 107.4,
+        },
+      ],
+      concepts: {
+        shardBalance: 'Shard balance tracks relative spread across unit shards.',
+        estimatorAccuracy:
+          'Estimator accuracy compares estimated wall-clock runtime against observed CI.',
+      },
+      advisoryFindings: ['Raw local estimate is 322.3% of observed CI runtime.'],
+      blockingIssues: [],
+      recommendation: 'Calibrated CI estimate is within tolerance; keep monitoring real runs.',
+    });
+
+    expect(markdown).toContain('# CI Runtime Calibration Profile');
+    expect(markdown).toContain('- Status: `calibrated_within_tolerance`');
+    expect(markdown).toContain('- Calibration factor: `3.3x`');
+    expect(markdown).toContain('| 1 | 1.1m | 3.6m | 3.9m | 107.4% |');
+    expect(markdown).toContain('## Concepts');
+    expect(markdown).toContain('Shard balance tracks relative spread');
   });
 
   it('deduplicates blocking issues already present in the comparison payload', () => {

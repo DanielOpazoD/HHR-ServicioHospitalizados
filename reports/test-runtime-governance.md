@@ -1,7 +1,7 @@
 # Test Runtime Governance
 
-- Generated: 2026-07-06T05:44:53.359Z
-- Git SHA: `cf972b18`
+- Generated: 2026-07-07T00:38:21.127Z
+- Git SHA: `e99a9a2e`
 - Worktree dirty: `false`
 - PR critical path budget: 35.0m
 
@@ -26,18 +26,21 @@
 
 | Check | Group | Duration |
 | --- | --- | ---: |
-| `check:feature-public-api-boundary` | boundaries | 6.2s |
-| `check:security` | security | 3.4s |
-| `check:test-runtime-governance` | tests | 2.5s |
-| `check:unit-shard-balance` | tests | 1.9s |
-| `check:architecture` | boundaries | 1.7s |
-| `check:module-dependencies` | boundaries | 1.4s |
-| `check:firestore-runtime-boundary` | boundaries | 1.4s |
-| `check:native-dialogs` | boundaries | 1.4s |
+| `check:feature-public-api-boundary` | boundaries | 11.9s |
+| `check:security` | security | 5.8s |
+| `check:unit-shard-balance` | tests | 4.3s |
+| `check:test-runtime-governance` | tests | 3.8s |
+| `check:firestore-runtime-boundary` | boundaries | 2.9s |
+| `check:report-freshness` | reports | 2.2s |
+| `check:repo-hygiene` | hygiene | 2.2s |
+| `check:legacy-bridge-boundary` | boundaries | 2.0s |
 
-- Unit shard balance: 1401 files, 0% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
+- Unit shard balance: 1403 files, 0.1% spread across 4 shard(s), tolerance 25%, per-file overhead 0.1s.
 
 - CI observed unit shard runtime: no_observed_ci_data, 0/4 shard(s), 0% observed spread.
+  - Advisory: No observed CI runtime data is available yet.
+
+- CI runtime calibration: no_observed_ci_data, factor 3.3x, calibrated ratio 0%, accuracy delta 0%.
   - Advisory: No observed CI runtime data is available yet.
 
 ## Fixture Duplication Governance
@@ -55,7 +58,7 @@
 
 | Signal | Files | Examples | Preferred Home |
 | --- | ---: | --- | --- |
-| large-inline-daily-record | 135 | `src/tests/application/ai/clinicalSummaryContextUseCase.test.ts`<br>`src/tests/application/census-email/sendCensusEmailUseCases.test.ts`<br>`src/tests/application/handoff/handoffManagementUseCases.test.ts`<br>`src/tests/domain/handoff/view.test.ts`<br>`src/tests/emulator/atomic-write-guards.emulator.test.ts` | shared DailyRecord builders under src/tests/support or src/tests/utils |
+| large-inline-daily-record | 130 | `src/tests/emulator/atomic-write-guards.emulator.test.ts`<br>`src/tests/emulator/cma-specialty-readback.emulator.test.ts`<br>`src/tests/emulator/conflict-version-recovery.emulator.test.ts`<br>`src/tests/emulator/daily-record-delete-failclosed.emulator.test.ts`<br>`src/tests/emulator/discharge-bed-consistency.emulator.test.ts` | shared DailyRecord builders under src/tests/support or src/tests/utils |
 | browser-runtime-mock | 10 | `src/tests/components/BookmarkEditorModal.test.tsx`<br>`src/tests/components/DatabaseStatusBanner.test.tsx`<br>`src/tests/components/IEEHFormDialog.test.tsx`<br>`src/tests/components/StorageStatusBadge.test.tsx`<br>`src/tests/components/TransferDocumentPackageModal.test.tsx` | src/tests/utils/browserWindowRuntimeMock.ts |
-| sync-client-scenario | 24 | `src/tests/emulator/sync-mutation-idempotency.emulator.test.ts`<br>`src/tests/functions/dailyRecordWriteAuthorityFullSaveRevision.test.ts`<br>`src/tests/functions/dailyRecordWriteAuthorityFunctions.test.ts`<br>`src/tests/functions/dailyRecordWriteAuthorityIdempotency.test.ts`<br>`src/tests/integration/sync-resilience.test.ts` | src/tests/support/clinicalSyncSimulator |
+| sync-client-scenario | 21 | `src/tests/emulator/sync-mutation-idempotency.emulator.test.ts`<br>`src/tests/functions/dailyRecordWriteAuthorityFunctions.test.ts`<br>`src/tests/services/dailyRecordRepository.test.ts`<br>`src/tests/services/repositories/DailyRecordRepository.persistence-and-copy.test.ts`<br>`src/tests/services/repositories/dailyRecordConflictAutoMergeController.test.ts` | src/tests/support/clinicalSyncSimulator |
 

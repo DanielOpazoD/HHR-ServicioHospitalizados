@@ -1,8 +1,11 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
-import type { PatientData } from '@/types/domain/patient';
-import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+import {
+  createDailyRecordFixture,
+  createPatientBedFixture,
+} from '@/tests/support/dailyRecordFixtures';
+import { expectClinicalSyncPathologyContract } from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
 
 const { mockSaveDailyRecordWithClinicalAuthorityCallable } = vi.hoisted(() => ({
   mockSaveDailyRecordWithClinicalAuthorityCallable: vi.fn(),
@@ -66,43 +69,23 @@ import { getRecordFromFirestore } from '@/services/storage/firestore/firestoreRe
 import { updateRecordPartial as updateRecordPartialToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
 import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
 
-const buildPatient = (bedId: string, overrides: Partial<PatientData> = {}): PatientData => ({
-  bedId,
-  isBlocked: false,
-  bedMode: 'Cama',
-  hasCompanionCrib: false,
-  patientName: 'Paciente',
-  rut: '11.111.111-1',
-  age: '40a',
-  pathology: 'Diagnostico',
-  specialty: Specialty.MEDICINA,
-  status: PatientStatus.ESTABLE,
-  admissionDate: '2026-02-19',
-  hasWristband: false,
-  devices: [],
-  surgicalComplication: false,
-  isUPC: false,
-  ...overrides,
-});
+const buildPatient = createPatientBedFixture;
 
-const buildRecord = (date: string): DailyRecord => ({
-  date,
-  beds: {},
-  discharges: [],
-  transfers: [],
-  cma: [],
-  lastUpdated: '2026-02-19T10:00:00.000Z',
-  nurses: ['', ''],
-  nursesDayShift: ['', ''],
-  nursesNightShift: ['', ''],
-  tensDayShift: ['', '', ''],
-  tensNightShift: ['', '', ''],
-  activeExtraBeds: [],
-  schemaVersion: 1,
-  dateTimestamp: Date.parse(`${date}T00:00:00.000Z`),
-  handoffDayChecklist: {},
-  handoffNightChecklist: {},
-});
+const buildRecord = (date: string): DailyRecord =>
+  createDailyRecordFixture({
+    date,
+    lastUpdated: '2026-02-19T10:00:00.000Z',
+    nurses: ['', ''],
+    nursesDayShift: ['', ''],
+    nursesNightShift: ['', ''],
+    tensDayShift: ['', '', ''],
+    tensNightShift: ['', '', ''],
+    activeExtraBeds: [],
+    schemaVersion: 1,
+    dateTimestamp: Date.parse(`${date}T00:00:00.000Z`),
+    handoffDayChecklist: {},
+    handoffNightChecklist: {},
+  });
 
 describe('Sync resilience integration', () => {
   beforeEach(async () => {
@@ -205,12 +188,10 @@ describe('Sync resilience integration', () => {
     expect(mergedPayload.beds.R1.bedMode).toBe('Cama');
     expect(tasks[0].contexts).toEqual(['clinical']);
     expect(tasks[0].origin).toBe('conflict_auto_merge');
-    expect(tasks[0].syncContract).toEqual(
-      expect.objectContaining({
-        expectedVersion: remote.lastUpdated,
-        recordRevision: mergedPayload.lastUpdated,
-        changedPaths: expect.arrayContaining(['beds.R1.pathology']),
-      })
-    );
+    expectClinicalSyncPathologyContract({
+      value: tasks[0].syncContract,
+      version: remote.lastUpdated,
+      recordRevision: mergedPayload.lastUpdated,
+    });
   });
 });

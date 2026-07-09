@@ -361,6 +361,11 @@ export const buildUnitShardRuntimeProfile = ({
     lockedAssignments: config.lockedAssignments,
     config,
   });
+  const ciRuntimeCalibrationFactor = Number(config.ciRuntimeCalibrationFactor || 1);
+  const calibratedShards = shards.map(shard => ({
+    ...shard,
+    ciEstimatedDurationMs: Math.round(shard.estimatedDurationMs * ciRuntimeCalibrationFactor),
+  }));
   const spread = calculateShardSpread(shards);
   const slowestFiles = normalizedFiles
     .map(file => ({
@@ -371,6 +376,10 @@ export const buildUnitShardRuntimeProfile = ({
     .sort((a, b) => b.estimatedDurationMs - a.estimatedDurationMs || a.file.localeCompare(b.file))
     .slice(0, Number(config.slowestFileCount || 20));
   const totalDurationMs = shards.reduce((sum, shard) => sum + shard.estimatedDurationMs, 0);
+  const totalCiEstimatedDurationMs = calibratedShards.reduce(
+    (sum, shard) => sum + shard.ciEstimatedDurationMs,
+    0
+  );
 
   return {
     reportId: 'unit-shard-runtime-profile',
@@ -380,17 +389,19 @@ export const buildUnitShardRuntimeProfile = ({
       totalFiles: normalizedFiles.length,
       shardCount: shards.length,
       totalEstimatedDurationMs: totalDurationMs,
-      slowestShard: shards.reduce((selected, shard) =>
+      totalCiEstimatedDurationMs,
+      ciRuntimeCalibrationFactor,
+      slowestShard: calibratedShards.reduce((selected, shard) =>
         shard.estimatedDurationMs > selected.estimatedDurationMs ? shard : selected
       ),
-      fastestShard: shards.reduce((selected, shard) =>
+      fastestShard: calibratedShards.reduce((selected, shard) =>
         shard.estimatedDurationMs < selected.estimatedDurationMs ? shard : selected
       ),
       spreadPercent: spread.spreadPercent,
       tolerancePercent: Number(config.tolerancePercent || 0),
       perFileOverheadMs: Number(config.perFileOverheadMs || 0),
     },
-    shards,
+    shards: calibratedShards,
     spread,
     slowestFiles,
     functionalGroups: buildFunctionalGroups({ files: normalizedFiles, durationByFile }),
@@ -451,6 +462,8 @@ export const formatUnitShardRuntimeProfileMarkdown = profile => {
     `- Shards: ${profile.summary.shardCount}`,
     `- Spread: ${profile.summary.spreadPercent}% (tolerance ${profile.summary.tolerancePercent}%)`,
     `- Per-file overhead: ${formatMs(profile.summary.perFileOverheadMs)}`,
+    `- CI calibration factor: ${Number(profile.summary.ciRuntimeCalibrationFactor || 1).toFixed(2)}x`,
+    `- CI calibrated estimated total: ${formatMs(profile.summary.totalCiEstimatedDurationMs)}`,
     '',
     '## Shard Balance',
     '',
@@ -466,7 +479,11 @@ export const formatUnitShardRuntimeProfileMarkdown = profile => {
         .slice(0, 4)
         .map(entry => `\`${entry.file}\``)
         .join('<br>');
-      return `| ${shard.index} | ${shard.files.length} | ${formatMs(shard.estimatedDurationMs)} | ${topFiles} |`;
+      const duration =
+        shard.ciEstimatedDurationMs && shard.ciEstimatedDurationMs !== shard.estimatedDurationMs
+          ? `${formatMs(shard.estimatedDurationMs)} / CI ${formatMs(shard.ciEstimatedDurationMs)}`
+          : formatMs(shard.estimatedDurationMs);
+      return `| ${shard.index} | ${shard.files.length} | ${duration} | ${topFiles} |`;
     }),
     '',
     '## Slowest Files',
