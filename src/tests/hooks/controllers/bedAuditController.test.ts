@@ -5,9 +5,9 @@ import {
   resolvePatientChangeAudit,
 } from '@/hooks/controllers/bedAuditController';
 import type { CudyrScore } from '@/types/domain/cudyr';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
 import { PatientStatus, Specialty } from '@/types/domain/patientClassification';
+import { createDailyRecordFixture } from '@/tests/support/dailyRecordFixtures';
 
 const buildCudyr = (overrides: Partial<CudyrScore> = {}): CudyrScore => ({
   changeClothes: 0,
@@ -46,8 +46,8 @@ const buildPatient = (overrides: Partial<PatientData> = {}): PatientData => ({
   ...overrides,
 });
 
-const buildRecord = (): DailyRecord =>
-  ({
+const buildRecord = () =>
+  createDailyRecordFixture({
     date: '2026-01-19',
     beds: {
       B1: buildPatient({
@@ -63,13 +63,8 @@ const buildRecord = (): DailyRecord =>
         }),
       }),
     },
-    discharges: [],
-    transfers: [],
-    cma: [],
     lastUpdated: '2026-01-19T00:00:00.000Z',
-    nurses: [],
-    activeExtraBeds: [],
-  }) as DailyRecord;
+  });
 
 describe('bedAuditController', () => {
   it('should resolve admissions and patient modifications', () => {

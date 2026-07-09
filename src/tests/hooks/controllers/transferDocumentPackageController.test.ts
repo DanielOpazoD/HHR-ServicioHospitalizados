@@ -1,5 +1,4 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { TransferRequest } from '@/types/transferRequestTypes';
 import type { GeneratedDocument, QuestionnaireResponse } from '@/types/transferDocuments';
 import {
@@ -7,6 +6,10 @@ import {
   buildTransferPatientData,
   prepareTransferDocumentPackage,
 } from '@/hooks/controllers/transferDocumentPackageController';
+import {
+  createDailyRecordFixture,
+  createPatientBedFixture,
+} from '@/tests/support/dailyRecordFixtures';
 
 const mockGenerateTransferDocuments = vi.fn();
 
@@ -20,14 +23,14 @@ vi.mock('@/services/transfers/documentGeneratorService', () => ({
   generateTransferDocuments: (...args: unknown[]) => mockGenerateTransferDocuments(...args),
 }));
 
-const record = {
+const record = createDailyRecordFixture({
   date: '2026-03-02',
   beds: {
-    BED_H1: {
+    BED_H1: createPatientBedFixture('BED_H1', {
       birthDate: '1980-01-02',
-    },
+    }),
   },
-} as unknown as DailyRecord;
+});
 
 const transfer = {
   id: 'transfer-1',

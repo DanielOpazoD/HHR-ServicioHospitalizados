@@ -25,6 +25,7 @@ describe('RutPassportInput', () => {
   });
 
   it('copies the RUT to clipboard when the visible RUT is clicked', async () => {
+    vi.useFakeTimers();
     const writeClipboardTextSpy = vi
       .spyOn(browserClipboardRuntime, 'writeClipboardText')
       .mockResolvedValue(undefined);
@@ -36,7 +37,10 @@ describe('RutPassportInput', () => {
 
     fireEvent.click(screen.getByRole('textbox'));
 
-    await waitFor(() => expect(writeClipboardTextSpy).toHaveBeenCalledWith('12.345.678-5'));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(writeClipboardTextSpy).toHaveBeenCalledWith('12.345.678-5');
     expect(screen.getByTitle('RUT copiado')).toBeInTheDocument();
   });
 

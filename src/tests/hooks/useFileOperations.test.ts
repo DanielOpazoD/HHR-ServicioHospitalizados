@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useFileOperations } from '@/hooks/useFileOperations';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import * as ExportService from '@/services/exporters/exportService';
 import * as backupExportMaintenanceUseCases from '@/application/backup-export/backupExportMaintenanceUseCases';
+import { createDailyRecordFixture } from '@/tests/support/dailyRecordFixtures';
 
 // Mock context
 vi.mock('@/context/UIContext', () => ({
@@ -46,7 +46,7 @@ vi.mock('@/application/backup-export/backupExportMaintenanceUseCases', () => ({
 }));
 
 describe('useFileOperations', () => {
-  const mockRecord: DailyRecord = { date: '2024-12-28', beds: {} } as DailyRecord;
+  const mockRecord = createDailyRecordFixture({ date: '2024-12-28', beds: {} });
   const mockOnRefresh = vi.fn();
 
   beforeEach(() => {

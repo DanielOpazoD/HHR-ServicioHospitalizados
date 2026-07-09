@@ -7,13 +7,9 @@ import {
   runHandoffMutation,
   shouldNotifyHandoffMutationFailure,
 } from '@/hooks/controllers/handoffManagementMutationController';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
+import { createDailyRecordFixture } from '@/tests/support/dailyRecordFixtures';
 
-const createRecord = (): DailyRecord =>
-  ({
-    date: '2026-04-05',
-    beds: {},
-  }) as DailyRecord;
+const createRecord = () => createDailyRecordFixture({ date: '2026-04-05', beds: {} });
 
 describe('handoffManagementMutationController', () => {
   it('runs success callbacks with the current record snapshot and payload', async () => {

@@ -2,8 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useExistingDays } from '@/hooks/useExistingDays';
 import * as recordQueryService from '@/services/records/recordQueryService';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { restoreConsole, suppressConsole } from '@/tests/utils/consoleTestUtils';
+import {
+  createDailyRecordFixture,
+  createPatientBedFixture,
+} from '@/tests/support/dailyRecordFixtures';
 
 // Mock the record query service
 vi.mock('@/services/records/recordQueryService', () => ({
@@ -47,10 +50,19 @@ describe('useExistingDays', () => {
 
   it('should return days with patient data', async () => {
     const mockRecords = [
-      { date: '2024-12-15', beds: { R1: { patientName: 'Patient A' } } },
-      { date: '2024-12-20', beds: { R1: { patientName: 'Patient B' } } },
-      { date: '2024-12-25', beds: { R1: { patientName: '' } } },
-    ] as unknown as DailyRecord[];
+      createDailyRecordFixture({
+        date: '2024-12-15',
+        beds: { R1: createPatientBedFixture('R1', { patientName: 'Patient A' }) },
+      }),
+      createDailyRecordFixture({
+        date: '2024-12-20',
+        beds: { R1: createPatientBedFixture('R1', { patientName: 'Patient B' }) },
+      }),
+      createDailyRecordFixture({
+        date: '2024-12-25',
+        beds: { R1: createPatientBedFixture('R1', { patientName: '' }) },
+      }),
+    ];
 
     vi.mocked(recordQueryService.fetchRecordsForMonth).mockResolvedValue(mockRecords);
 
@@ -67,7 +79,7 @@ describe('useExistingDays', () => {
     const mockRecords = [
       { date: '2024-12-15', beds: null },
       { date: '2024-12-20' },
-    ] as unknown as DailyRecord[];
+    ] as unknown as Awaited<ReturnType<typeof recordQueryService.fetchRecordsForMonth>>;
 
     vi.mocked(recordQueryService.fetchRecordsForMonth).mockResolvedValue(mockRecords);
 

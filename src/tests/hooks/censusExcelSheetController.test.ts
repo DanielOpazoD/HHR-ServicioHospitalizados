@@ -1,23 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { DataFactory } from '@/tests/factories/DataFactory';
 import { BEDS } from '@/constants/beds';
 import {
   buildCensusWorkbookPlan,
   buildCensusWorkbookSheetDescriptors,
 } from '@/hooks/controllers/censusExcelSheetController';
+import { createDailyRecordFixture } from '@/tests/support/dailyRecordFixtures';
 
-const buildRecord = (date: string): DailyRecord =>
-  ({
-    date,
-    beds: {},
-    discharges: [],
-    transfers: [],
-    cma: [],
-    lastUpdated: '',
-    nurses: [],
-    activeExtraBeds: [],
-  }) as unknown as DailyRecord;
+const buildRecord = (date: string) => createDailyRecordFixture({ date, lastUpdated: '' });
 
 describe('censusExcelSheetController', () => {
   it('builds one current-day snapshot using the current time in the sheet name', () => {

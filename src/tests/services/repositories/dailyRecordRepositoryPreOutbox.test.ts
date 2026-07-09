@@ -62,6 +62,7 @@ import {
   ackDailyRecordSyncTask,
   queueDailyRecordSyncTaskWithLocalRecord as queueSyncTask,
 } from '@/services/storage/sync';
+import { expectClinicalSyncPathsContract } from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
 
 const buildRecord = (date: string): DailyRecord => ({
   date,
@@ -97,12 +98,7 @@ describe('dailyRecordRepositoryWriteService pre-outbox', () => {
       expect.objectContaining({
         contexts: ['clinical', 'staffing', 'movements', 'handoff', 'metadata'],
         origin: 'direct_queue',
-        syncContract: expect.objectContaining({
-          expectedVersion: '2026-02-21T07:55:00.000Z',
-          changedPaths: ['*'],
-          recordRevision: '2026-02-21T08:00:00.000Z',
-          mutationId: expect.any(String),
-        }),
+        syncContract: expect.any(Object),
       }),
       expect.objectContaining({ deferProcessing: true, holdForMs: expect.any(Number) })
     );
@@ -110,12 +106,25 @@ describe('dailyRecordRepositoryWriteService pre-outbox', () => {
       expect.objectContaining({ date: '2026-02-21' }),
       '2026-02-21T07:55:00.000Z',
       expect.objectContaining({
-        syncContract: expect.objectContaining({
-          expectedVersion: '2026-02-21T07:55:00.000Z',
-          changedPaths: ['*'],
-          recordRevision: '2026-02-21T08:00:00.000Z',
-        }),
+        syncContract: expect.any(Object),
       })
     );
+    const queueOptions = vi.mocked(queueSyncTask).mock.calls[0]?.[1];
+    const writeOptions = vi.mocked(saveRecordToFirestore).mock.calls[0]?.[2];
+    expectClinicalSyncPathsContract({
+      value: queueOptions?.syncContract,
+      version: '2026-02-21T07:55:00.000Z',
+      recordRevision: '2026-02-21T08:00:00.000Z',
+      paths: ['*'],
+    });
+    expect(queueOptions?.syncContract).toEqual(
+      expect.objectContaining({ mutationId: expect.any(String) })
+    );
+    expectClinicalSyncPathsContract({
+      value: writeOptions?.syncContract,
+      version: '2026-02-21T07:55:00.000Z',
+      recordRevision: '2026-02-21T08:00:00.000Z',
+      paths: ['*'],
+    });
   });
 });

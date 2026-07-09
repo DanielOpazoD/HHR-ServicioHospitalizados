@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import type { PatientData } from '@/types/domain/patient';
 import {
   resolveBlockedReasonUpdate,
@@ -9,6 +8,7 @@ import {
   resolveToggleExtraBedOperation,
   toBedOperationAuditArgs,
 } from '@/hooks/controllers/bedOperationsAuditController';
+import { createDailyRecordFixture } from '@/tests/support/dailyRecordFixtures';
 
 const createPatient = (bedId: string, patientName = 'Paciente', location = 'Sala A'): PatientData =>
   ({
@@ -20,19 +20,16 @@ const createPatient = (bedId: string, patientName = 'Paciente', location = 'Sala
     isBlocked: false,
   }) as PatientData;
 
-const buildRecord = (): DailyRecord =>
-  ({
+const buildRecord = () =>
+  createDailyRecordFixture({
     date: '2026-03-07',
     beds: {
       R1: createPatient('R1', 'Paciente 1', 'Sala 1'),
       R2: createPatient('R2', '', 'Sala 2'),
     },
     activeExtraBeds: ['E1'],
-    discharges: [],
-    transfers: [],
-    cma: [],
     lastUpdated: '2026-03-07T00:00:00.000Z',
-  }) as unknown as DailyRecord;
+  });
 
 describe('bedOperationsAuditController', () => {
   it('resolves move/copy with patch and audit payloads', () => {

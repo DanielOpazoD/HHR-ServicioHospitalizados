@@ -153,6 +153,11 @@
       "artifact": "reports/test-runtime-governance.md"
     },
     {
+      "id": "test_runtime_remediation",
+      "script": "report:test-runtime-remediation",
+      "artifact": "reports/test-runtime-remediation.md"
+    },
+    {
       "id": "unit_shard_runtime_profile",
       "script": "report:unit-shard-runtime-profile",
       "artifact": "reports/unit-shard-runtime-profile.md"
@@ -226,6 +231,7 @@
       { "id": "check:ci-runtime-telemetry", "group": "tests" },
       { "id": "check:ci-runtime-calibration", "group": "tests" },
       { "id": "check:test-runtime-governance", "group": "tests" },
+      { "id": "check:test-runtime-remediation", "group": "tests" },
       { "id": "check:test-failure-catalog", "group": "tests" },
       { "id": "check:flaky-quarantine", "group": "tests" },
       { "id": "check:guardrail-governance", "group": "governance" },

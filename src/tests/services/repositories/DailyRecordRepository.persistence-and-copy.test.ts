@@ -13,6 +13,7 @@ import {
   Repository,
   resetDailyRecordRepositoryLifecycleState,
 } from '@/tests/services/repositories/DailyRecordRepository.lifecycle-support';
+import { expectClinicalSyncPathsContract } from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
 
 describe('DailyRecordRepository persistence and copy flows', () => {
   beforeEach(() => {
@@ -74,12 +75,15 @@ describe('DailyRecordRepository persistence and copy flows', () => {
       expect.anything(),
       mockRecord.lastUpdated,
       expect.objectContaining({
-        syncContract: expect.objectContaining({
-          changedPaths: ['beds.R1.patientName', 'beds.R1.rut'],
-          expectedVersion: mockRecord.lastUpdated,
-        }),
+        syncContract: expect.any(Object),
       })
     );
+    const writeOptions = firestoreMock.updateRecordPartial.mock.calls[0]?.[3];
+    expectClinicalSyncPathsContract({
+      value: writeOptions?.syncContract,
+      version: mockRecord.lastUpdated,
+      paths: ['beds.R1.patientName', 'beds.R1.rut'],
+    });
   });
 
   it('deletes from local and moves to trash in remote', async () => {
@@ -180,12 +184,15 @@ describe('DailyRecordRepository persistence and copy flows', () => {
       }),
       targetRecord.lastUpdated,
       expect.objectContaining({
-        syncContract: expect.objectContaining({
-          changedPaths: ['beds.R2'],
-          expectedVersion: targetRecord.lastUpdated,
-        }),
+        syncContract: expect.any(Object),
       })
     );
+    const writeOptions = firestoreMock.updateRecordPartial.mock.calls[0]?.[3];
+    expectClinicalSyncPathsContract({
+      value: writeOptions?.syncContract,
+      version: targetRecord.lastUpdated,
+      paths: ['beds.R2'],
+    });
     expect(firestoreMock.saveRecordToFirestore).not.toHaveBeenCalled();
   });
 

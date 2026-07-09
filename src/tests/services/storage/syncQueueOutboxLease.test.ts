@@ -34,6 +34,7 @@ import {
 } from '@/services/storage/sync';
 import { createDexieSyncQueueStore } from '@/services/storage/sync/dexieSyncQueueStore';
 import type { DailyRecord } from '@/types/domain/dailyRecord';
+import { createClinicalSyncPathologyContract } from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
 
 const TEST_TASK_TIMESTAMP_MS = 1760000000000;
 const FRESH_WORKER_NOW_MS = 1760000060000;
@@ -69,10 +70,11 @@ describe('sync queue transactional outbox and leases', () => {
     const result = await queueDailyRecordSyncTaskWithLocalRecord(record, {
       contexts: ['clinical'],
       origin: 'partial_update_retry',
-      syncContract: {
-        expectedVersion: '2025-01-16T09:00:00.000Z',
-        changedPaths: ['beds.R1.pathology'],
-      },
+      syncContract: createClinicalSyncPathologyContract({
+        version: '2025-01-16T09:00:00.000Z',
+        revision: 0,
+        mutationId: 'mutation-outbox-lease',
+      }),
     });
 
     expect(result).toMatchObject({

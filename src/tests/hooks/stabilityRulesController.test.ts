@@ -1,17 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { DailyRecord } from '@/types/domain/dailyRecord';
 import { buildStabilityRules } from '@/hooks/stabilityRulesController';
+import { createDailyRecordFixture } from '@/tests/support/dailyRecordFixtures';
 
-const createRecord = (date: string): DailyRecord => ({
-  date,
-  beds: {},
-  discharges: [],
-  transfers: [],
-  cma: [],
-  lastUpdated: `${date}T08:00:00.000Z`,
-  nurses: [],
-  activeExtraBeds: [],
-});
+const createRecord = (date: string) =>
+  createDailyRecordFixture({
+    date,
+    lastUpdated: `${date}T08:00:00.000Z`,
+  });
 
 describe('stabilityRulesController', () => {
   it('returns locked rules when there is no record', () => {

@@ -58,6 +58,9 @@ vi.mock('@/services/utils/fhirMappers', () => ({
 import { updatePartial } from '@/services/repositories/dailyRecordRepositoryWriteService';
 import { getRecordForDate as getRecordFromIndexedDB } from '@/services/storage/indexeddb/indexedDbRecordService';
 import { updateRecordPartial as updateRecordPartialToFirestore } from '@/services/storage/firestore/firestoreRecordWrites';
+import { expectClinicalSyncPathsContract } from '@/tests/support/clinicalSyncSimulator/syncContractFixtures';
+
+const medicalHandoffPatchPaths = ['beds.R1.medicalHandoffNote', 'beds.R1.medicalHandoffEntries'];
 
 const buildRecord = (date: string): DailyRecord => ({
   date,
@@ -117,12 +120,15 @@ describe('dailyRecordRepositoryWriteService specialist handoff patches', () => {
       }),
       current.lastUpdated,
       expect.objectContaining({
-        syncContract: expect.objectContaining({
-          changedPaths: ['beds.R1.medicalHandoffNote', 'beds.R1.medicalHandoffEntries'],
-          expectedVersion: current.lastUpdated,
-        }),
+        syncContract: expect.any(Object),
       })
     );
+    const writeOptions = vi.mocked(updateRecordPartialToFirestore).mock.calls[0]?.[3];
+    expectClinicalSyncPathsContract({
+      value: writeOptions?.syncContract,
+      version: current.lastUpdated,
+      paths: medicalHandoffPatchPaths,
+    });
   });
 
   it('does not append structural bed normalization patches for specialist-scoped medical handoff updates', async () => {
@@ -150,11 +156,14 @@ describe('dailyRecordRepositoryWriteService specialist handoff patches', () => {
       }),
       current.lastUpdated,
       expect.objectContaining({
-        syncContract: expect.objectContaining({
-          changedPaths: ['beds.R1.medicalHandoffNote', 'beds.R1.medicalHandoffEntries'],
-          expectedVersion: current.lastUpdated,
-        }),
+        syncContract: expect.any(Object),
       })
     );
+    const writeOptions = vi.mocked(updateRecordPartialToFirestore).mock.calls[0]?.[3];
+    expectClinicalSyncPathsContract({
+      value: writeOptions?.syncContract,
+      version: current.lastUpdated,
+      paths: medicalHandoffPatchPaths,
+    });
   });
 });
