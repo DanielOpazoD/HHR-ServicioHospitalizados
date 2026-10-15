@@ -3,6 +3,9 @@
 ## Contrato
 
 - Replicar y escribir snapshots derivados sin mezclar autorización clínica.
+- `dailyRecords` queda fuera del espejo: los censos corregidos en `hhr-pruebas`
+  se conservan como base de la migración y no deben sobrescribirse desde el antiguo.
+  `mirrorDailyRecords` se retiró de Cloud Functions el 15-10-2026 y no se exporta.
 
 ## Límites
 
