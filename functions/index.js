@@ -19,7 +19,7 @@ const { createPrescriptionAccessFunctions } = require('./lib/prescriptionAccessF
 const authHelpers = createAuthHelpers(admin);
 
 module.exports = {
-  ...createMirrorFunctions({ dbBeta, admin }),
+  ...createMirrorFunctions({ dbBeta }),
   ...createMinsalFunctions({
     admin,
     hospitalCapacity: HOSPITAL_CAPACITY,

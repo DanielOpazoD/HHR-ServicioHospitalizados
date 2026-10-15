@@ -17,14 +17,20 @@ const {
 
 describe('functions mirrorFunctions', () => {
   it('builds the expected handler keys from the registry-driven mirror wiring', () => {
-    const handlers = createMirrorFunctions({ dbBeta: {}, admin: {} });
+    const handlers = createMirrorFunctions({ dbBeta: {} });
     const registryKeys = MIRROR_WRITE_COLLECTIONS.map(
       (entry: { exportName: string }) => entry.exportName
     ).sort();
 
-    expect(Object.keys(handlers).sort()).toEqual(['mirrorDailyRecords', ...registryKeys].sort());
-    expect(typeof handlers.mirrorDailyRecords).toBe('function');
+    expect(Object.keys(handlers).sort()).toEqual(registryKeys);
+    expect(handlers).not.toHaveProperty('mirrorDailyRecords');
     expect(registryKeys.every((key: string) => typeof handlers[key] === 'function')).toBe(true);
+  });
+
+  it('keeps the corrected daily census outside the cross-project mirror', () => {
+    expect(MIRROR_WRITE_COLLECTIONS).not.toContainEqual(
+      expect.objectContaining({ collection: 'dailyRecords' })
+    );
   });
 
   it('registers clinical documents in the official-to-testing mirror', () => {
