@@ -10,7 +10,7 @@ on:
 jobs:
   validate-preview-bootstrap:
     name: Validate Preview Bootstrap
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code

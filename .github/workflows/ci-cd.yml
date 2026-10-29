@@ -350,7 +350,7 @@ jobs:
 
   e2e-critical-emulator:
     name: e2e-critical
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -405,7 +405,7 @@ jobs:
 
   build:
     name: build-budget
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [quality-static, unit-risk, clinical-sync-release-gate, rules-emulator, e2e-critical-emulator]
 
     steps:

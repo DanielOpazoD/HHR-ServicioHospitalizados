@@ -48,5 +48,8 @@ export const buildInitializedDayRecord = (
     tensNightShift: inheritedStaff.tensNight,
     activeExtraBeds: prevRecord ? [...(prevRecord.activeExtraBeds || [])] : [],
     handoffNovedadesDayShift: resolveInitialDayHandoff(prevRecord),
+    ...(prevRecord?.handoffSharedChecklist
+      ? { handoffSharedChecklist: { ...prevRecord.handoffSharedChecklist } }
+      : {}),
   };
 };

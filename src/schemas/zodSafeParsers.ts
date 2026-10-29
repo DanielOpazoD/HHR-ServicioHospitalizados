@@ -7,7 +7,7 @@ import { recordOperationalTelemetry } from '@/services/observability/operational
 import type { SafeParseReturnType } from 'zod';
 
 import { normalizeLegacyNullsDeep } from './zod/legacyNormalization';
-import { DailyRecordSchema } from './zod/dailyRecord';
+import { DailyRecordSchema, HandoffSharedChecklistSchema } from './zod/dailyRecord';
 import { PatientDataSchema } from './zod/patient';
 import { CMADataSchema, DischargeDataSchema, TransferDataSchema } from './zod/movements';
 import { buildFallbackPatientData } from './zodFallbackBuilders';
@@ -120,6 +120,8 @@ export const parseDailyRecordWithDefaultsReport = (
   const salvagedTransfers = salvageArrayItems<TransferData>(raw.transfers, TransferDataSchema);
   const salvagedCma = salvageArrayItems<CMAData>(raw.cma, CMADataSchema);
 
+  const sharedChecklist = HandoffSharedChecklistSchema.safeParse(raw.handoffSharedChecklist);
+
   return {
     record: applyDailyRecordStaffingCompatibility({
       date: typeof raw.date === 'string' ? raw.date : docId,
@@ -135,6 +137,7 @@ export const parseDailyRecordWithDefaultsReport = (
       tensDayShift: Array.isArray(raw.tensDayShift) ? raw.tensDayShift : ['', '', ''],
       tensNightShift: Array.isArray(raw.tensNightShift) ? raw.tensNightShift : ['', '', ''],
       activeExtraBeds: Array.isArray(raw.activeExtraBeds) ? raw.activeExtraBeds : [],
+      handoffSharedChecklist: sharedChecklist.success ? sharedChecklist.data : undefined,
       handoffDayChecklist: (raw.handoffDayChecklist as DailyRecord['handoffDayChecklist']) || {},
       handoffNightChecklist:
         (raw.handoffNightChecklist as DailyRecord['handoffNightChecklist']) || {},

@@ -54,6 +54,8 @@ type TopLevelValueMap = {
 
 type TopLevelPath = keyof TopLevelValueMap;
 
+type HandoffSharedChecklistPath =
+  `handoffSharedChecklist.${'crashCartReviewDate' | 'crashCartCode'}`;
 type HandoffDayChecklistPath = `handoffDayChecklist.${string}`;
 type HandoffNightChecklistPath = `handoffNightChecklist.${string}`;
 type HandoffStaffPath =
@@ -78,6 +80,7 @@ export type DailyRecordPatchPath =
   | PatientCudyrPath
   | PatientClinicalCribPath
   | PatientDeviceDetailsPath
+  | HandoffSharedChecklistPath
   | HandoffDayChecklistPath
   | HandoffNightChecklistPath
   | HandoffStaffPath
@@ -90,26 +93,28 @@ export type DailyRecordPatch = {
       : TopLevelValueMap[K]
     : K extends PatientCudyrPath
       ? number
-      : K extends HandoffDayChecklistPath | HandoffNightChecklistPath
-        ? boolean | string
-        : K extends HandoffStaffPath
-          ? string[]
-          :
-              | string
-              | number
-              | boolean
-              | string[]
-              | PatientData
-              | CudyrScore
-              | DeviceDetails
-              | PatientStatus
-              | Specialty
-              | ClinicalEvent[]
-              | DeviceInstance[]
-              | FhirResource
-              | Record<string, unknown>
-              | null
-              | undefined;
+      : K extends HandoffSharedChecklistPath
+        ? string
+        : K extends HandoffDayChecklistPath | HandoffNightChecklistPath
+          ? boolean | string
+          : K extends HandoffStaffPath
+            ? string[]
+            :
+                | string
+                | number
+                | boolean
+                | string[]
+                | PatientData
+                | CudyrScore
+                | DeviceDetails
+                | PatientStatus
+                | Specialty
+                | ClinicalEvent[]
+                | DeviceInstance[]
+                | FhirResource
+                | Record<string, unknown>
+                | null
+                | undefined;
 } & {
   [key: string]: unknown;
 };
