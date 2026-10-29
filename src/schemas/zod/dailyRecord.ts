@@ -1,3 +1,4 @@
+import { isValidCrashCartReviewDate } from '@/domain/handoff/sharedChecklist';
 import { z } from 'zod';
 import { DailyRecord } from '@/types/domain/dailyRecord';
 import { DATE_REGEX, nullableOptional, nullishDefault } from './helpers';
@@ -51,6 +52,11 @@ const DailyRecordStaffingDetailsSchema = z.object({
   }),
 });
 
+export const HandoffSharedChecklistSchema = z.object({
+  crashCartReviewDate: nullableOptional(z.string().refine(isValidCrashCartReviewDate)),
+  crashCartCode: nullableOptional(z.string().regex(/^(?:[0-9]{8})?$/)),
+});
+
 export const DailyRecordSchema: z.ZodType<DailyRecord, z.ZodTypeDef, unknown> = z.preprocess(
   input => {
     if (!input || typeof input !== 'object' || Array.isArray(input)) {
@@ -93,6 +99,7 @@ export const DailyRecordSchema: z.ZodType<DailyRecord, z.ZodTypeDef, unknown> = 
       tensNightShift: nullishDefault(z.array(z.string()), () => ['', '', '']),
       staffingDetailsV1: nullableOptional(DailyRecordStaffingDetailsSchema),
       activeExtraBeds: nullishDefault(z.array(z.string()), () => []),
+      handoffSharedChecklist: nullableOptional(HandoffSharedChecklistSchema),
       handoffDayChecklist: z
         .object({
           escalaBraden: nullableOptional(z.boolean()),

@@ -45,3 +45,12 @@
 - `npm run check:quality`
 - relevant `handoff` application/domain/view tests
 - `npm run check:handoff-feature-boundary`
+
+## Shared nursing checklist
+
+`handoffSharedChecklist` stores the crash cart's last review date (`YYYY-MM-DD`) and
+its eight-digit code as text, preserving leading zeros. Day and night edit the same
+fields through the checklist patch path. Empty values explicitly clear a field.
+A newly copied census inherits these values from its chosen source day, including
+month/year transitions; ordinary shift checklist completions still reset.
+Both nursing PDF paths include the shared review and the heading “Novedades & Pendientes”.

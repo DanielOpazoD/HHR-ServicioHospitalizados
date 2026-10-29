@@ -87,6 +87,7 @@ export type DailyRecordHandoffPdfState = Pick<
   | 'discharges'
   | 'transfers'
   | 'cma'
+  | 'handoffSharedChecklist'
   | 'handoffDayChecklist'
   | 'handoffNightChecklist'
   | 'handoffNovedadesDayShift'
