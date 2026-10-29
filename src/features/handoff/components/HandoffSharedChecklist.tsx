@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React from 'react';
 import type { DailyRecord } from '@/domain/handoff/recordContracts';
 import { DebouncedInput } from '@/components/ui/DebouncedInput';
 
@@ -13,7 +13,6 @@ export const HandoffSharedChecklist: React.FC<HandoffSharedChecklistProps> = ({
   onUpdate,
   readOnly,
 }) => {
-  const id = useId();
   const inputClass =
     'rounded border border-slate-300 px-2 py-1 text-sm disabled:bg-slate-50 disabled:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500';
 
@@ -50,15 +49,11 @@ export const HandoffSharedChecklist: React.FC<HandoffSharedChecklistProps> = ({
             );
           }}
           onBlur={event => event.currentTarget.reportValidity()}
-          aria-describedby={`${id}-hint`}
           placeholder="8 dígitos"
           disabled={readOnly}
           className={`${inputClass} w-28`}
         />
       </label>
-      <span id={`${id}-hint`} className="text-xs text-slate-500">
-        El código se guarda al completar los 8 dígitos.
-      </span>
     </div>
   );
 };
