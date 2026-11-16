@@ -18,6 +18,11 @@ export type { TransferUpdateField } from '@/hooks/types/censusActionModalContrac
 const transferModalLogger = createScopedLogger('TransferModal');
 
 export const TransferModal: React.FC<TransferModalProps> = ({
+  title,
+  confirmText,
+  notice,
+  saving = false,
+  saveError,
   isOpen,
   bedId,
   isEditing,
@@ -126,14 +131,22 @@ export const TransferModal: React.FC<TransferModalProps> = ({
   return (
     <BaseModal
       isOpen={isOpen}
-      onClose={onClose}
-      title={isEditing ? 'Editar Traslado' : 'Confirmar Traslado'}
+      onClose={() => {
+        if (!saving) onClose();
+      }}
+      title={title || (isEditing ? 'Editar Traslado' : 'Confirmar Traslado')}
       icon={<Share2 size={16} />}
       size="md"
       headerIconColor="text-blue-600"
       variant="white"
     >
       <div className="space-y-5">
+        {notice && <MovementFinalStateNotice tone="blue">{notice}</MovementFinalStateNotice>}
+        {saveError && (
+          <p role="alert" className="text-sm text-red-700">
+            {saveError}
+          </p>
+        )}
         {!isEditing && (
           <MovementFinalStateNotice tone="blue">
             Se registrará el traslado clínico para esta cama del censo.
@@ -196,16 +209,20 @@ export const TransferModal: React.FC<TransferModalProps> = ({
 
         <div className="pt-6 flex justify-end items-center gap-4">
           <button
+            disabled={saving}
             onClick={onClose}
             className="text-slate-500 hover:text-slate-700 text-sm font-semibold transition-colors"
           >
             Cancelar
           </button>
           <button
+            disabled={saving}
             onClick={submit}
             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-md shadow-blue-600/10 hover:bg-blue-700 transition-all transform active:scale-95"
           >
-            {isEditing ? 'Guardar Cambios' : 'Confirmar Traslado'}
+            {saving
+              ? 'Guardando…'
+              : confirmText || (isEditing ? 'Guardar Cambios' : 'Confirmar Traslado')}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react';
+import { useDischargeToTransfer } from './useDischargeToTransfer';
 import type {
   ApplyDailyRecordPatch,
   DailyRecord,
@@ -52,6 +53,7 @@ export const usePatientDischarges = (
   runtime: PatientMovementRuntime = patientMovementBrowserRuntime,
   patchRecord?: ApplyDailyRecordPatch
 ): DischargeMovementActions => {
+  const convertDischargeToTransfer = useDischargeToTransfer(record, patchRecord);
   const recordRef = useLatestRef(record);
   const { notifyCreationError, notifyUndoError } = usePatientMovementFeedback(runtime);
   const { logDischargeEntries, logDischargeDiagnosisChange, logDischargeUndoEntry } =
@@ -257,7 +259,15 @@ export const usePatientDischarges = (
       deleteDischarge,
       undoDischarge,
       convertDischargeToCma,
+      convertDischargeToTransfer,
     }),
-    [addDischarge, updateDischarge, deleteDischarge, undoDischarge, convertDischargeToCma]
+    [
+      addDischarge,
+      updateDischarge,
+      deleteDischarge,
+      undoDischarge,
+      convertDischargeToCma,
+      convertDischargeToTransfer,
+    ]
   );
 };

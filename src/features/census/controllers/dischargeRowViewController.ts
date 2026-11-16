@@ -10,6 +10,7 @@ interface DischargeRowActionHandlers {
   viewClinicalDocuments: (discharge: DischargeData) => void | Promise<void>;
   editDischarge: (discharge: DischargeData) => void | Promise<void>;
   deleteDischarge: (id: string) => void | Promise<void>;
+  convertDischargeToTransfer?: (discharge: DischargeData) => void;
   convertDischargeToCma: (id: string) => void | Promise<void>;
 }
 

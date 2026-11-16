@@ -229,6 +229,7 @@ export const createMockDailyRecordContext = (
   deleteDischarge: vi.fn(),
   undoDischarge: vi.fn(),
   convertDischargeToCma: vi.fn(),
+  convertDischargeToTransfer: vi.fn(),
 
   // Transfers
   addTransfer: vi.fn(),

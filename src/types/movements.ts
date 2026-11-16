@@ -50,6 +50,11 @@ export interface DischargeMovementActions {
   deleteDischarge: DeleteDischargeAction;
   undoDischarge: UndoDischargeAction;
   convertDischargeToCma: ConvertDischargeToCmaAction;
+  convertDischargeToTransfer: (
+    id: string,
+    payload: TransferCommandPayload,
+    recordDate: string
+  ) => Promise<void>;
 }
 
 export interface TransferMovementActions {
@@ -77,6 +82,7 @@ export interface DischargeAddCommandPayload extends DischargeUpdateCommandPayloa
 
 export interface TransferCommandPayload {
   evacuationMethod: string;
+  evacuationMethodOther?: string;
   receivingCenter: string;
   receivingCenterOther: string;
   transferEscort: string;
