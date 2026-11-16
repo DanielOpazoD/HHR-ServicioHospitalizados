@@ -308,7 +308,12 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ onOpenCensusDate }
 
       {activeTab === 'upc-clinical' && <UpcClinicalAnalyticsSection records={allRecords} />}
 
-      {activeTab === 'transfers' && <TransferAnalyticsSection records={allRecords} />}
+      {activeTab === 'transfers' && (
+        <TransferAnalyticsSection
+          records={allRecords}
+          period={{ startDate: stats.periodStart, endDate: stats.periodEnd }}
+        />
+      )}
 
       {activeTab === 'cma' && (
         <CmaStatsSection cma={stats.cma} onOpenCensusDate={onOpenCensusDate} />
