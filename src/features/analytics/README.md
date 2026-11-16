@@ -23,6 +23,9 @@ Feature autónoma para indicadores MINSAL/DEIS, tendencias y exportación analí
   eliminados y filtra por fecha del censo, igual que los recuentos; distingue esa fecha de la
   fecha de movimiento registrada. Los datos ausentes quedan vacíos y las fechas/documentos
   se exportan como texto.
+- El controller de exportación es una superficie permitida de lectura histórica en
+  `originalDataBusinessUsageStatic.test.ts`; su propietario es analytics y las pruebas del XLSX
+  verifican que no se mezcle el snapshot del traslado con el ocupante actual de la cama.
 - Todo traslado cuyo medio seleccionado sea `Otro` se clasifica por defecto como aeroevacuación
   médica de otra empresa; el texto libre no es requisito para incorporarlo a ese grupo.
 - Mantiene separados los contratos de visualización analítica de la UI operativa del censo diario.
