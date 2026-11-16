@@ -19,11 +19,21 @@ interface DischargeRowProps {
   onEdit: (item: DischargeData) => void;
   onUpdate: (item: DischargeData) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onConvertToTransfer?: (item: DischargeData) => void;
   onConvertToCma: (id: string) => Promise<void>;
 }
 
 export const DischargeRow: React.FC<DischargeRowProps> = React.memo(
-  ({ item, recordDate, onUndo, onEdit, onUpdate, onDelete, onConvertToCma }) => {
+  ({
+    item,
+    recordDate,
+    onUndo,
+    onEdit,
+    onUpdate,
+    onDelete,
+    onConvertToCma,
+    onConvertToTransfer,
+  }) => {
     const [showClinicalDocuments, setShowClinicalDocuments] = useState(false);
     const clinicalDocumentsPatient = useMemo(
       () => buildDischargeClinicalDocumentsPatientSnapshot(item, recordDate),
@@ -35,6 +45,7 @@ export const DischargeRow: React.FC<DischargeRowProps> = React.memo(
       editDischarge: onEdit,
       deleteDischarge: onDelete,
       convertDischargeToCma: onConvertToCma,
+      convertDischargeToTransfer: onConvertToTransfer,
     });
 
     return (

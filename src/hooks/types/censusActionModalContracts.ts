@@ -49,6 +49,11 @@ export interface DischargeModalProps {
 }
 
 export interface TransferModalProps {
+  title?: string;
+  confirmText?: string;
+  notice?: string;
+  saving?: boolean;
+  saveError?: string;
   bedId?: string;
   isOpen: boolean;
   isEditing: boolean;

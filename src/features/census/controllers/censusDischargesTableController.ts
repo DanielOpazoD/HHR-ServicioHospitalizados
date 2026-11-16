@@ -1,3 +1,4 @@
+import { canConvertDischargeToTransfer } from '@/application/census/dischargeToTransferPolicy';
 import type { DischargeData } from '@/features/census/contracts/censusMovementContracts';
 import type { CensusMovementTableHeader } from '@/features/census/types/censusMovementTableTypes';
 import { buildMovementRowActions } from '@/features/census/controllers/censusMovementRowActionsController';
@@ -23,6 +24,7 @@ interface DischargeRowActionHandlers {
   viewClinicalDocuments: (discharge: DischargeData) => void;
   editDischarge: (discharge: DischargeData) => void;
   deleteDischarge: (id: string) => void;
+  convertDischargeToTransfer?: (discharge: DischargeData) => void;
   convertDischargeToCma: (id: string) => void;
 }
 
@@ -57,6 +59,14 @@ export const buildDischargeRowActions = (
     });
   }
 
+  if (handlers.convertDischargeToTransfer && canConvertDischargeToTransfer(discharge)) {
+    actions.push({
+      kind: 'convert',
+      title: 'Convertir a traslado',
+      className: 'text-blue-600 hover:text-blue-700',
+      onClick: () => handlers.convertDischargeToTransfer?.(discharge),
+    });
+  }
   actions.push(deleteAction);
   return actions;
 };

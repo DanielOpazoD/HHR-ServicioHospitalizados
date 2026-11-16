@@ -113,6 +113,24 @@ describe('DischargesSection', () => {
     });
   });
 
+  it('opens conversion from the discharge menu and cancel leaves the case unchanged', async () => {
+    vi.mocked(useDailyRecordMovements).mockReturnValue({
+      discharges: mockDischarges,
+    } as unknown as MovementsValue);
+    render(<DischargesSection />);
+    fireEvent.click(screen.getByTitle('Abrir menú de acciones'));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Convertir a traslado' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Convertir alta a traslado' })
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(
+      screen.queryByRole('heading', { name: 'Convertir alta a traslado' })
+    ).not.toBeInTheDocument();
+    expect(mockOnUndo).not.toHaveBeenCalled();
+    expect(mockOnDelete).not.toHaveBeenCalled();
+  });
+
   it('converts a discharge into CMA from the shared actions menu', async () => {
     vi.mocked(useDailyRecordMovements).mockReturnValue({
       discharges: mockDischarges,

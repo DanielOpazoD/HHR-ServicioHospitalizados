@@ -121,6 +121,7 @@ export const useDailyRecord = (
         deleteDischarge: dischargeManagement.deleteDischarge,
         undoDischarge: dischargeManagement.undoDischarge,
         convertDischargeToCma: dischargeManagement.convertDischargeToCma,
+        convertDischargeToTransfer: dischargeManagement.convertDischargeToTransfer,
         addTransfer: transferManagement.addTransfer,
         updateTransfer: transferManagement.updateTransfer,
         deleteTransfer: transferManagement.deleteTransfer,

@@ -376,3 +376,12 @@ Hotspots secundarios:
 - Se controlan boundaries runtime para evitar acoplamiento directo a `window/alert/confirm` en zonas críticas.
 
 > ⚠️ IMPORTANT: When modifying any layer, update the corresponding README.md in that directory.
+
+### Corrección de altas mal clasificadas
+
+En Censo → Altas → acciones → **Convertir a traslado**, las altas de pacientes vivos
+pueden reclasificarse completando transporte, centro receptor, acompañante y fecha/hora.
+La operación conserva identidad, episodio, ingreso, cama de origen y snapshot histórico;
+no restaura ni modifica ocupantes de camas. Guarda ambas listas en un único patch y
+marca el alta original como `converted_to_transfer`, conservando sus datos (incluido IEEH)
+para trazabilidad. Los fallos dejan el formulario abierto para reintentar.

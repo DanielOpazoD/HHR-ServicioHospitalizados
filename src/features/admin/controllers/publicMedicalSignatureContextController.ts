@@ -69,6 +69,7 @@ export const createPublicMedicalSignatureContextValue = ({
   deleteDischarge: noop,
   undoDischarge: noop,
   convertDischargeToCma: noop,
+  convertDischargeToTransfer: asyncNoop,
   addTransfer: noop,
   updateTransfer: noop,
   deleteTransfer: noop,

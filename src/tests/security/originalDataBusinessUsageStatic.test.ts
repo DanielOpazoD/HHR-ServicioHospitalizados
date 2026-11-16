@@ -10,6 +10,8 @@ const ALLOWED_ORIGINAL_DATA_REFERENCES = [
   'src/application/census/cmaEpisodeMovementFields.ts',
   'src/application/census/cmaUndoPatchUseCase.ts',
   'src/application/census/movementTypeConversionPolicy.ts',
+  // Reclassification copies the historical snapshot without consulting live beds.
+  'src/application/census/dischargeToTransferPolicy.ts',
   'src/hooks/usePatientMovementUndoExecutor.ts',
   'src/hooks/controllers/censusExcelSheetController.ts',
   // Read-only historical transfer export; never consult the current bed occupant.
