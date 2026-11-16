@@ -36,7 +36,12 @@ const record = {
 
 describe('TransferAnalyticsSection', () => {
   it('renders transfer percentages, air-ambulance providers and daily detail', () => {
-    render(<TransferAnalyticsSection records={[record]} />);
+    render(
+      <TransferAnalyticsSection
+        records={[record]}
+        period={{ startDate: record.date, endDate: record.date }}
+      />
+    );
 
     expect(screen.getByTestId('transfer-analytics')).toBeInTheDocument();
     expect(screen.getByText('Análisis de traslados')).toBeInTheDocument();
@@ -60,7 +65,12 @@ describe('TransferAnalyticsSection', () => {
   });
 
   it('renders an explicit empty state', () => {
-    render(<TransferAnalyticsSection records={[]} />);
+    render(
+      <TransferAnalyticsSection
+        records={[]}
+        period={{ startDate: '2026-03-01', endDate: '2026-03-31' }}
+      />
+    );
     expect(screen.getByText('Sin traslados en el período')).toBeInTheDocument();
   });
 });

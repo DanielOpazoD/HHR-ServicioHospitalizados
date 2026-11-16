@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import ExcelJS from 'exceljs';
 
 import {
   bootstrapSeededRecord,
@@ -35,6 +36,24 @@ const buildStatisticsRecord = (date: string) => {
         specialty: 'Oftalmología',
         status: 'Vivo',
         time: '10:00',
+        admissionDate: date,
+      },
+    ],
+    transfers: [
+      {
+        id: 'transfer-analytics-1',
+        bedName: 'R2',
+        bedId: 'R2',
+        bedType: 'Cama',
+        patientName: 'TRASLADO SINTETICO',
+        rut: '00123456-K',
+        diagnosis: 'Diagnóstico prueba',
+        specialty: 'Medicina Interna',
+        time: '09:15',
+        movementDate: date,
+        evacuationMethod: 'Otro',
+        evacuationMethodOther: 'Empresa sintética',
+        receivingCenter: 'Hospital Salvador',
         admissionDate: date,
       },
     ],
@@ -107,6 +126,35 @@ test.describe('Statistics authenticated module', () => {
     await page.getByRole('tab', { name: 'Trazabilidad' }).click();
     await expect(page.getByText('Calidad de datos')).toBeVisible();
     await expect(page.getByText('Egreso sin fecha explícita')).toBeVisible();
+  });
+
+  test('downloads a detailed transfer workbook from the selected period', async ({ page }) => {
+    await openStatistics(page);
+    await page.getByRole('tab', { name: 'Traslados', exact: true }).click();
+    const button = page.getByRole('button', { name: 'Descargar detalle Excel' });
+    await expect(button).toBeVisible();
+    const downloadPromise = page.waitForEvent('download');
+    await button.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/^Detalle_Traslados_HHR_.*\.xlsx$/);
+    const file = await download.path();
+    expect(file).toBeTruthy();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(file!);
+    const all = workbook.getWorksheet('Todos los traslados')!;
+    expect(all.rowCount).toBe(2);
+    expect(workbook.getWorksheet('Avión ambulancia')!.rowCount).toBe(2);
+    expect(workbook.getWorksheet('LATAM')!.rowCount).toBe(1);
+    const values = all.getRow(2).values;
+    expect(values).toContain('TRASLADO SINTETICO');
+    expect(values).toContain('00123456-K');
+    expect(values).toContain('Empresa sintética');
+    expect(values).toContain(getE2EDate());
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(button).toBeVisible();
+    const bounds = await button.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
   });
 
   test('saves and clears statistical specialty reclassification from the admin UI', async ({

@@ -12,6 +12,8 @@ const ALLOWED_ORIGINAL_DATA_REFERENCES = [
   'src/application/census/movementTypeConversionPolicy.ts',
   'src/hooks/usePatientMovementUndoExecutor.ts',
   'src/hooks/controllers/censusExcelSheetController.ts',
+  // Read-only historical transfer export; never consult the current bed occupant.
+  'src/features/analytics/controllers/transferExportController.ts',
   'src/features/census/components/DischargeRowView.tsx',
   'src/features/census/components/TransferRowView.tsx',
   'src/features/census/controllers/patientMovementDischargeMutationController.ts',
@@ -26,7 +28,7 @@ const ALLOWED_ORIGINAL_DATA_REFERENCES = [
 ];
 
 describe('originalData business governance', () => {
-  it('limits originalData usage to undo, audit, compatibility and historical maintenance surfaces', () => {
+  it('limits originalData usage to undo, audit, compatibility and historical reporting/maintenance surfaces', () => {
     const command =
       'grep -rl "originalData" src --include="*.ts" --include="*.tsx" | grep -v "src/tests/" | grep -v "\\.md$"';
     const rawOutput = execSync(command, { cwd: ROOT, encoding: 'utf8' });

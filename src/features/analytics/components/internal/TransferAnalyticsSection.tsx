@@ -10,9 +10,12 @@ import {
 } from '@/features/analytics/controllers/transferAnalyticsController';
 import { formatDateDDMMYYYY } from '@/utils/dateDisplayUtils';
 import { TransferTraceabilityModal } from './TransferTraceabilityModal';
+import { TransferExportButton } from './TransferExportButton';
+import type { TransferExportPeriod } from '../../controllers/transferExportController';
 
 interface TransferAnalyticsSectionProps {
   records: DailyRecord[];
+  period: TransferExportPeriod;
 }
 
 const formatPercent = (value: number): string => `${value.toFixed(1)}%`;
@@ -101,7 +104,10 @@ const ProviderBreakdown: React.FC<{
   </div>
 );
 
-export const TransferAnalyticsSection: React.FC<TransferAnalyticsSectionProps> = ({ records }) => {
+export const TransferAnalyticsSection: React.FC<TransferAnalyticsSectionProps> = ({
+  records,
+  period,
+}) => {
   const analysis = React.useMemo(() => buildTransferAnalytics(records), [records]);
   const [traceability, setTraceability] = React.useState<TraceabilitySelection | null>(null);
 
@@ -136,7 +142,7 @@ export const TransferAnalyticsSection: React.FC<TransferAnalyticsSectionProps> =
 
   return (
     <section className="space-y-5" data-testid="transfer-analytics">
-      <div className="rounded-xl border border-sky-200 bg-sky-50 p-5">
+      <div className="flex flex-col gap-4 rounded-xl border border-sky-200 bg-sky-50 p-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-start gap-3">
           <PlaneTakeoff className="mt-0.5 h-6 w-6 shrink-0 text-sky-700" />
           <div>
@@ -147,6 +153,7 @@ export const TransferAnalyticsSection: React.FC<TransferAnalyticsSectionProps> =
             </p>
           </div>
         </div>
+        <TransferExportButton records={records} period={period} />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
